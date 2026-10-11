@@ -1,9 +1,12 @@
+import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
+import { EnemyView, floatText } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
 
 /** 縦画面レイアウト: 上=敵 / 中=ログ / 下=プレイヤー / 最下=ボタン。 */
 export class BattleView {
+  private enemyView: EnemyView;
   private enemyHp = new HpBar('enemy');
   private playerHp = new HpBar('player');
   private enemyHand = new HandView();
@@ -12,7 +15,9 @@ export class BattleView {
   private roundEl = document.createElement('div');
   private hitBtn = document.createElement('button');
   private standBtn = document.createElement('button');
+  private muteBtn = document.createElement('button');
   private overlay = document.createElement('div');
+  private playerArea: HTMLElement;
   private unsubs: Array<() => void> = [];
   private container: HTMLElement;
 
@@ -23,31 +28,46 @@ export class BattleView {
   ) {
     this.container = document.createElement('main');
     this.container.className = 'battle';
+    this.enemyView = new EnemyView(machine.ctx.enemyDef.id);
 
-    const enemyArea = section('enemy-area', this.roundEl, this.enemyHp.el, this.enemyHand.el);
     this.roundEl.className = 'round';
+    this.muteBtn.className = 'mute';
+    this.muteBtn.setAttribute('aria-label', 'サウンドの切り替え');
+    this.muteBtn.textContent = '♪';
+    this.muteBtn.addEventListener('click', () => {
+      audio.setMuted(!audio.muted);
+      audio.sfx('click');
+      this.renderMute();
+    });
+    const topRow = section('top-row', this.roundEl, this.muteBtn);
+    const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemyView.el, this.enemyHand.el);
     this.logEl.className = 'log';
     this.logEl.setAttribute('aria-live', 'polite');
-    const playerArea = section('player-area', this.playerHand.el, this.playerHp.el);
+    this.playerArea = section('player-area', this.playerHand.el, this.playerHp.el);
 
     this.hitBtn.className = 'btn btn--hit';
     this.hitBtn.textContent = 'Hit';
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.textContent = 'Stand';
     const actions = section('actions', this.hitBtn, this.standBtn);
-    this.hitBtn.addEventListener('click', () => machine.submit('hit'));
-    this.standBtn.addEventListener('click', () => machine.submit('stand'));
+    this.hitBtn.addEventListener('click', () => this.act('hit'));
+    this.standBtn.addEventListener('click', () => this.act('stand'));
 
     this.overlay.className = 'overlay';
     this.overlay.hidden = true;
 
-    this.container.append(enemyArea, this.logEl, playerArea, actions, this.overlay);
+    this.container.append(enemyArea, this.logEl, this.playerArea, actions, this.overlay);
     root.replaceChildren(this.container);
 
     this.unsubs.push(
       machine.onChange(() => this.render()),
       machine.onLog((text) => this.appendLog(text)),
+      machine.bus.on('onResolve', ({ result, damage }) => this.playResolveEffects(result.outcome, damage)),
+      machine.bus.on('onBattleEnd', ({ winner }) => {
+        if (winner.id === 'player') window.setTimeout(() => this.enemyView.play('defeated'), 300);
+      }),
     );
+    this.renderMute();
     this.render();
   }
 
@@ -56,12 +76,35 @@ export class BattleView {
     this.container.remove();
   }
 
+  private act(input: 'hit' | 'stand'): void {
+    if (this.machine.submit(input)) audio.sfx('click');
+  }
+
+  private playResolveEffects(outcome: 'playerWin' | 'enemyWin' | 'push', damage: number): void {
+    if (outcome === 'push' || damage <= 0) return;
+    if (outcome === 'playerWin') {
+      this.enemyView.play('hurt');
+      this.enemyView.floatText(`-${damage}`);
+    } else {
+      this.enemyView.play('attack');
+      floatText(this.playerArea, `-${damage}`);
+      this.container.classList.remove('is-flash');
+      void this.container.offsetWidth;
+      this.container.classList.add('is-flash');
+    }
+  }
+
   private appendLog(text: string): void {
     const line = document.createElement('p');
     line.textContent = text;
     this.logEl.append(line);
     while (this.logEl.childElementCount > 50) this.logEl.firstElementChild?.remove();
     this.logEl.scrollTop = this.logEl.scrollHeight;
+  }
+
+  private renderMute(): void {
+    this.muteBtn.classList.toggle('mute--off', audio.muted);
+    this.muteBtn.setAttribute('aria-pressed', String(audio.muted));
   }
 
   private render(): void {
@@ -90,7 +133,10 @@ export class BattleView {
     const again = document.createElement('button');
     again.className = 'btn btn--retry';
     again.textContent = 'もう一度';
-    again.addEventListener('click', this.onRestart);
+    again.addEventListener('click', () => {
+      audio.sfx('click');
+      this.onRestart();
+    });
     this.overlay.append(title, again);
   }
 }
