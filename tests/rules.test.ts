@@ -73,7 +73,7 @@ describe('スロット', () => {
     expect(skillForTotal(e, 15).id).toBe('guard');
     expect(skillForTotal(e, 13).id).toBe('basic_attack');
     expect(skillForTotal(e, 20).id).toBe('big_attack');
-    expect(skillForTotal(e, 21).id).toBe('critical_strike');
+    expect(skillForTotal(e, 21).id).toBe('ace_strike');
   });
   it('キャラクターごとに fallbackSkill を変えられる', () => {
     const e = new Entity('player', 'p', 60, {}, 'guard');
@@ -106,7 +106,7 @@ describe('applyDamage / Block', () => {
 });
 
 describe('行動順（decideInitiative）', () => {
-  const base = { playerBust: false, enemyBust: false, playerBlackjack: false, enemyBlackjack: false };
+  const base = { playerBust: false, enemyBust: false };
   it('大きい方が先攻', () => {
     expect(decideInitiative({ ...base, playerTotal: 20, enemyTotal: 18 })).toMatchObject({ mode: 'sequential', first: 'player', second: 'enemy' });
     expect(decideInitiative({ ...base, playerTotal: 17, enemyTotal: 18 })).toMatchObject({ mode: 'sequential', first: 'enemy', second: 'player' });
@@ -114,17 +114,14 @@ describe('行動順（decideInitiative）', () => {
   it('同値は同時攻撃', () => {
     expect(decideInitiative({ ...base, playerTotal: 18, enemyTotal: 18 }).mode).toBe('simultaneous');
   });
-  it('バーストした側はスキルが発動しない。相手は通常どおり行動する（クリティカルなし）', () => {
+  it('バーストした側はスキルが発動しない。相手は通常どおり行動する', () => {
     const t = decideInitiative({ ...base, playerTotal: 25, enemyTotal: 10, playerBust: true });
-    expect(t).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null, crit: { enemy: false, player: false } });
+    expect(t).toEqual({ mode: 'bustSkip', first: 'enemy', second: null });
     const u = decideInitiative({ ...base, playerTotal: 10, enemyTotal: 24, enemyBust: true });
-    expect(u).toMatchObject({ mode: 'bustSkip', first: 'player', second: null, crit: { player: false, enemy: false } });
+    expect(u).toEqual({ mode: 'bustSkip', first: 'player', second: null });
   });
   it('両者バーストは誰も行動しない', () => {
     expect(decideInitiative({ ...base, playerTotal: 25, enemyTotal: 24, playerBust: true, enemyBust: true }).mode).toBe('none');
   });
-  it('ブラックジャックはその側の行動がクリティカル', () => {
-    const t = decideInitiative({ ...base, playerTotal: 21, enemyTotal: 18, playerBlackjack: true });
-    expect(t.crit).toEqual({ player: true, enemy: false });
-  });
+
 });

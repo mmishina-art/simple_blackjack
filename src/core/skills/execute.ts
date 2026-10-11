@@ -1,6 +1,6 @@
 import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
-import { attackValue, getSkill, hasAttack, slotKeyOf, type SkillDef } from './Skill';
+import { attackValue, getSkill, slotKeyOf, type SkillDef } from './Skill';
 
 /** ダメージ適用。HP より先に Block を減らす。piercing なら Block を無視する。 */
 export function applyDamage(target: Entity, amount: number, piercing = false): { absorbed: number; hpLoss: number } {
@@ -18,15 +18,14 @@ export function skillForTotal(entity: Entity, total: number): SkillDef {
 }
 
 /** スキルの発動宣言（onSkillActivated フック）。不発になった場合は null。 */
-export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef, baseCrit: boolean): { skill: SkillDef; crit: boolean } | null {
-  const payload = ctx.bus.emit('onSkillActivated', { user, skill, crit: baseCrit });
+export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef): SkillDef | null {
+  const payload = ctx.bus.emit('onSkillActivated', { user, skill });
   if (!payload.skill) {
     ctx.log(`${user.name}のスキルは不発に終わった`);
     return null;
   }
-  const crit = payload.crit || !!payload.skill.alwaysCrit;
-  ctx.log(`${user.name}の「${payload.skill.name}」${crit && hasAttack(payload.skill) ? ' クリティカル！' : ''}`);
-  return { skill: payload.skill, crit };
+  ctx.log(`${user.name}の「${payload.skill.name}」`);
+  return payload.skill;
 }
 
 /**
@@ -38,18 +37,17 @@ export function applyEffects(
   user: Entity,
   target: Entity,
   skill: SkillDef,
-  crit: boolean,
   part: 'support' | 'attack' | 'all' = 'all',
 ): void {
-  const { rules, bus } = ctx;
+  const { bus } = ctx;
   for (const effect of skill.effects) {
     if (effect.type === 'attack') {
       if (part === 'support') continue;
-      const base = Math.floor(attackValue(effect, user.attack) * (crit ? rules.critMultiplier : 1));
-      const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill, crit });
+      const base = attackValue(effect, user.attack);
+      const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
       const damage = Math.max(0, Math.floor(calc.damage));
       const { absorbed, hpLoss } = applyDamage(calc.defender, damage);
-      bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, skill, crit });
+      bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, skill });
       const guard = absorbed > 0 ? `（Block ${absorbed} を消費）` : '';
       ctx.log(hpLoss > 0 || absorbed === 0
         ? `${calc.defender.name}に${hpLoss}ダメージ${guard}`
@@ -71,8 +69,7 @@ export function applyEffects(
 }
 
 /** 合計値スロットのスキルを発動して効果を適用する（先攻・後攻の通常処理）。 */
-export function runSlotSkill(ctx: BattleContext, user: Entity, target: Entity, crit: boolean): void {
-  const skill = skillForTotal(user, user.hand.total(ctx.rules));
-  const activated = activateSkill(ctx, user, skill, crit);
-  if (activated) applyEffects(ctx, user, target, activated.skill, activated.crit);
+export function runSlotSkill(ctx: BattleContext, user: Entity, target: Entity): void {
+  const skill = activateSkill(ctx, user, skillForTotal(user, user.hand.total(ctx.rules)));
+  if (skill) applyEffects(ctx, user, target, skill);
 }

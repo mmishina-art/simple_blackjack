@@ -40,7 +40,7 @@ export const ScapegoatDoll: Relic = {
     bus.on('onInitiativeDecided', (p) => {
       if (!used && p.playerBust && p.turn.mode === 'bustSkip') {
         used = true;
-        return { ...p, turn: { mode: 'none', first: null, second: null, crit: { player: false, enemy: false } } };
+        return { ...p, turn: { mode: 'none', first: null, second: null } };
       }
     });
   },
@@ -48,10 +48,14 @@ export const ScapegoatDoll: Relic = {
 
 export const FateRing: Relic = {
   id: 'ring', name: '運命の指輪', icon: '輪',
-  description: '合計値が同値で同時攻撃になったとき、自分の攻撃がクリティカルになる',
-  apply({ bus }) {
+  description: '合計値が同値で同時攻撃になったラウンド、与える攻撃ダメージ +5',
+  apply({ bus, player }) {
+    let simultaneous = false;
     bus.on('onInitiativeDecided', (p) => {
-      if (p.turn.mode === 'simultaneous') return { ...p, turn: { ...p.turn, crit: { ...p.turn.crit, player: true } } };
+      simultaneous = p.turn.mode === 'simultaneous';
+    }, 10);
+    bus.on('onDamageCalculated', (p) => {
+      if (simultaneous && p.attacker === player && p.damage > 0) return { ...p, damage: p.damage + 5 };
     });
   },
 };
@@ -90,10 +94,10 @@ export const LifeCandle: Relic = {
 
 export const OverlordOrb: Relic = {
   id: 'orb', name: '覇王の宝珠', icon: '珠',
-  description: '会心の一撃が「覇王の一撃」（攻撃16・必ず会心 + Block 8）に変わる',
+  description: '会心の一撃（21）が「覇王の一撃」（ATK×4 + Block 8）に変わる',
   apply({ bus, player }) {
     bus.on('onSkillActivated', (p) => {
-      if (p.user === player && p.skill?.id === 'critical_strike') return { ...p, skill: getSkill('overlord_strike') };
+      if (p.user === player && p.skill?.id === 'ace_strike') return { ...p, skill: getSkill('overlord_strike') };
     });
   },
 };

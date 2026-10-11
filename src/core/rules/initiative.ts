@@ -4,7 +4,7 @@ export interface TurnInfo {
   /**
    * sequential : 合計値の大きい方が先攻、小さい方が後攻
    * simultaneous: 同値。両者が同時に攻撃（防御系 → 攻撃 → 死亡判定の順）
-   * bustSkip   : 片方がバースト。バースト側はスキルが発動せず（行動不能）、相手だけが行動する（クリティカルにはならない）
+   * bustSkip   : 片方がバースト。バースト側はスキルが発動せず、相手だけが行動する
    * defend     : プレイヤーがサレンダー（防御）。自分のスキルは不発で、敵だけが行動する
    * none       : 両者バースト等。誰も行動しない
    */
@@ -12,7 +12,6 @@ export interface TurnInfo {
   first: EntityId | null;
   /** 後攻。null なら行動しない。 */
   second: EntityId | null;
-  crit: Record<EntityId, boolean>;
 }
 
 export interface InitiativeInput {
@@ -20,29 +19,22 @@ export interface InitiativeInput {
   enemyTotal: number;
   playerBust: boolean;
   enemyBust: boolean;
-  playerBlackjack: boolean;
-  enemyBlackjack: boolean;
   /** プレイヤーがサレンダーを選んだ。 */
   playerSurrendered?: boolean;
 }
 
-/** 行動順の決定（純関数）。バーストは行動不能になるだけでクリティカルは発生しない。ブラックジャック（初手21）はその側の行動をクリティカルにする。 */
+/** 行動順の決定（純関数）。バーストはスキルが発動しなくなるだけで、ほかの効果はない。 */
 export function decideInitiative(i: InitiativeInput): TurnInfo {
-  const crit: Record<EntityId, boolean> = {
-    player: i.playerBlackjack && !i.playerBust,
-    enemy: i.enemyBlackjack && !i.enemyBust,
-  };
-
   if (i.playerSurrendered) {
-    if (i.enemyBust) return { mode: 'none', first: null, second: null, crit: { player: false, enemy: false } };
-    return { mode: 'defend', first: 'enemy', second: null, crit: { player: false, enemy: crit.enemy } };
+    if (i.enemyBust) return { mode: 'none', first: null, second: null };
+    return { mode: 'defend', first: 'enemy', second: null };
   }
-  if (i.playerBust && i.enemyBust) return { mode: 'none', first: null, second: null, crit: { player: false, enemy: false } };
-  if (i.playerBust) return { mode: 'bustSkip', first: 'enemy', second: null, crit };
-  if (i.enemyBust) return { mode: 'bustSkip', first: 'player', second: null, crit };
+  if (i.playerBust && i.enemyBust) return { mode: 'none', first: null, second: null };
+  if (i.playerBust) return { mode: 'bustSkip', first: 'enemy', second: null };
+  if (i.enemyBust) return { mode: 'bustSkip', first: 'player', second: null };
 
-  if (i.playerTotal === i.enemyTotal) return { mode: 'simultaneous', first: 'player', second: 'enemy', crit };
+  if (i.playerTotal === i.enemyTotal) return { mode: 'simultaneous', first: 'player', second: 'enemy' };
   return i.playerTotal > i.enemyTotal
-    ? { mode: 'sequential', first: 'player', second: 'enemy', crit }
-    : { mode: 'sequential', first: 'enemy', second: 'player', crit };
+    ? { mode: 'sequential', first: 'player', second: 'enemy' }
+    : { mode: 'sequential', first: 'enemy', second: 'player' };
 }

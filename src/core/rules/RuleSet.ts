@@ -7,8 +7,6 @@ export interface RuleSet {
   bustLimit: number;
   /** ブラックジャック（初手2枚）とみなす合計値。 */
   blackjackScore: number;
-  /** クリティカル時の攻撃倍率（端数切り捨て）。 */
-  critMultiplier: number;
   /** サレンダー（防御）時にプレイヤーが得る Block。 */
   surrenderBlock: number;
   /** 配牌枚数。 */
@@ -23,7 +21,6 @@ export function createRuleSet(overrides: Partial<RuleSet> = {}): RuleSet {
   return {
     bustLimit: 21,
     blackjackScore: 21,
-    critMultiplier: 1.5,
     surrenderBlock: 5,
     initialCards: 2,
     aceBonus: 10,

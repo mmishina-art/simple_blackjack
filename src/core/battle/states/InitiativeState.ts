@@ -2,7 +2,7 @@ import { decideInitiative } from '../../rules/initiative';
 import type { BattleContext } from '../BattleContext';
 import type { BattleState, StateId } from '../types';
 
-/** 行動順の決定: 合計値の大きい方が先攻。バースト側は行動不能で、相手が先制クリティカル。 */
+/** 行動順の決定: 合計値の大きい方が先攻。バースト側はスキルが発動しない。 */
 export class InitiativeState implements BattleState {
   readonly id = 'Initiative' as const;
 
@@ -17,8 +17,6 @@ export class InitiativeState implements BattleState {
     const enemyBust = enemy.hand.isBust(rules);
     const decided = decideInitiative({
       playerTotal, enemyTotal, playerBust, enemyBust,
-      playerBlackjack: player.hand.isBlackjack(rules),
-      enemyBlackjack: enemy.hand.isBlackjack(rules),
       playerSurrendered: ctx.playerSurrendered,
     });
     const { turn } = ctx.bus.emit('onInitiativeDecided', { turn: decided, playerTotal, enemyTotal, playerBust, enemyBust });

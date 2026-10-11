@@ -29,14 +29,14 @@ defineSkill({
   effects: [{ type: 'block', amount: 5 }, { type: 'heal', amount: 4 }],
 });
 
-/** スロット21に固定されるスキル。必ずクリティカルになる（封印の鍵のレリックで付け替え可能）。 */
-export const CRITICAL_STRIKE_ID: SkillId = defineSkill({
-  id: 'critical_strike', name: '会心の一撃', icon: '会', alwaysCrit: true,
+/** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。 */
+export const ACE_STRIKE_ID: SkillId = defineSkill({
+  id: 'ace_strike', name: '会心の一撃', icon: '会',
   effects: [{ type: 'attack', mult: 3 }],
 }).id;
 /** 覇王の宝珠で会心の一撃が置き換わるスキル。 */
 defineSkill({
-  id: 'overlord_strike', name: '覇王の一撃', icon: '覇', alwaysCrit: true,
+  id: 'overlord_strike', name: '覇王の一撃', icon: '覇',
   effects: [{ type: 'attack', mult: 4 }, { type: 'block', amount: 8 }],
 });
 
@@ -52,7 +52,7 @@ export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   15: 'guard',
   18: 'shield',
   20: 'big_attack',
-  21: CRITICAL_STRIKE_ID,
+  21: ACE_STRIKE_ID,
 };
 /** プレイヤーの初期の基本攻撃力。 */
 export const START_ATTACK = 5;

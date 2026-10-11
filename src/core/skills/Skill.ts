@@ -13,8 +13,6 @@ export interface SkillDef {
   /** スロット表に表示する1文字。 */
   icon: string;
   effects: SkillEffect[];
-  /** true なら発動時に必ずクリティカルになる。 */
-  alwaysCrit?: boolean;
 }
 
 /** 合計値スロット。キー 11 は「11以下」を表す。 */
@@ -64,7 +62,7 @@ export function hasAttack(skill: SkillDef): boolean {
   return skill.effects.some((e) => e.type === 'attack');
 }
 
-/** 攻撃効果の基本ダメージ（クリティカル前）。 */
+/** 攻撃効果のダメージ: floor(ATK × 倍率) + 加算。 */
 export function attackValue(effect: { mult: number; add?: number }, atk: number): number {
   return Math.floor(atk * effect.mult) + (effect.add ?? 0);
 }
@@ -77,11 +75,10 @@ export function attackFormula(effect: { mult: number; add?: number }): string {
 
 /** 「攻撃 ATK×3+2＝14」「Block 6」のような効果の要約。atk を渡すと実数値も併記する。 */
 export function describeSkill(skill: SkillDef, atk?: number): string {
-  const body = skill.effects
+  return skill.effects
     .map((e) => {
       if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${atk !== undefined ? `＝${attackValue(e, atk)}` : ''}`;
       return e.type === 'block' ? `Block ${e.amount}` : `回復 ${e.amount}`;
     })
     .join(' + ');
-  return skill.alwaysCrit ? `${body}・必ず会心` : body;
 }

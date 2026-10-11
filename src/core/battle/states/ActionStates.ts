@@ -16,15 +16,15 @@ export class FirstActionState implements BattleState {
     if (turn.mode === 'simultaneous') {
       const plan = [player, enemy].map((user) => {
         const target = user === player ? enemy : player;
-        const activated = activateSkill(ctx, user, skillForTotal(user, user.hand.total(rules)), turn.crit[user.id]);
+        const activated = activateSkill(ctx, user, skillForTotal(user, user.hand.total(rules)));
         return { user, target, activated };
       });
       for (const { user, target, activated } of plan) {
-        if (activated) applyEffects(ctx, user, target, activated.skill, activated.crit, 'support');
+        if (activated) applyEffects(ctx, user, target, activated, 'support');
       }
       await ctx.wait(600);
       for (const { user, target, activated } of plan) {
-        if (activated) applyEffects(ctx, user, target, activated.skill, activated.crit, 'attack');
+        if (activated) applyEffects(ctx, user, target, activated, 'attack');
       }
       await ctx.wait(800);
       return 'CheckDeath';
@@ -32,7 +32,7 @@ export class FirstActionState implements BattleState {
 
     const first = ctx.entityOf(turn.first!);
     const other = first === player ? enemy : player;
-    runSlotSkill(ctx, first, other, turn.crit[first.id]);
+    runSlotSkill(ctx, first, other);
     await ctx.wait(900);
     return turn.second ? 'SurvivalCheck' : 'CheckDeath';
   }
@@ -54,7 +54,7 @@ export class SecondActionState implements BattleState {
     const turn = ctx.turn!;
     const second = ctx.entityOf(turn.second!);
     const other = second === ctx.player ? ctx.enemy : ctx.player;
-    runSlotSkill(ctx, second, other, turn.crit[second.id]);
+    runSlotSkill(ctx, second, other);
     await ctx.wait(900);
     return 'CheckDeath';
   }

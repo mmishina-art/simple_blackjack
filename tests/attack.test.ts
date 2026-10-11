@@ -28,10 +28,10 @@ describe('基本攻撃力（ATK）', () => {
     expect(attackFormula({ mult: 3 })).toBe('ATK×3');
   });
 
-  it('初期スキルの式: 11以下=ATK×0.5 / 剛=ATK+5 / 会=ATK×3', () => {
+  it('初期スキルの式: 11以下=ATK×0.5 / 剛=ATK+5 / 会=ATK×3（クリティカルの概念はない）', () => {
     expect(describeSkill(getSkill('small_attack'), 5)).toBe('攻撃 ATK×0.5＝2');
     expect(describeSkill(getSkill('big_attack'), 5)).toBe('攻撃 ATK+5＝10');
-    expect(describeSkill(getSkill('critical_strike'), 5)).toBe('攻撃 ATK×3＝15・必ず会心');
+    expect(describeSkill(getSkill('ace_strike'), 5)).toBe('攻撃 ATK×3＝15');
     expect(describeSkill(getSkill('big_attack'))).toBe('攻撃 ATK+5');
     expect(describeSkill(getSkill('shield'))).toBe('Block 8');
   });
@@ -72,28 +72,21 @@ describe('基本攻撃力（ATK）', () => {
 });
 
 describe('予測ダメージ', () => {
-  it('通常のスキル: 基本の値と会心時の値を出す', () => {
+  it('通常のスキル: 発動するスキルとダメージを出す', () => {
     const m = machine();
     give(m, 'player', ['K', 'K']); // 20: 大攻撃
     const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20);
     expect(p.skill?.id).toBe('big_attack');
-    expect(p.parts).toEqual([{ type: 'attack', value: 10, critValue: 15 }]);
-    expect(formatPreview(p)).toBe('大攻撃 → 10ダメージ（会心 15）');
+    expect(p.parts).toEqual([{ type: 'attack', value: 10 }]);
+    expect(formatPreview(p)).toBe('大攻撃 → 10ダメージ');
   });
 
-  it('必ず会心のスキル（21）は会心の値が基本になる', () => {
-    const m = machine();
-    give(m, 'player', ['7', '7', '7']);
-    const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 21);
-    expect(p.skill?.id).toBe('critical_strike');
-    expect(p.parts[0]).toMatchObject({ value: 22 }); // ATK×3=15 → ×1.5
-    expect(formatPreview(p)).toContain('（会心）');
-  });
-
-  it('ブラックジャック（初手21）は会心扱い', () => {
+  it('21 は会心の一撃（ATK×3 = 15）。ブラックジャックでも変わらない', () => {
     const m = machine();
     give(m, 'player', ['A', 'K']);
-    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 21).crit).toBe(true);
+    const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 21);
+    expect(p.skill?.id).toBe('ace_strike');
+    expect(p.parts[0]).toEqual({ type: 'attack', value: 15 });
   });
 
   it('レリックと敵の特性による補正を反映する', () => {

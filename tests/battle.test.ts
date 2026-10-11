@@ -104,14 +104,14 @@ describe('ラウンドの行動順', () => {
     expect(m.ctx.player.hp).toBe(60);
   });
 
-  it('プレイヤーがバースト: スキルは発動しないだけ。敵は通常どおり行動する（クリティカルなし）', async () => {
+  it('プレイヤーがバースト: スキルは発動しないだけ。敵は通常どおり行動する', async () => {
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] }); // 25 vs 18
     expect(m.ctx.turn).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null });
-    expect(m.ctx.player.hp).toBe(60 - 8);   // 溶解8（クリティカルにならない）
+    expect(m.ctx.player.hp).toBe(60 - 8);   // 溶解8
     expect(m.ctx.enemy.hp).toBe(16);        // プレイヤーは行動不能
   });
 
-  it('敵がバースト: 敵のスキルは発動しない。プレイヤーは通常どおり行動する（クリティカルなし）', async () => {
+  it('敵がバースト: 敵のスキルは発動しない。プレイヤーは通常どおり行動する', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
     expect(m.ctx.enemy.hp).toBe(40 - 10); // 大攻撃 ATK+5
     expect(m.ctx.player.hp).toBe(60);
@@ -123,11 +123,11 @@ describe('ラウンドの行動順', () => {
     expect(m.ctx.enemy.hp).toBe(16);
   });
 
-  it('スロット21は会心の一撃（必ずクリティカル）。ブラックジャックでも二重にはならない', async () => {
+  it('スロット21は会心の一撃（ATK×3）。ブラックジャック（初手21）でも特別な効果はない', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 22); // ATK×3 = 15 → 会心 ×1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 15); // ATK×3
     const bj = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(bj.ctx.enemy.hp).toBe(40 - 22);
+    expect(bj.ctx.enemy.hp).toBe(40 - 15);
   });
 
   it('未設定スロットでは基本攻撃が発動する', async () => {

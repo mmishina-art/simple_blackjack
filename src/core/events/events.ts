@@ -18,17 +18,16 @@ export interface BattleEvents {
   onStand: { entity: Entity };
   /** バーストした直後。 */
   onBust: { entity: Entity };
-  /** 行動順の決定直後。turn を書き換えて、先攻・後攻・クリティカルを改変できる。 */
+  /** 行動順の決定直後。turn を書き換えて、先攻・後攻を改変できる。 */
   onInitiativeDecided: { turn: TurnInfo; playerTotal: number; enemyTotal: number; playerBust: boolean; enemyBust: boolean };
-  /** スキル発動直前。skill を別のものに差し替える、null にして不発にする、crit を変える、が可能。 */
-  onSkillActivated: { user: Entity; skill: SkillDef | null; crit: boolean };
+  /** スキル発動直前。skill を別のものに差し替える、null にして不発にする、が可能。 */
+  onSkillActivated: { user: Entity; skill: SkillDef | null };
   /** 攻撃のダメージ計算直後（Block・HP への反映前）。damage の書き換えが可能。 */
   onDamageCalculated: {
     attacker: Entity | null;
     defender: Entity;
     damage: number;
     skill: SkillDef | null;
-    crit: boolean;
   };
   /** ダメージが実際に反映された後。 */
   onDamageDealt: {
@@ -38,7 +37,6 @@ export interface BattleEvents {
     absorbed: number;
     hpLoss: number;
     skill: SkillDef | null;
-    crit: boolean;
   };
   /** Block 獲得直前。amount の書き換えが可能。 */
   onBlockGained: { entity: Entity; amount: number };

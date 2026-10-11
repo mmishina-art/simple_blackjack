@@ -118,11 +118,11 @@ describe('冒険の状態（レベル・経験値は廃止）', () => {
 describe('スキルの付け替え', () => {
   it('スロット21は会心の一撃で固定されている（付け替え不可）', () => {
     const run = createRun();
-    expect(run.slots[21]).toBe('critical_strike');
+    expect(run.slots[21]).toBe('ace_strike');
     run.inventory.push('smash');
     expect(equipSkill(run, 21, 'smash')).toBe(false);
     expect(unequipSlot(run, 21)).toBe(false);
-    expect(run.slots[21]).toBe('critical_strike');
+    expect(run.slots[21]).toBe('ace_strike');
   });
 
   it('持ち物のスキルをセットすると、元のスキルが持ち物に戻る', () => {
@@ -153,7 +153,7 @@ describe('スキルの付け替え', () => {
     run.inventory.push('smash');
     expect(equipSkill(run, 21, 'smash')).toBe(true);
     expect(run.slots[21]).toBe('smash');
-    expect(run.inventory).toEqual(['critical_strike']);
+    expect(run.inventory).toEqual(['ace_strike']);
   });
 });
 
@@ -227,9 +227,9 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(60);
   });
 
-  it('運命の指輪: 同時攻撃のとき自分の攻撃がクリティカル', async () => {
+  it('運命の指輪: 同時攻撃になったラウンド、与える攻撃ダメージ +5', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q'], enemyHp: 40, relics: [FateRing] });
-    expect(m.ctx.enemy.hp).toBe(40 - 15); // 大攻撃10 ×1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 15); // 大攻撃10 + 5
   });
 
   it('疾風の靴: 同値でも先攻になる', async () => {
@@ -250,9 +250,9 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(38);
   });
 
-  it('覇王の宝珠: 会心の一撃が覇王の一撃（ATK×4・必ず会心 + Block 8）に変わる', async () => {
+  it('覇王の宝珠: 会心の一撃が覇王の一撃（ATK×4 + Block 8）に変わる', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['3', '4'], enemyHp: 40, relics: [OverlordOrb], stopAt: ['CheckDeath'] });
-    expect(m.ctx.enemy.hp).toBe(40 - 30); // ATK×4=20 → 会心 ×1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 20); // ATK×4
     expect(m.ctx.player.block).toBe(8 - 3); // 敵の基本攻撃3は Block で吸収
   });
 });
@@ -278,7 +278,7 @@ describe('敵の特性', () => {
 
   it('骸骨兵: 骨の鎧（受けるダメージ -2）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemy: enemy('skeleton') });
-    expect(m.ctx.enemy.hp).toBe(28 - 8); // 大攻撃10 - 骨の鎧2
+    expect(m.ctx.enemy.hp).toBe(24 - 8); // 大攻撃10 - 骨の鎧2
   });
 
   it('大蝙蝠: 同値なら必ず敵が先攻', async () => {
