@@ -1,5 +1,7 @@
 import { Deck } from '../cards/Deck';
 import { Entity } from '../entities/Entity';
+import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS } from '../skills/catalog';
+import type { SkillId, SlotTable } from '../skills/Skill';
 import type { EnemyDef } from '../entities/enemies/EnemyDef';
 import { EventBus } from '../events/EventBus';
 import { createRuleSet, type RuleSet } from '../rules/RuleSet';
@@ -7,11 +9,13 @@ import { defaultRng, type Rng } from '../util/Rng';
 import type { Relic } from '../../relics/Relic';
 import type { BattleContext } from './BattleContext';
 import { CheckDeathState } from './states/CheckDeathState';
+import { FirstActionState, SecondActionState, SurvivalCheckState } from './states/ActionStates';
+import { InitiativeState } from './states/InitiativeState';
+import { SurrenderState } from './states/SurrenderState';
 import { DealState } from './states/DealState';
 import { EnemyActionState } from './states/EnemyActionState';
 import { InitState } from './states/InitState';
 import { PlayerActionState } from './states/PlayerActionState';
-import { ResolveState } from './states/ResolveState';
 import { TRANSITIONS, type BattleState, type PlayerInput, type StateId } from './types';
 
 export interface BattleOptions {
@@ -19,6 +23,10 @@ export interface BattleOptions {
   playerMaxHp?: number;
   /** 開始時のプレイヤーHP（連戦での持ち越し用）。省略時は最大HP。 */
   playerHp?: number;
+  /** プレイヤーの合計値スロット。省略時は仮の初期スロット。 */
+  playerSlots?: SlotTable;
+  /** スロット未設定の合計値で発動するスキル（キャラクターごとの初期能力）。 */
+  playerFallback?: SkillId;
   rules?: Partial<RuleSet>;
   rng?: Rng;
   relics?: Relic[];
@@ -43,8 +51,11 @@ export class BattleMachine {
     const rules = createRuleSet(opts.rules);
     const rng = opts.rng ?? defaultRng;
     const pace = opts.pace ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-    const player = new Entity('player', 'あなた', opts.playerMaxHp ?? 50);
-    const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp);
+    const player = new Entity(
+      'player', 'あなた', opts.playerMaxHp ?? 60,
+      { ...(opts.playerSlots ?? DEFAULT_PLAYER_SLOTS) }, opts.playerFallback ?? DEFAULT_PLAYER_FALLBACK,
+    );
+    const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp, { ...opts.enemy.slots }, opts.enemy.fallbackSkill);
     if (opts.playerHp !== undefined) player.hp = Math.min(opts.playerHp, player.maxHp);
 
     this.ctx = {
@@ -55,9 +66,9 @@ export class BattleMachine {
       enemy,
       enemyDef: opts.enemy,
       round: 0,
-      lastResult: null,
-      lastDamage: null,
+      turn: null,
       winner: null,
+      entityOf: (id) => (id === 'player' ? player : enemy),
       log: (text) => {
         this._logs.push(text);
         this.logListeners.forEach((l) => l(text));
@@ -85,7 +96,11 @@ export class BattleMachine {
       Deal: new DealState(),
       PlayerAction: new PlayerActionState(),
       EnemyAction: new EnemyActionState(),
-      Resolve: new ResolveState(),
+      Initiative: new InitiativeState(),
+      FirstAction: new FirstActionState(),
+      SurvivalCheck: new SurvivalCheckState(),
+      SecondAction: new SecondActionState(),
+      Surrender: new SurrenderState(),
       CheckDeath: new CheckDeathState(),
     };
 
@@ -139,6 +154,20 @@ export class BattleMachine {
       next = await this.states[next].enter(this.ctx);
     }
     this.ctx.notify();
+  }
+
+  /**
+   * 指定ステートから実行を再開する（テスト・リプレイ用）。stopAt のいずれかに到達したら、そのステートに入る前に戻る。
+   */
+  async runFrom(start: StateId, stopAt: readonly StateId[] = []): Promise<void> {
+    let cur: StateId | null = start;
+    this._state = start;
+    while (cur) {
+      const next: StateId | null = await this.states[cur].enter(this.ctx);
+      if (!next || stopAt.includes(next)) return;
+      this.transition(next);
+      cur = next;
+    }
   }
 
   private transition(to: StateId): void {

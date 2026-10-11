@@ -7,12 +7,13 @@ export function bindBattleSounds(machine: BattleMachine, audio: AudioManager): (
   const offs = [
     bus.on('onCardDrawn', () => audio.sfx('deal')),
     bus.on('onBust', () => audio.sfx('bust')),
-    bus.on('onResolve', ({ result, damage, defender }) => {
-      if (!defender || damage <= 0) audio.sfx('push');
-      else if (defender.id === 'enemy') {
-        audio.sfx(result.outcome === 'playerWin' && result.playerBlackjack ? 'blackjack' : 'attack');
-      } else audio.sfx('damage');
+    bus.on('onDamageDealt', ({ defender, hpLoss, absorbed, crit }) => {
+      if (hpLoss === 0 && absorbed > 0) audio.sfx('guard');
+      else if (defender.id === 'enemy') audio.sfx(crit ? 'blackjack' : 'attack');
+      else audio.sfx('damage');
     }),
+    bus.on('onBlockGained', () => audio.sfx('guard')),
+    bus.on('onHealed', () => audio.sfx('heal')),
     bus.on('onBattleEnd', ({ winner }) => audio.sfx(winner.id === 'player' ? 'victory' : 'defeat', 0.7)),
   ];
   return () => offs.forEach((off) => off());

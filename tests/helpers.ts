@@ -1,19 +1,33 @@
-import { BattleMachine } from '../src/core/battle/BattleMachine';
+import { BattleMachine, type BattleOptions } from '../src/core/battle/BattleMachine';
 import { makeCard, type Rank } from '../src/core/cards/Card';
-import { Slime } from '../src/core/entities/enemies/Slime';
 import type { EnemyDef } from '../src/core/entities/enemies/EnemyDef';
-import { ResolveState } from '../src/core/battle/states/ResolveState';
-import type { Relic } from '../src/relics/Relic';
+import { Slime } from '../src/core/entities/enemies/Slime';
+import type { StateId } from '../src/core/battle/types';
 import { seededRng } from '../src/core/util/Rng';
+import type { Relic } from '../src/relics/Relic';
 
-/** 指定した手札で Resolve を1回だけ実行し、ダメージの結果を返す（レリックの効果検証用）。 */
-export async function calcResolve(player: Rank[], enemyHand: Rank[], relics: Relic[], enemy: EnemyDef = Slime) {
-  const m = new BattleMachine({ enemy, relics, rng: seededRng(1), pace: async () => {} });
-  const { ctx } = m;
-  player.forEach((r) => ctx.player.hand.add(makeCard(r, 'S')));
-  enemyHand.forEach((r) => ctx.enemy.hand.add(makeCard(r, 'H')));
-  let captured: { damage: number; defender: 'player' | 'enemy' | null } = { damage: 0, defender: null };
-  m.bus.on('onResolve', ({ damage, defender }) => { captured = { damage, defender: defender?.id ?? null }; }, 100);
-  await new ResolveState().enter(ctx);
-  return captured;
+export const noWait = async () => {};
+
+export interface RoundSetup extends Partial<BattleOptions> {
+  player: Rank[];
+  enemyHand: Rank[];
+  relics?: Relic[];
+  enemy?: EnemyDef;
+  playerHp?: number;
+  enemyHp?: number;
+  /** 実行開始ステート（既定: Initiative）。 */
+  from?: StateId;
+  /** この手前で止める。既定は次ラウンド開始（Deal）の手前。 */
+  stopAt?: StateId[];
+}
+
+/** 指定した手札でラウンドの後半（行動順〜死亡判定）だけを実行する。 */
+export async function playRound(setup: RoundSetup) {
+  const { player, enemyHand, from = 'Initiative', stopAt = ['Deal'], enemyHp, ...opts } = setup;
+  const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, ...opts });
+  player.forEach((r) => m.ctx.player.hand.add(makeCard(r, 'S')));
+  enemyHand.forEach((r) => m.ctx.enemy.hand.add(makeCard(r, 'H')));
+  if (enemyHp !== undefined) m.ctx.enemy.hp = enemyHp;
+  await m.runFrom(from, stopAt);
+  return m;
 }

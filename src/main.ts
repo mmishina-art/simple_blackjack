@@ -3,10 +3,7 @@ import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { ENEMY_LINEUP } from './core/entities/enemies/catalog';
 import { defaultRng } from './core/util/Rng';
-import {
-  applyVictory, battleRelics, createRun, currentEnemy, expForNextLevel, isLastStage,
-  offerPerks, offerRelics, type RunState, type VictoryResult,
-} from './run/Run';
+import { applyRest, createRun, currentEnemy, isLastStage, offerRelics, type RunState } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen } from './ui/ChoiceScreen';
 import { EnemyView } from './ui/components/EnemyView';
@@ -41,7 +38,9 @@ function startBattle(): void {
     enemy: currentEnemy(run),
     playerMaxHp: run.maxHp,
     playerHp: run.hp,
-    relics: battleRelics(run),
+    playerSlots: run.slots,
+    playerFallback: run.fallbackSkill,
+    relics: run.relics,
   });
   unbindSounds = bindBattleSounds(machine, audio);
   view = new BattleView(root, machine, run, (won) => buildResult(machine, won));
@@ -62,63 +61,29 @@ function buildResult(machine: BattleMachine, won: boolean): HTMLElement {
 
   if (!won) {
     box.append(
-      el('p', 'result__line', `到達: STAGE ${run.stage + 1} / ${ENEMY_LINEUP.length}　Lv ${run.level}`),
+      el('p', 'result__line', `到達: STAGE ${run.stage + 1} / ${ENEMY_LINEUP.length}`),
       button('最初からやり直す', restartRun),
     );
     return box;
   }
 
   run.hp = machine.ctx.player.hp;
-  const enemy = currentEnemy(run);
-  const levelBefore = run.level;
-  const victory = applyVictory(run, enemy);
+  const healed = applyRest(run);
 
   if (isLastStage(run)) {
     box.append(
-      el('p', 'result__line', `全${ENEMY_LINEUP.length}戦を制覇した！　最終 Lv ${run.level}`),
+      el('p', 'result__line', `全${ENEMY_LINEUP.length}戦を制覇した！`),
       button('もう一度挑む', restartRun),
     );
     return box;
   }
 
-  box.append(...victoryLines(victory, levelBefore));
-  box.append(button('次へ', () => afterVictory(victory.levelsGained)));
+  if (healed > 0) box.append(el('p', 'result__line', `休息で HP +${healed}`));
+  box.append(button('次へ', offerRelicChoice));
   return box;
 }
 
-function victoryLines(v: VictoryResult, levelBefore: number): HTMLElement[] {
-  const next = expForNextLevel(run.level);
-  const lines = [el('p', 'result__line', `経験値 +${v.gainedExp}`)];
-  if (v.healed > 0) lines.push(el('p', 'result__line', `休息で HP +${v.healed}`));
-  if (v.levelsGained > 0) {
-    lines.push(el('p', 'result__levelup', `LEVEL UP!　Lv ${levelBefore} → Lv ${run.level}`));
-    audio.sfx('levelup', 0.9);
-  } else if (next !== null) {
-    lines.push(el('p', 'result__line', `次のレベルまで あと ${next - run.exp}`));
-  }
-  return lines;
-}
-
-/** 勝利後: レベルアップ強化（レベル分）→ 報酬レリック → 次のバトル。 */
-function afterVictory(levelUps: number): void {
-  if (levelUps > 0) return offerPerkChoice(levelUps);
-  offerRelicChoice();
-}
-
-function offerPerkChoice(remaining: number): void {
-  const perks = offerPerks(defaultRng);
-  showChoiceScreen(root, {
-    heading: 'LEVEL UP',
-    sub: `Lv ${run.level}　力を一つ選べ`,
-    options: perks,
-    onPick(i) {
-      perks[i].apply(run);
-      if (remaining > 1) offerPerkChoice(remaining - 1);
-      else offerRelicChoice();
-    },
-  });
-}
-
+/** 勝利後: 報酬レリックを選び、次のバトルへ。 */
 function offerRelicChoice(): void {
   const relics = offerRelics(run, defaultRng);
   const next = () => {

@@ -1,7 +1,7 @@
 import type { BattleContext } from '../BattleContext';
 import type { BattleState, StateId } from '../types';
 
-/** プレイヤー入力待ち。Hit なら自身へ再突入、Stand なら EnemyAction、バーストなら Resolve へ。 */
+/** プレイヤー入力待ち。Hit なら自身へ再突入、Stand なら EnemyAction、バーストなら Initiative、撤退なら Surrender へ。 */
 export class PlayerActionState implements BattleState {
   readonly id = 'PlayerAction' as const;
 
@@ -18,6 +18,8 @@ export class PlayerActionState implements BattleState {
     if (player.hand.size === rules.initialCards) ctx.log('あなたのターン');
     const input = await ctx.waitForInput();
 
+    if (input === 'surrender') return 'Surrender';
+
     if (input === 'stand') {
       ctx.log('スタンド');
       ctx.bus.emit('onStand', { entity: player });
@@ -29,7 +31,7 @@ export class PlayerActionState implements BattleState {
     ctx.log(`ヒット: ${card.rank} (合計 ${player.hand.total(rules)})`);
     if (player.hand.isBust(rules)) {
       ctx.log('あなたはバースト！');
-      return 'Resolve';
+      return 'Initiative';
     }
     return 'PlayerAction';
   }

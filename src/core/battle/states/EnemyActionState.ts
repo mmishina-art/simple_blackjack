@@ -24,6 +24,6 @@ export class EnemyActionState implements BattleState {
       ctx.log(`${enemy.name}はスタンド`);
       ctx.bus.emit('onStand', { entity: enemy });
     }
-    return 'Resolve';
+    return 'Initiative';
   }
 }

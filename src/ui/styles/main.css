@@ -369,5 +369,52 @@ section { min-width: 0; }
 
 .result { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 20px; text-align: center; }
 .result__line { margin: 0; font-size: 16px; letter-spacing: 0.1em; color: var(--bone); }
-.result__levelup { margin: 4px 0 0; font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: 0.14em; color: var(--gold); text-shadow: 0 0 16px rgba(176, 141, 62, 0.6); }
+.result__levelup-unused { margin: 4px 0 0; font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: 0.14em; color: var(--gold); text-shadow: 0 0 16px rgba(176, 141, 62, 0.6); }
 .result .btn { margin-top: 10px; min-width: 220px; }
+
+/* ---- Slots / Block / Surrender ---- */
+.hpbar__right { display: inline-flex; align-items: baseline; gap: 10px; }
+.block-chip {
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
+  padding: 1px 8px; color: #cfe3ef; background: linear-gradient(180deg, #34505f, #1b2d37);
+  border: 1px solid #6f8d9d; border-radius: 10px;
+}
+.block-chip[hidden] { display: none; }
+
+.slots { display: flex; flex-direction: column; gap: 4px; }
+.slots__row { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 2px; }
+.slot {
+  display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 3px 0 2px;
+  border: 1px solid #2a2118; border-radius: 2px; background: #0d0a07; color: #4f4536;
+  font-family: var(--font-display); font-size: 10px; line-height: 1;
+}
+.slot__icon { font-family: var(--font-body); font-size: 14px; font-weight: 800; line-height: 1.2; }
+.slot--set { color: var(--bone-dim); border-color: var(--gold-dim); background: #17110b; }
+.slot--active {
+  color: #1a1206; background: linear-gradient(180deg, #d1ae5a, var(--gold)); border-color: #e6c878;
+  box-shadow: 0 0 10px rgba(176, 141, 62, 0.65); transform: translateY(-2px);
+}
+.slots--bust .slot { opacity: 0.45; }
+.slots__caption { min-height: 1.4em; font-size: 12px; letter-spacing: 0.06em; color: var(--bone-dim); }
+.slots--bust .slots__caption { color: var(--blood-hi); }
+
+.actions { grid-template-columns: 1fr 1fr; }
+.btn--surrender {
+  grid-column: 1 / -1; min-height: 46px; flex-direction: row; gap: 10px;
+  background: transparent; border-color: var(--gold-dim); color: var(--bone-dim);
+}
+.btn--surrender .btn__main { font-size: 16px; letter-spacing: 0.3em; }
+.btn--surrender .btn__sub { font-size: 11px; letter-spacing: 0.1em; }
+
+@media (max-height: 760px) {
+  .slot__icon { font-size: 12px; }
+  .hand { min-height: 64px; }
+  .card { width: 40px; height: 58px; }
+}
+
+.hpbar__left { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.hpbar__left .status-strip__relics { margin-left: 0; }
+.enemy-stage { height: 128px; }
+.enemy-sprite { height: 120px; width: 160px; }
+.hand { min-height: 80px; }
+.enemy-area, .player-area { gap: 6px; }

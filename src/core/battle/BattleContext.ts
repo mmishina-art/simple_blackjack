@@ -1,9 +1,8 @@
 import type { Deck } from '../cards/Deck';
-import type { Entity } from '../entities/Entity';
+import type { Entity, EntityId } from '../entities/Entity';
 import type { EnemyDef } from '../entities/enemies/EnemyDef';
 import type { EventBus } from '../events/EventBus';
-import type { DamageInfo } from '../rules/damage';
-import type { RoundResult } from '../rules/judge';
+import type { TurnInfo } from '../rules/initiative';
 import type { RuleSet } from '../rules/RuleSet';
 import type { PlayerInput } from './types';
 
@@ -16,10 +15,11 @@ export interface BattleContext {
   readonly enemy: Entity;
   readonly enemyDef: EnemyDef;
   round: number;
-  lastResult: RoundResult | null;
-  lastDamage: DamageInfo | null;
+  /** 現ラウンドの行動順。Initiative で決まる。 */
+  turn: TurnInfo | null;
   winner: Entity | null;
 
+  entityOf(id: EntityId): Entity;
   /** バトルログに1行追加。 */
   log(text: string): void;
   /** 画面更新を促す。 */

@@ -4,7 +4,8 @@ import { EnemyView, floatText } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
 import { ENEMY_LINEUP } from '../core/entities/enemies/catalog';
-import { expForNextLevel, type RunState } from '../run/Run';
+import type { RunState } from '../run/Run';
+import { SlotStrip } from './components/SlotStrip';
 
 /** 縦画面レイアウト: 上=敵 / 中=ログ / 下=プレイヤー / 最下=ボタン。 */
 export class BattleView {
@@ -13,10 +14,12 @@ export class BattleView {
   private playerHp = new HpBar('player');
   private enemyHand = new HandView();
   private playerHand = new HandView();
+  private slotStrip = new SlotStrip();
   private logEl = document.createElement('div');
   private roundEl = document.createElement('div');
   private hitBtn = document.createElement('button');
   private standBtn = document.createElement('button');
+  private surrenderBtn = document.createElement('button');
   private muteBtn = document.createElement('button');
   private overlay = document.createElement('div');
   private playerArea: HTMLElement;
@@ -47,15 +50,19 @@ export class BattleView {
     const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemyView.el, this.enemyHand.el);
     this.logEl.className = 'log';
     this.logEl.setAttribute('aria-live', 'polite');
-    this.playerArea = section('player-area', this.playerHand.el, this.playerHp.el, this.buildStatusStrip());
+    this.playerHp.attach(this.buildRelicChips());
+    this.playerArea = section('player-area', this.playerHand.el, this.slotStrip.el, this.playerHp.el);
 
     this.hitBtn.className = 'btn btn--hit';
     this.hitBtn.innerHTML = '<span class="btn__main">Hit</span><span class="btn__sub">引く</span>';
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
-    const actions = section('actions', this.hitBtn, this.standBtn);
+    this.surrenderBtn.className = 'btn btn--surrender';
+    this.surrenderBtn.innerHTML = `<span class="btn__main">撤退</span><span class="btn__sub">HP -${machine.ctx.rules.surrenderDamage}・敵の行動なし</span>`;
+    const actions = section('actions', this.hitBtn, this.standBtn, this.surrenderBtn);
     this.hitBtn.addEventListener('click', () => this.act('hit'));
     this.standBtn.addEventListener('click', () => this.act('stand'));
+    this.surrenderBtn.addEventListener('click', () => this.act('surrender'));
 
     this.overlay.className = 'overlay';
     this.overlay.hidden = true;
@@ -66,7 +73,7 @@ export class BattleView {
     this.unsubs.push(
       machine.onChange(() => this.render()),
       machine.onLog((text) => this.appendLog(text)),
-      machine.bus.on('onResolve', ({ defender, damage }) => this.playResolveEffects(defender?.id ?? null, damage)),
+      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender.id, p.hpLoss, p.absorbed)),
       machine.bus.on('onBattleEnd', ({ winner }) => {
         if (winner.id === 'player') window.setTimeout(() => this.enemyView.play('defeated'), 300);
       }),
@@ -80,35 +87,29 @@ export class BattleView {
     this.container.remove();
   }
 
-  private act(input: 'hit' | 'stand'): void {
+  private act(input: 'hit' | 'stand' | 'surrender'): void {
     if (this.machine.submit(input)) audio.sfx('click');
   }
 
-  private playResolveEffects(defender: 'player' | 'enemy' | null, damage: number): void {
-    if (!defender || damage <= 0) return;
+  private playDamageEffects(attacker: 'player' | 'enemy' | null, defender: 'player' | 'enemy', hpLoss: number, absorbed: number): void {
+    const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : '';
+    if (!text) return;
     if (defender === 'enemy') {
-      this.enemyView.play('hurt');
-      this.enemyView.floatText(`-${damage}`);
+      if (hpLoss > 0) this.enemyView.play('hurt');
+      this.enemyView.floatText(text);
     } else {
-      this.enemyView.play('attack');
-      floatText(this.playerArea, `-${damage}`);
-      this.container.classList.remove('is-flash');
-      void this.container.offsetWidth;
-      this.container.classList.add('is-flash');
+      if (attacker === 'enemy') this.enemyView.play('attack');
+      floatText(this.playerArea, text);
+      if (hpLoss > 0) {
+        this.container.classList.remove('is-flash');
+        void this.container.offsetWidth;
+        this.container.classList.add('is-flash');
+      }
     }
   }
 
-  /** レベル・経験値・所持レリックの表示。 */
-  private buildStatusStrip(): HTMLElement {
-    const strip = document.createElement('div');
-    strip.className = 'status-strip';
-    const next = expForNextLevel(this.run.level);
-    const lv = document.createElement('span');
-    lv.className = 'status-strip__lv';
-    lv.textContent = `Lv ${this.run.level}`;
-    const exp = document.createElement('span');
-    exp.className = 'status-strip__exp';
-    exp.textContent = next === null ? 'MAX' : `EXP ${this.run.exp}/${next}`;
+  /** 所持レリックのメダリオン（HPバーの名前の横に表示）。 */
+  private buildRelicChips(): HTMLElement {
     const relics = document.createElement('span');
     relics.className = 'status-strip__relics';
     for (const r of this.run.relics) {
@@ -118,8 +119,7 @@ export class BattleView {
       chip.title = `${r.name}: ${r.description}`;
       relics.append(chip);
     }
-    strip.append(lv, exp, relics);
-    return strip;
+    return relics;
   }
 
   private appendLog(text: string): void {
@@ -137,8 +137,9 @@ export class BattleView {
 
   private render(): void {
     const { ctx } = this.machine;
-    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp);
-    this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp);
+    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block);
+    this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block);
+    this.slotStrip.update(ctx.player, ctx.rules);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
     this.roundEl.textContent =
@@ -148,6 +149,7 @@ export class BattleView {
     const active = this.machine.canAct;
     this.hitBtn.disabled = !active;
     this.standBtn.disabled = !active;
+    this.surrenderBtn.disabled = !active;
 
     if (ctx.winner) this.showResult(ctx.winner === ctx.player);
   }

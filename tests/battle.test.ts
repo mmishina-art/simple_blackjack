@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
+import type { PlayerInput } from '../src/core/battle/types';
 import { DealerAI } from '../src/core/entities/enemies/ai/DealerAI';
 import { Slime } from '../src/core/entities/enemies/Slime';
 import { seededRng } from '../src/core/util/Rng';
+import { noWait, playRound } from './helpers';
 
-const noWait = async () => {};
-
-/** 入力待ちのたびに policy で Hit/Stand を自動入力して最後まで走らせる。 */
-async function play(m: BattleMachine, policy: (m: BattleMachine) => 'hit' | 'stand') {
+/** 入力待ちのたびに policy で入力を自動送信して最後まで走らせる。 */
+async function play(m: BattleMachine, policy: (m: BattleMachine) => PlayerInput) {
   const visited: string[] = [];
   m.onChange(() => {
     if (m.state && visited[visited.length - 1] !== m.state) visited.push(m.state);
@@ -17,43 +17,54 @@ async function play(m: BattleMachine, policy: (m: BattleMachine) => 'hit' | 'sta
   return visited;
 }
 
-describe('BattleMachine', () => {
+const machine = (seed: number) => new BattleMachine({ enemy: Slime, rng: seededRng(seed), pace: noWait });
+
+describe('BattleMachine の進行', () => {
   it('どちらかのHPが0になるまで進行し、勝者が決まる', async () => {
-    const m = new BattleMachine({ enemy: Slime, rng: seededRng(42), pace: noWait });
-    const standAt15 = (b: BattleMachine) => (b.ctx.player.hand.total(b.ctx.rules) < 15 ? 'hit' : 'stand');
-    await play(m, standAt15);
+    const m = machine(42);
+    await play(m, (b) => (b.ctx.player.hand.total(b.ctx.rules) < 15 ? 'hit' : 'stand'));
     expect(m.isFinished).toBe(true);
-    expect(m.ctx.winner).not.toBeNull();
     expect(m.ctx.player.isDead || m.ctx.enemy.isDead).toBe(true);
-    expect(m.ctx.player.hp).toBeGreaterThanOrEqual(0);
   });
 
-  it('許可された遷移のみを辿る', async () => {
-    const m = new BattleMachine({ enemy: Slime, rng: seededRng(3), pace: noWait });
+  it('Stand 後は EnemyAction → Initiative → FirstAction の順に進む', async () => {
+    const m = machine(3);
     const visited = await play(m, () => 'stand');
-    expect(visited[0]).toBe('Init');
-    expect(visited[1]).toBe('Deal');
-    expect(visited[2]).toBe('PlayerAction');
+    const i = visited.indexOf('EnemyAction');
+    expect(visited.slice(0, 3)).toEqual(['Init', 'Deal', 'PlayerAction']);
+    expect(visited.slice(i, i + 3)).toEqual(['EnemyAction', 'Initiative', 'FirstAction']);
     expect(visited.at(-1)).toBe('CheckDeath');
   });
 
-  it('PlayerAction 以外では入力を受け付けない', async () => {
-    const m = new BattleMachine({ enemy: Slime, rng: seededRng(5), pace: noWait });
+  it('PlayerAction 以外では入力を受け付けない', () => {
+    const m = machine(5);
     expect(m.submit('hit')).toBe(false);
     expect(m.canAct).toBe(false);
   });
 
-  it('プレイヤーがバーストしたら EnemyAction を経由せず Resolve へ', async () => {
-    const m = new BattleMachine({ enemy: Slime, rng: seededRng(11), pace: noWait });
-    const visited = await play(m, () => 'hit'); // 常に Hit → いずれバースト
-    const firstBust = visited.indexOf('Resolve');
-    expect(visited[firstBust - 1]).toBe('PlayerAction');
+  it('プレイヤーがバーストしたら EnemyAction を経由せず Initiative へ', async () => {
+    const m = machine(11);
+    const visited = await play(m, () => 'hit');
+    const idx = visited.indexOf('Initiative');
+    expect(visited[idx - 1]).toBe('PlayerAction');
     expect(m.ctx.winner).toBe(m.ctx.enemy);
+  });
+
+  it('サレンダー: スキルも敵のターンも発動せず、5ダメージで次のラウンドへ', async () => {
+    const m = machine(9);
+    const visited = await play(m, () => 'surrender');
+    expect(visited).toContain('Surrender');
+    expect(visited).not.toContain('EnemyAction');
+    expect(visited).not.toContain('Initiative');
+    expect(visited).not.toContain('FirstAction');
+    expect(m.ctx.winner).toBe(m.ctx.enemy);
+    expect(m.ctx.enemy.hp).toBe(Slime.maxHp);
+    expect(m.ctx.round).toBe(12); // 60HP / 5 = 12ラウンドで力尽きる
   });
 
   it('敵ディーラーは17以上になるまで引く', () => {
     const ai = new DealerAI(17);
-    const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
+    const m = machine(1);
     const { enemy, player, rules } = m.ctx;
     m.ctx.draw(enemy);
     while (enemy.hand.total(rules) < 17) {
@@ -63,35 +74,105 @@ describe('BattleMachine', () => {
     expect(ai.decide(enemy, player, rules)).toBe('stand');
   });
 
-  it('フック: onCardDrawn でカードの数字を変え、onDamageCalculated でダメージを改変できる', async () => {
-    const m = new BattleMachine({ enemy: Slime, rng: seededRng(8), pace: noWait });
-    const seen: string[] = [];
-    m.bus.on('onCardDrawn', (p) => {
-      seen.push(p.entity.id);
-      p.card.value = 5; // 全カードを5として扱う（A は 5 / 15 になる）
-    });
-    m.bus.on('onDamageCalculated', (p) => ({ ...p, damage: 999 }));
+  it('フック: onCardDrawn でカードの数字を変えられる', async () => {
+    const m = machine(8);
+    m.bus.on('onCardDrawn', (p) => { p.card.value = 5; });
     await play(m, () => 'stand');
-    expect(seen.length).toBeGreaterThanOrEqual(4);
-    expect(m.ctx.lastDamage?.damage).toBe(999);
-    expect(m.isFinished).toBe(true);
+    expect(m.ctx.player.hand.cards.every((c) => c.value === 5)).toBe(true);
   });
 
-  it('フック: onBust が発火する', async () => {
-    const m = new BattleMachine({ enemy: Slime, rng: seededRng(11), pace: noWait });
-    const busted: string[] = [];
-    m.bus.on('onBust', (p) => { busted.push(p.entity.id); });
-    await play(m, () => 'hit');
-    expect(busted).toContain('player');
+  it('フック: onSkillActivated で不発にできる', async () => {
+    const { BattleMachine: M } = await import('../src/core/battle/BattleMachine');
+    const { makeCard } = await import('../src/core/cards/Card');
+    const m = new M({ enemy: Slime, rng: seededRng(1), pace: noWait });
+    m.bus.on('onSkillActivated', (p) => (p.user.id === 'player' ? { ...p, skill: null } : undefined));
+    ['K', 'K'].forEach((r) => m.ctx.player.hand.add(makeCard(r as never, 'S')));
+    ['9', '9'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as never, 'H')));
+    await m.runFrom('Initiative', ['Deal']);
+    expect(m.ctx.enemy.hp).toBe(16); // プレイヤーのスキルは不発
+  });
+});
+
+describe('ラウンドの行動順', () => {
+  it('合計値が大きい方が先攻: 先攻の攻撃 → 後攻の攻撃', async () => {
+    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'] }); // 20 vs 18
+    expect(m.ctx.turn).toMatchObject({ mode: 'sequential', first: 'player', second: 'enemy' });
+    expect(m.ctx.enemy.hp).toBe(2);   // 16 - 大攻撃14
+    expect(m.ctx.player.hp).toBe(52); // 60 - 溶解8
   });
 
-  it('フック: レリックで bustLimit を24にできる', () => {
-    const m = new BattleMachine({
-      enemy: Slime,
-      rng: seededRng(2),
-      pace: noWait,
-      relics: [{ id: 'r', name: 'r', icon: 'r', description: '', apply: ({ rules }) => { rules.bustLimit = 24; } }],
-    });
-    expect(m.ctx.rules.bustLimit).toBe(24);
+  it('生存確認: 先攻が倒したら後攻は行動しない', async () => {
+    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 10 });
+    expect(m.ctx.winner).toBe(m.ctx.player);
+    expect(m.ctx.player.hp).toBe(60);
+  });
+
+  it('プレイヤーがバースト: スキル不発、敵が先制クリティカル', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] }); // 25 vs 18
+    expect(m.ctx.turn).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null });
+    expect(m.ctx.player.hp).toBe(60 - 12);  // 溶解8 × 1.5
+    expect(m.ctx.enemy.hp).toBe(16);        // プレイヤーは行動不能
+  });
+
+  it('敵がバースト: プレイヤーが先制クリティカル', async () => {
+    const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
+    expect(m.ctx.enemy.hp).toBe(40 - 21); // 大攻撃14 × 1.5
+    expect(m.ctx.player.hp).toBe(60);
+  });
+
+  it('両者バースト: 誰も行動しない', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['K', 'Q', '4'] });
+    expect(m.ctx.player.hp).toBe(60);
+    expect(m.ctx.enemy.hp).toBe(16);
+  });
+
+  it('ブラックジャックはスロット21のスキルがクリティカル', async () => {
+    const m = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
+    expect(m.ctx.enemy.hp).toBe(40 - 30); // 特大攻撃20 × 1.5
+  });
+
+  it('未設定スロットでは基本攻撃が発動する', async () => {
+    const m = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 40 }); // 13 vs 7
+    expect(m.ctx.enemy.hp).toBe(37); // 基本攻撃3
+  });
+});
+
+describe('同時攻撃（同値）', () => {
+  it('回復 → 攻撃の順で処理される', async () => {
+    const m = await playRound({ player: ['A', '7'], enemyHand: ['9', '9'], playerHp: 50 }); // 18 vs 18
+    expect(m.ctx.turn?.mode).toBe('simultaneous');
+    expect(m.ctx.player.hp).toBe(50 + 6 - 8);
+  });
+
+  it('同時のシールドは同時の攻撃を防ぐ。Block はラウンド終了で消える', async () => {
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['8', '7'] }); // 15 vs 15
+    expect(m.ctx.player.hp).toBe(60); // 敵の酸5はBlock6で吸収
+    expect(m.ctx.player.block).toBe(0);
+  });
+
+  it('相打ちはプレイヤー敗北', async () => {
+    const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'K'], playerHp: 5, enemyHp: 5 });
+    expect(m.ctx.winner).toBe(m.ctx.enemy);
+  });
+});
+
+describe('Block とサレンダー', () => {
+  it('先攻の Block が後攻の攻撃を防ぎ、ラウンド終了でリセットされる', async () => {
+    const { Skeleton } = await import('../src/core/entities/enemies/catalog');
+    const m = await playRound({ player: ['6', '8'], enemyHand: ['8', '8'], enemy: Skeleton }); // 14 vs 16
+    expect(m.ctx.turn?.first).toBe('enemy');
+    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 基本攻撃3は盾(6)で防がれる
+    expect(m.ctx.enemy.block).toBe(0);
+  });
+
+  it('サレンダー: Block を貫通して5ダメージ、敵は行動しない', async () => {
+    const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender' });
+    expect(m.ctx.player.hp).toBe(55);
+    expect(m.ctx.enemy.hp).toBe(16);
+  });
+
+  it('サレンダーの固定ダメージはBlockを無視する', async () => {
+    const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', stopAt: ['CheckDeath'] });
+    expect(m.ctx.player.hp).toBe(55);
   });
 });
