@@ -1,12 +1,15 @@
 import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
+import type { Entity } from '../core/entities/Entity';
 import { EnemyView, floatText } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
 import { buildEnemyInfo } from './components/EnemyInfo';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
+import { rarityClass } from './rarity';
 import { formatPreview, previewSkill } from '../core/skills/preview';
+import { fallbackLabel, slotKeyOf } from '../core/skills/Skill';
 
 /** 縦画面レイアウト: 上=敵 / 中=ログ / 下=プレイヤー / 最下=ボタン。 */
 export class BattleView {
@@ -16,6 +19,7 @@ export class BattleView {
   private enemyHand = new HandView();
   private playerHand = new HandView();
   private slotStrip = new SlotStrip();
+  private enemySlotStrip = new SlotStrip();
   private logEl = document.createElement('div');
   private roundEl = document.createElement('div');
   private hitBtn = document.createElement('button');
@@ -56,7 +60,7 @@ export class BattleView {
     topRight.className = 'top-row__right';
     topRight.append(infoBtn, this.muteBtn);
     const topRow = section('top-row', this.roundEl, topRight);
-    const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemyView.el, this.enemyHand.el);
+    const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemySlotStrip.el, this.enemyView.el, this.enemyHand.el);
     this.logEl.className = 'log';
     this.logEl.setAttribute('aria-live', 'polite');
     this.playerHp.attach(this.buildRelicChips());
@@ -134,12 +138,23 @@ export class BattleView {
     relics.className = 'status-strip__relics';
     for (const r of this.run.relics) {
       const chip = document.createElement('span');
-      chip.className = 'medal medal--sm';
+      chip.className = `medal medal--sm ${rarityClass(r.rarity)}`;
       chip.textContent = r.icon;
       chip.title = `${r.name}: ${r.description}`;
       relics.append(chip);
     }
     return relics;
+  }
+
+  /** 現在の合計値で発動するスキルの予測テキスト。空スロットは「通常攻撃」と明記する。 */
+  private previewText(user: Entity, target: Entity): string | undefined {
+    const { ctx } = this.machine;
+    const total = user.hand.total(ctx.rules);
+    if (user.hand.size === 0 || total > ctx.rules.bustLimit) return undefined;
+    const p = previewSkill(ctx, user, target, total);
+    const empty = !user.slots[slotKeyOf(total)];
+    const label = empty && p.skill?.id === user.fallbackSkill ? fallbackLabel(p.skill) : undefined;
+    return formatPreview(p, target.block, label);
   }
 
   private appendLog(text: string): void {
@@ -159,15 +174,13 @@ export class BattleView {
     const { ctx } = this.machine;
     this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, ctx.enemy.attack);
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block, ctx.player.attack);
-    const total = ctx.player.hand.total(ctx.rules);
-    const preview = ctx.player.hand.size > 0 && total <= ctx.rules.bustLimit
-      ? formatPreview(previewSkill(ctx, ctx.player, ctx.enemy, total), ctx.enemy.block)
-      : undefined;
-    this.slotStrip.update(ctx.player, ctx.rules, preview);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
+    this.slotStrip.update(ctx.player, ctx.rules, this.previewText(ctx.player, ctx.enemy));
+    const hidden = ctx.enemy.hand.hasHidden;
+    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : this.previewText(ctx.enemy, ctx.player), hidden);
     this.roundEl.textContent =
-      ctx.round > 0 ? `${this.run.map.name} · ROUND ${ctx.round}` : '';
+      ctx.round > 0 ? `ROUND ${ctx.round}` : '';
 
     // Hit / Stand は PlayerAction で入力待ちのときのみ活性
     const active = this.machine.canAct;

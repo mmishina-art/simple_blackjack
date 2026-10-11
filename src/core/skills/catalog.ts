@@ -1,4 +1,4 @@
-import { defineSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
+import { assignRarity, defineSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
 
 /** 基本攻撃力（ATK）基準の攻撃スキル: ダメージ = floor(ATK × mult) + add */
 const atk = (id: string, name: string, mult: number, add = 0, icon = '攻'): SkillDef =>
@@ -39,6 +39,9 @@ defineSkill({
   id: 'overlord_strike', name: '覇王の一撃', icon: '覇',
   effects: [{ type: 'attack', mult: 4 }, { type: 'block', amount: 8 }],
 });
+
+assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike'], 'rare');
+assignRarity(['smash', 'overlord_strike'], 'legend');
 
 /** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。 */
 export const SKILL_POOL: readonly SkillId[] = [

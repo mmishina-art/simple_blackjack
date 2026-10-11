@@ -1,3 +1,5 @@
+import type { Rarity } from '../rarity';
+
 /** スキルの効果。判別共用体なので、バフやドロー等を後から追加できる。 */
 export type SkillEffect =
   /** 基本攻撃力（ATK）を基準にしたダメージ: floor(ATK × mult) + add。 */
@@ -13,6 +15,8 @@ export interface SkillDef {
   /** スロット表に表示する1文字。 */
   icon: string;
   effects: SkillEffect[];
+  /** レア度。省略時はコモン。 */
+  rarity?: Rarity;
 }
 
 /** 合計値スロット。キー 11 は「11以下」を表す。 */
@@ -52,6 +56,20 @@ export function getSkill(id: SkillId): SkillDef {
   const def = registry.get(id);
   if (!def) throw new Error(`Unknown skill: ${id}`);
   return def;
+}
+
+/** 登録済みスキルのレア度をまとめて設定する。 */
+export function assignRarity(ids: readonly SkillId[], rarity: Rarity): void {
+  for (const id of ids) getSkill(id).rarity = rarity;
+}
+
+export function rarityOfSkill(skill: SkillDef): Rarity {
+  return skill.rarity ?? 'common';
+}
+
+/** スロット未設定（空スロット）のときの表記。空スロット = 通常攻撃。 */
+export function fallbackLabel(skill: SkillDef): string {
+  return skill.id === 'basic_attack' ? '通常攻撃' : `通常攻撃（${skill.name}）`;
 }
 
 export function hasSkill(id: SkillId): boolean {

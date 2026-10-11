@@ -290,3 +290,52 @@ export const STAGE_BACKDROP = `
 </svg>`;
 
 export const ENEMY_SPRITES: Record<string, string> = { slime, skeleton, bat, ghoul, dragon };
+
+/** タイトル画面のイラスト: 21 を作る A と K のカードと、その背後で笑う骸骨。 */
+export const TITLE_ART = `
+<svg viewBox="0 0 240 180" role="img" aria-label="21を作るAとKのカードと骸骨" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="inkTt" x="-10%" y="-10%" width="120%" height="125%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="9" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5"/>
+    </filter>
+    <radialGradient id="ttGlow" cx="50%" cy="55%" r="55%">
+      <stop offset="0" stop-color="#ff9a2a" stop-opacity=".55"/><stop offset="1" stop-color="#ff9a2a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ttBone" cx="40%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#ece3c6"/><stop offset="1" stop-color="#a99d7c"/>
+    </radialGradient>
+    <linearGradient id="ttCard" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8dab0"/><stop offset="1" stop-color="#bba974"/>
+    </linearGradient>
+    <pattern id="ttHatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <line x1="0" y1="0" x2="0" y2="5" stroke="#1a1408" stroke-width="1.2" opacity=".55"/>
+    </pattern>
+  </defs>
+  <ellipse cx="120" cy="100" rx="110" ry="80" fill="url(#ttGlow)"/>
+  <g filter="url(#inkTt)" stroke="#0b0905" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+    <!-- 骸骨 -->
+    <ellipse cx="120" cy="66" rx="44" ry="47" fill="url(#ttBone)"/>
+    <ellipse cx="120" cy="66" rx="44" ry="47" fill="url(#ttHatch)" opacity=".5"/>
+    <path d="M98 104l4 22h36l4-22z" fill="#c4b994"/>
+    <ellipse cx="103" cy="68" rx="12" ry="14" fill="#0b0905"/>
+    <ellipse cx="137" cy="68" rx="12" ry="14" fill="#0b0905"/>
+    <path d="M120 82l-6 13h12z" fill="#0b0905"/>
+    <path d="M104 106v14M112 108v16M120 108v16M128 108v16M136 106v14" stroke-width="2.2" fill="none"/>
+    <path d="M86 40c6-12 18-20 34-20" stroke-width="3" fill="none" opacity=".6"/>
+    <!-- 左のカード: A -->
+    <g transform="translate(68 112) rotate(-16)">
+      <rect x="-30" y="-46" width="60" height="92" rx="6" fill="url(#ttCard)"/>
+      <text x="-21" y="-24" font-family="Cinzel, serif" font-size="22" font-weight="800" fill="#17110c" stroke="none">A</text>
+      <text x="0" y="14" text-anchor="middle" font-size="46" fill="#17110c" stroke="none">♠</text>
+    </g>
+    <!-- 右のカード: K -->
+    <g transform="translate(172 112) rotate(16)">
+      <rect x="-30" y="-46" width="60" height="92" rx="6" fill="url(#ttCard)"/>
+      <text x="-21" y="-24" font-family="Cinzel, serif" font-size="22" font-weight="800" fill="#17110c" stroke="none">K</text>
+      <text x="0" y="14" text-anchor="middle" font-size="46" fill="#17110c" stroke="none">♠</text>
+    </g>
+  </g>
+  <circle cx="103" cy="70" r="3.4" fill="#ffd9a0"/><circle cx="137" cy="70" r="3.4" fill="#ffd9a0"/>
+  <circle cx="103" cy="70" r="11" fill="#ff7a2a" opacity=".3"/><circle cx="137" cy="70" r="11" fill="#ff7a2a" opacity=".3"/>
+</svg>`;

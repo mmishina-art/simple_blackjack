@@ -1,5 +1,6 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { EnemyDef } from '../../core/entities/enemies/EnemyDef';
+import { fallbackLabel } from '../../core/skills/Skill';
 import { describeSlotTable } from '../../core/skills/table';
 
 /** 敵の ATK・特性・全スロットのスキル（実数値つき）を一覧するシート。 */
@@ -15,8 +16,8 @@ export function buildEnemyInfo(enemy: Entity, def: EnemyDef, onClose: () => void
     const el = document.createElement('div');
     el.className = `lslot lslot--info${row.isFallback ? '' : ' lslot--set'}`;
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
-      <span class="medal medal--sm">${row.isFallback ? '·' : row.skill.icon}</span>
-      <span class="lslot__name">${row.skill.name}${row.isFallback ? '（通常）' : ''}</span>
+      <span class="medal medal--sm">${row.isFallback ? '通' : row.skill.icon}</span>
+      <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}</span>
       <span class="lslot__desc">${row.text}</span>`;
     list.append(el);
   }

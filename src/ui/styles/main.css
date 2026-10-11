@@ -537,3 +537,66 @@ section { min-width: 0; }
 .enemy-info__close { min-height: 52px; }
 .info-btn { white-space: nowrap; flex: none; }
 .top-row .round { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Rarity: コモン / レア / レジェンド ---- */
+.rar-common { --rar: #9a8d72; --rar-glow: transparent; }
+.rar-rare { --rar: #5aa0e0; --rar-glow: rgba(90, 160, 224, 0.45); }
+.rar-legend { --rar: #f0a83a; --rar-glow: rgba(240, 168, 58, 0.7); }
+
+.medal { border-color: var(--rar, var(--gold)); color: var(--rar, var(--gold)); }
+.medal.rar-rare { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #2d557d, 0 0 8px var(--rar-glow); }
+.medal.rar-legend {
+  background: radial-gradient(circle at 35% 30%, #5a3a10, #1a0e04);
+  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #8a5a1a, 0 0 12px var(--rar-glow);
+  animation: legendGlow 2.4s ease-in-out infinite;
+}
+@keyframes legendGlow { 0%,100% { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #8a5a1a, 0 0 6px var(--rar-glow); } 50% { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #c98a2a, 0 0 18px var(--rar-glow); } }
+
+.rar-badge {
+  display: inline-block; font-family: var(--font-body); font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
+  padding: 1px 7px; border-radius: 9px; border: 1px solid var(--rar, var(--gold-dim)); color: var(--rar); white-space: nowrap; vertical-align: middle;
+}
+.rar-badge--common { --rar: #9a8d72; }
+.rar-badge--rare { --rar: #5aa0e0; background: rgba(90, 160, 224, 0.12); }
+.rar-badge--legend { --rar: #f0a83a; background: rgba(240, 168, 58, 0.16); }
+
+.choice__card { position: relative; border-color: var(--rar, var(--gold-dim)); }
+.choice__card.rar-rare { box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #2d557d, 0 0 14px var(--rar-glow); }
+.choice__card.rar-legend {
+  background: linear-gradient(115deg, #2a1a08 0%, #1a1008 40%, #3a2410 55%, #1a1008 70%);
+  background-size: 220% 100%;
+  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #8a5a1a, 0 0 22px var(--rar-glow);
+  animation: legendShine 3.5s linear infinite;
+}
+@keyframes legendShine { from { background-position: 100% 0; } to { background-position: -120% 0; } }
+.choice__card .rar-badge { position: absolute; top: 8px; right: 10px; }
+.choice__card.rar-common .choice__text strong { color: var(--bone); }
+.choice__card.rar-rare .choice__text strong { color: #8cc4f5; }
+.choice__card.rar-legend .choice__text strong { color: #ffc766; }
+
+.slot.rar-rare { border-color: #3d6f9f; color: #8cc4f5; background: #0e1722; }
+.slot.rar-legend { border-color: #c98a2a; color: #ffc766; background: #241608; box-shadow: 0 0 6px var(--rar-glow); }
+.slot--basic { border-style: dashed; border-color: #3a2f22; color: #6b5f4a; background: transparent; }
+.slot--basic .slot__icon { font-size: 12px; opacity: 0.8; }
+.slot--active.rar-rare, .slot--active.rar-legend, .slot--active.slot--basic {
+  color: #1a1206; background: linear-gradient(180deg, #d1ae5a, var(--gold)); border: 1px solid #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.65);
+}
+
+.lslot.rar-rare { border-color: #3d6f9f; }
+.lslot.rar-legend { border-color: #c98a2a; box-shadow: 0 0 8px var(--rar-glow); }
+.lslot--basic { border-style: dashed; color: #8a7d66; }
+.lslot--basic .lslot__name { font-style: italic; }
+.chip { border-color: var(--rar, var(--gold-dim)); }
+.chip.rar-rare { box-shadow: 0 0 8px var(--rar-glow); }
+.chip.rar-legend { box-shadow: 0 0 12px var(--rar-glow); background: #241608; }
+.chip small { margin-top: 2px; }
+
+/* 敵のスロット表を追加した分、敵ステージを少し低くする */
+.enemy-stage { height: 100px; }
+.enemy-sprite { height: 96px; width: 128px; }
+.enemy-area .slots__caption { min-height: 1.4em; }
+.title .enemy-stage { height: 200px; }
+.title .enemy-sprite { height: 180px; width: 240px; }
+.title-art { position: relative; height: 100%; width: 100%; display: flex; justify-content: center; align-items: flex-end; }
+.title-art svg { height: 100%; width: auto; max-width: 100%; display: block; overflow: visible; }
+.title-stage { width: 100%; }

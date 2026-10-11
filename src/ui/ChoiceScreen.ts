@@ -1,6 +1,9 @@
 import { audio } from '../audio/AudioManager';
+import type { Rarity } from '../core/rarity';
+import { rarityBadge, rarityClass } from './rarity';
 
 export interface ChoiceOption {
+  rarity?: Rarity;
   icon: string;
   name: string;
   description: string;
@@ -30,10 +33,11 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
   list.className = 'choice__list';
   const buttons = cfg.options.map((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = 'choice__card';
+    btn.className = `choice__card ${rarityClass(opt.rarity)}`;
     btn.disabled = true;
     btn.innerHTML = `<span class="medal">${opt.icon}</span>
-      <span class="choice__text"><strong>${opt.name}</strong><span>${opt.description}</span></span>`;
+      <span class="choice__text"><strong>${opt.name}</strong><span>${opt.description}</span></span>
+      ${rarityBadge(opt.rarity)}`;
     btn.addEventListener('click', () => {
       audio.sfx('pick');
       cfg.onPick(i);

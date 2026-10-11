@@ -1,7 +1,7 @@
 import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
-import { describeSkill, getSkill } from './core/skills/Skill';
+import { describeSkill, getSkill, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { resolveShrine, useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
@@ -10,7 +10,7 @@ import {
 } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
-import { EnemyView } from './ui/components/EnemyView';
+import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import './ui/styles/main.css';
@@ -143,7 +143,7 @@ function offerSkillReward(): void {
   showChoiceScreen(root, {
     heading: 'スキル獲得',
     sub: 'ひとつ選び、スロットにセットする',
-    options: ids.map((id) => ({ icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkill(getSkill(id), run.baseAttack) })),
+    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkill(getSkill(id), run.baseAttack) })),
     onPick(i) {
       run.inventory.push(ids[i]);
       showLoadout(root, run, { armed: ids[i], onClose: () => showMapScreen() });
@@ -154,7 +154,9 @@ function offerSkillReward(): void {
 /** タイトル画面。音声はユーザー操作後でないと鳴らせないため、ここでタップさせる。 */
 function showTitle(): void {
   const screen = el('main', 'title');
-  const enemy = new EnemyView('slime');
+  const art = el('div', 'enemy-stage title-stage');
+  const backdrop = el('div', 'enemy-backdrop', STAGE_BACKDROP);
+  art.append(backdrop, el('div', 'title-art', TITLE_ART));
   const h1 = el('h1', '', 'BLACKJACK<small>ROGUELIKE</small>');
   const sub = el('p', '', '二十一に近き者が先を制す。分かれ道を選び、地下墓所の主を討て。');
   const start = el('button', 'btn btn--hit title__start', '<span class="btn__main">冒険を始める</span>');
@@ -163,7 +165,7 @@ function showTitle(): void {
     audio.sfx('click');
     showMapScreen();
   });
-  screen.append(enemy.el, h1, sub, start);
+  screen.append(art, h1, sub, start);
   root.replaceChildren(screen);
 }
 

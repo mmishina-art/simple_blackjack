@@ -1,5 +1,6 @@
 import { audio } from '../audio/AudioManager';
-import { describeSkill, getSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { describeSkill, fallbackLabel, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { rarityBadge, rarityClass } from './rarity';
 import { equipSkill, isSlotLocked, unequipSlot, type RunState } from '../run/Run';
 
 export interface LoadoutOptions {
@@ -26,7 +27,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     head.innerHTML = `<h1>編成</h1><p class="loadout__atk">基本攻撃力 ATK ${run.baseAttack}</p><p>${
       armed
         ? `「${getSkill(armed).name}」をセットするスロットを選べ`
-        : '持ち物のスキルを選び、スロットに置く'
+        : '持ち物のスキルを選び、スロットに置く（空きスロットは通常攻撃）'
     }</p>`;
 
     // スロット一覧
@@ -36,11 +37,11 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const id = run.slots[key];
       const locked = isSlotLocked(run, key);
       const row = document.createElement('button');
-      row.className = `lslot${id ? ' lslot--set' : ''}${selected === key ? ' lslot--selected' : ''}${locked ? ' lslot--locked' : ''}${armed && !locked ? ' lslot--target' : ''}`;
+      row.className = `lslot${id ? ` lslot--set ${rarityClass(rarityOfSkill(getSkill(id)))}` : ' lslot--basic'}${selected === key ? ' lslot--selected' : ''}${locked ? ' lslot--locked' : ''}${armed && !locked ? ' lslot--target' : ''}`;
       const skill = id ? getSkill(id) : getSkill(run.fallbackSkill);
       row.innerHTML = `<span class="lslot__key">${slotLabel(key)}</span>
-        <span class="medal medal--sm">${id ? skill.icon : '·'}</span>
-        <span class="lslot__name">${id ? skill.name : `${skill.name}（未設定）`}</span>
+        <span class="medal medal--sm">${id ? skill.icon : '通'}</span>
+        <span class="lslot__name">${id ? skill.name : `${fallbackLabel(skill)}・空き`}</span>
         <span class="lslot__desc">${describeSkill(skill, run.baseAttack)}</span>
         ${locked ? '<span class="lslot__lock">封</span>' : ''}`;
       row.addEventListener('click', () => {
@@ -71,8 +72,8 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     run.inventory.forEach((id) => {
       const skill = getSkill(id);
       const chip = document.createElement('button');
-      chip.className = `chip${armed === id ? ' chip--armed' : ''}`;
-      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}<small>${describeSkill(skill, run.baseAttack)}</small></span>`;
+      chip.className = `chip ${rarityClass(rarityOfSkill(skill))}${armed === id ? ' chip--armed' : ''}`;
+      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name} ${rarityBadge(rarityOfSkill(skill))}<small>${describeSkill(skill, run.baseAttack)}</small></span>`;
       chip.addEventListener('click', () => {
         armed = armed === id ? null : id;
         selected = null;

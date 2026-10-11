@@ -219,7 +219,7 @@ describe('マスのイベント', () => {
     expect(offerRelics(run, seededRng(1))).toHaveLength(3);
     run.relics.push(Whetstone);
     expect(offerRelics(run, seededRng(1)).some((r) => r.id === 'whetstone')).toBe(false);
-    expect(RELIC_POOL).toHaveLength(12);
+    expect(RELIC_POOL).toHaveLength(13);
   });
 });
 

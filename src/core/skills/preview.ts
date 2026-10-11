@@ -37,7 +37,8 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
 }
 
 /** 「大攻撃 → 10ダメージ」のような表示用テキスト。 */
-export function formatPreview(p: SkillPreview, targetBlock = 0): string {
+/** nameOverride: スロット未設定（通常攻撃）のときの表示名など。 */
+export function formatPreview(p: SkillPreview, targetBlock = 0, nameOverride?: string): string {
   if (!p.skill) return '不発（スキルが発動しない）';
   const bits = p.parts.map((part) => {
     if (part.type === 'block') return `Block +${part.value}`;
@@ -45,5 +46,5 @@ export function formatPreview(p: SkillPreview, targetBlock = 0): string {
     const absorbed = targetBlock > 0 ? `（Block吸収後 ${Math.max(0, part.value - targetBlock)}）` : '';
     return `${part.value}ダメージ${absorbed}`;
   });
-  return `${p.skill.name} → ${bits.join('・')}`;
+  return `${nameOverride ?? p.skill.name} → ${bits.join('・')}`;
 }

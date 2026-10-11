@@ -1,7 +1,8 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
-import type { SkillId, SlotKey, SlotTable } from '../core/skills/Skill';
+import { pickWeighted, RARITY_WEIGHT } from '../core/rarity';
+import { getSkill, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { STAGE_1 } from '../map/stage1';
 import { nextTiles, tileOf, type StageMap, type TileDef } from '../map/StageMap';
@@ -32,9 +33,8 @@ export interface RunState {
 }
 
 export const START_MAX_HP = 60;
-/** 固定スロット。11以下は小攻撃、21 は会心の一撃で固定。21 だけは封印の鍵で解除できる。 */
+/** 固定スロット。11以下は小攻撃、21 は会心の一撃で固定。レリック（解錠の鍵・封印の鍵）で解除できる。 */
 export const FIXED_SLOTS: readonly SlotKey[] = [11, 21];
-export const KEY_SLOT: SlotKey = 21;
 
 export function createRun(map: StageMap = STAGE_1): RunState {
   return {
@@ -74,17 +74,19 @@ export function markCleared(run: RunState, id: string): void {
   if (!isCleared(run, id)) run.cleared.push(id);
 }
 
-export function isSlot21Unlocked(run: RunState): boolean {
-  return run.relics.some((r) => r.unlocksSlot21);
+/** 固定スロットがレリックで解錠されているか。 */
+export function isSlotUnlockedByRelic(run: RunState, key: SlotKey): boolean {
+  return run.relics.some((r) => r.unlocksSlots?.includes(key));
 }
 
 export function isSlotLocked(run: RunState, key: SlotKey): boolean {
-  if (key === KEY_SLOT) return !isSlot21Unlocked(run);
-  return FIXED_SLOTS.includes(key);
+  return FIXED_SLOTS.includes(key) && !isSlotUnlockedByRelic(run, key);
 }
 
 /** 持ち物のスキルをスロットにセットする。元のスキルは持ち物に戻る。 */
 export function equipSkill(run: RunState, key: SlotKey, skillId: SkillId): boolean {
+  // 通常攻撃（空スロット）はスキルとしてセットも外しもできない
+  if (skillId === run.fallbackSkill) return false;
   const idx = run.inventory.indexOf(skillId);
   if (idx < 0 || isSlotLocked(run, key)) return false;
   const previous = run.slots[key];
@@ -103,22 +105,13 @@ export function unequipSlot(run: RunState, key: SlotKey): boolean {
   return true;
 }
 
-function pickRandom<T>(pool: readonly T[], count: number, rng: Rng): T[] {
-  const rest = [...pool];
-  const out: T[] = [];
-  while (out.length < count && rest.length > 0) {
-    out.push(rest.splice(Math.floor(rng.next() * rest.length), 1)[0]);
-  }
-  return out;
-}
-
-/** 敵撃破の報酬スキル（3択）。 */
+/** 敵撃破の報酬スキル（3択）。レア度が高いほど出にくい。 */
 export function offerSkills(rng: Rng): SkillId[] {
-  return pickRandom(SKILL_POOL, 3, rng);
+  return pickWeighted(SKILL_POOL, 3, rng, (id) => RARITY_WEIGHT[rarityOfSkill(getSkill(id))]);
 }
 
-/** 宝箱のレリック（3択）。所持済みは出ない。 */
+/** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */
 export function offerRelics(run: RunState, rng: Rng): Relic[] {
   const owned = new Set(run.relics.map((r) => r.id));
-  return pickRandom(RELIC_POOL.filter((r) => !owned.has(r.id)), 3, rng);
+  return pickWeighted(RELIC_POOL.filter((r) => !owned.has(r.id)), 3, rng, (r) => RARITY_WEIGHT[r.rarity ?? 'common']);
 }

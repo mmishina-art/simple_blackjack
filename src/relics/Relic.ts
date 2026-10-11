@@ -1,3 +1,4 @@
+import type { Rarity } from '../core/rarity';
 import type { EventBus } from '../core/events/EventBus';
 import type { Entity } from '../core/entities/Entity';
 import type { RuleSet } from '../core/rules/RuleSet';
@@ -20,7 +21,9 @@ export interface Relic {
   /** メダリオンに表示する1文字。 */
   readonly icon: string;
   readonly description: string;
-  /** true なら、スロット21（会心の一撃で固定）の付け替えができるようになる。 */
-  readonly unlocksSlot21?: boolean;
+  /** レア度。省略時はコモン（敵の特性など）。 */
+  readonly rarity?: Rarity;
+  /** 封印が解けて付け替え可能になる固定スロット（11以下・21）。 */
+  readonly unlocksSlots?: readonly number[];
   apply(env: RelicEnv): void;
 }
