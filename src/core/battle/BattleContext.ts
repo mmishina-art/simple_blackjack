@@ -1,0 +1,33 @@
+import type { Deck } from '../cards/Deck';
+import type { Entity } from '../entities/Entity';
+import type { EnemyDef } from '../entities/enemies/EnemyDef';
+import type { EventBus } from '../events/EventBus';
+import type { DamageInfo } from '../rules/damage';
+import type { RoundResult } from '../rules/judge';
+import type { RuleSet } from '../rules/RuleSet';
+import type { PlayerInput } from './types';
+
+/** 各ステートが共有するバトルの状態と、ステートから使うサービス群。 */
+export interface BattleContext {
+  readonly rules: RuleSet;
+  readonly bus: EventBus;
+  readonly deck: Deck;
+  readonly player: Entity;
+  readonly enemy: Entity;
+  readonly enemyDef: EnemyDef;
+  round: number;
+  lastResult: RoundResult | null;
+  lastDamage: DamageInfo | null;
+  winner: Entity | null;
+
+  /** バトルログに1行追加。 */
+  log(text: string): void;
+  /** 画面更新を促す。 */
+  notify(): void;
+  /** 演出用ウェイト。 */
+  wait(ms: number): Promise<void>;
+  /** プレイヤー入力を待つ（PlayerAction 専用）。 */
+  waitForInput(): Promise<PlayerInput>;
+  /** 1枚引いて手札に加える（onCardDrawn / onBust フックを発火）。 */
+  draw(entity: Entity, opts?: { faceDown?: boolean }): void;
+}

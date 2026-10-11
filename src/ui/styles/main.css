@@ -1,0 +1,135 @@
+:root {
+  --bg: #14101f;
+  --panel: #1f1a33;
+  --text: #f1ecff;
+  --muted: #9b93b8;
+  --felt: #12372a;
+  --hp-player: #46c28a;
+  --hp-enemy: #e0566b;
+  --hit: #e8a838;
+  --stand: #4a8fe0;
+  --card-bg: #f7f3e8;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+#app { height: 100%; }
+
+.battle {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 12px);
+}
+
+section { min-width: 0; }
+
+.enemy-area, .player-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.player-area { flex-direction: column-reverse; }
+
+.round { font-size: 12px; letter-spacing: 0.15em; color: var(--muted); min-height: 1em; }
+
+/* HP */
+.hpbar__row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+.hpbar__label { color: var(--muted); font-variant-numeric: tabular-nums; }
+.hpbar__track { height: 12px; background: #0d0a17; border-radius: 6px; overflow: hidden; }
+.hpbar__fill { height: 100%; transition: width 0.5s ease; }
+.hpbar--player .hpbar__fill { background: var(--hp-player); }
+.hpbar--enemy .hpbar__fill { background: var(--hp-enemy); }
+
+/* Hand */
+.hand { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 84px; }
+.hand__cards { display: flex; gap: 6px; flex-wrap: wrap; }
+.hand__total { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hand__total--bust { color: var(--hp-enemy); font-size: 22px; }
+
+.card {
+  width: 52px; height: 76px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: #1b1b1b;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0,0,0,.45);
+}
+.card--red { color: #c8283c; }
+.card__rank { font-size: 22px; line-height: 1; }
+.card__suit { font-size: 24px; line-height: 1.1; }
+.card--back {
+  background: repeating-linear-gradient(45deg, #3b2f8f 0 6px, #2c2270 6px 12px);
+  border: 3px solid var(--card-bg);
+}
+.card--deal { animation: deal 0.25s ease-out; }
+@keyframes deal {
+  from { transform: translateY(-14px) scale(0.9); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* Log */
+.log {
+  overflow-y: auto;
+  background: var(--felt);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.log p { margin: 0; }
+.log p:last-child { font-weight: 700; }
+
+/* Actions (thumb zone) */
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn {
+  min-height: 72px;
+  border: 0;
+  border-radius: 16px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.08s, opacity 0.2s, filter 0.2s;
+}
+.btn:active:not(:disabled) { transform: scale(0.96); }
+.btn:disabled { opacity: 0.3; filter: grayscale(0.6); cursor: default; }
+.btn--hit { background: var(--hit); color: #2a1c00; }
+.btn--stand { background: var(--stand); }
+
+/* Result overlay */
+.overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  background: rgba(10, 7, 20, 0.82);
+  z-index: 10;
+}
+.overlay[hidden] { display: none; }
+.overlay__title { margin: 0; font-size: 44px; letter-spacing: 0.05em; }
+.overlay__title--win { color: var(--hit); }
+.overlay__title--lose { color: var(--hp-enemy); }
+.btn--retry { background: var(--stand); padding: 0 40px; }
+
+@media (max-height: 640px) {
+  .card { width: 44px; height: 64px; }
+  .hand { min-height: 70px; }
+  .btn { min-height: 60px; }
+}
