@@ -306,11 +306,11 @@ describe('敵の特性', () => {
   it('屍食鬼: HPを削るたびHP+4', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 20 });
     expect(m.ctx.enemy.hp).toBe(24);
-    expect(m.ctx.player.hp).toBe(60 - 12); // 貪り喰う ATK4×3
+    expect(m.ctx.player.hp).toBe(60 - (12 - 8)); // 貪り喰う ATK4×3。後攻の盾 Block 8 が先に付与される
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon') });
-    expect(m.ctx.player.hp).toBe(60 - (17 + 3)); // 業火 ATK5×3+2 + 息吹3
+    expect(m.ctx.player.hp).toBe(60 - (17 + 3 - 8)); // 業火 ATK5×3+2 + 息吹3。後攻の盾 Block 8 が先に付与される
   });
 });

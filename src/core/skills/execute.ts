@@ -28,21 +28,25 @@ export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef)
   return payload.skill;
 }
 
+export type EffectPart = 'block' | 'heal' | 'attack' | 'rest' | 'all';
+
 /**
  * スキルの効果を適用する。
- * part: 'support' = 防御・回復のみ / 'attack' = 攻撃のみ / 'all' = すべて（効果の記述順）
+ * part: 'block' = Block のみ / 'heal' = 回復のみ / 'attack' = 攻撃のみ / 'rest' = Block 以外（攻撃・回復）/ 'all' = すべて（効果の記述順）
  */
 export function applyEffects(
   ctx: BattleContext,
   user: Entity,
   target: Entity,
   skill: SkillDef,
-  part: 'support' | 'attack' | 'all' = 'all',
+  part: EffectPart = 'all',
 ): void {
   const { bus } = ctx;
   for (const effect of skill.effects) {
+    // この呼び出しで処理する効果の種類（part による絞り込み）
+    const wanted = part === 'all' || part === effect.type || (part === 'rest' && effect.type !== 'block');
+    if (!wanted) continue;
     if (effect.type === 'attack') {
-      if (part === 'support') continue;
       const base = attackValue(effect, user.attack);
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
       const damage = Math.max(0, Math.floor(calc.damage));
@@ -52,7 +56,7 @@ export function applyEffects(
       ctx.log(hpLoss > 0 || absorbed === 0
         ? `${calc.defender.name}に${hpLoss}ダメージ${guard}`
         : `${calc.defender.name}は Block で防いだ（${absorbed}）`);
-    } else if (part !== 'attack') {
+    } else {
       if (effect.type === 'block') {
         const { amount } = bus.emit('onBlockGained', { entity: user, amount: effect.amount });
         user.block += Math.max(0, Math.floor(amount));
@@ -66,10 +70,4 @@ export function applyEffects(
     }
   }
   ctx.notify();
-}
-
-/** 合計値スロットのスキルを発動して効果を適用する（先攻・後攻の通常処理）。 */
-export function runSlotSkill(ctx: BattleContext, user: Entity, target: Entity): void {
-  const skill = activateSkill(ctx, user, skillForTotal(user, user.hand.total(ctx.rules)));
-  if (skill) applyEffects(ctx, user, target, skill);
 }

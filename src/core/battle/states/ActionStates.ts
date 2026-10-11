@@ -1,10 +1,12 @@
-import { activateSkill, applyEffects, runSlotSkill, skillForTotal } from '../../skills/execute';
+import { activateSkill, applyEffects, skillForTotal } from '../../skills/execute';
 import type { BattleContext } from '../BattleContext';
 import type { BattleState, StateId } from '../types';
 
 /**
- * 先攻の行動。
- * 同値（simultaneous）の場合は両者分をここで処理する: 防御系 → 攻撃 → （死亡判定は CheckDeath でまとめて）。
+ * 先攻の行動。ラウンドの処理順:
+ *   1. 両者のスキルを宣言し、**Block を先に付与**する（後攻の Block も先攻の攻撃より前に入る）
+ *   2. 先攻の残りの効果（攻撃・回復）→ 生存確認 → 後攻の残りの効果
+ * 同値（simultaneous）は、Block → 回復 → 攻撃の順に両者分をまとめて処理し、死亡判定は CheckDeath で行う。
  */
 export class FirstActionState implements BattleState {
   readonly id = 'FirstAction' as const;
@@ -12,29 +14,41 @@ export class FirstActionState implements BattleState {
   async enter(ctx: BattleContext): Promise<StateId> {
     const turn = ctx.turn!;
     const { player, enemy, rules } = ctx;
+    const declare = (user: typeof player) => {
+      const skill = activateSkill(ctx, user, skillForTotal(user, user.hand.total(rules)));
+      ctx.plan[user.id] = skill;
+      return skill;
+    };
 
     if (turn.mode === 'simultaneous') {
-      const plan = [player, enemy].map((user) => {
-        const target = user === player ? enemy : player;
-        const activated = activateSkill(ctx, user, skillForTotal(user, user.hand.total(rules)));
-        return { user, target, activated };
-      });
-      for (const { user, target, activated } of plan) {
-        if (activated) applyEffects(ctx, user, target, activated, 'support');
-      }
+      const plan = [player, enemy].map((user) => ({ user, target: user === player ? enemy : player, skill: declare(user) }));
+      for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'block');
+      for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'heal');
       await ctx.wait(600);
-      for (const { user, target, activated } of plan) {
-        if (activated) applyEffects(ctx, user, target, activated, 'attack');
-      }
+      for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'attack');
       await ctx.wait(800);
       return 'CheckDeath';
     }
 
     const first = ctx.entityOf(turn.first!);
     const other = first === player ? enemy : player;
-    runSlotSkill(ctx, first, other);
+    const firstSkill = declare(first);
+
+    // 単独行動（バースト・サレンダー）: そのままの順序で処理
+    if (!turn.second) {
+      if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'all');
+      await ctx.wait(900);
+      return 'CheckDeath';
+    }
+
+    // 通常: 後攻のスキルも宣言し、両者の Block を先に付与する
+    const secondSkill = declare(other);
+    if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'block');
+    if (secondSkill) applyEffects(ctx, other, first, secondSkill, 'block');
+    await ctx.wait(500);
+    if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'rest');
     await ctx.wait(900);
-    return turn.second ? 'SurvivalCheck' : 'CheckDeath';
+    return 'SurvivalCheck';
   }
 }
 
@@ -54,7 +68,14 @@ export class SecondActionState implements BattleState {
     const turn = ctx.turn!;
     const second = ctx.entityOf(turn.second!);
     const other = second === ctx.player ? ctx.enemy : ctx.player;
-    runSlotSkill(ctx, second, other);
+    if (second.id in ctx.plan) {
+      // Block は先攻の行動前に付与済み。残り（攻撃・回復）をここで処理する
+      const skill = ctx.plan[second.id];
+      if (skill) applyEffects(ctx, second, other, skill, 'rest');
+    } else {
+      const skill = activateSkill(ctx, second, skillForTotal(second, second.hand.total(ctx.rules)));
+      if (skill) applyEffects(ctx, second, other, skill, 'all');
+    }
     await ctx.wait(900);
     return 'CheckDeath';
   }

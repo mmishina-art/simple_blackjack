@@ -70,6 +70,7 @@ export class BattleMachine {
       round: 0,
       turn: null,
       playerSurrendered: false,
+      plan: {},
       winner: null,
       entityOf: (id) => (id === 'player' ? player : enemy),
       log: (text) => {

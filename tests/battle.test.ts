@@ -198,3 +198,28 @@ describe('Block の持ち越し', () => {
     expect(m.ctx.player.hp).toBe(60 - 2); // 持ち越し1 + サレンダー5 = 6、溶解8 → 2通る
   });
 });
+
+describe('Block は後攻でも最初に付与される', () => {
+  it('後攻のシールドが、先攻の攻撃より前に入って攻撃を受け止める', async () => {
+    // 敵 17（溶解8）が先攻、プレイヤー 15（シールド Block 6）が後攻
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['K', '7'] });
+    expect(m.ctx.turn).toMatchObject({ first: 'enemy', second: 'player' });
+    expect(m.ctx.player.hp).toBe(60 - 2); // 溶解8 - Block6（後攻でも先に付与）
+    expect(m.ctx.player.block).toBe(0);
+  });
+
+  it('先攻が後攻を倒しても、その Block は先に付与されている（攻撃は Block 後に計算）', async () => {
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['K', '7'], playerHp: 8 });
+    expect(m.ctx.player.hp).toBe(8 - 2);
+    expect(m.ctx.winner).toBeNull();
+  });
+
+  it('後攻の攻撃は、先攻の Block が先にあるため通りにくい', async () => {
+    const { Skeleton } = await import('../src/core/entities/enemies/catalog');
+    // プレイヤー 17（ATK×? 未設定: 通常攻撃5）が先攻、骸骨兵 16（シールド6）が後攻
+    const m = await playRound({ player: ['K', '7'], enemyHand: ['8', '8'], enemy: Skeleton });
+    expect(m.ctx.turn).toMatchObject({ first: 'player', second: 'enemy' });
+    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 通常攻撃5-骨の鎧2=3 は、後攻の Block 6 に先に防がれる
+    expect(m.ctx.enemy.block).toBe(3);
+  });
+});

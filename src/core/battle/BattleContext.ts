@@ -4,6 +4,7 @@ import type { EnemyDef } from '../entities/enemies/EnemyDef';
 import type { EventBus } from '../events/EventBus';
 import type { TurnInfo } from '../rules/initiative';
 import type { RuleSet } from '../rules/RuleSet';
+import type { SkillDef } from '../skills/Skill';
 import type { PlayerInput } from './types';
 
 /** 各ステートが共有するバトルの状態と、ステートから使うサービス群。 */
@@ -17,6 +18,8 @@ export interface BattleContext {
   round: number;
   /** 現ラウンドの行動順。Initiative で決まる。 */
   turn: TurnInfo | null;
+  /** 行動順の決定後に発動が確定したスキル（後攻の Block を先に付与するため、先攻の行動時にまとめて宣言する）。 */
+  plan: Partial<Record<EntityId, SkillDef | null>>;
   /** このラウンドでプレイヤーがサレンダー（防御）を選んだ。 */
   playerSurrendered: boolean;
   winner: Entity | null;

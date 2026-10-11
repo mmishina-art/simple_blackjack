@@ -10,6 +10,7 @@ export class DealState implements BattleState {
     ctx.round++;
     ctx.turn = null;
     ctx.playerSurrendered = false;
+    ctx.plan = {};
     player.hand.clear();
     enemy.hand.clear();
     if (deck.remaining < rules.reshuffleThreshold) {
