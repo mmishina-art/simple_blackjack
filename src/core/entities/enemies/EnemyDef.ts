@@ -6,6 +6,8 @@ export interface EnemyDef {
   id: string;
   name: string;
   maxHp: number;
+  /** 基本攻撃力（ATK）。 */
+  attack: number;
   ai: EnemyAI;
   /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;

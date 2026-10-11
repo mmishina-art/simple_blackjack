@@ -36,6 +36,13 @@ const SHRINE_EFFECTS: ShrineEffect[] = [
     },
   },
   {
+    id: 'might', weight: 2,
+    apply(run) {
+      run.baseAttack += 1;
+      return { id: 'might', title: '力の祠', text: '基本攻撃力（ATK）が 1 上がった。' };
+    },
+  },
+  {
     id: 'light', weight: 3,
     apply(run) {
       run.hp = run.maxHp;

@@ -1,5 +1,5 @@
 import { Hand } from '../cards/Hand';
-import { BASIC_ATTACK_ID } from '../skills/catalog';
+import { BASIC_ATTACK_ID, START_ATTACK } from '../skills/catalog';
 import type { SkillId, SlotTable } from '../skills/Skill';
 
 export type EntityId = 'player' | 'enemy';
@@ -18,6 +18,8 @@ export class Entity {
     public slots: SlotTable = {},
     /** スロット未設定の合計値で発動するスキル（キャラクターごとの初期能力）。 */
     public fallbackSkill: SkillId = BASIC_ATTACK_ID,
+    /** 基本攻撃力（ATK）。攻撃スキルのダメージはこれを基準に ×・＋で決まる。 */
+    public attack = START_ATTACK,
   ) {
     this.hp = maxHp;
   }

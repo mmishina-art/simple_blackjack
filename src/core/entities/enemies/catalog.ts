@@ -44,22 +44,22 @@ const DragonBreath: Relic = {
 };
 
 export const Skeleton: EnemyDef = {
-  id: 'skeleton', name: '骸骨兵', maxHp: 28, ai: new DealerAI(16), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
+  id: 'skeleton', name: '骸骨兵', maxHp: 28, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
   trait: '骨の鎧（受けるダメージ -2）', relics: [BoneArmor],
 };
 
 export const GiantBat: EnemyDef = {
-  id: 'bat', name: '大蝙蝠', maxHp: 26, ai: new DealerAI(18), slots: ENEMY_SLOTS.bat, fallbackSkill: 'bat_nip',
+  id: 'bat', name: '大蝙蝠', maxHp: 26, attack: 3, ai: new DealerAI(18), slots: ENEMY_SLOTS.bat, fallbackSkill: 'bat_nip',
   trait: '超音波（同値なら必ず先攻）。18まで引く危険な賭け', relics: [Ultrasound],
 };
 
 export const Ghoul: EnemyDef = {
-  id: 'ghoul', name: '屍食鬼', maxHp: 30, ai: new DealerAI(17), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
+  id: 'ghoul', name: '屍食鬼', maxHp: 30, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
   trait: '屍の渇き（HPを削るたびに回復）', relics: [CorpseThirst],
 };
 
 export const BlackDragon: EnemyDef = {
-  id: 'dragon', name: '黒竜', maxHp: 46, ai: new DealerAI(18), slots: ENEMY_SLOTS.dragon, fallbackSkill: 'dragon_swipe',
+  id: 'dragon', name: '黒竜', maxHp: 46, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.dragon, fallbackSkill: 'dragon_swipe',
   trait: '竜の息吹（攻撃ダメージ +3）', relics: [DragonBreath],
 };
 

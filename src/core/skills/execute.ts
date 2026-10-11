@@ -1,6 +1,6 @@
 import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
-import { getSkill, hasAttack, slotKeyOf, type SkillDef } from './Skill';
+import { attackValue, getSkill, hasAttack, slotKeyOf, type SkillDef } from './Skill';
 
 /** ダメージ適用。HP より先に Block を減らす。piercing なら Block を無視する。 */
 export function applyDamage(target: Entity, amount: number, piercing = false): { absorbed: number; hpLoss: number } {
@@ -45,7 +45,7 @@ export function applyEffects(
   for (const effect of skill.effects) {
     if (effect.type === 'attack') {
       if (part === 'support') continue;
-      const base = Math.floor(effect.power * (crit ? rules.critMultiplier : 1));
+      const base = Math.floor(attackValue(effect, user.attack) * (crit ? rules.critMultiplier : 1));
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill, crit });
       const damage = Math.max(0, Math.floor(calc.damage));
       const { absorbed, hpLoss } = applyDamage(calc.defender, damage);

@@ -23,7 +23,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
     const head = document.createElement('header');
     head.className = 'loadout__head';
-    head.innerHTML = `<h1>編成</h1><p>${
+    head.innerHTML = `<h1>編成</h1><p class="loadout__atk">基本攻撃力 ATK ${run.baseAttack}</p><p>${
       armed
         ? `「${getSkill(armed).name}」をセットするスロットを選べ`
         : '持ち物のスキルを選び、スロットに置く'
@@ -41,7 +41,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       row.innerHTML = `<span class="lslot__key">${slotLabel(key)}</span>
         <span class="medal medal--sm">${id ? skill.icon : '·'}</span>
         <span class="lslot__name">${id ? skill.name : `${skill.name}（未設定）`}</span>
-        <span class="lslot__desc">${describeSkill(skill)}</span>
+        <span class="lslot__desc">${describeSkill(skill, run.baseAttack)}</span>
         ${locked ? '<span class="lslot__lock">封</span>' : ''}`;
       row.addEventListener('click', () => {
         if (locked) return;
@@ -72,7 +72,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const skill = getSkill(id);
       const chip = document.createElement('button');
       chip.className = `chip${armed === id ? ' chip--armed' : ''}`;
-      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}<small>${describeSkill(skill)}</small></span>`;
+      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}<small>${describeSkill(skill, run.baseAttack)}</small></span>`;
       chip.addEventListener('click', () => {
         armed = armed === id ? null : id;
         selected = null;

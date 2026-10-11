@@ -506,3 +506,13 @@ section { min-width: 0; }
 .notice .btn { align-self: center; min-width: 220px; }
 .notice__text { font-size: 16px !important; line-height: 1.7; color: var(--bone) !important; letter-spacing: 0.06em !important; }
 @media (max-height: 760px) { .lslot { min-height: 32px; } }
+
+/* ---- ATK ---- */
+.atk-chip {
+  font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
+  padding: 1px 8px; color: #f0d9a0; background: linear-gradient(180deg, #5a3a14, #2a1a08);
+  border: 1px solid var(--gold); border-radius: 10px;
+}
+.atk-chip[hidden] { display: none; }
+.loadout__atk { color: var(--gold) !important; font-family: var(--font-display); font-weight: 800; letter-spacing: 0.15em !important; }
+.slots__caption { min-height: 2.6em; line-height: 1.3; }

@@ -1,6 +1,6 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
-import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL } from '../core/skills/catalog';
+import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import type { SkillId, SlotKey, SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { STAGE_1 } from '../map/stage1';
@@ -20,6 +20,8 @@ export interface RunState {
   cleared: string[];
   maxHp: number;
   hp: number;
+  /** 基本攻撃力（ATK）。攻撃スキルのダメージの基準。 */
+  baseAttack: number;
   /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;
   /** スロット未設定の合計値で発動するスキル（キャラクターごとの初期能力）。 */
@@ -36,7 +38,7 @@ export const FIXED_SLOT: SlotKey = 21;
 export function createRun(map: StageMap = STAGE_1): RunState {
   return {
     map, position: map.start, cleared: [],
-    maxHp: START_MAX_HP, hp: START_MAX_HP,
+    maxHp: START_MAX_HP, hp: START_MAX_HP, baseAttack: START_ATTACK,
     slots: { ...DEFAULT_PLAYER_SLOTS }, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
     inventory: [], relics: [],
   };

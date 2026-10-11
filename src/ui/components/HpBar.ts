@@ -5,6 +5,7 @@ export class HpBar {
   private name = document.createElement('span');
   private blockChip = document.createElement('span');
   private left = document.createElement('span');
+  private atkChip = document.createElement('span');
 
   constructor(variant: 'player' | 'enemy') {
     this.el.className = `hpbar hpbar--${variant}`;
@@ -20,9 +21,11 @@ export class HpBar {
     this.label.className = 'hpbar__label';
     this.blockChip.className = 'block-chip';
     this.blockChip.hidden = true;
+    this.atkChip.className = 'atk-chip';
+    this.atkChip.title = '基本攻撃力（ATK）。攻撃スキルのダメージの基準';
     const right = document.createElement('span');
     right.className = 'hpbar__right';
-    right.append(this.blockChip, this.label);
+    right.append(this.blockChip, this.atkChip, this.label);
     row.append(this.left, right);
     this.el.append(row, track);
   }
@@ -32,10 +35,12 @@ export class HpBar {
     this.left.append(el);
   }
 
-  update(name: string, hp: number, maxHp: number, block = 0): void {
+  update(name: string, hp: number, maxHp: number, block = 0, attack?: number): void {
     this.name.textContent = name;
     this.label.textContent = `HP ${hp} / ${maxHp}`;
     this.fill.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
+    this.atkChip.hidden = attack === undefined;
+    if (attack !== undefined) this.atkChip.textContent = `ATK ${attack}`;
     this.blockChip.hidden = block <= 0;
     this.blockChip.textContent = `守 ${block}`;
   }

@@ -102,6 +102,7 @@ function startBattle(tile: TileDef): void {
     playerHp: run.hp,
     playerSlots: run.slots,
     playerFallback: run.fallbackSkill,
+    playerAttack: run.baseAttack,
     relics: run.relics,
   });
   unbindSounds = bindBattleSounds(machine, audio);
@@ -142,7 +143,7 @@ function offerSkillReward(): void {
   showChoiceScreen(root, {
     heading: 'スキル獲得',
     sub: 'ひとつ選び、スロットにセットする',
-    options: ids.map((id) => ({ icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkill(getSkill(id)) })),
+    options: ids.map((id) => ({ icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkill(getSkill(id), run.baseAttack) })),
     onPick(i) {
       run.inventory.push(ids[i]);
       showLoadout(root, run, { armed: ids[i], onClose: () => showMapScreen() });

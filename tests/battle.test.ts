@@ -131,7 +131,7 @@ describe('ラウンドの行動順', () => {
 
   it('未設定スロットでは基本攻撃が発動する', async () => {
     const m = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 40 }); // 13 vs 7
-    expect(m.ctx.enemy.hp).toBe(37); // 基本攻撃3
+    expect(m.ctx.enemy.hp).toBe(36); // 通常攻撃 = ATK×1 = 4
   });
 });
 

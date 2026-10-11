@@ -1,6 +1,7 @@
 /** スキルの効果。判別共用体なので、バフやドロー等を後から追加できる。 */
 export type SkillEffect =
-  | { type: 'attack'; power: number }
+  /** 基本攻撃力（ATK）を基準にしたダメージ: floor(ATK × mult) + add。 */
+  | { type: 'attack'; mult: number; add?: number }
   | { type: 'heal'; amount: number }
   | { type: 'block'; amount: number };
 
@@ -63,10 +64,24 @@ export function hasAttack(skill: SkillDef): boolean {
   return skill.effects.some((e) => e.type === 'attack');
 }
 
-/** 「攻撃 4」「Block 6」のような効果の要約。 */
-export function describeSkill(skill: SkillDef): string {
+/** 攻撃効果の基本ダメージ（クリティカル前）。 */
+export function attackValue(effect: { mult: number; add?: number }, atk: number): number {
+  return Math.floor(atk * effect.mult) + (effect.add ?? 0);
+}
+
+/** 「ATK×3+2」のような計算式の表記。 */
+export function attackFormula(effect: { mult: number; add?: number }): string {
+  const mult = effect.mult === 1 ? 'ATK' : `ATK×${effect.mult}`;
+  return effect.add ? `${mult}+${effect.add}` : mult;
+}
+
+/** 「攻撃 ATK×3+2＝14」「Block 6」のような効果の要約。atk を渡すと実数値も併記する。 */
+export function describeSkill(skill: SkillDef, atk?: number): string {
   const body = skill.effects
-    .map((e) => (e.type === 'attack' ? `攻撃 ${e.power}` : e.type === 'block' ? `Block ${e.amount}` : `回復 ${e.amount}`))
+    .map((e) => {
+      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${atk !== undefined ? `＝${attackValue(e, atk)}` : ''}`;
+      return e.type === 'block' ? `Block ${e.amount}` : `回復 ${e.amount}`;
+    })
     .join(' + ');
   return skill.alwaysCrit ? `${body}・必ず会心` : body;
 }

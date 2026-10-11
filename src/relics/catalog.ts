@@ -6,11 +6,9 @@ export const reduceDamage = (damage: number, by: number): number => (damage > 0 
 
 export const Whetstone: Relic = {
   id: 'whetstone', name: '血塗れの砥石', icon: '砥',
-  description: '与える攻撃ダメージ +3',
-  apply({ bus, player }) {
-    bus.on('onDamageCalculated', (p) => {
-      if (p.attacker === player && p.damage > 0) return { ...p, damage: p.damage + 3 };
-    });
+  description: '基本攻撃力（ATK）+1（すべての攻撃スキルに効く）',
+  apply({ player }) {
+    player.attack += 1;
   },
 };
 

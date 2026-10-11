@@ -5,6 +5,7 @@ import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
+import { formatPreview, previewSkill } from '../core/skills/preview';
 
 /** 縦画面レイアウト: 上=敵 / 中=ログ / 下=プレイヤー / 最下=ボタン。 */
 export class BattleView {
@@ -136,9 +137,13 @@ export class BattleView {
 
   private render(): void {
     const { ctx } = this.machine;
-    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block);
-    this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block);
-    this.slotStrip.update(ctx.player, ctx.rules);
+    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, ctx.enemy.attack);
+    this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block, ctx.player.attack);
+    const total = ctx.player.hand.total(ctx.rules);
+    const preview = ctx.player.hand.size > 0 && total <= ctx.rules.bustLimit
+      ? formatPreview(previewSkill(ctx, ctx.player, ctx.enemy, total), ctx.enemy.block)
+      : undefined;
+    this.slotStrip.update(ctx.player, ctx.rules, preview);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
     this.roundEl.textContent =

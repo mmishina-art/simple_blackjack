@@ -27,6 +27,8 @@ export interface BattleOptions {
   playerSlots?: SlotTable;
   /** スロット未設定の合計値で発動するスキル（キャラクターごとの初期能力）。 */
   playerFallback?: SkillId;
+  /** プレイヤーの基本攻撃力（ATK）。省略時は初期値。 */
+  playerAttack?: number;
   rules?: Partial<RuleSet>;
   rng?: Rng;
   relics?: Relic[];
@@ -53,9 +55,9 @@ export class BattleMachine {
     const pace = opts.pace ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
     const player = new Entity(
       'player', 'あなた', opts.playerMaxHp ?? 60,
-      { ...(opts.playerSlots ?? DEFAULT_PLAYER_SLOTS) }, opts.playerFallback ?? DEFAULT_PLAYER_FALLBACK,
+      { ...(opts.playerSlots ?? DEFAULT_PLAYER_SLOTS) }, opts.playerFallback ?? DEFAULT_PLAYER_FALLBACK, opts.playerAttack,
     );
-    const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp, { ...opts.enemy.slots }, opts.enemy.fallbackSkill);
+    const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp, { ...opts.enemy.slots }, opts.enemy.fallbackSkill, opts.enemy.attack);
     if (opts.playerHp !== undefined) player.hp = Math.min(opts.playerHp, player.maxHp);
 
     this.ctx = {
