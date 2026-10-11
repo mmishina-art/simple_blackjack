@@ -4,6 +4,7 @@ import type { PlayerInput } from '../src/core/battle/types';
 import { DealerAI } from '../src/core/entities/enemies/ai/DealerAI';
 import { Slime } from '../src/core/entities/enemies/Slime';
 import { seededRng } from '../src/core/util/Rng';
+import { makeCard } from '../src/core/cards/Card';
 import { noWait, playRound } from './helpers';
 
 /** 入力待ちのたびに policy で入力を自動送信して最後まで走らせる。 */
@@ -93,7 +94,7 @@ describe('ラウンドの行動順', () => {
   it('合計値が大きい方が先攻: 先攻の攻撃 → 後攻の攻撃', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'] }); // 20 vs 18
     expect(m.ctx.turn).toMatchObject({ mode: 'sequential', first: 'player', second: 'enemy' });
-    expect(m.ctx.enemy.hp).toBe(2);   // 16 - 大攻撃14
+    expect(m.ctx.enemy.hp).toBe(6);   // 16 - 大攻撃(ATK+5=10)
     expect(m.ctx.player.hp).toBe(52); // 60 - 溶解8
   });
 
@@ -103,16 +104,16 @@ describe('ラウンドの行動順', () => {
     expect(m.ctx.player.hp).toBe(60);
   });
 
-  it('プレイヤーがバースト: スキル不発、敵が先制クリティカル', async () => {
+  it('プレイヤーがバースト: スキルは発動しないだけ。敵は通常どおり行動する（クリティカルなし）', async () => {
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] }); // 25 vs 18
     expect(m.ctx.turn).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null });
-    expect(m.ctx.player.hp).toBe(60 - 12);  // 溶解8 × 1.5
+    expect(m.ctx.player.hp).toBe(60 - 8);   // 溶解8（クリティカルにならない）
     expect(m.ctx.enemy.hp).toBe(16);        // プレイヤーは行動不能
   });
 
-  it('敵がバースト: プレイヤーが先制クリティカル', async () => {
+  it('敵がバースト: 敵のスキルは発動しない。プレイヤーは通常どおり行動する（クリティカルなし）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 21); // 大攻撃14 × 1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 10); // 大攻撃 ATK+5
     expect(m.ctx.player.hp).toBe(60);
   });
 
@@ -124,28 +125,29 @@ describe('ラウンドの行動順', () => {
 
   it('スロット21は会心の一撃（必ずクリティカル）。ブラックジャックでも二重にはならない', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 21); // 攻撃14 × 1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 22); // ATK×3 = 15 → 会心 ×1.5
     const bj = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(bj.ctx.enemy.hp).toBe(40 - 21);
+    expect(bj.ctx.enemy.hp).toBe(40 - 22);
   });
 
   it('未設定スロットでは基本攻撃が発動する', async () => {
     const m = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 40 }); // 13 vs 7
-    expect(m.ctx.enemy.hp).toBe(36); // 通常攻撃 = ATK×1 = 4
+    expect(m.ctx.enemy.hp).toBe(35); // 通常攻撃 = ATK×1 = 5
   });
 });
 
 describe('同時攻撃（同値）', () => {
-  it('回復 → 攻撃の順で処理される', async () => {
+  it('防御 → 攻撃の順で処理される（同時の Block が同時の攻撃を防ぐ）', async () => {
     const m = await playRound({ player: ['A', '7'], enemyHand: ['9', '9'], playerHp: 50 }); // 18 vs 18
     expect(m.ctx.turn?.mode).toBe('simultaneous');
-    expect(m.ctx.player.hp).toBe(50 + 6 - 8);
+    expect(m.ctx.player.hp).toBe(50); // 盾 Block 8 で溶解8を完全に防ぐ
+    expect(m.ctx.player.block).toBe(0);
   });
 
-  it('同時のシールドは同時の攻撃を防ぐ。Block はラウンド終了で消える', async () => {
+  it('同時のシールドは同時の攻撃を防ぎ、余った Block は持ち越される', async () => {
     const m = await playRound({ player: ['7', '8'], enemyHand: ['8', '7'] }); // 15 vs 15
     expect(m.ctx.player.hp).toBe(60); // 敵の酸5はBlock6で吸収
-    expect(m.ctx.player.block).toBe(0);
+    expect(m.ctx.player.block).toBe(1); // 残り1は次のラウンドへ
   });
 
   it('相打ちはプレイヤー敗北', async () => {
@@ -155,12 +157,12 @@ describe('同時攻撃（同値）', () => {
 });
 
 describe('Block とサレンダー', () => {
-  it('先攻の Block が後攻の攻撃を防ぎ、ラウンド終了でリセットされる', async () => {
+  it('先攻の Block が後攻の攻撃を防ぎ、余りは持ち越される', async () => {
     const { Skeleton } = await import('../src/core/entities/enemies/catalog');
     const m = await playRound({ player: ['6', '8'], enemyHand: ['8', '8'], enemy: Skeleton }); // 14 vs 16
     expect(m.ctx.turn?.first).toBe('enemy');
-    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 基本攻撃3は盾(6)で防がれる
-    expect(m.ctx.enemy.block).toBe(0);
+    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 通常攻撃5 - 骨の鎧2 = 3 は盾(6)で防がれる
+    expect(m.ctx.enemy.block).toBe(3);
   });
 
   it('サレンダー: Block 5 を得て、敵の攻撃を受け止める。自分のスキルは不発', async () => {
@@ -179,5 +181,20 @@ describe('Block とサレンダー', () => {
   it('サレンダー中に敵がバーストしたら誰も行動しない', async () => {
     const m = await playRound({ player: ['K', '5'], enemyHand: ['K', 'Q', '5'], from: 'Surrender' });
     expect(m.ctx.player.hp).toBe(60);
+  });
+});
+
+describe('Block の持ち越し', () => {
+  it('Block は戦闘中ラウンドをまたいで残り、次のラウンドの攻撃も吸収する', async () => {
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], stopAt: ['Deal'] }); // 15 vs 14: 盾6, 敵の酸5
+    expect(m.ctx.player.block).toBe(1);
+    // 次のラウンド: プレイヤーが防御（Block+5 → 6）、敵の溶解8
+    m.ctx.player.hand.clear();
+    m.ctx.enemy.hand.clear();
+    ['K', '5'].forEach((r) => m.ctx.player.hand.add(makeCard(r as never, 'S')));
+    ['9', '9'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as never, 'H')));
+    await m.runFrom('Surrender', ['Deal']);
+    expect(m.ctx.player.block).toBe(0);
+    expect(m.ctx.player.hp).toBe(60 - 2); // 持ち越し1 + サレンダー5 = 6、溶解8 → 2通る
   });
 });

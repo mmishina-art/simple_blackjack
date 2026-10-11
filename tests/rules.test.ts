@@ -114,11 +114,11 @@ describe('行動順（decideInitiative）', () => {
   it('同値は同時攻撃', () => {
     expect(decideInitiative({ ...base, playerTotal: 18, enemyTotal: 18 }).mode).toBe('simultaneous');
   });
-  it('バーストした側は行動不能、相手が先制クリティカル', () => {
+  it('バーストした側はスキルが発動しない。相手は通常どおり行動する（クリティカルなし）', () => {
     const t = decideInitiative({ ...base, playerTotal: 25, enemyTotal: 10, playerBust: true });
-    expect(t).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null, crit: { enemy: true, player: false } });
+    expect(t).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null, crit: { enemy: false, player: false } });
     const u = decideInitiative({ ...base, playerTotal: 10, enemyTotal: 24, enemyBust: true });
-    expect(u).toMatchObject({ mode: 'bustSkip', first: 'player', second: null, crit: { player: true, enemy: false } });
+    expect(u).toMatchObject({ mode: 'bustSkip', first: 'player', second: null, crit: { player: false, enemy: false } });
   });
   it('両者バーストは誰も行動しない', () => {
     expect(decideInitiative({ ...base, playerTotal: 25, enemyTotal: 24, playerBust: true, enemyBust: true }).mode).toBe('none');

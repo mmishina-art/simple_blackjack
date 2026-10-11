@@ -31,7 +31,7 @@ export class InitiativeState implements BattleState {
         break;
       case 'bustSkip': {
         const bust = turn.first === 'player' ? enemy : player;
-        ctx.log(`${bust.name}はバースト！ 行動不能。${ctx.entityOf(turn.first!).name}の先制攻撃（クリティカル）`);
+        ctx.log(`${bust.name}はバースト！ スキルは発動しない。${ctx.entityOf(turn.first!).name}だけが行動する`);
         break;
       }
       case 'defend':

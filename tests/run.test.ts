@@ -202,14 +202,14 @@ describe('マスのイベント', () => {
     expect(offerRelics(run, seededRng(1))).toHaveLength(3);
     run.relics.push(Whetstone);
     expect(offerRelics(run, seededRng(1)).some((r) => r.id === 'whetstone')).toBe(false);
-    expect(RELIC_POOL).toHaveLength(10);
+    expect(RELIC_POOL).toHaveLength(12);
   });
 });
 
 describe('レリックの効果', () => {
-  it('砥石: 与える攻撃ダメージ +3', async () => {
+  it('砥石: 基本攻撃力 +2（大攻撃 ATK+5 が 10 → 12）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40, relics: [Whetstone] });
-    expect(m.ctx.enemy.hp).toBe(40 - 17);
+    expect(m.ctx.enemy.hp).toBe(40 - 12);
   });
 
   it('胸当て: 受ける攻撃ダメージ -2', async () => {
@@ -222,14 +222,14 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(50 + 3 - 8);
   });
 
-  it('身代わりの人形: 最初のバーストで敵のクリティカルが消える', async () => {
+  it('身代わりの人形: 最初のバーストでは敵も行動しない', async () => {
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [ScapegoatDoll] });
-    expect(m.ctx.player.hp).toBe(60 - 8);
+    expect(m.ctx.player.hp).toBe(60);
   });
 
   it('運命の指輪: 同時攻撃のとき自分の攻撃がクリティカル', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q'], enemyHp: 40, relics: [FateRing] });
-    expect(m.ctx.enemy.hp).toBe(40 - 21);
+    expect(m.ctx.enemy.hp).toBe(40 - 15); // 大攻撃10 ×1.5
   });
 
   it('疾風の靴: 同値でも先攻になる', async () => {
@@ -250,10 +250,26 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(38);
   });
 
-  it('覇王の宝珠: 会心の一撃が覇王の一撃（攻撃16・必ず会心 + Block 8）に変わる', async () => {
+  it('覇王の宝珠: 会心の一撃が覇王の一撃（ATK×4・必ず会心 + Block 8）に変わる', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['3', '4'], enemyHp: 40, relics: [OverlordOrb], stopAt: ['CheckDeath'] });
-    expect(m.ctx.enemy.hp).toBe(40 - 24); // 16 × 1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 30); // ATK×4=20 → 会心 ×1.5
     expect(m.ctx.player.block).toBe(8 - 3); // 敵の基本攻撃3は Block で吸収
+  });
+});
+
+describe('レリックで変わるスキル効果', () => {
+  it('剛力の腕輪: 大攻撃が ATK×2+5 になる', async () => {
+    const { Bracer } = await import('../src/relics/catalog');
+    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 60, relics: [Bracer] });
+    expect(60 - m.ctx.enemy.hp).toBe(15);
+  });
+
+  it('巨人の血: 小攻撃（11以下）が ATK×0.5 から ATK×1 になる', async () => {
+    const { TitanBlood } = await import('../src/relics/catalog');
+    const base = await playRound({ player: ['3', '4'], enemyHand: ['9', '9'], enemyHp: 60 });
+    const buffed = await playRound({ player: ['3', '4'], enemyHand: ['9', '9'], enemyHp: 60, relics: [TitanBlood] });
+    expect(60 - base.ctx.enemy.hp).toBe(2);   // 後攻の小攻撃 = ATK×0.5
+    expect(60 - buffed.ctx.enemy.hp).toBe(5); // ATK×1
   });
 });
 
@@ -262,7 +278,7 @@ describe('敵の特性', () => {
 
   it('骸骨兵: 骨の鎧（受けるダメージ -2）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemy: enemy('skeleton') });
-    expect(m.ctx.enemy.hp).toBe(28 - 12);
+    expect(m.ctx.enemy.hp).toBe(28 - 8); // 大攻撃10 - 骨の鎧2
   });
 
   it('大蝙蝠: 同値なら必ず敵が先攻', async () => {
@@ -273,11 +289,11 @@ describe('敵の特性', () => {
   it('屍食鬼: HPを削るたびHP+4', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 20 });
     expect(m.ctx.enemy.hp).toBe(24);
-    expect(m.ctx.player.hp).toBe(60 - 12 + 6);
+    expect(m.ctx.player.hp).toBe(60 - 12); // 貪り喰う ATK4×3
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon') });
-    expect(m.ctx.player.hp).toBe(60 - (17 + 3) + 6);
+    expect(m.ctx.player.hp).toBe(60 - (17 + 3)); // 業火 ATK5×3+2 + 息吹3
   });
 });

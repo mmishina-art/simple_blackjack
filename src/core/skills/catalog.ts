@@ -6,23 +6,23 @@ const atk = (id: string, name: string, mult: number, add = 0, icon = '攻'): Ski
 
 // ---- プレイヤーのスキル ----
 export const BASIC_ATTACK_ID: SkillId = atk('basic_attack', '通常攻撃', 1, 0, '撃').id;
-atk('small_attack', '小攻撃', 1, 1);
-atk('big_attack', '大攻撃', 3, 2, '剛');
-atk('jab', '突き', 1, 2, '突');
-atk('slash', '斬撃', 2, 0, '斬');
-atk('heavy', '重撃', 2, 3, '重');
-atk('smash', '渾身の一撃', 4, 0, '渾');
+atk('small_attack', '小攻撃', 0.5, 0);
+atk('big_attack', '大攻撃', 1, 5, '剛');
+atk('jab', '突き', 1, 1, '突');
+atk('slash', '斬撃', 1, 3, '斬');
+atk('heavy', '重撃', 2, 1, '重');
+atk('smash', '渾身の一撃', 3, 0, '渾');
 defineSkill({ id: 'guard', name: 'シールド', icon: '守', effects: [{ type: 'block', amount: 6 }] });
 defineSkill({ id: 'bulwark', name: '鉄壁の構え', icon: '壁', effects: [{ type: 'block', amount: 10 }] });
-defineSkill({ id: 'mend', name: '回復', icon: '癒', effects: [{ type: 'heal', amount: 6 }] });
+defineSkill({ id: 'shield', name: '盾', icon: '盾', effects: [{ type: 'block', amount: 8 }] });
 defineSkill({ id: 'recover', name: '治癒', icon: '治', effects: [{ type: 'heal', amount: 10 }] });
 defineSkill({
-  id: 'shield_bash', name: '盾打ち', icon: '盾',
-  effects: [{ type: 'attack', mult: 1, add: 1 }, { type: 'block', amount: 5 }],
+  id: 'shield_bash', name: '盾打ち', icon: '殴',
+  effects: [{ type: 'attack', mult: 1 }, { type: 'block', amount: 5 }],
 });
 defineSkill({
   id: 'drain', name: '吸精', icon: '吸',
-  effects: [{ type: 'attack', mult: 1.5 }, { type: 'heal', amount: 4 }],
+  effects: [{ type: 'attack', mult: 1, add: 1 }, { type: 'heal', amount: 4 }],
 });
 defineSkill({
   id: 'rally', name: '鼓舞', icon: '鼓',
@@ -32,7 +32,7 @@ defineSkill({
 /** スロット21に固定されるスキル。必ずクリティカルになる（封印の鍵のレリックで付け替え可能）。 */
 export const CRITICAL_STRIKE_ID: SkillId = defineSkill({
   id: 'critical_strike', name: '会心の一撃', icon: '会', alwaysCrit: true,
-  effects: [{ type: 'attack', mult: 3, add: 2 }],
+  effects: [{ type: 'attack', mult: 3 }],
 }).id;
 /** 覇王の宝珠で会心の一撃が置き換わるスキル。 */
 defineSkill({
@@ -43,19 +43,19 @@ defineSkill({
 /** 報酬として出現するスキル。 */
 export const SKILL_POOL: readonly SkillId[] = [
   'small_attack', 'big_attack', 'jab', 'slash', 'heavy', 'smash',
-  'guard', 'bulwark', 'mend', 'recover', 'shield_bash', 'drain', 'rally',
+  'guard', 'shield', 'bulwark', 'recover', 'shield_bash', 'drain', 'rally',
 ];
 
 /** プレイヤーの初期スロット。21 は会心の一撃で固定。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
 export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   11: 'small_attack',
   15: 'guard',
-  18: 'mend',
+  18: 'shield',
   20: 'big_attack',
   21: CRITICAL_STRIKE_ID,
 };
 /** プレイヤーの初期の基本攻撃力。 */
-export const START_ATTACK = 4;
+export const START_ATTACK = 5;
 export const DEFAULT_PLAYER_FALLBACK: SkillId = BASIC_ATTACK_ID;
 
 // ---- 敵 ----

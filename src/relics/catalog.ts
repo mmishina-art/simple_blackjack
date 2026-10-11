@@ -1,4 +1,4 @@
-import { getSkill } from '../core/skills/Skill';
+import { getSkill, type SkillDef } from '../core/skills/Skill';
 import type { Relic } from './Relic';
 
 /** ダメージが正のときだけ軽減する（最低1）。0 のダメージは増やさない。 */
@@ -6,9 +6,9 @@ export const reduceDamage = (damage: number, by: number): number => (damage > 0 
 
 export const Whetstone: Relic = {
   id: 'whetstone', name: '血塗れの砥石', icon: '砥',
-  description: '基本攻撃力（ATK）+1（すべての攻撃スキルに効く）',
+  description: '基本攻撃力（ATK）+2（すべての攻撃スキルに効く）',
   apply({ player }) {
-    player.attack += 1;
+    player.attack += 2;
   },
 };
 
@@ -34,13 +34,13 @@ export const VampireFang: Relic = {
 
 export const ScapegoatDoll: Relic = {
   id: 'doll', name: '身代わりの人形', icon: '偶',
-  description: '各バトルで最初にバーストしたとき、敵のクリティカルを無効にする',
+  description: '各バトルで最初にバーストしたとき、敵も行動しない',
   apply({ bus }) {
     let used = false;
     bus.on('onInitiativeDecided', (p) => {
-      if (!used && p.playerBust && p.turn.crit.enemy) {
+      if (!used && p.playerBust && p.turn.mode === 'bustSkip') {
         used = true;
-        return { ...p, turn: { ...p.turn, crit: { ...p.turn.crit, enemy: false } } };
+        return { ...p, turn: { mode: 'none', first: null, second: null, crit: { player: false, enemy: false } } };
       }
     });
   },
@@ -104,7 +104,30 @@ export const SealKey: Relic = {
   apply() {},
 };
 
+/** 発動するスキルの効果をレリックで書き換える（スロットのスキルは同じまま、効果だけが変わる）。 */
+function reshapeSkill(bus: Parameters<Relic['apply']>[0]['bus'], player: Parameters<Relic['apply']>[0]['player'], skillId: string, reshape: (s: SkillDef) => SkillDef): void {
+  bus.on('onSkillActivated', (p) => {
+    if (p.user === player && p.skill?.id === skillId) return { ...p, skill: reshape(p.skill) };
+  });
+}
+
+export const Bracer: Relic = {
+  id: 'bracer', name: '剛力の腕輪', icon: '腕',
+  description: '大攻撃（剛）が「ATK+5」から「ATK×2+5」に変わる',
+  apply({ bus, player }) {
+    reshapeSkill(bus, player, 'big_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 2, add: 5 }] }));
+  },
+};
+
+export const TitanBlood: Relic = {
+  id: 'titan', name: '巨人の血', icon: '巨',
+  description: '小攻撃（11以下）が「ATK×0.5」から「ATK×1」に変わる',
+  apply({ bus, player }) {
+    reshapeSkill(bus, player, 'small_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 1, add: 0 }] }));
+  },
+};
+
 /** 報酬として出現するレリックの一覧。 */
 export const RELIC_POOL: readonly Relic[] = [
-  Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle, OverlordOrb, SealKey,
+  Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle, OverlordOrb, SealKey, Bracer, TitanBlood,
 ];

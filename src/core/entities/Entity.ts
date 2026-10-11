@@ -6,7 +6,7 @@ export type EntityId = 'player' | 'enemy';
 
 export class Entity {
   hp: number;
-  /** ラウンド終了時にリセットされるシールド値。ダメージは HP より先に Block を減らす。 */
+  /** シールド値。ダメージは HP より先に Block を減らす。戦闘中は持ち越され、戦闘が終わると消える。 */
   block = 0;
   readonly hand = new Hand();
 

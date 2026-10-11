@@ -516,3 +516,24 @@ section { min-width: 0; }
 .atk-chip[hidden] { display: none; }
 .loadout__atk { color: var(--gold) !important; font-family: var(--font-display); font-weight: 800; letter-spacing: 0.15em !important; }
 .slots__caption { min-height: 2.6em; line-height: 1.3; }
+
+/* ---- Enemy info sheet ---- */
+.top-row__right { display: inline-flex; align-items: center; gap: 6px; }
+.info-btn {
+  min-height: 30px; padding: 0 12px; cursor: pointer;
+  font-family: var(--font-body); font-size: 12px; letter-spacing: 0.15em; color: var(--gold);
+  background: transparent; border: 1px solid var(--gold-dim); border-radius: 14px;
+}
+.info-layer {
+  position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
+  background: rgba(5, 3, 2, 0.88); padding: 12px;
+}
+.info-layer[hidden] { display: none; }
+.enemy-info { width: 100%; display: flex; flex-direction: column; gap: 8px; max-height: 100%; }
+.enemy-info__head h2 { margin: 0; font-size: 20px; letter-spacing: 0.15em; color: var(--gold); text-align: center; }
+.enemy-info__head p { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--bone-dim); text-align: center; }
+.enemy-info__list { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+.lslot--info { cursor: default; grid-template-columns: 38px 28px minmax(0, 1fr) auto; }
+.enemy-info__close { min-height: 52px; }
+.info-btn { white-space: nowrap; flex: none; }
+.top-row .round { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

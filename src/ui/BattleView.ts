@@ -3,6 +3,7 @@ import type { BattleMachine } from '../core/battle/BattleMachine';
 import { EnemyView, floatText } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
+import { buildEnemyInfo } from './components/EnemyInfo';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
 import { formatPreview, previewSkill } from '../core/skills/preview';
@@ -22,6 +23,7 @@ export class BattleView {
   private surrenderBtn = document.createElement('button');
   private muteBtn = document.createElement('button');
   private overlay = document.createElement('div');
+  private infoLayer = document.createElement('div');
   private playerArea: HTMLElement;
   private unsubs: Array<() => void> = [];
   private container: HTMLElement;
@@ -46,7 +48,14 @@ export class BattleView {
       audio.sfx('click');
       this.renderMute();
     });
-    const topRow = section('top-row', this.roundEl, this.muteBtn);
+    const infoBtn = document.createElement('button');
+    infoBtn.className = 'info-btn';
+    infoBtn.textContent = '敵の技';
+    infoBtn.addEventListener('click', () => this.toggleEnemyInfo(true));
+    const topRight = document.createElement('span');
+    topRight.className = 'top-row__right';
+    topRight.append(infoBtn, this.muteBtn);
+    const topRow = section('top-row', this.roundEl, topRight);
     const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemyView.el, this.enemyHand.el);
     this.logEl.className = 'log';
     this.logEl.setAttribute('aria-live', 'polite');
@@ -67,7 +76,9 @@ export class BattleView {
     this.overlay.className = 'overlay';
     this.overlay.hidden = true;
 
-    this.container.append(enemyArea, this.logEl, this.playerArea, actions, this.overlay);
+    this.infoLayer.className = 'info-layer';
+    this.infoLayer.hidden = true;
+    this.container.append(enemyArea, this.logEl, this.playerArea, actions, this.overlay, this.infoLayer);
     root.replaceChildren(this.container);
 
     this.unsubs.push(
@@ -85,6 +96,15 @@ export class BattleView {
   destroy(): void {
     this.unsubs.forEach((u) => u());
     this.container.remove();
+  }
+
+  /** 敵の ATK・特性・全スキルの数値を確認するシート。 */
+  private toggleEnemyInfo(show: boolean): void {
+    this.infoLayer.hidden = !show;
+    if (show) {
+      const { ctx } = this.machine;
+      this.infoLayer.replaceChildren(buildEnemyInfo(ctx.enemy, ctx.enemyDef, () => this.toggleEnemyInfo(false)));
+    }
   }
 
   private act(input: 'hit' | 'stand' | 'surrender'): void {
