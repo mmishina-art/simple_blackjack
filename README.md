@@ -11,6 +11,12 @@ npm test           # Core のユニットテスト (Vitest)
 npm run build      # 型チェック + 本番ビルド (PWA の SW / manifest 生成)
 ```
 
+## 公開（GitHub Pages）
+
+`.github/workflows/pages.yml` が push のたびにテスト・ビルドして Pages へデプロイする。
+初回のみ、リポジトリの Settings → Pages → Build and deployment → Source を **GitHub Actions** にする。
+公開URL: `https://<ユーザー名>.github.io/simple_blackjack/`
+
 ## 構成
 
 | パス | 役割 |
