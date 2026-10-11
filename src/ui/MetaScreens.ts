@@ -6,6 +6,7 @@ import {
   selectableStartingSkills, setStartingSkill, STARTER_SKILLS, startingCapacity, STARTING_SLOT_KEYS, UPGRADES,
   upgradeLevel, validStartingSkills, type MetaState,
 } from '../meta/Meta';
+import { slotLook } from '../core/skills/look';
 import { RELIC_POOL } from '../relics/catalog';
 import { rarityBadge, rarityClass } from './rarity';
 
@@ -113,7 +114,7 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
     for (const key of STARTING_SLOT_KEYS) {
       const id = picked[key];
       const skill = id ? getSkill(id) : null;
-      const row = el('button', `lslot${skill ? ` lslot--set ${rarityClass(rarityOfSkill(skill))}` : ' lslot--set'}${armed ? ' lslot--target' : ''}`,
+      const row = el('button', `lslot lslot--set ${rarityClass(slotLook(key, skill).rarity)}${armed ? ' lslot--target' : ''}`,
         `<span class="lslot__key">${slotLabel(key)}</span><span class="medal medal--sm">${skill ? skill.icon : '攻'}</span>
          <span class="lslot__name">${skill ? skill.name : '通常攻撃・空き'}</span>
          <span class="lslot__desc">${skill ? describeSkill(skill) : ''}</span>`);

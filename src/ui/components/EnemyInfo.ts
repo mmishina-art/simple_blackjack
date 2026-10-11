@@ -1,7 +1,9 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { EnemyDef } from '../../core/entities/enemies/EnemyDef';
 import { BASIC_ICON, fallbackLabel } from '../../core/skills/Skill';
+import { slotLook } from '../../core/skills/look';
 import { describeSlotTable } from '../../core/skills/table';
+import { rarityClass } from '../rarity';
 
 /** 敵の ATK・特性・全スロットのスキル（実数値つき）を一覧するシート。 */
 export function buildEnemyInfo(enemy: Entity, def: EnemyDef, onClose: () => void): HTMLElement {
@@ -14,7 +16,8 @@ export function buildEnemyInfo(enemy: Entity, def: EnemyDef, onClose: () => void
   list.className = 'enemy-info__list';
   for (const row of describeSlotTable(enemy)) {
     const el = document.createElement('div');
-    el.className = `lslot lslot--info${row.isFallback ? '' : ' lslot--set'}`;
+    const look = slotLook(row.key, row.isFallback ? null : row.skill);
+    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ' lslot--special' : ''}`;
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>
       <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}</span>

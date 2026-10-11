@@ -92,6 +92,10 @@ atk('dragon_breath', '火炎の息', 2, 3, '剛');
 atk('dragon_inferno', '業火', 3, 2, '絶');
 atk('dragon_apocalypse', '終焉の炎', 4, 2, '滅');
 
+// 敵のスキルのレア度: 強い技ほど高い（スロット表の色で技の格が分かる）
+assignRarity(['slime_melt', 'skel_slash', 'bat_drain', 'bat_dive', 'ghoul_rend', 'dragon_breath'], 'rare');
+assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dragon_inferno', 'dragon_apocalypse'], 'legend');
+
 export const ENEMY_SLOTS = {
   slime: slotsFromRanges([[14, 16, 'slime_acid'], [17, 19, 'slime_melt'], [20, 21, 'slime_engulf']]),
   skeleton: slotsFromRanges([[15, 16, 'skel_guard'], [17, 19, 'skel_slash'], [20, 21, 'skel_cleave']]),

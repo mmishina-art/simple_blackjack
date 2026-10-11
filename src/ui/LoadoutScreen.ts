@@ -1,6 +1,7 @@
 import { audio } from '../audio/AudioManager';
 import { effectiveSlotSkills } from '../run/effective';
 import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { slotLook } from '../core/skills/look';
 import { rarityBadge, rarityClass } from './rarity';
 import { equipSkill, isSlotLocked, unequipSlot, type RunState } from '../run/Run';
 
@@ -52,13 +53,14 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
       if (locked) {
         const fixed = document.createElement('div');
-        fixed.className = 'lslot lslot--fixed';
+        fixed.className = `lslot lslot--fixed${slotLook(key, null).special ? ' lslot--special' : ''}`;
         fixed.innerHTML = inner;
         slotList.append(fixed);
         continue;
       }
+      const look = slotLook(key, id ? skill : null);
       const row = document.createElement('button');
-      row.className = `lslot${id ? ` lslot--set ${rarityClass(rarityOfSkill(getSkill(id)))}` : ' lslot--set'}${selected === key ? ' lslot--selected' : ''}${armed ? ' lslot--target' : ''}`;
+      row.className = `lslot lslot--set ${rarityClass(look.rarity)}${look.special ? ' lslot--special' : ''}${selected === key ? ' lslot--selected' : ''}${armed ? ' lslot--target' : ''}`;
       row.innerHTML = inner;
       row.addEventListener('click', () => {
         if (armed) {

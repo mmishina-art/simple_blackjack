@@ -153,3 +153,26 @@ describe('アイコン', () => {
     expect(icons).not.toContain('攻');
   });
 });
+
+describe('スロットの見た目の規則（全画面共通）', async () => {
+  const { slotLook } = await import('../src/core/skills/look');
+
+  it('11以下と21は特殊スロット（金）。それ以外は特殊ではない', () => {
+    for (let key = 11; key <= 21; key++) expect(slotLook(key, null).special).toBe(key === 11 || key === 21);
+  });
+
+  it('通常スロットはセットされたスキルのレア度に合わせ、空き（通常攻撃）はコモン扱い', () => {
+    expect(slotLook(15, getSkill('guard')).rarity).toBe('common');
+    expect(slotLook(20, getSkill('big_attack')).rarity).toBe('rare');
+    expect(slotLook(17, getSkill('smash')).rarity).toBe('legend');
+    expect(slotLook(13, null).rarity).toBe('common');
+    expect(slotLook(13, undefined).rarity).toBe('common');
+  });
+
+  it('敵のスキルも強さに応じたレア度（弱い技=コモン、大技=レア、必殺=レジェンド）', () => {
+    expect(rarityOfSkill(getSkill('slime_acid'))).toBe('common');
+    expect(rarityOfSkill(getSkill('slime_melt'))).toBe('rare');
+    expect(rarityOfSkill(getSkill('dragon_apocalypse'))).toBe('legend');
+    expect(rarityOfSkill(getSkill('slime_touch'))).toBe('common');
+  });
+});
