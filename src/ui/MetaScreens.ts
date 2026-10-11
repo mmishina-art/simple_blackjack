@@ -1,13 +1,15 @@
 import { audio } from '../audio/AudioManager';
+import { DEFAULT_PLAYER_FALLBACK, START_ATTACK } from '../core/skills/catalog';
 import { SKILL_POOL } from '../core/skills/catalog';
-import { describeSkill, getSkill, rarityOfSkill, slotLabel, type SkillId } from '../core/skills/Skill';
+import { describeSkill, getSkill, rarityOfSkill, slotLabel } from '../core/skills/Skill';
 import {
-  buyUpgrade, canBuy, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, isRelicDiscovered, isSkillDiscovered, nextCost, saveMeta,
-  selectableStartingSkills, setStartingSkill, STARTER_SKILLS, startingCapacity, STARTING_SLOT_KEYS, UPGRADES,
-  upgradeLevel, validStartingSkills, type MetaState,
+  buyUpgrade, canBuy, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeBonus, customCount, isRelicDiscovered, isSkillDiscovered,
+  nextCost, saveMeta, setStartingSkill, STARTER_SKILLS, startingCapacity, UPGRADES, upgradeLevel, type MetaState,
 } from '../meta/Meta';
-import { slotLook } from '../core/skills/look';
+import { placedElsewhere, prepCandidates, prepSlots, type PrepSlot } from '../meta/prep';
 import { RELIC_POOL } from '../relics/catalog';
+import { openSheet, type SheetOption } from './components/SkillSheet';
+import { buildSlotRow } from './components/SlotRow';
 import { rarityBadge, rarityClass } from './rarity';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, html = ''): HTMLElementTagNameMap[K] {
@@ -99,55 +101,44 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   root.replaceChildren(screen);
 }
 
-/** 出撃準備: 図鑑のスキルを、空きスロットに最初から置く（枠数は祭壇で増やせる）。 */
+/**
+ * 出撃準備: 冒険を始めるときの装備を決める（設定は保存され、次回以降も使われる）。
+ *  - 全スロット（11以下〜21）の一覧を見ながら、変えたいスロットをタップ → 図鑑のスキルを選ぶ（1ステップ）
+ *  - 変えられる数（初期装備枠）は 1 から。祭壇で最大 3 まで増やせる
+ *  - 11以下と 21 は固定。初期装備（15・18・20）も置き換えられ、「初期装備に戻す」で元に戻せる
+ */
 export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void, onBack: () => void): void {
-  let armed: SkillId | null = null;
+  const atk = START_ATTACK + computeBonus(meta).attack;
+  const fallback = getSkill(DEFAULT_PLAYER_FALLBACK);
+
   const render = (): void => {
-    const picked = validStartingSkills(meta);
-    const used = Object.keys(picked).length;
+    const slots = prepSlots(meta);
+    const used = customCount(meta);
     const capacity = startingCapacity(meta);
-    const screen = el('main', 'meta-screen');
+    const screen = el('main', 'meta-screen prep');
+
     screen.append(el('header', 'meta-head', `<h1>出撃準備</h1>
-      <p class="meta-head__sub">初期スキル枠 ${used} / ${capacity}　${armed ? `「${getSkill(armed).name}」を置くスロットを選べ` : 'スキルを選び、空きスロットに置く'}</p>`));
+      <p class="meta-head__sub">冒険を始めるときの装備を決める。図鑑に載っているスキルを、最初から装備できる。設定は保存される。</p>`));
 
-    const slots = el('div', 'loadout__slots');
-    for (const key of STARTING_SLOT_KEYS) {
-      const id = picked[key];
-      const skill = id ? getSkill(id) : null;
-      const row = el('button', `lslot lslot--set ${rarityClass(slotLook(key, skill).rarity)}${armed ? ' lslot--target' : ''}`,
-        `<span class="lslot__key">${slotLabel(key)}</span><span class="medal medal--sm">${skill ? skill.icon : '攻'}</span>
-         <span class="lslot__name">${skill ? skill.name : '通常攻撃・空き'}</span>
-         <span class="lslot__desc">${skill ? describeSkill(skill) : ''}</span>`);
-      row.addEventListener('click', () => {
-        if (armed) {
-          if (setStartingSkill(meta, key, armed)) {
-            saveMeta(meta);
-            audio.sfx('pick');
-            armed = null;
-          }
-        } else if (skill) {
-          setStartingSkill(meta, key, null);
-          saveMeta(meta);
-        }
-        render();
-      });
-      slots.append(row);
-    }
+    const pips = Array.from({ length: capacity }, (_, i) => (i < used ? '●' : '○')).join(' ');
+    screen.append(el('div', 'prep-cap', `<span class="prep-cap__label">装備を変えられる数</span>
+      <span class="prep-cap__pips">${pips}</span><span class="prep-cap__num">${used} / ${capacity}</span>
+      <span class="prep-cap__sub">${capacity < 3 ? '祭壇の「初期装備枠」で増やせる（最大 3）' : '最大まで強化済み'}</span>`));
+    screen.append(el('p', 'prep-hint', '変えたいスロットをタップ → 一覧からスキルを選ぶ。11以下と21は固定。'));
 
-    const inv = el('div', 'loadout__inv');
-    inv.append(el('div', 'loadout__inv-title', '図鑑のスキル'));
-    const chips = el('div', 'loadout__chips');
-    for (const id of selectableStartingSkills(meta)) {
-      const skill = getSkill(id);
-      const chip = el('button', `chip ${rarityClass(rarityOfSkill(skill))}${armed === id ? ' chip--armed' : ''}`,
-        `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}<small>${describeSkill(skill)}</small></span>`);
-      chip.addEventListener('click', () => {
-        armed = armed === id ? null : id;
-        render();
-      });
-      chips.append(chip);
+    const list = el('div', 'loadout__slots');
+    for (const slot of slots) {
+      list.append(buildSlotRow({
+        key: slot.key,
+        skill: slot.effectiveId ? getSkill(slot.effectiveId) : null,
+        fallback, atk,
+        locked: !slot.editable,
+        tag: slot.customId ? '変更' : slot.defaultId && slot.editable ? '初期' : undefined,
+        tagTone: slot.customId ? 'custom' : undefined,
+        onTap: slot.editable ? () => openPicker(slot) : undefined,
+      }));
     }
-    inv.append(chips);
+    screen.append(list);
 
     const actions = el('div', 'loadout__actions');
     const back = backButton('戻る', onBack);
@@ -158,8 +149,56 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
       onStart();
     });
     actions.append(back, go);
-    screen.append(slots, inv, actions);
+    screen.append(actions);
     root.replaceChildren(screen);
   };
+
+  /** スロットをタップしたときに開く、置くスキルの選択シート。 */
+  const openPicker = (slot: PrepSlot): void => {
+    const used = customCount(meta);
+    const capacity = startingCapacity(meta);
+    const current = slot.effectiveId ? getSkill(slot.effectiveId) : null;
+    const options: SheetOption[] = [];
+
+    if (slot.customId) {
+      const def = slot.defaultId ? getSkill(slot.defaultId) : null;
+      options.push({
+        kind: 'reset', icon: '戻',
+        name: def ? `初期装備に戻す（${def.name}）` : '空きに戻す（通常攻撃）',
+        detail: def ? describeSkill(def, atk) : '何も装備しない',
+        onPick() {
+          setStartingSkill(meta, slot.key, null);
+          saveMeta(meta);
+          render();
+        },
+      });
+    }
+    for (const id of prepCandidates(meta)) {
+      const skill = getSkill(id);
+      const elsewhere = placedElsewhere(meta, id, slot.key);
+      const isCurrent = slot.effectiveId === id;
+      options.push({
+        icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill),
+        detail: describeSkill(skill, atk),
+        badge: isCurrent ? '現在' : elsewhere.length ? `${elsewhere.map(slotLabel).join('・')} に配置中` : undefined,
+        disabled: !slot.canChange || isCurrent,
+        onPick() {
+          if (setStartingSkill(meta, slot.key, id)) {
+            saveMeta(meta);
+            render();
+          }
+        },
+      });
+    }
+    const state = slot.customId ? '変更済み' : slot.defaultId ? '初期装備' : '空き';
+    openSheet({
+      title: `${slotLabel(slot.key)} のスロット`,
+      subtitle: `いま: ${current ? `${current.name}（${describeSkill(current, atk)}）` : '通常攻撃'}　[${state}]`,
+      notice: slot.canChange ? undefined
+        : `装備を変えられる数がいっぱい（${used} / ${capacity}）。別のスロットを「初期装備に戻す」と空きます。祭壇の「初期装備枠」でも増やせます。`,
+      options,
+    });
+  };
+
   render();
 }

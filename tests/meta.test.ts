@@ -4,10 +4,13 @@ import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, useInn } from '../src/map/events';
 import {
-  buyUpgrade, canBuy, CODEX_SKILL_TOTAL, computeBonus, computeShards, discoverRelic, discoverSkill, emptyMeta, finishRun,
-  isSkillDiscovered, loadMeta, META_KEY, nextCost, saveMeta, selectableStartingSkills, setStartingSkill,
-  startingCapacity, UPGRADES, validStartingSkills, type MetaState,
+  buyUpgrade, canBuy, canCustomize, CODEX_SKILL_TOTAL, computeBonus, computeShards, customCount, discoverRelic, discoverSkill,
+  emptyMeta, finishRun, isSkillDiscovered, loadMeta, META_KEY, nextCost, saveMeta, selectableStartingSkills, setStartingSkill,
+  startingCapacity, STARTING_SLOT_KEYS, UPGRADES, validStartingSkills, type MetaState,
 } from '../src/meta/Meta';
+import { getSkill, rarityOfSkill } from '../src/core/skills/Skill';
+import { hasUnusedKitOpportunity, placedElsewhere, prepCandidates, prepSlots } from '../src/meta/prep';
+import { inventoryEntries } from '../src/run/loadout';
 import { createRun, offerSkills } from '../src/run/Run';
 import { noWait } from './helpers';
 
@@ -120,49 +123,153 @@ describe('図鑑', () => {
   });
 });
 
-describe('初期スキル（図鑑から出撃時に置く）', () => {
+describe('初期装備（出撃準備: 図鑑のスキルを出撃時に装備する）', () => {
   const withCodex = (): MetaState => {
     const meta = emptyMeta();
     for (const id of ['slash', 'heavy', 'smash']) discoverSkill(meta, id);
     return meta;
   };
 
-  it('図鑑のスキルだけ置ける。枠数（初期1）を超えては置けない', () => {
+  it('変えられるのは 12〜20。11以下（小攻撃）と 21（会心の一撃）は固定', () => {
+    expect([...STARTING_SLOT_KEYS]).toEqual([12, 13, 14, 15, 16, 17, 18, 19, 20]);
+    const meta = withCodex();
+    meta.shards = 999;
+    buyUpgrade(meta, 'kit');
+    expect(setStartingSkill(meta, 11, 'slash')).toBe(false);
+    expect(setStartingSkill(meta, 21, 'slash')).toBe(false);
+    expect(canCustomize(meta, 11)).toBe(false);
+    expect(canCustomize(meta, 21)).toBe(false);
+  });
+
+  it('図鑑のスキルだけ置ける。枠数（初期1）を超えては置けないが、同じスロットの入れ替えはできる', () => {
     const meta = withCodex();
     expect(selectableStartingSkills(meta)).toContain('slash');
     expect(selectableStartingSkills(meta)).not.toContain('jab');
     expect(setStartingSkill(meta, 13, 'jab')).toBe(false);
     expect(startingCapacity(meta)).toBe(1);
     expect(setStartingSkill(meta, 13, 'slash')).toBe(true);
+    expect(customCount(meta)).toBe(1);
+    expect(canCustomize(meta, 14)).toBe(false);
     expect(setStartingSkill(meta, 14, 'heavy')).toBe(false);
-    expect(setStartingSkill(meta, 13, 'heavy')).toBe(true); // 同じスロットの入れ替えは可
+    expect(canCustomize(meta, 13)).toBe(true);
+    expect(setStartingSkill(meta, 13, 'heavy')).toBe(true);
   });
 
-  it('初期スキル枠を強化すると枠が増える。置けるのは空きスロット（12〜14,16,17,19）だけ', () => {
+  it('初期装備枠を強化すると枠が増える。初期スロット（15=シールド等）も置き換えられる', () => {
     const meta = withCodex();
     meta.shards = 200;
     buyUpgrade(meta, 'kit');
     expect(startingCapacity(meta)).toBe(2);
     expect(setStartingSkill(meta, 13, 'slash')).toBe(true);
-    expect(setStartingSkill(meta, 17, 'heavy')).toBe(true);
-    expect(setStartingSkill(meta, 15, 'smash')).toBe(false); // 15 は初期スロット（シールド）
-    expect(setStartingSkill(meta, 11, 'smash')).toBe(false);
+    expect(setStartingSkill(meta, 15, 'smash')).toBe(true); // シールドを置き換え
+    expect(setStartingSkill(meta, 17, 'heavy')).toBe(false); // 枠がいっぱい
+    expect(customCount(meta)).toBe(2);
   });
 
-  it('冒険の初期スロットに反映される。外せる', () => {
+  it('初期装備と同じスキルを置く・null を渡すと「変更なし」に戻り、枠を消費しない', () => {
     const meta = withCodex();
+    expect(setStartingSkill(meta, 15, 'smash')).toBe(true);
+    expect(customCount(meta)).toBe(1);
+    expect(setStartingSkill(meta, 15, 'guard')).toBe(true); // 初期装備と同じ → 変更なし
+    expect(customCount(meta)).toBe(0);
+    expect(setStartingSkill(meta, 13, 'slash')).toBe(true);
+    expect(setStartingSkill(meta, 13, null)).toBe(true);
+    expect(customCount(meta)).toBe(0);
+  });
+
+  it('冒険の初期スロットに反映される。変更を戻すと初期装備に戻る', () => {
+    const meta = withCodex();
+    meta.shards = 200;
+    buyUpgrade(meta, 'kit');
     setStartingSkill(meta, 13, 'slash');
+    setStartingSkill(meta, 15, 'smash');
     const run = createRun(undefined, meta);
     expect(run.slots[13]).toBe('slash');
-    expect(run.slots[15]).toBe('guard');
+    expect(run.slots[15]).toBe('smash');
+    expect(run.slots[18]).toBe('shield');
+    expect(run.slots[11]).toBe('small_attack');
+    expect(run.slots[21]).toBe('ace_strike');
+    setStartingSkill(meta, 15, null);
+    expect(createRun(undefined, meta).slots[15]).toBe('guard');
     setStartingSkill(meta, 13, null);
     expect(createRun(undefined, meta).slots[13]).toBeUndefined();
   });
 
-  it('無効になった保存値（図鑑にない・枠超過）は無視される', () => {
+  it('無効になった保存値（図鑑にない・固定スロット・枠超過）は無視される', () => {
     const meta = withCodex();
-    meta.startingSkills = { 13: 'slash', 14: 'heavy', 16: 'nothing' };
+    meta.startingSkills = { 11: 'smash', 13: 'slash', 14: 'heavy', 16: 'nothing', 21: 'smash' };
     expect(Object.keys(validStartingSkills(meta))).toEqual(['13']);
+  });
+});
+
+describe('出撃準備の表示用ロジック', () => {
+  const withCodex = (): MetaState => {
+    const meta = emptyMeta();
+    for (const id of ['slash', 'smash', 'jab']) discoverSkill(meta, id);
+    return meta;
+  };
+
+  it('prepSlots: 全11スロットを返し、初期装備・変更後・実際に入るスキルを区別する', () => {
+    const meta = withCodex();
+    setStartingSkill(meta, 15, 'smash');
+    const slots = prepSlots(meta);
+    expect(slots).toHaveLength(11);
+    const s15 = slots.find((s) => s.key === 15)!;
+    expect(s15).toMatchObject({ defaultId: 'guard', customId: 'smash', effectiveId: 'smash', editable: true });
+    const s13 = slots.find((s) => s.key === 13)!;
+    expect(s13).toMatchObject({ defaultId: null, customId: null, effectiveId: null, editable: true });
+    const s11 = slots.find((s) => s.key === 11)!;
+    expect(s11).toMatchObject({ effectiveId: 'small_attack', editable: false, canChange: false });
+    expect(slots.find((s) => s.key === 21)!.editable).toBe(false);
+    expect(slots.find((s) => s.key === 18)!).toMatchObject({ effectiveId: 'shield', customId: null });
+  });
+
+  it('枠がいっぱいのとき、変更済みでないスロットは canChange=false（選べない理由の表示に使う）', () => {
+    const meta = withCodex();
+    setStartingSkill(meta, 13, 'slash');
+    const slots = prepSlots(meta);
+    expect(slots.find((s) => s.key === 13)!.canChange).toBe(true);
+    expect(slots.find((s) => s.key === 14)!.canChange).toBe(false);
+  });
+
+  it('prepCandidates: 図鑑のスキルがレア度の高い順（レジェンド → レア → コモン）に並ぶ', () => {
+    const meta = withCodex();
+    const ids = prepCandidates(meta);
+    expect(ids).toContain('smash');
+    expect(ids).not.toContain('heavy');
+    const rank = (id: string) => ({ legend: 0, rare: 1, common: 2 })[rarityOfSkill(getSkill(id))];
+    for (let i = 1; i < ids.length; i++) expect(rank(ids[i])).toBeGreaterThanOrEqual(rank(ids[i - 1]));
+    expect(ids[0]).toBe('smash');
+  });
+
+  it('placedElsewhere: ほかのどのスロットに入る予定かを返す（自分のスロットは除く）', () => {
+    const meta = withCodex();
+    expect(placedElsewhere(meta, 'big_attack', 13)).toEqual([20]);
+    expect(placedElsewhere(meta, 'big_attack', 20)).toEqual([]);
+    expect(placedElsewhere(meta, 'guard', 13)).toEqual([15]);
+  });
+
+  it('hasUnusedKitOpportunity: 初期スキル以外が図鑑にあり、枠が余っているときだけ true', () => {
+    const meta = emptyMeta();
+    expect(hasUnusedKitOpportunity(meta)).toBe(false); // 図鑑に初期スキルしかない
+    discoverSkill(meta, 'slash');
+    expect(hasUnusedKitOpportunity(meta)).toBe(true);
+    setStartingSkill(meta, 13, 'slash');
+    expect(hasUnusedKitOpportunity(meta)).toBe(false); // 枠を使い切った
+  });
+});
+
+describe('編成画面の持ち物の表示用ロジック', () => {
+  it('inventoryEntries: 種類ごとに個数をまとめ、レア度の高い順に並べる', () => {
+    const run = createRun();
+    run.inventory.push('jab', 'smash', 'jab', 'heavy', 'jab');
+    expect(inventoryEntries(run)).toEqual([
+      { id: 'smash', count: 1 }, { id: 'heavy', count: 1 }, { id: 'jab', count: 3 },
+    ]);
+  });
+
+  it('持ち物が空なら空配列', () => {
+    expect(inventoryEntries(createRun())).toEqual([]);
   });
 });
 

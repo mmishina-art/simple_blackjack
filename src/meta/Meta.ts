@@ -1,4 +1,4 @@
-import { SKILL_POOL } from '../core/skills/catalog';
+import { DEFAULT_PLAYER_SLOTS, SKILL_POOL } from '../core/skills/catalog';
 import type { SkillId, SlotKey } from '../core/skills/Skill';
 import { RELIC_POOL } from '../relics/catalog';
 
@@ -85,7 +85,7 @@ export const UPGRADES: readonly UpgradeDef[] = [
   { id: 'ward', name: '守りの心得', icon: '護', costs: [25, 45, 70], describe: (l) => `戦闘開始時の Block +${l * 2}` },
   { id: 'rest', name: '安らぎの心得', icon: '休', costs: [20, 40, 70], describe: (l) => `宿屋の回復量 +${l * 10}%` },
   { id: 'insight', name: '見る目', icon: '眼', costs: [90], describe: (l) => `敵撃破の報酬スキルの選択肢 +${l}` },
-  { id: 'kit', name: '初期スキル枠', icon: '枠', costs: [50, 100], describe: (l) => `図鑑のスキルを最初から置ける数: ${1 + l}` },
+  { id: 'kit', name: '初期装備枠', icon: '枠', costs: [50, 100], describe: (l) => `出撃時に装備を変えられるスロット数: ${1 + l}（出撃準備で設定）` },
 ];
 
 export function upgradeLevel(meta: MetaState, id: string): number {
@@ -192,36 +192,60 @@ export function discoverRelic(meta: MetaState, id: string): boolean {
 export const CODEX_SKILL_TOTAL = new Set<SkillId>([...STARTER_SKILLS, ...SKILL_POOL]).size;
 export const CODEX_RELIC_TOTAL = RELIC_POOL.length;
 
-// ---- 出撃時の初期スキル ----
-/** 初期スキルを置ける空きスロット（初期スロットで埋まっていない 12〜19）。 */
-export const STARTING_SLOT_KEYS: readonly SlotKey[] = [12, 13, 14, 16, 17, 19];
+// ---- 出撃時の初期装備（出撃準備） ----
+/**
+ * 出撃準備で装備を変えられるスロット（12〜20）。11以下（小攻撃）と 21（会心の一撃）は固定。
+ * 初期スロット（15=シールド、18=盾、20=大攻撃）も置き換えられる。
+ */
+export const STARTING_SLOT_KEYS: readonly SlotKey[] = [12, 13, 14, 15, 16, 17, 18, 19, 20];
 
+/** 出撃時に装備を変えられるスロットの数（初期 1 + 祭壇「初期装備枠」）。 */
 export function startingCapacity(meta: MetaState): number {
   return 1 + upgradeLevel(meta, 'kit');
 }
 
-/** 図鑑に載っていて、初期スロットに置けるスキル（報酬プールのスキル）。 */
+/** 図鑑に載っていて、初期装備に選べるスキル（報酬プールのスキル）。 */
 export function selectableStartingSkills(meta: MetaState): SkillId[] {
   return SKILL_POOL.filter((id) => isSkillDiscovered(meta, id));
 }
 
-/** 保存されている初期スキルのうち、現在も有効なもの（図鑑にあり、枠数以内）。 */
+/**
+ * 保存されている初期装備のうち、現在も有効なもの。
+ * 有効 = 変えられるスロット・図鑑にあるスキル・初期装備と違うスキル・枠数以内。
+ */
 export function validStartingSkills(meta: MetaState): Record<number, SkillId> {
   const out: Record<number, SkillId> = {};
   const ok = selectableStartingSkills(meta);
+  const capacity = startingCapacity(meta);
   for (const key of STARTING_SLOT_KEYS) {
     const id = meta.startingSkills[key];
-    if (id && ok.includes(id) && Object.keys(out).length < startingCapacity(meta)) out[key] = id;
+    if (!id || !ok.includes(id) || id === DEFAULT_PLAYER_SLOTS[key]) continue;
+    if (Object.keys(out).length >= capacity) break;
+    out[key] = id;
   }
   return out;
 }
 
-/** 初期スキルを設定する（null で外す）。枠数・図鑑・スロットの条件を満たさなければ false。 */
+/** 装備を変えているスロットの数（枠の使用数）。 */
+export function customCount(meta: MetaState): number {
+  return Object.keys(validStartingSkills(meta)).length;
+}
+
+/** そのスロットの装備を変えられるか（変えられるスロットで、すでに変更済みか、枠に空きがある）。 */
+export function canCustomize(meta: MetaState, key: SlotKey): boolean {
+  return STARTING_SLOT_KEYS.includes(key) && (key in validStartingSkills(meta) || customCount(meta) < startingCapacity(meta));
+}
+
+/**
+ * 初期装備を設定する。null か「初期装備と同じスキル」を渡すと、変更なし（初期装備のまま）に戻る。
+ * 変えられないスロット・図鑑にないスキル・枠数超過なら false。
+ */
 export function setStartingSkill(meta: MetaState, key: SlotKey, id: SkillId | null): boolean {
   if (!STARTING_SLOT_KEYS.includes(key)) return false;
-  const current = validStartingSkills(meta);
-  if (id === null) {
-    delete meta.startingSkills[key];
+  const current = { ...validStartingSkills(meta) };
+  if (id === null || id === DEFAULT_PLAYER_SLOTS[key]) {
+    delete current[key];
+    meta.startingSkills = current;
     return true;
   }
   if (!selectableStartingSkills(meta).includes(id)) return false;

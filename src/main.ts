@@ -1,7 +1,7 @@
 import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
-import { discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, selectableStartingSkills, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
+import { customCount, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
 import { describeSkill, getSkill, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { resolveShrine, useInn } from './map/events';
@@ -14,6 +14,7 @@ import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
 import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
+import { hasUnusedKitOpportunity } from './meta/prep';
 import { showAltar, showCodex, showPrep } from './ui/MetaScreens';
 import './ui/styles/main.css';
 
@@ -52,7 +53,7 @@ function showMapScreen(message = ''): void {
   syncCodex();
   showMap(root, run, {
     onMove: (id) => resolveTile(moveTo(run, id)),
-    onLoadout: () => showLoadout(root, run, { onClose: () => showMapScreen(message) }),
+    onLoadout: () => showLoadout(root, run, { onClose: (msg) => showMapScreen(msg ?? message) }),
   }, message);
 }
 
@@ -132,14 +133,10 @@ function endRun(cleared: boolean): number {
   return gained;
 }
 
-/** 出撃: 初期スキルを選べるなら出撃準備画面を挟み、冒険を始める。 */
+/** 冒険を始める。装備は出撃準備で決めた保存済みの設定が使われる。 */
 function startAdventure(): void {
-  const begin = () => {
-    run = createRun(undefined, meta);
-    showMapScreen();
-  };
-  if (selectableStartingSkills(meta).length > 0 && startingCapacity(meta) > 0) showPrep(root, meta, begin, showTitle);
-  else begin();
+  run = createRun(undefined, meta);
+  showMapScreen();
 }
 
 function restartRun(): void {
@@ -187,7 +184,7 @@ function offerSkillReward(): void {
     onPick(i) {
       run.inventory.push(ids[i]);
       syncCodex();
-      showLoadout(root, run, { armed: ids[i], onClose: () => showMapScreen() });
+      showLoadout(root, run, { armed: ids[i], onClose: (msg) => showMapScreen(msg) });
     },
   });
 }
@@ -205,20 +202,28 @@ function showTitle(): void {
     audio.sfx('click');
     startAdventure();
   });
-  const sub2 = el('div', 'title__sub');
-  const altar = el('button', 'btn btn--stand', `<span class="btn__main">魂の祭壇</span><span class="btn__sub">魂片 ${meta.shards}</span>`);
-  altar.addEventListener('click', () => {
+  const sub2 = el('div', 'title__sub title__sub--3');
+  const unlock = () => {
     audio.unlock();
     audio.sfx('click');
+  };
+  const prep = el('button', 'btn btn--stand', `<span class="btn__main">出撃準備</span><span class="btn__sub">装備 ${customCount(meta)}/${startingCapacity(meta)}</span>`);
+  if (hasUnusedKitOpportunity(meta)) prep.classList.add('btn--notice');
+  prep.addEventListener('click', () => {
+    unlock();
+    showPrep(root, meta, startAdventure, showTitle);
+  });
+  const altar = el('button', 'btn btn--stand', `<span class="btn__main">祭壇</span><span class="btn__sub">魂片 ${meta.shards}</span>`);
+  altar.addEventListener('click', () => {
+    unlock();
     showAltar(root, meta, showTitle);
   });
   const codex = el('button', 'btn btn--stand', '<span class="btn__main">図鑑</span><span class="btn__sub">入手の記録</span>');
   codex.addEventListener('click', () => {
-    audio.unlock();
-    audio.sfx('click');
+    unlock();
     showCodex(root, meta, showTitle);
   });
-  sub2.append(altar, codex);
+  sub2.append(prep, altar, codex);
   screen.append(art, h1, sub, start, sub2);
   root.replaceChildren(screen);
 }
