@@ -53,14 +53,15 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
       if (locked) {
         const fixed = document.createElement('div');
-        fixed.className = `lslot lslot--fixed${slotLook(key, null).special ? ' lslot--special' : ''}`;
+        const fixedLook = slotLook(key, null);
+        fixed.className = `lslot lslot--fixed${fixedLook.special ? ` lslot--special lslot--${fixedLook.tone}` : ''}`;
         fixed.innerHTML = inner;
         slotList.append(fixed);
         continue;
       }
       const look = slotLook(key, id ? skill : null);
       const row = document.createElement('button');
-      row.className = `lslot lslot--set ${rarityClass(look.rarity)}${look.special ? ' lslot--special' : ''}${selected === key ? ' lslot--selected' : ''}${armed ? ' lslot--target' : ''}`;
+      row.className = `lslot lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}${selected === key ? ' lslot--selected' : ''}${armed ? ' lslot--target' : ''}`;
       row.innerHTML = inner;
       row.addEventListener('click', () => {
         if (armed) {

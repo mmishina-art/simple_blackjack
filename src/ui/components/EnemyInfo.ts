@@ -17,7 +17,7 @@ export function buildEnemyInfo(enemy: Entity, def: EnemyDef, onClose: () => void
   for (const row of describeSlotTable(enemy)) {
     const el = document.createElement('div');
     const look = slotLook(row.key, row.isFallback ? null : row.skill);
-    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ' lslot--special' : ''}`;
+    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}`;
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>
       <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}</span>

@@ -157,8 +157,11 @@ describe('アイコン', () => {
 describe('スロットの見た目の規則（全画面共通）', async () => {
   const { slotLook } = await import('../src/core/skills/look');
 
-  it('11以下と21は特殊スロット（金）。それ以外は特殊ではない', () => {
+  it('11以下は鋼のグレー、21 は金の特殊スロット。それ以外は特殊ではない', () => {
     for (let key = 11; key <= 21; key++) expect(slotLook(key, null).special).toBe(key === 11 || key === 21);
+    expect(slotLook(11, null).tone).toBe('steel');
+    expect(slotLook(21, null).tone).toBe('gold');
+    expect(slotLook(15, null).tone).toBeNull();
   });
 
   it('通常スロットはセットされたスキルのレア度に合わせ、空き（通常攻撃）はコモン扱い', () => {

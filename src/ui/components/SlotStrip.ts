@@ -41,7 +41,7 @@ export class SlotStrip {
       const skill = id ? getSkill(id) : null;
       // 11以下と21は特殊スロット（金）。ほかはスキルのレア度に合わせる（空きはコモン）
       const look = slotLook(key, skill);
-      cell.className = `slot ${look.special ? 'slot--special' : `slot--set ${rarityClass(look.rarity)}`}${key === active ? ' slot--active' : ''}`;
+      cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${key === active ? ' slot--active' : ''}`;
       cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;
       cell.title = skill
         ? `${skill.name}（${describeSkill(skill, entity.attack)}）`

@@ -668,3 +668,22 @@ section { min-width: 0; }
 .title__sub .btn { min-height: 56px; }
 .result__shards { color: #9fd0ff !important; font-family: var(--font-display); }
 .title { gap: 14px; }
+
+/* 11以下の特殊スロット: 鋼のグレー（21 は金） */
+.slot--special.slot--steel {
+  color: #d4dae0; background: linear-gradient(180deg, #2c3238, #14181c);
+  border-color: #aab4be; box-shadow: inset 0 0 0 2px #0e1114, inset 0 0 0 3px #5d6873;
+}
+.slot--special.slot--steel::before { background: #aab4be; border-color: #0e1114; }
+.slot--special.slot--steel .slot__key { color: #9aa6b2; }
+.slot--special.slot--steel .slot__icon { text-shadow: 0 0 8px rgba(190, 205, 220, 0.4); }
+.slot--special.slot--steel.slot--active {
+  color: #14181c; background: linear-gradient(180deg, #f2f5f8, #aab4be); border-color: #ffffff;
+  box-shadow: 0 0 14px rgba(200, 215, 230, 0.7);
+}
+.slot--special.slot--steel.slot--active .slot__key { color: #2c3238; }
+.slot--special.slot--steel.slot--active::before { background: #ffffff; }
+.lslot.lslot--steel { border-color: #aab4be; box-shadow: inset 0 0 0 1px #3a424b; }
+.lslot--steel .lslot__key { color: #c4ccd4; }
+.lslot--steel .medal { border-color: #aab4be; color: #d4dae0; }
+.lslot--fixed.lslot--steel { border-color: transparent; box-shadow: none; border-bottom: 1px solid #1f242a; }
