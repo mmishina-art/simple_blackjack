@@ -32,8 +32,9 @@ export interface RunState {
 }
 
 export const START_MAX_HP = 60;
-/** 付け替え可能なスロット（11以下〜20）。21 は会心の一撃で固定（封印の鍵で解除）。 */
-export const FIXED_SLOT: SlotKey = 21;
+/** 固定スロット。11以下は小攻撃、21 は会心の一撃で固定。21 だけは封印の鍵で解除できる。 */
+export const FIXED_SLOTS: readonly SlotKey[] = [11, 21];
+export const KEY_SLOT: SlotKey = 21;
 
 export function createRun(map: StageMap = STAGE_1): RunState {
   return {
@@ -78,7 +79,8 @@ export function isSlot21Unlocked(run: RunState): boolean {
 }
 
 export function isSlotLocked(run: RunState, key: SlotKey): boolean {
-  return key === FIXED_SLOT && !isSlot21Unlocked(run);
+  if (key === KEY_SLOT) return !isSlot21Unlocked(run);
+  return FIXED_SLOTS.includes(key);
 }
 
 /** 持ち物のスキルをスロットにセットする。元のスキルは持ち物に戻る。 */

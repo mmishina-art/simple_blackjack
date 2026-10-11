@@ -11,7 +11,7 @@ export interface LoadoutOptions {
 /**
  * スキルの編成画面。
  * 持ち物のスキルをタップ → スロットをタップでセット（元のスキルは持ち物へ）。
- * スロットをタップして選び、「外す」で持ち物へ戻す。21 は会心の一撃で固定（封印の鍵で解除）。
+ * スロットをタップして選び、「外す」で持ち物へ戻す。11以下（小攻撃）と 21（会心の一撃）は固定。21 は封印の鍵で解除できる。
  */
 export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptions): void {
   let armed: SkillId | null = opts.armed && run.inventory.includes(opts.armed) ? opts.armed : null;

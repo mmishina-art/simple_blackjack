@@ -40,9 +40,9 @@ defineSkill({
   effects: [{ type: 'attack', mult: 4 }, { type: 'block', amount: 8 }],
 });
 
-/** 報酬として出現するスキル。 */
+/** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。 */
 export const SKILL_POOL: readonly SkillId[] = [
-  'small_attack', 'big_attack', 'jab', 'slash', 'heavy', 'smash',
+  'big_attack', 'jab', 'slash', 'heavy', 'smash',
   'guard', 'shield', 'bulwark', 'recover', 'shield_bash', 'drain', 'rally',
 ];
 

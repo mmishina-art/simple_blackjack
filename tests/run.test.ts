@@ -12,7 +12,7 @@ import {
   VampireFang, Whetstone,
 } from '../src/relics/catalog';
 import {
-  createRun, enemyOfTile, equipSkill, isCleared, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
+  createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
   unequipSlot,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
@@ -116,13 +116,28 @@ describe('冒険の状態（レベル・経験値は廃止）', () => {
 });
 
 describe('スキルの付け替え', () => {
-  it('スロット21は会心の一撃で固定されている（付け替え不可）', () => {
+  it('スロット11以下（小攻撃）と21（会心の一撃）は固定されている（付け替え不可）', () => {
     const run = createRun();
+    expect(run.slots[11]).toBe('small_attack');
     expect(run.slots[21]).toBe('ace_strike');
     run.inventory.push('smash');
-    expect(equipSkill(run, 21, 'smash')).toBe(false);
-    expect(unequipSlot(run, 21)).toBe(false);
+    for (const key of [11, 21]) {
+      expect(isSlotLocked(run, key)).toBe(true);
+      expect(equipSkill(run, key, 'smash')).toBe(false);
+      expect(unequipSlot(run, key)).toBe(false);
+    }
+    expect(run.slots[11]).toBe('small_attack');
     expect(run.slots[21]).toBe('ace_strike');
+    expect(run.inventory).toEqual(['smash']);
+  });
+
+  it('それ以外のスロット（12〜20）は付け替えられる', () => {
+    const run = createRun();
+    for (let key = 12; key <= 20; key++) expect(isSlotLocked(run, key)).toBe(false);
+  });
+
+  it('報酬スキルの抽選に小攻撃（11以下固定）は出ない', () => {
+    expect(SKILL_POOL).not.toContain('small_attack');
   });
 
   it('持ち物のスキルをセットすると、元のスキルが持ち物に戻る', () => {
@@ -147,13 +162,15 @@ describe('スキルの付け替え', () => {
     expect(equipSkill(createRun(), 13, 'slash')).toBe(false);
   });
 
-  it('封印の鍵を持つと、スロット21を付け替えられ、会心の一撃は持ち物に残る', () => {
+  it('封印の鍵を持つと、スロット21だけ付け替えられ（11以下は固定のまま）、会心の一撃は持ち物に残る', () => {
     const run = createRun();
+    expect(isSlotLocked(run, 11)).toBe(true);
     run.relics.push(SealKey);
     run.inventory.push('smash');
     expect(equipSkill(run, 21, 'smash')).toBe(true);
     expect(run.slots[21]).toBe('smash');
     expect(run.inventory).toEqual(['ace_strike']);
+    expect(isSlotLocked(run, 11)).toBe(true);
   });
 });
 
