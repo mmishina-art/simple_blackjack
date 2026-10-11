@@ -17,6 +17,8 @@ import { TRANSITIONS, type BattleState, type PlayerInput, type StateId } from '.
 export interface BattleOptions {
   enemy: EnemyDef;
   playerMaxHp?: number;
+  /** 開始時のプレイヤーHP（連戦での持ち越し用）。省略時は最大HP。 */
+  playerHp?: number;
   rules?: Partial<RuleSet>;
   rng?: Rng;
   relics?: Relic[];
@@ -43,6 +45,7 @@ export class BattleMachine {
     const pace = opts.pace ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
     const player = new Entity('player', 'あなた', opts.playerMaxHp ?? 50);
     const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp);
+    if (opts.playerHp !== undefined) player.hp = Math.min(opts.playerHp, player.maxHp);
 
     this.ctx = {
       rules,
@@ -86,7 +89,9 @@ export class BattleMachine {
       CheckDeath: new CheckDeathState(),
     };
 
-    for (const relic of opts.relics ?? []) relic.apply(this.bus, rules);
+    const env = { bus: this.bus, rules, player, enemy };
+    for (const relic of opts.relics ?? []) relic.apply(env);
+    for (const trait of opts.enemy.relics ?? []) trait.apply(env);
   }
 
   get state(): StateId | null {

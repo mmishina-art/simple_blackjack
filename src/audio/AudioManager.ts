@@ -1,5 +1,5 @@
 export type SfxName =
-  | 'click' | 'deal' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat';
+  | 'click' | 'deal' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'levelup' | 'pick';
 
 const STORAGE_KEY = 'bj-muted';
 
@@ -114,6 +114,13 @@ export class AudioManager {
         [523, 659, 784, 659, 784, 1047].forEach((f, i) =>
           this.tone(f, t + i * 0.13, i === 5 ? 0.7 : 0.16, 'square', 0.22),
         );
+        break;
+      case 'levelup':
+        [392, 523, 659, 784, 1047].forEach((f, i) => this.tone(f, t + i * 0.09, 0.3, 'triangle', 0.3));
+        break;
+      case 'pick':
+        this.tone(440, t, 0.08, 'square', 0.2);
+        this.tone(880, t + 0.07, 0.18, 'triangle', 0.3);
         break;
       case 'defeat':
         [392, 349, 311, 262].forEach((f, i) => this.tone(f, t + i * 0.28, 0.5, 'triangle', 0.35));

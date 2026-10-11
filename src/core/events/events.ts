@@ -19,8 +19,14 @@ export interface BattleEvents {
   /** バーストした直後。 */
   onBust: { entity: Entity };
   /** ダメージ計算直後（HP 反映前）。damage の書き換えが可能。 */
-  onDamageCalculated: { attacker: Entity | null; defender: Entity | null; damage: number; info: DamageInfo };
-  onResolve: { result: RoundResult; damage: number };
+  onDamageCalculated: {
+    attacker: Entity | null;
+    defender: Entity | null;
+    damage: number;
+    info: DamageInfo;
+    result: RoundResult;
+  };
+  onResolve: { result: RoundResult; damage: number; attacker: Entity | null; defender: Entity | null };
   onRoundEnd: { round: number };
   onBattleEnd: { winner: Entity };
 }

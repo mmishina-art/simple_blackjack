@@ -90,7 +90,7 @@ describe('BattleMachine', () => {
       enemy: Slime,
       rng: seededRng(2),
       pace: noWait,
-      relics: [{ id: 'r', name: 'r', apply: (_bus, rules) => { rules.bustLimit = 24; } }],
+      relics: [{ id: 'r', name: 'r', icon: 'r', description: '', apply: ({ rules }) => { rules.bustLimit = 24; } }],
     });
     expect(m.ctx.rules.bustLimit).toBe(24);
   });
