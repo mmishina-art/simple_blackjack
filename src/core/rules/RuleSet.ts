@@ -9,8 +9,8 @@ export interface RuleSet {
   blackjackScore: number;
   /** クリティカル時の攻撃倍率（端数切り捨て）。 */
   critMultiplier: number;
-  /** サレンダー時にプレイヤーが受ける固定ダメージ（Block 貫通）。 */
-  surrenderDamage: number;
+  /** サレンダー（防御）時にプレイヤーが得る Block。 */
+  surrenderBlock: number;
   /** 配牌枚数。 */
   initialCards: number;
   /** A を 11 として数える際の加算量（A=1 に対する +10）。 */
@@ -24,7 +24,7 @@ export function createRuleSet(overrides: Partial<RuleSet> = {}): RuleSet {
     bustLimit: 21,
     blackjackScore: 21,
     critMultiplier: 1.5,
-    surrenderDamage: 5,
+    surrenderBlock: 5,
     initialCards: 2,
     aceBonus: 10,
     reshuffleThreshold: 15,

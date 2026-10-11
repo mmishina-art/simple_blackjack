@@ -1,51 +1,102 @@
-import { ENEMY_LINEUP } from '../core/entities/enemies/catalog';
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
-import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS } from '../core/skills/catalog';
-import type { SkillId, SlotTable } from '../core/skills/Skill';
+import { getEnemy } from '../core/entities/enemies/catalog';
+import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL } from '../core/skills/catalog';
+import type { SkillId, SlotKey, SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
+import { STAGE_1 } from '../map/stage1';
+import { nextTiles, tileOf, type StageMap, type TileDef } from '../map/StageMap';
 import { RELIC_POOL } from '../relics/catalog';
 import type { Relic } from '../relics/Relic';
 
 /**
- * 1回の冒険（連戦）の状態。バトルをまたいで持ち越す。
- * 永続強化はスロット（装備スキル）とレリックのみ。レベル・経験値はない。
+ * 1回の冒険の状態。マップ上の位置・HP・スロット（装備スキル）・持ち物・レリックを持つ。
+ * 永続強化はスロットとレリックのみ（レベル・経験値はない）。
  */
 export interface RunState {
-  /** 現在の戦闘番号（0始まり）。 */
-  stage: number;
+  map: StageMap;
+  /** 駒のいるマス。 */
+  position: string;
+  /** 効果を使い切ったマス（戦闘に勝った敵・開けた宝箱・使った宿屋/祠）。 */
+  cleared: string[];
   maxHp: number;
   hp: number;
-  /** 合計値スロットにセットされたスキル（将来は「装備スキル」で書き換える）。 */
+  /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;
   /** スロット未設定の合計値で発動するスキル（キャラクターごとの初期能力）。 */
   fallbackSkill: SkillId;
+  /** スロットにセットしていない所持スキル。 */
+  inventory: SkillId[];
   relics: Relic[];
 }
 
 export const START_MAX_HP = 60;
-/** 勝利後の休息で回復する割合。 */
-export const REST_HEAL_RATIO = 0.35;
+/** 付け替え可能なスロット（11以下〜20）。21 は会心の一撃で固定（封印の鍵で解除）。 */
+export const FIXED_SLOT: SlotKey = 21;
 
-export function createRun(): RunState {
+export function createRun(map: StageMap = STAGE_1): RunState {
   return {
-    stage: 0, maxHp: START_MAX_HP, hp: START_MAX_HP,
-    slots: { ...DEFAULT_PLAYER_SLOTS }, fallbackSkill: DEFAULT_PLAYER_FALLBACK, relics: [],
+    map, position: map.start, cleared: [],
+    maxHp: START_MAX_HP, hp: START_MAX_HP,
+    slots: { ...DEFAULT_PLAYER_SLOTS }, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
+    inventory: [], relics: [],
   };
 }
 
-export function currentEnemy(run: RunState): EnemyDef {
-  return ENEMY_LINEUP[run.stage];
+export function currentTile(run: RunState): TileDef {
+  return tileOf(run.map, run.position);
 }
 
-export function isLastStage(run: RunState): boolean {
-  return run.stage >= ENEMY_LINEUP.length - 1;
+export function reachableTiles(run: RunState): TileDef[] {
+  return nextTiles(run.map, run.position);
 }
 
-/** 勝利後の休息による回復。HP は呼び出し側が戦闘結果で更新済みであること。回復量を返す。 */
-export function applyRest(run: RunState): number {
-  const before = run.hp;
-  run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * REST_HEAL_RATIO));
-  return run.hp - before;
+export function isCleared(run: RunState, id: string): boolean {
+  return run.cleared.includes(id);
+}
+
+export function enemyOfTile(tile: TileDef): EnemyDef {
+  if (!tile.enemyId) throw new Error(`Tile ${tile.id} has no enemy`);
+  return getEnemy(tile.enemyId);
+}
+
+/** 1マス進む。隣接していないマスへは進めない。 */
+export function moveTo(run: RunState, id: string): TileDef {
+  const target = reachableTiles(run).find((t) => t.id === id);
+  if (!target) throw new Error(`Cannot move ${run.position} -> ${id}`);
+  run.position = id;
+  return target;
+}
+
+export function markCleared(run: RunState, id: string): void {
+  if (!isCleared(run, id)) run.cleared.push(id);
+}
+
+export function isSlot21Unlocked(run: RunState): boolean {
+  return run.relics.some((r) => r.unlocksSlot21);
+}
+
+export function isSlotLocked(run: RunState, key: SlotKey): boolean {
+  return key === FIXED_SLOT && !isSlot21Unlocked(run);
+}
+
+/** 持ち物のスキルをスロットにセットする。元のスキルは持ち物に戻る。 */
+export function equipSkill(run: RunState, key: SlotKey, skillId: SkillId): boolean {
+  const idx = run.inventory.indexOf(skillId);
+  if (idx < 0 || isSlotLocked(run, key)) return false;
+  const previous = run.slots[key];
+  run.inventory.splice(idx, 1);
+  run.slots[key] = skillId;
+  if (previous) run.inventory.push(previous);
+  return true;
+}
+
+/** スロットのスキルを外して持ち物に戻す。 */
+export function unequipSlot(run: RunState, key: SlotKey): boolean {
+  const id = run.slots[key];
+  if (!id || isSlotLocked(run, key)) return false;
+  delete run.slots[key];
+  run.inventory.push(id);
+  return true;
 }
 
 function pickRandom<T>(pool: readonly T[], count: number, rng: Rng): T[] {
@@ -57,7 +108,12 @@ function pickRandom<T>(pool: readonly T[], count: number, rng: Rng): T[] {
   return out;
 }
 
-/** 報酬レリックの選択肢。所持済みは出ない。 */
+/** 敵撃破の報酬スキル（3択）。 */
+export function offerSkills(rng: Rng): SkillId[] {
+  return pickRandom(SKILL_POOL, 3, rng);
+}
+
+/** 宝箱のレリック（3択）。所持済みは出ない。 */
 export function offerRelics(run: RunState, rng: Rng): Relic[] {
   const owned = new Set(run.relics.map((r) => r.id));
   return pickRandom(RELIC_POOL.filter((r) => !owned.has(r.id)), 3, rng);

@@ -18,15 +18,15 @@ export function skillForTotal(entity: Entity, total: number): SkillDef {
 }
 
 /** スキルの発動宣言（onSkillActivated フック）。不発になった場合は null。 */
-export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef, crit: boolean): { skill: SkillDef; crit: boolean } | null {
-  const payload = ctx.bus.emit('onSkillActivated', { user, skill, crit });
+export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef, baseCrit: boolean): { skill: SkillDef; crit: boolean } | null {
+  const payload = ctx.bus.emit('onSkillActivated', { user, skill, crit: baseCrit });
   if (!payload.skill) {
     ctx.log(`${user.name}のスキルは不発に終わった`);
     return null;
   }
-  const critical = payload.crit && hasAttack(payload.skill);
-  ctx.log(`${user.name}の「${payload.skill.name}」${critical ? ' クリティカル！' : ''}`);
-  return { skill: payload.skill, crit: payload.crit };
+  const crit = payload.crit || !!payload.skill.alwaysCrit;
+  ctx.log(`${user.name}の「${payload.skill.name}」${crit && hasAttack(payload.skill) ? ' クリティカル！' : ''}`);
+  return { skill: payload.skill, crit };
 }
 
 /**

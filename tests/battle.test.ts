@@ -50,16 +50,12 @@ describe('BattleMachine の進行', () => {
     expect(m.ctx.winner).toBe(m.ctx.enemy);
   });
 
-  it('サレンダー: スキルも敵のターンも発動せず、5ダメージで次のラウンドへ', async () => {
+  it('サレンダー: 自分のスキルは発動せず、敵だけが行動する（行動順の比較はしない）', async () => {
     const m = machine(9);
     const visited = await play(m, () => 'surrender');
-    expect(visited).toContain('Surrender');
-    expect(visited).not.toContain('EnemyAction');
-    expect(visited).not.toContain('Initiative');
-    expect(visited).not.toContain('FirstAction');
-    expect(m.ctx.winner).toBe(m.ctx.enemy);
-    expect(m.ctx.enemy.hp).toBe(Slime.maxHp);
-    expect(m.ctx.round).toBe(12); // 60HP / 5 = 12ラウンドで力尽きる
+    const i = visited.indexOf('Surrender');
+    expect(visited.slice(i, i + 4)).toEqual(['Surrender', 'EnemyAction', 'Initiative', 'FirstAction']);
+    expect(m.isFinished).toBe(true);
   });
 
   it('敵ディーラーは17以上になるまで引く', () => {
@@ -126,9 +122,11 @@ describe('ラウンドの行動順', () => {
     expect(m.ctx.enemy.hp).toBe(16);
   });
 
-  it('ブラックジャックはスロット21のスキルがクリティカル', async () => {
-    const m = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 30); // 特大攻撃20 × 1.5
+  it('スロット21は会心の一撃（必ずクリティカル）。ブラックジャックでも二重にはならない', async () => {
+    const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['9', '9'], enemyHp: 40 });
+    expect(m.ctx.enemy.hp).toBe(40 - 21); // 攻撃14 × 1.5
+    const bj = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
+    expect(bj.ctx.enemy.hp).toBe(40 - 21);
   });
 
   it('未設定スロットでは基本攻撃が発動する', async () => {
@@ -165,14 +163,21 @@ describe('Block とサレンダー', () => {
     expect(m.ctx.enemy.block).toBe(0);
   });
 
-  it('サレンダー: Block を貫通して5ダメージ、敵は行動しない', async () => {
+  it('サレンダー: Block 5 を得て、敵の攻撃を受け止める。自分のスキルは不発', async () => {
     const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender' });
-    expect(m.ctx.player.hp).toBe(55);
-    expect(m.ctx.enemy.hp).toBe(16);
+    expect(m.ctx.turn?.mode).toBe('defend');
+    expect(m.ctx.player.hp).toBe(60 - 3); // 溶解8 - Block5
+    expect(m.ctx.enemy.hp).toBe(16);       // 自分は行動していない
   });
 
-  it('サレンダーの固定ダメージはBlockを無視する', async () => {
-    const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', stopAt: ['CheckDeath'] });
-    expect(m.ctx.player.hp).toBe(55);
+  it('サレンダーの Block もレリックの影響を受ける（堅牢の盾 +3）', async () => {
+    const { SturdyShield } = await import('../src/relics/catalog');
+    const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', relics: [SturdyShield] });
+    expect(m.ctx.player.hp).toBe(60); // Block 8 で溶解8を完全に防ぐ
+  });
+
+  it('サレンダー中に敵がバーストしたら誰も行動しない', async () => {
+    const m = await playRound({ player: ['K', '5'], enemyHand: ['K', 'Q', '5'], from: 'Surrender' });
+    expect(m.ctx.player.hp).toBe(60);
   });
 });

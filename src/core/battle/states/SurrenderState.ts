@@ -1,21 +1,24 @@
-import { applyDamage } from '../../skills/execute';
 import type { BattleContext } from '../BattleContext';
 import type { BattleState, StateId } from '../types';
 
-/** サレンダー: 自分のスキルも敵のターンも発動せず、固定ダメージ（Block 貫通）を受けてラウンドを終える。 */
+/**
+ * サレンダー: 自分のスキルは発動せず、防御として Block を得る。
+ * 敵は通常どおり手札を引いて行動する（行動順の比較はなし）。
+ */
 export class SurrenderState implements BattleState {
   readonly id = 'Surrender' as const;
 
   async enter(ctx: BattleContext): Promise<StateId> {
     const { player, rules } = ctx;
+    ctx.playerSurrendered = true;
     ctx.bus.emit('onSurrender', { entity: player });
-    ctx.log(`${player.name}は撤退した…`);
-    const damage = rules.surrenderDamage;
-    const { absorbed, hpLoss } = applyDamage(player, damage, true);
-    ctx.bus.emit('onDamageDealt', { attacker: null, defender: player, damage, absorbed, hpLoss, skill: null, crit: false });
-    ctx.log(`${player.name}に${hpLoss}ダメージ`);
+    ctx.log(`${player.name}は防御に徹した…`);
+    const { amount } = ctx.bus.emit('onBlockGained', { entity: player, amount: rules.surrenderBlock });
+    const gained = Math.max(0, Math.floor(amount));
+    player.block += gained;
+    ctx.log(`${player.name}は Block を ${gained} 得た`);
     ctx.notify();
-    await ctx.wait(900);
-    return 'CheckDeath';
+    await ctx.wait(700);
+    return 'EnemyAction';
   }
 }

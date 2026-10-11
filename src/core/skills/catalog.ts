@@ -3,21 +3,55 @@ import { defineSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTab
 const atk = (id: string, name: string, power: number, icon = '攻'): SkillDef =>
   defineSkill({ id, name, icon, effects: [{ type: 'attack', power }] });
 
-// ---- プレイヤー（テスト用の仮スキル） ----
+// ---- プレイヤーのスキル ----
 export const BASIC_ATTACK_ID: SkillId = atk('basic_attack', '基本攻撃', 3, '撃').id;
 atk('small_attack', '小攻撃', 4);
 atk('big_attack', '大攻撃', 14, '剛');
-atk('huge_attack', '特大攻撃', 20, '絶');
+atk('jab', '突き', 5, '突');
+atk('slash', '斬撃', 8, '斬');
+atk('heavy', '重撃', 11, '重');
+atk('smash', '渾身の一撃', 16, '渾');
 defineSkill({ id: 'guard', name: 'シールド', icon: '守', effects: [{ type: 'block', amount: 6 }] });
+defineSkill({ id: 'bulwark', name: '鉄壁の構え', icon: '壁', effects: [{ type: 'block', amount: 10 }] });
 defineSkill({ id: 'mend', name: '回復', icon: '癒', effects: [{ type: 'heal', amount: 6 }] });
+defineSkill({ id: 'recover', name: '治癒', icon: '治', effects: [{ type: 'heal', amount: 10 }] });
+defineSkill({
+  id: 'shield_bash', name: '盾打ち', icon: '盾',
+  effects: [{ type: 'attack', power: 5 }, { type: 'block', amount: 5 }],
+});
+defineSkill({
+  id: 'drain', name: '吸精', icon: '吸',
+  effects: [{ type: 'attack', power: 6 }, { type: 'heal', amount: 4 }],
+});
+defineSkill({
+  id: 'rally', name: '鼓舞', icon: '鼓',
+  effects: [{ type: 'block', amount: 5 }, { type: 'heal', amount: 4 }],
+});
 
-/** プレイヤーの初期スロット（仮）。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
+/** スロット21に固定されるスキル。必ずクリティカルになる（封印の鍵のレリックで付け替え可能）。 */
+export const CRITICAL_STRIKE_ID: SkillId = defineSkill({
+  id: 'critical_strike', name: '会心の一撃', icon: '会', alwaysCrit: true,
+  effects: [{ type: 'attack', power: 14 }],
+}).id;
+/** 覇王の宝珠で会心の一撃が置き換わるスキル。 */
+defineSkill({
+  id: 'overlord_strike', name: '覇王の一撃', icon: '覇', alwaysCrit: true,
+  effects: [{ type: 'attack', power: 16 }, { type: 'block', amount: 8 }],
+});
+
+/** 報酬として出現するスキル。 */
+export const SKILL_POOL: readonly SkillId[] = [
+  'small_attack', 'big_attack', 'jab', 'slash', 'heavy', 'smash',
+  'guard', 'bulwark', 'mend', 'recover', 'shield_bash', 'drain', 'rally',
+];
+
+/** プレイヤーの初期スロット。21 は会心の一撃で固定。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
 export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   11: 'small_attack',
   15: 'guard',
   18: 'mend',
   20: 'big_attack',
-  21: 'huge_attack',
+  21: CRITICAL_STRIKE_ID,
 };
 export const DEFAULT_PLAYER_FALLBACK: SkillId = BASIC_ATTACK_ID;
 
@@ -43,8 +77,8 @@ atk('bat_screech', '血の饗宴', 16, '絶');
 
 atk('ghoul_scratch', '引っ掻き', 4, '撃');
 atk('ghoul_claw', '腐爪', 7);
-atk('ghoul_rend', '引き裂き', 10, '剛');
-atk('ghoul_devour', '貪り喰う', 14, '絶');
+atk('ghoul_rend', '引き裂き', 8, '剛');
+atk('ghoul_devour', '貪り喰う', 12, '絶');
 
 atk('dragon_swipe', '尾の一撃', 5, '撃');
 atk('dragon_claw', '竜爪', 9);

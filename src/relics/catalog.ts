@@ -1,3 +1,4 @@
+import { getSkill } from '../core/skills/Skill';
 import type { Relic } from './Relic';
 
 /** ダメージが正のときだけ軽減する（最低1）。0 のダメージは増やさない。 */
@@ -89,7 +90,23 @@ export const LifeCandle: Relic = {
   },
 };
 
+export const OverlordOrb: Relic = {
+  id: 'orb', name: '覇王の宝珠', icon: '珠',
+  description: '会心の一撃が「覇王の一撃」（攻撃16・必ず会心 + Block 8）に変わる',
+  apply({ bus, player }) {
+    bus.on('onSkillActivated', (p) => {
+      if (p.user === player && p.skill?.id === 'critical_strike') return { ...p, skill: getSkill('overlord_strike') };
+    });
+  },
+};
+
+export const SealKey: Relic = {
+  id: 'key', name: '封印の鍵', icon: '鍵', unlocksSlot21: true,
+  description: 'スロット21の封印が解け、好きなスキルを付け替えられる',
+  apply() {},
+};
+
 /** 報酬として出現するレリックの一覧。 */
 export const RELIC_POOL: readonly Relic[] = [
-  Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle,
+  Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle, OverlordOrb, SealKey,
 ];

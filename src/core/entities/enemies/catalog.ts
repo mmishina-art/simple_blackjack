@@ -54,7 +54,7 @@ export const GiantBat: EnemyDef = {
 };
 
 export const Ghoul: EnemyDef = {
-  id: 'ghoul', name: '屍食鬼', maxHp: 38, ai: new DealerAI(17), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
+  id: 'ghoul', name: '屍食鬼', maxHp: 30, ai: new DealerAI(17), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
   trait: '屍の渇き（HPを削るたびに回復）', relics: [CorpseThirst],
 };
 
@@ -65,3 +65,9 @@ export const BlackDragon: EnemyDef = {
 
 /** 冒険の敵の並び順。 */
 export const ENEMY_LINEUP: readonly EnemyDef[] = [Slime, Skeleton, GiantBat, Ghoul, BlackDragon];
+
+export function getEnemy(id: string): EnemyDef {
+  const e = ENEMY_LINEUP.find((x) => x.id === id);
+  if (!e) throw new Error(`Unknown enemy: ${id}`);
+  return e;
+}

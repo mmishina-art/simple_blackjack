@@ -17,6 +17,8 @@ export interface BattleContext {
   round: number;
   /** 現ラウンドの行動順。Initiative で決まる。 */
   turn: TurnInfo | null;
+  /** このラウンドでプレイヤーがサレンダー（防御）を選んだ。 */
+  playerSurrendered: boolean;
   winner: Entity | null;
 
   entityOf(id: EntityId): Entity;

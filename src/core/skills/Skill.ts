@@ -12,6 +12,8 @@ export interface SkillDef {
   /** スロット表に表示する1文字。 */
   icon: string;
   effects: SkillEffect[];
+  /** true なら発動時に必ずクリティカルになる。 */
+  alwaysCrit?: boolean;
 }
 
 /** 合計値スロット。キー 11 は「11以下」を表す。 */
@@ -63,7 +65,8 @@ export function hasAttack(skill: SkillDef): boolean {
 
 /** 「攻撃 4」「Block 6」のような効果の要約。 */
 export function describeSkill(skill: SkillDef): string {
-  return skill.effects
+  const body = skill.effects
     .map((e) => (e.type === 'attack' ? `攻撃 ${e.power}` : e.type === 'block' ? `Block ${e.amount}` : `回復 ${e.amount}`))
     .join(' + ');
+  return skill.alwaysCrit ? `${body}・必ず会心` : body;
 }

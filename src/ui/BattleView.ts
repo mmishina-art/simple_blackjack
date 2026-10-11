@@ -3,7 +3,6 @@ import type { BattleMachine } from '../core/battle/BattleMachine';
 import { EnemyView, floatText } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
-import { ENEMY_LINEUP } from '../core/entities/enemies/catalog';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
 
@@ -58,7 +57,7 @@ export class BattleView {
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
     this.surrenderBtn.className = 'btn btn--surrender';
-    this.surrenderBtn.innerHTML = `<span class="btn__main">撤退</span><span class="btn__sub">HP -${machine.ctx.rules.surrenderDamage}・敵の行動なし</span>`;
+    this.surrenderBtn.innerHTML = `<span class="btn__main">撤退</span><span class="btn__sub">Block +${machine.ctx.rules.surrenderBlock}・スキル発動なし</span>`;
     const actions = section('actions', this.hitBtn, this.standBtn, this.surrenderBtn);
     this.hitBtn.addEventListener('click', () => this.act('hit'));
     this.standBtn.addEventListener('click', () => this.act('stand'));
@@ -143,7 +142,7 @@ export class BattleView {
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
     this.roundEl.textContent =
-      ctx.round > 0 ? `STAGE ${this.run.stage + 1}/${ENEMY_LINEUP.length} · ROUND ${ctx.round}` : '';
+      ctx.round > 0 ? `${this.run.map.name} · ROUND ${ctx.round}` : '';
 
     // Hit / Stand は PlayerAction で入力待ちのときのみ活性
     const active = this.machine.canAct;

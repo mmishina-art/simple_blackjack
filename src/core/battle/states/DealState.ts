@@ -8,6 +8,8 @@ export class DealState implements BattleState {
   async enter(ctx: BattleContext): Promise<StateId> {
     const { player, enemy, rules, deck } = ctx;
     ctx.round++;
+    ctx.turn = null;
+    ctx.playerSurrendered = false;
     player.hand.clear();
     enemy.hand.clear();
     if (deck.remaining < rules.reshuffleThreshold) {

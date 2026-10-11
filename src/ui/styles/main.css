@@ -418,3 +418,91 @@ section { min-width: 0; }
 .enemy-sprite { height: 120px; width: 160px; }
 .hand { min-height: 80px; }
 .enemy-area, .player-area { gap: 6px; }
+
+/* ---- Map ---- */
+.map-screen {
+  height: 100dvh; max-width: 480px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 12px);
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px;
+}
+.map-hud, .map-foot {
+  background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+  border: 1px solid var(--gold-dim); border-radius: 3px;
+  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px var(--gold-dim), 0 4px 14px rgba(0, 0, 0, 0.6);
+  padding: 12px 14px;
+}
+.map-hud__row { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+.map-hud__row strong { letter-spacing: 0.1em; }
+.map-hud__row span { font-family: var(--font-display); color: var(--bone-dim); }
+.map-hud__bar { height: 8px; margin: 6px 0; background: var(--ink); border: 1px solid var(--gold-dim); border-radius: 2px; padding: 1px; }
+.map-hud__fill { height: 100%; background: linear-gradient(90deg, #2d5a3e, var(--moss)); }
+.map-hud__relics { display: flex; gap: 4px; flex-wrap: wrap; font-size: 12px; color: var(--bone-dim); min-height: 24px; align-items: center; }
+
+.map-board-wrap { min-height: 0; display: flex; justify-content: center; }
+.map-board { height: 100%; max-width: 100%; }
+.edge { stroke: #3a2f22; stroke-width: 3; stroke-linecap: round; }
+.edge--active { stroke: var(--gold); stroke-width: 4; }
+.tile__bg { fill: #14100b; stroke: var(--gold-dim); stroke-width: 2.5; }
+.tile__icon { font-family: var(--font-body); font-weight: 800; font-size: 19px; fill: var(--bone-dim); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.tile__check { font-size: 14px; fill: var(--moss); text-anchor: middle; font-weight: 800; pointer-events: none; }
+.tile--enemy .tile__bg { stroke: var(--blood-hi); }
+.tile--enemy .tile__icon { fill: var(--blood-hi); }
+.tile--chest .tile__bg { stroke: var(--gold); }
+.tile--chest .tile__icon { fill: var(--gold); }
+.tile--inn .tile__bg { stroke: var(--moss); }
+.tile--inn .tile__icon { fill: var(--moss); }
+.tile--shrine .tile__bg { stroke: #8a6ab8; }
+.tile--shrine .tile__icon { fill: #8a6ab8; }
+.tile--boss .tile__bg { stroke: var(--blood-hi); stroke-width: 4; fill: #240c0c; }
+.tile--boss .tile__icon { fill: var(--blood-hi); font-size: 28px; }
+.tile--cleared { opacity: 0.45; }
+.tile--here .tile__bg { fill: #2a2112; stroke: #e6c878; }
+.tile--reach { cursor: pointer; }
+.tile--reach .tile__bg { stroke: #e6c878; stroke-width: 3.5; animation: reach 1.2s ease-in-out infinite; }
+.tile--reach:focus-visible .tile__bg { stroke-width: 5; }
+@keyframes reach { 0%,100% { filter: drop-shadow(0 0 2px rgba(230, 200, 120, 0.4)); } 50% { filter: drop-shadow(0 0 10px rgba(230, 200, 120, 0.95)); } }
+.pawn { animation: bob 1.4s ease-in-out infinite; }
+.pawn__shape { fill: var(--gold); stroke: #070504; stroke-width: 2; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+.map-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.map-foot__msg { margin: 0; font-size: 14px; line-height: 1.5; color: var(--bone); letter-spacing: 0.04em; }
+.map-foot__btn { min-height: 56px; min-width: 120px; }
+
+/* ---- Loadout ---- */
+.loadout {
+  height: 100dvh; max-width: 480px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 12px);
+  display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 8px;
+}
+.loadout__head { text-align: center; }
+.loadout__head h1 { margin: 0; font-family: var(--font-display); font-size: 22px; letter-spacing: 0.3em; color: var(--gold); }
+.loadout__head p { margin: 4px 0 0; font-size: 13px; color: var(--bone-dim); letter-spacing: 0.06em; }
+.loadout__slots { display: flex; flex-direction: column; gap: 3px; }
+.lslot {
+  display: grid; grid-template-columns: 38px 28px minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
+  min-height: 38px; padding: 3px 8px; text-align: left; cursor: pointer;
+  background: #0d0a07; color: var(--bone-dim); border: 1px solid #2a2118; border-radius: 2px; font-family: var(--font-body);
+}
+.lslot--set { background: #17110b; border-color: var(--gold-dim); color: var(--bone); }
+.lslot--selected { border-color: #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.5); }
+.lslot--target { border-color: var(--gold); animation: reach 1.2s ease-in-out infinite; }
+.lslot--locked { cursor: default; opacity: 0.75; }
+.lslot__key { font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--gold); }
+.lslot__name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lslot__desc { font-size: 11px; color: var(--bone-dim); white-space: nowrap; }
+.lslot__lock { font-size: 12px; font-weight: 800; color: var(--blood-hi); border: 1px solid var(--blood-hi); border-radius: 2px; padding: 0 4px; }
+.loadout__inv { min-height: 0; overflow-y: auto; padding: 8px 10px; background: var(--panel); border: 1px solid var(--gold-dim); border-radius: 3px; }
+.loadout__inv-title { font-size: 12px; letter-spacing: 0.2em; color: var(--gold); margin-bottom: 6px; }
+.loadout__chips { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; color: var(--bone-dim); }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px; cursor: pointer;
+  background: #17110b; color: var(--bone); border: 1px solid var(--gold-dim); border-radius: 3px; font-family: var(--font-body); font-size: 13px; text-align: left;
+}
+.chip small { display: block; font-size: 11px; color: var(--bone-dim); }
+.chip--armed { border-color: #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.6); }
+.loadout__actions { display: flex; gap: 10px; }
+.loadout__btn { flex: 1; min-height: 52px; }
+.notice .btn { align-self: center; min-width: 220px; }
+.notice__text { font-size: 16px !important; line-height: 1.7; color: var(--bone) !important; letter-spacing: 0.06em !important; }
+@media (max-height: 760px) { .lslot { min-height: 32px; } }

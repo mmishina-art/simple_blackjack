@@ -20,5 +20,7 @@ export interface Relic {
   /** メダリオンに表示する1文字。 */
   readonly icon: string;
   readonly description: string;
+  /** true なら、スロット21（会心の一撃で固定）の付け替えができるようになる。 */
+  readonly unlocksSlot21?: boolean;
   apply(env: RelicEnv): void;
 }

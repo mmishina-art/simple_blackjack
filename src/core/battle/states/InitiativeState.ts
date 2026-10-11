@@ -19,11 +19,12 @@ export class InitiativeState implements BattleState {
       playerTotal, enemyTotal, playerBust, enemyBust,
       playerBlackjack: player.hand.isBlackjack(rules),
       enemyBlackjack: enemy.hand.isBlackjack(rules),
+      playerSurrendered: ctx.playerSurrendered,
     });
     const { turn } = ctx.bus.emit('onInitiativeDecided', { turn: decided, playerTotal, enemyTotal, playerBust, enemyBust });
     ctx.turn = turn;
 
-    ctx.log(`${player.name} ${playerBust ? 'BUST' : playerTotal}  vs  ${enemy.name} ${enemyBust ? 'BUST' : enemyTotal}`);
+    ctx.log(`${player.name} ${ctx.playerSurrendered ? '防御' : playerBust ? 'BUST' : playerTotal}  vs  ${enemy.name} ${enemyBust ? 'BUST' : enemyTotal}`);
     switch (turn.mode) {
       case 'none':
         ctx.log('両者バースト！ 誰も行動できない');
@@ -33,6 +34,9 @@ export class InitiativeState implements BattleState {
         ctx.log(`${bust.name}はバースト！ 行動不能。${ctx.entityOf(turn.first!).name}の先制攻撃（クリティカル）`);
         break;
       }
+      case 'defend':
+        ctx.log(`${enemy.name}の行動（あなたのスキルは発動しない）`);
+        break;
       case 'simultaneous':
         ctx.log('同値！ 両者が同時に行動する');
         break;

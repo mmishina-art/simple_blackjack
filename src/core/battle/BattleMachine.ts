@@ -67,6 +67,7 @@ export class BattleMachine {
       enemyDef: opts.enemy,
       round: 0,
       turn: null,
+      playerSurrendered: false,
       winner: null,
       entityOf: (id) => (id === 'player' ? player : enemy),
       log: (text) => {

@@ -73,6 +73,7 @@ describe('スロット', () => {
     expect(skillForTotal(e, 15).id).toBe('guard');
     expect(skillForTotal(e, 13).id).toBe('basic_attack');
     expect(skillForTotal(e, 20).id).toBe('big_attack');
+    expect(skillForTotal(e, 21).id).toBe('critical_strike');
   });
   it('キャラクターごとに fallbackSkill を変えられる', () => {
     const e = new Entity('player', 'p', 60, {}, 'guard');

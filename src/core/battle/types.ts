@@ -8,7 +8,7 @@ export const TRANSITIONS: Record<StateId | 'START', readonly StateId[]> = {
   START: ['Init'],
   Init: ['Deal'],
   Deal: ['PlayerAction'],
-  // Hit なら自身へ再突入 / Stand なら敵の行動 / バーストなら敵の行動を飛ばして行動順へ / 撤退
+  // Hit なら自身へ再突入 / Stand なら敵の行動 / バーストなら敵の行動を飛ばして行動順へ / サレンダー
   PlayerAction: ['PlayerAction', 'EnemyAction', 'Initiative', 'Surrender'],
   EnemyAction: ['Initiative'],
   // 両者バーストなら誰も行動せず CheckDeath へ
@@ -17,7 +17,8 @@ export const TRANSITIONS: Record<StateId | 'START', readonly StateId[]> = {
   FirstAction: ['SurvivalCheck', 'CheckDeath'],
   SurvivalCheck: ['SecondAction', 'CheckDeath'],
   SecondAction: ['CheckDeath'],
-  Surrender: ['CheckDeath'],
+  // サレンダー: Block を得て自分のスキルは不発。敵だけが行動する
+  Surrender: ['EnemyAction'],
   CheckDeath: ['Deal'],
 };
 
