@@ -10,7 +10,7 @@ export const INN_HEAL_RATIO = 0.5;
 /** 宿屋: 最大HPの50%回復。回復量を返す。 */
 export function useInn(run: RunState): number {
   const before = run.hp;
-  run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * INN_HEAL_RATIO));
+  run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * (INN_HEAL_RATIO + run.bonus.innHeal)));
   return run.hp - before;
 }
 

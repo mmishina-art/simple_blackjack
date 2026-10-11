@@ -29,6 +29,8 @@ export interface BattleOptions {
   playerFallback?: SkillId;
   /** プレイヤーの基本攻撃力（ATK）。省略時は初期値。 */
   playerAttack?: number;
+  /** 戦闘開始時にプレイヤーが持つ Block（祭壇の強化）。 */
+  playerBlock?: number;
   rules?: Partial<RuleSet>;
   rng?: Rng;
   relics?: Relic[];
@@ -58,6 +60,7 @@ export class BattleMachine {
       { ...(opts.playerSlots ?? DEFAULT_PLAYER_SLOTS) }, opts.playerFallback ?? DEFAULT_PLAYER_FALLBACK, opts.playerAttack,
     );
     const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp, { ...opts.enemy.slots }, opts.enemy.fallbackSkill, opts.enemy.attack);
+    player.block = opts.playerBlock ?? 0;
     if (opts.playerHp !== undefined) player.hp = Math.min(opts.playerHp, player.maxHp);
 
     this.ctx = {

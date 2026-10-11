@@ -576,16 +576,12 @@ section { min-width: 0; }
 
 .slot.rar-rare { border-color: #3d6f9f; color: #8cc4f5; background: #0e1722; }
 .slot.rar-legend { border-color: #c98a2a; color: #ffc766; background: #241608; box-shadow: 0 0 6px var(--rar-glow); }
-.slot--basic { border-style: dashed; border-color: #3a2f22; color: #6b5f4a; background: transparent; }
-.slot--basic .slot__icon { font-size: 12px; opacity: 0.8; }
-.slot--active.rar-rare, .slot--active.rar-legend, .slot--active.slot--basic {
+.slot--active.rar-rare, .slot--active.rar-legend {
   color: #1a1206; background: linear-gradient(180deg, #d1ae5a, var(--gold)); border: 1px solid #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.65);
 }
 
 .lslot.rar-rare { border-color: #3d6f9f; }
 .lslot.rar-legend { border-color: #c98a2a; box-shadow: 0 0 8px var(--rar-glow); }
-.lslot--basic { border-style: dashed; color: #8a7d66; }
-.lslot--basic .lslot__name { font-style: italic; }
 .chip { border-color: var(--rar, var(--gold-dim)); }
 .chip.rar-rare { box-shadow: 0 0 8px var(--rar-glow); }
 .chip.rar-legend { box-shadow: 0 0 12px var(--rar-glow); background: #241608; }
@@ -609,3 +605,62 @@ section { min-width: 0; }
 .lslot--fixed .medal { border-color: #4a3f2e; color: var(--bone-dim); box-shadow: none; animation: none; background: #0d0a07; }
 .lslot--fixed .lslot__key { color: var(--bone-dim); }
 .over { color: #ff6b81; font-weight: 800; }
+
+/* ---- 特殊スロット（11以下・21）: 固定のスキルなので、通常のスロットとは別の見た目にする ---- */
+.slot--special {
+  position: relative;
+  color: #f3c9c0; background: linear-gradient(180deg, #3a1218, #1a0709);
+  border: 1px solid #b8352b;
+  box-shadow: inset 0 0 0 2px #14070a, inset 0 0 0 3px #7e1b1b;
+  border-radius: 6px 6px 2px 2px;
+}
+.slot--special::before { /* 上辺の飾り */
+  content: ''; position: absolute; top: -4px; left: 50%; width: 8px; height: 8px;
+  background: #b8352b; border: 1px solid #14070a; transform: translateX(-50%) rotate(45deg);
+}
+.slot--special .slot__key { color: #e89a90; }
+.slot--special .slot__icon { text-shadow: 0 0 8px rgba(232, 90, 70, 0.55); }
+.slot--special.slot--active {
+  color: #1a0709; background: linear-gradient(180deg, #f0c0b0, #d9705f); border-color: #ffd9cc;
+  box-shadow: 0 0 12px rgba(232, 90, 70, 0.7);
+}
+.slot--special.slot--active::before { background: #ffd9cc; }
+.slot--special.slot--active .slot__key { color: #3a1218; }
+
+/* ---- Meta: 祭壇 / 図鑑 / 出撃準備 ---- */
+.meta-screen {
+  min-height: 100dvh; max-width: 480px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 16px) 12px calc(env(safe-area-inset-bottom) + 14px);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.meta-head { text-align: center; }
+.meta-head h1 { margin: 0; font-family: var(--font-display); font-size: 24px; letter-spacing: 0.3em; color: var(--gold); text-shadow: 0 3px 0 #000; }
+.meta-head__sub { margin: 4px 0 0; font-size: 12px; color: var(--bone-dim); letter-spacing: 0.06em; line-height: 1.5; }
+.shards { margin: 8px 0 0; font-size: 14px; letter-spacing: 0.15em; color: var(--bone-dim); }
+.shards strong { font-family: var(--font-display); font-size: 26px; color: #9fd0ff; text-shadow: 0 0 14px rgba(120, 180, 255, 0.5); }
+.meta-list { display: flex; flex-direction: column; gap: 8px; }
+.upgrade { padding-right: 70px; }
+.upgrade:disabled { opacity: 0.5; }
+.upgrade--max { opacity: 0.8; border-color: var(--moss); }
+.upgrade .pips { font-size: 11px; letter-spacing: 0.2em; color: var(--gold); margin-left: 6px; }
+.upgrade__next { font-size: 12px !important; color: var(--bone-dim) !important; }
+.upgrade__cost {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #9fd0ff;
+}
+.upgrade__cost::before { content: '◆ '; font-size: 12px; }
+.meta-body { display: flex; flex-direction: column; gap: 12px; }
+.codex__title { margin: 0 0 6px; font-size: 14px; letter-spacing: 0.2em; color: var(--gold); }
+.codex__grid { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.codex__item {
+  display: flex; align-items: center; gap: 10px; padding: 5px 8px; font-size: 13px; color: var(--bone);
+  background: #12100c; border: 1px solid var(--rar, var(--gold-dim)); border-radius: 3px;
+}
+.codex__item small { display: block; font-size: 11px; color: var(--bone-dim); }
+.codex__item--unknown { border-style: dashed; border-color: #2e261b; color: #5c5240; }
+.title__sub { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 320px; }
+.title__sub .btn { min-height: 56px; }
+.result__shards { color: #9fd0ff !important; font-family: var(--font-display); }
+.title { gap: 14px; }
+.slot--special { padding-top: 6px; }
+.slot--special::before { top: -5px; width: 7px; height: 7px; }

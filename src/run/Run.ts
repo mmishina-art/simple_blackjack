@@ -4,6 +4,7 @@ import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK
 import { pickWeighted, RARITY_WEIGHT } from '../core/rarity';
 import { getSkill, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
+import { NO_BONUS, computeBonus, validStartingSkills, type MetaState, type RunBonus } from '../meta/Meta';
 import { STAGE_1 } from '../map/stage1';
 import { nextTiles, tileOf, type StageMap, type TileDef } from '../map/StageMap';
 import { RELIC_POOL } from '../relics/catalog';
@@ -30,18 +31,30 @@ export interface RunState {
   /** スロットにセットしていない所持スキル。 */
   inventory: SkillId[];
   relics: Relic[];
+  /** 祭壇の強化による、この冒険のボーナス。 */
+  bonus: RunBonus;
+  /** 図鑑に載っているスキル（報酬に出やすい）。 */
+  favored: SkillId[];
+  /** 魂片の計算用の記録。 */
+  stats: { maxRow: number; enemiesDefeated: number };
 }
 
 export const START_MAX_HP = 60;
 /** 固定スロット。11以下は小攻撃、21 は会心の一撃で固定。レリック（解錠の鍵・封印の鍵）で解除できる。 */
 export const FIXED_SLOTS: readonly SlotKey[] = [11, 21];
 
-export function createRun(map: StageMap = STAGE_1): RunState {
+/** 新しい冒険を始める。meta を渡すと、祭壇の強化・初期スキル・図鑑が反映される。 */
+export function createRun(map: StageMap = STAGE_1, meta?: MetaState): RunState {
+  const bonus = meta ? computeBonus(meta) : { ...NO_BONUS };
+  const maxHp = START_MAX_HP + bonus.maxHp;
+  const slots = { ...DEFAULT_PLAYER_SLOTS, ...(meta ? validStartingSkills(meta) : {}) };
   return {
     map, position: map.start, cleared: [],
-    maxHp: START_MAX_HP, hp: START_MAX_HP, baseAttack: START_ATTACK,
-    slots: { ...DEFAULT_PLAYER_SLOTS }, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
-    inventory: [], relics: [],
+    maxHp, hp: maxHp, baseAttack: START_ATTACK + bonus.attack,
+    slots, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
+    inventory: [], relics: [], bonus,
+    favored: meta ? [...meta.codex.skills] : [],
+    stats: { maxRow: 0, enemiesDefeated: 0 },
   };
 }
 
@@ -67,6 +80,7 @@ export function moveTo(run: RunState, id: string): TileDef {
   const target = reachableTiles(run).find((t) => t.id === id);
   if (!target) throw new Error(`Cannot move ${run.position} -> ${id}`);
   run.position = id;
+  run.stats.maxRow = Math.max(run.stats.maxRow, target.row);
   return target;
 }
 
@@ -105,9 +119,14 @@ export function unequipSlot(run: RunState, key: SlotKey): boolean {
   return true;
 }
 
-/** 敵撃破の報酬スキル（3択）。レア度が高いほど出にくい。 */
-export function offerSkills(rng: Rng): SkillId[] {
-  return pickWeighted(SKILL_POOL, 3, rng, (id) => RARITY_WEIGHT[rarityOfSkill(getSkill(id))]);
+/** 図鑑に載っているスキルは出やすい（重み ×2）。 */
+export const CODEX_BOOST = 2;
+
+/** 敵撃破の報酬スキル（3択 + 祭壇の「見る目」）。レア度が高いほど出にくい。 */
+export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
+  const favored = new Set(run?.favored ?? []);
+  const count = 3 + (run?.bonus.extraChoices ?? 0);
+  return pickWeighted(SKILL_POOL, count, rng, (id) => RARITY_WEIGHT[rarityOfSkill(getSkill(id))] * (favored.has(id) ? CODEX_BOOST : 1));
 }
 
 /** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */

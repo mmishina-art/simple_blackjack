@@ -58,7 +58,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         continue;
       }
       const row = document.createElement('button');
-      row.className = `lslot${id ? ` lslot--set ${rarityClass(rarityOfSkill(getSkill(id)))}` : ' lslot--basic'}${selected === key ? ' lslot--selected' : ''}${armed ? ' lslot--target' : ''}`;
+      row.className = `lslot${id ? ` lslot--set ${rarityClass(rarityOfSkill(getSkill(id)))}` : ' lslot--set'}${selected === key ? ' lslot--selected' : ''}${armed ? ' lslot--target' : ''}`;
       row.innerHTML = inner;
       row.addEventListener('click', () => {
         if (armed) {
