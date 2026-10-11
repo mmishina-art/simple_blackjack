@@ -67,6 +67,9 @@ export function rarityOfSkill(skill: SkillDef): Rarity {
   return skill.rarity ?? 'common';
 }
 
+/** 空スロット（= 通常攻撃）を表すアイコン。 */
+export const BASIC_ICON = '攻';
+
 /** スロット未設定（空スロット）のときの表記。空スロット = 通常攻撃。 */
 export function fallbackLabel(skill: SkillDef): string {
   return skill.id === 'basic_attack' ? '通常攻撃' : `通常攻撃（${skill.name}）`;

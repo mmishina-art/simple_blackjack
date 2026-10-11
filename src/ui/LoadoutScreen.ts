@@ -1,5 +1,6 @@
 import { audio } from '../audio/AudioManager';
-import { describeSkill, fallbackLabel, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { effectiveSlotSkills } from '../run/effective';
+import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
 import { rarityBadge, rarityClass } from './rarity';
 import { equipSkill, isSlotLocked, unequipSlot, type RunState } from '../run/Run';
 
@@ -27,25 +28,39 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     head.innerHTML = `<h1>編成</h1><p class="loadout__atk">基本攻撃力 ATK ${run.baseAttack}</p><p>${
       armed
         ? `「${getSkill(armed).name}」をセットするスロットを選べ`
-        : '持ち物のスキルを選び、スロットに置く（空きスロットは通常攻撃）'
+        : '持ち物のスキルを選び、スロットに置く（空きスロットは通常攻撃）。11以下と21は変更できない'
     }</p>`;
 
-    // スロット一覧
+    // スロット一覧: 固定スロット（11以下・21）は変更対象外なので、選べない平らな行で表示する
+    const effective = effectiveSlotSkills(run);
     const slotList = document.createElement('div');
     slotList.className = 'loadout__slots';
     for (const key of SLOT_KEYS) {
       const id = run.slots[key];
       const locked = isSlotLocked(run, key);
-      const row = document.createElement('button');
-      row.className = `lslot${id ? ` lslot--set ${rarityClass(rarityOfSkill(getSkill(id)))}` : ' lslot--basic'}${selected === key ? ' lslot--selected' : ''}${locked ? ' lslot--locked' : ''}${armed && !locked ? ' lslot--target' : ''}`;
       const skill = id ? getSkill(id) : getSkill(run.fallbackSkill);
-      row.innerHTML = `<span class="lslot__key">${slotLabel(key)}</span>
-        <span class="medal medal--sm">${id ? skill.icon : '通'}</span>
-        <span class="lslot__name">${id ? skill.name : `${fallbackLabel(skill)}・空き`}</span>
-        <span class="lslot__desc">${describeSkill(skill, run.baseAttack)}</span>
-        ${locked ? '<span class="lslot__lock">封</span>' : ''}`;
+      const eff = id ? effective.get(key) : undefined;
+      // レリックで上書きされているときは、上書き後の名前と効果を赤字で示す
+      const name = id ? (eff?.changed && eff.skill.id !== skill.id ? `<span class="over">${eff.skill.name}</span>` : skill.name) : `${fallbackLabel(skill)}・空き`;
+      const desc = eff?.changed
+        ? `<span class="over" title="本来: ${eff.baseText}">${eff.text}</span>`
+        : describeSkill(skill, run.baseAttack);
+      const inner = `<span class="lslot__key">${slotLabel(key)}</span>
+        <span class="medal medal--sm">${id ? skill.icon : BASIC_ICON}</span>
+        <span class="lslot__name">${name}</span>
+        <span class="lslot__desc">${desc}</span>`;
+
+      if (locked) {
+        const fixed = document.createElement('div');
+        fixed.className = 'lslot lslot--fixed';
+        fixed.innerHTML = inner;
+        slotList.append(fixed);
+        continue;
+      }
+      const row = document.createElement('button');
+      row.className = `lslot${id ? ` lslot--set ${rarityClass(rarityOfSkill(getSkill(id)))}` : ' lslot--basic'}${selected === key ? ' lslot--selected' : ''}${armed ? ' lslot--target' : ''}`;
+      row.innerHTML = inner;
       row.addEventListener('click', () => {
-        if (locked) return;
         if (armed) {
           if (equipSkill(run, key, armed)) {
             audio.sfx('pick');

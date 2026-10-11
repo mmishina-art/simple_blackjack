@@ -100,3 +100,56 @@ describe('固定スロットの解錠（11以下はレリックで変更でき�
     expect(isSlotLocked(run, 11)).toBe(true);
   });
 });
+
+describe('レリックによる上書きの検出（編成画面の赤字表示）', async () => {
+  const { effectiveSlotSkills } = await import('../src/run/effective');
+  const { TitanBlood, Whetstone, OverlordOrb } = await import('../src/relics/catalog');
+
+  it('レリックなしなら、どのスロットも上書きなし', () => {
+    for (const eff of effectiveSlotSkills(createRun()).values()) expect(eff.changed).toBe(false);
+  });
+
+  it('巨人の血: 11以下の小攻撃が ATK×0.5＝2 から ATK＝5 に上書きされる', () => {
+    const run = createRun();
+    run.relics.push(TitanBlood);
+    const eff = effectiveSlotSkills(run).get(11)!;
+    expect(eff.changed).toBe(true);
+    expect(eff.baseText).toBe('攻撃 ATK×0.5＝2');
+    expect(eff.text).toBe('攻撃 ATK＝5');
+    expect(effectiveSlotSkills(run).get(20)!.changed).toBe(false);
+  });
+
+  it('砥石（ATK+2）は攻撃スキルの実数値を上書きする。防御スキルは変わらない', () => {
+    const run = createRun();
+    run.relics.push(Whetstone);
+    const all = effectiveSlotSkills(run);
+    expect(all.get(20)!.text).toBe('攻撃 ATK+5＝12');
+    expect(all.get(20)!.changed).toBe(true);
+    expect(all.get(15)!.changed).toBe(false);
+  });
+
+  it('覇王の宝珠: 21 のスキルが別のスキル（覇王の一撃）に上書きされる', () => {
+    const run = createRun();
+    run.relics.push(OverlordOrb);
+    const eff = effectiveSlotSkills(run).get(21)!;
+    expect(eff.skill.id).toBe('overlord_strike');
+    expect(eff.base.id).toBe('ace_strike');
+    expect(eff.changed).toBe(true);
+  });
+});
+
+describe('アイコン', () => {
+  it('小=小攻撃 / 攻=通常攻撃 / 大=大攻撃。空スロットの記号も「攻」', async () => {
+    const { BASIC_ICON } = await import('../src/core/skills/Skill');
+    expect(getSkill('small_attack').icon).toBe('小');
+    expect(getSkill('basic_attack').icon).toBe('攻');
+    expect(getSkill('big_attack').icon).toBe('大');
+    expect(BASIC_ICON).toBe('攻');
+  });
+
+  it('プレイヤーのスキルのアイコンは1文字で、通常攻撃（攻）と重複しない', () => {
+    const icons = SKILL_POOL.map((id) => getSkill(id).icon);
+    for (const i of icons) expect(i).toHaveLength(1);
+    expect(icons).not.toContain('攻');
+  });
+});

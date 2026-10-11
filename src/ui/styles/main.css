@@ -600,3 +600,12 @@ section { min-width: 0; }
 .title-art { position: relative; height: 100%; width: 100%; display: flex; justify-content: center; align-items: flex-end; }
 .title-art svg { height: 100%; width: auto; max-width: 100%; display: block; overflow: visible; }
 .title-stage { width: 100%; }
+
+/* ---- Loadout: 固定スロットは変更対象外なので、選べる行とは別の見え方にする ---- */
+.lslot--fixed {
+  background: transparent; border-color: transparent; cursor: default; color: var(--bone-dim);
+  border-bottom: 1px solid #1f1810; border-radius: 0;
+}
+.lslot--fixed .medal { border-color: #4a3f2e; color: var(--bone-dim); box-shadow: none; animation: none; background: #0d0a07; }
+.lslot--fixed .lslot__key { color: var(--bone-dim); }
+.over { color: #ff6b81; font-weight: 800; }

@@ -1,6 +1,6 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { RuleSet } from '../../core/rules/RuleSet';
-import { describeSkill, fallbackLabel, getSkill, rarityOfSkill, SLOT_KEYS, slotKeyOf, slotLabel } from '../../core/skills/Skill';
+import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, rarityOfSkill, SLOT_KEYS, slotKeyOf, slotLabel } from '../../core/skills/Skill';
 import { rarityClass } from '../rarity';
 
 /** 合計値スロット表（11以下〜21）と、現在の合計値で発動するスキルの表示。プレイヤーと敵の両方で使う。 */
@@ -39,7 +39,7 @@ export class SlotStrip {
       const id = entity.slots[key];
       const skill = id ? getSkill(id) : null;
       cell.className = `slot ${skill ? `slot--set ${rarityClass(rarityOfSkill(skill))}` : 'slot--basic'}${key === active ? ' slot--active' : ''}`;
-      cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : '通'}</span>`;
+      cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;
       cell.title = skill
         ? `${skill.name}（${describeSkill(skill, entity.attack)}）`
         : `${fallbackLabel(fallback)}（空きスロット・${describeSkill(fallback, entity.attack)}）`;
