@@ -15,8 +15,8 @@ export default defineConfig({
         lang: 'ja',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#14101f',
-        theme_color: '#14101f',
+        background_color: '#0a0806',
+        theme_color: '#0a0806',
         start_url: './',
         scope: './',
         icons: [
@@ -25,7 +25,17 @@ export default defineConfig({
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        // Google Fonts は初回アクセス後にキャッシュし、オフラインでも表示できるようにする
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+        ],
+      },
     }),
   ],
   test: { environment: 'node', include: ['tests/**/*.test.ts'] },

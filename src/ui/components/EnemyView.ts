@@ -1,4 +1,4 @@
-import { ENEMY_SPRITES } from './enemySprites';
+import { ENEMY_SPRITES, STAGE_BACKDROP } from './enemySprites';
 
 type Anim = 'hurt' | 'attack' | 'defeated';
 
@@ -11,7 +11,10 @@ export class EnemyView {
     this.el.className = 'enemy-stage';
     this.sprite.className = 'enemy-sprite';
     this.sprite.innerHTML = ENEMY_SPRITES[enemyId] ?? ENEMY_SPRITES.slime;
-    this.el.append(this.sprite);
+    const backdrop = document.createElement('div');
+    backdrop.className = 'enemy-backdrop';
+    backdrop.innerHTML = STAGE_BACKDROP;
+    this.el.append(backdrop, this.sprite);
   }
 
   play(anim: Anim): void {

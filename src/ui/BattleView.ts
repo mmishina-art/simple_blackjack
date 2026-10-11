@@ -46,9 +46,9 @@ export class BattleView {
     this.playerArea = section('player-area', this.playerHand.el, this.playerHp.el);
 
     this.hitBtn.className = 'btn btn--hit';
-    this.hitBtn.textContent = 'Hit';
+    this.hitBtn.innerHTML = '<span class="btn__main">Hit</span><span class="btn__sub">引く</span>';
     this.standBtn.className = 'btn btn--stand';
-    this.standBtn.textContent = 'Stand';
+    this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
     const actions = section('actions', this.hitBtn, this.standBtn);
     this.hitBtn.addEventListener('click', () => this.act('hit'));
     this.standBtn.addEventListener('click', () => this.act('stand'));
@@ -129,7 +129,9 @@ export class BattleView {
     this.overlay.innerHTML = '';
     const title = document.createElement('h1');
     title.className = won ? 'overlay__title overlay__title--win' : 'overlay__title overlay__title--lose';
-    title.textContent = won ? 'YOU WIN!' : 'YOU LOSE...';
+    title.innerHTML = won
+      ? '勝　利<small>VICTORY</small>'
+      : '敗　北<small>DEFEAT</small>';
     const again = document.createElement('button');
     again.className = 'btn btn--retry';
     again.textContent = 'もう一度';

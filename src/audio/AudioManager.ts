@@ -3,15 +3,15 @@ export type SfxName =
 
 const STORAGE_KEY = 'bj-muted';
 
-// A マイナー。小節ごとのベース音とアルペジオの和音（Hz）
-const BASS = [110.0, 87.31, 130.81, 98.0];
+// A ハーモニックマイナー（Am - F - Dm - E）。小節ごとのベース音とアルペジオ（Hz）
+const BASS = [110.0, 87.31, 73.42, 82.41];
 const ARP: number[][] = [
   [220.0, 261.63, 329.63, 261.63],
   [174.61, 220.0, 261.63, 220.0],
-  [261.63, 329.63, 392.0, 329.63],
-  [196.0, 246.94, 293.66, 246.94],
+  [146.83, 174.61, 220.0, 174.61],
+  [164.81, 207.65, 246.94, 207.65],
 ];
-const STEP_SEC = 60 / 104 / 2; // 104bpm の8分音符
+const STEP_SEC = 60 / 84 / 2; // 84bpm の8分音符
 
 /**
  * 外部ファイルを使わず Web Audio で合成する BGM / SE。
@@ -65,8 +65,12 @@ export class AudioManager {
       this.master.gain.value = this._muted ? 0 : 1;
       this.master.connect(this.ctx.destination);
       this.bgmGain = this.ctx.createGain();
-      this.bgmGain.gain.value = 0.22;
-      this.bgmGain.connect(this.master);
+      this.bgmGain.gain.value = 0.26;
+      // こもった暗い音色にするローパス
+      const lowpass = this.ctx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = 1100;
+      this.bgmGain.connect(lowpass).connect(this.master);
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.gain.value = 0.6;
       this.sfxGain.connect(this.master);
@@ -131,8 +135,11 @@ export class AudioManager {
       const bar = Math.floor(this.step / 8) % 4;
       const pos = this.step % 8;
       const t = this.nextTime;
-      if (pos % 4 === 0) this.tone(BASS[bar], t, STEP_SEC * 3.6, 'triangle', 0.5, undefined, this.bgmGain);
-      this.tone(ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1), t, STEP_SEC * 0.9, 'square', 0.07, undefined, this.bgmGain);
+      if (pos % 4 === 0) {
+        this.tone(BASS[bar], t, STEP_SEC * 3.8, 'sawtooth', 0.28, undefined, this.bgmGain);
+        this.tone(BASS[bar] / 2, t, STEP_SEC * 3.8, 'sine', 0.5, undefined, this.bgmGain);
+      }
+      this.tone(ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1), t, STEP_SEC * 0.9, 'triangle', 0.16, undefined, this.bgmGain);
       if (pos % 2 === 1) this.noise(t, 0.03, 7000, 0.06, this.bgmGain);
       this.nextTime += STEP_SEC;
       this.step++;

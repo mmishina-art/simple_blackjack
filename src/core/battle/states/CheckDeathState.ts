@@ -9,7 +9,7 @@ export class CheckDeathState implements BattleState {
     ctx.bus.emit('onRoundEnd', { round: ctx.round });
     if (ctx.enemy.isDead || ctx.player.isDead) {
       ctx.winner = ctx.enemy.isDead ? ctx.player : ctx.enemy;
-      ctx.log(ctx.winner === ctx.player ? 'You Win!' : 'You Lose...');
+      ctx.log(ctx.winner === ctx.player ? '勝利！' : '敗北…');
       ctx.bus.emit('onBattleEnd', { winner: ctx.winner });
       return null;
     }

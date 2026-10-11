@@ -25,12 +25,12 @@ function showTitle(): void {
   screen.className = 'title';
   const enemy = new EnemyView(Slime.id);
   const h1 = document.createElement('h1');
-  h1.textContent = 'BLACKJACK ROGUELIKE';
+  h1.innerHTML = 'BLACKJACK<small>ROGUELIKE</small>';
   const sub = document.createElement('p');
-  sub.textContent = '21に近い方が勝ち。勝敗でHPを削り合え。';
+  sub.textContent = '二十一に近き者が勝つ。敗者は、命を削られる。';
   const start = document.createElement('button');
   start.className = 'btn btn--hit title__start';
-  start.textContent = 'バトル開始';
+  start.innerHTML = '<span class="btn__main">バトル開始</span>';
   start.addEventListener('click', () => {
     audio.unlock();
     audio.sfx('click');
