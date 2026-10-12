@@ -60,6 +60,31 @@ describe('BattleMachine の進行', () => {
     expect(m.ctx.winner).toBe(m.ctx.enemy);
   });
 
+  it('初手が21（ブラックジャック）でも自動では進まず、Stand を待つ', async () => {
+    const m = machine(3);
+    m.bus.on('onCardDrawn', (p) => (p.entity.id === 'player' && p.entity.hand.size < 2
+      ? { ...p, card: makeCard(p.entity.hand.size === 0 ? 'A' : 'K', 'S') }
+      : undefined));
+    const seen: string[] = [];
+    let waited = false;
+    m.onChange(() => {
+      if (m.state && seen.at(-1) !== m.state) seen.push(m.state);
+      if (!m.canAct) return;
+      if (!waited) {
+        waited = true;
+        // 入力待ちの時点では、まだ行動順の決定へ進んでいない
+        expect(m.ctx.player.hand.total(m.ctx.rules)).toBe(21);
+        expect(seen.at(-1)).toBe('PlayerAction');
+        expect(seen).not.toContain('Initiative');
+      }
+      queueMicrotask(() => m.submit('stand'));
+    });
+    await m.run();
+    expect(waited).toBe(true);
+    expect(m.logs).toContain('ブラックジャック！ あなたのターン');
+    expect(seen.indexOf('Initiative')).toBeGreaterThan(seen.indexOf('PlayerAction'));
+  });
+
   it('サレンダー: 自分のスキルは発動せず、敵だけが行動する（行動順の比較はしない）', async () => {
     const m = machine(9);
     const visited = await play(m, () => 'surrender');
@@ -110,7 +135,7 @@ interface InputSnapshot {
 
 /**
  * プレイヤーの入力待ちのたびに敵の手札を記録し（ラウンドごと）、行動順の決定後（FirstAction）の敵の手札も記録して、最後まで走らせる。
- * 初手ブラックジャックのラウンドは入力待ちが発生しない。
+ * 初手が21でも入力待ちは発生する（自動では進まない）。
  */
 async function observeBattle(m: BattleMachine, policy: (m: BattleMachine) => PlayerInput) {
   const { enemy, player, rules } = m.ctx;

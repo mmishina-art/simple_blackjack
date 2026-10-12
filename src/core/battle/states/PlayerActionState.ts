@@ -11,14 +11,10 @@ export class PlayerActionState implements BattleState {
   async enter(ctx: BattleContext): Promise<StateId> {
     const { player, rules } = ctx;
 
-    // 配牌直後（初手）のブラックジャックは自動で Stand 扱い
-    if (player.hand.isBlackjack(rules)) {
-      ctx.log('ブラックジャック！');
-      ctx.bus.emit('onStand', { entity: player });
-      return 'Initiative';
+    // 初手が21（ブラックジャック）でも自動では進めず、ほかの手と同じく入力を待つ
+    if (player.hand.size === rules.initialCards) {
+      ctx.log(player.hand.isBlackjack(rules) ? 'ブラックジャック！ あなたのターン' : 'あなたのターン');
     }
-
-    if (player.hand.size === rules.initialCards) ctx.log('あなたのターン');
     const input = await ctx.waitForInput();
 
     if (input === 'surrender') return 'Surrender';
