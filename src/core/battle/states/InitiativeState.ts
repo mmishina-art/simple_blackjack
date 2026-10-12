@@ -26,6 +26,7 @@ export class InitiativeState implements BattleState {
     });
     const { turn } = ctx.bus.emit('onInitiativeDecided', { turn: decided, playerTotal, enemyTotal, playerBust, enemyBust });
     ctx.turn = turn;
+    ctx.notify(); // 画面が行動順の帯をすぐ出せるように
 
     ctx.log(`${player.name} ${ctx.playerSurrendered ? '防御' : playerBust ? 'BUST' : playerTotal}  vs  ${enemy.name} ${enemyBust ? 'BUST' : enemyTotal}`);
     switch (turn.mode) {

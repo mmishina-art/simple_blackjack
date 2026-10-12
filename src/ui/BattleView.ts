@@ -1,6 +1,7 @@
 import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
 import type { Entity } from '../core/entities/Entity';
+import { BattleLog } from './components/BattleLog';
 import { EnemyView, floatText } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
@@ -10,8 +11,14 @@ import { SlotStrip } from './components/SlotStrip';
 import { rarityClass } from './rarity';
 import { formatPreview, previewSkill } from '../core/skills/preview';
 import { fallbackLabel, slotKeyOf } from '../core/skills/Skill';
+import { damageTakenMultiplier } from '../core/rules/bust';
+import { turnBanner } from './turnBanner';
+import type { TurnInfo } from '../core/rules/initiative';
 
-/** 縦画面レイアウト: 上=敵 / 中=ログ / 下=プレイヤー / 最下=ボタン。 */
+/**
+ * 縦画面レイアウト: 上=敵 / 下=プレイヤー / 最下=ボタン。
+ * 戦闘ログは常時は出さない（BattleLog: 読み上げ用の領域と、「記録」ボタンのシート）。行動順は敵の舞台に帯で出す。
+ */
 export class BattleView {
   private enemyView: EnemyView;
   private enemyHp = new HpBar('enemy');
@@ -20,7 +27,10 @@ export class BattleView {
   private playerHand = new HandView();
   private slotStrip = new SlotStrip();
   private enemySlotStrip = new SlotStrip();
-  private logEl = document.createElement('div');
+  private log = new BattleLog();
+  private banner = document.createElement('div');
+  private bannerTimer = 0;
+  private shownTurn: TurnInfo | null = null;
   private roundEl = document.createElement('div');
   private hitBtn = document.createElement('button');
   private standBtn = document.createElement('button');
@@ -55,14 +65,20 @@ export class BattleView {
     const infoBtn = document.createElement('button');
     infoBtn.className = 'info-btn';
     infoBtn.textContent = '敵の技';
-    infoBtn.addEventListener('click', () => this.toggleEnemyInfo(true));
+    infoBtn.addEventListener('click', () => this.showSheet((close) => buildEnemyInfo(machine.ctx.enemy, machine.ctx.enemyDef, close)));
+    const historyBtn = document.createElement('button');
+    historyBtn.className = 'info-btn';
+    historyBtn.textContent = '記録';
+    historyBtn.addEventListener('click', () => this.showSheet((close) => this.log.buildSheet(close)));
     const topRight = document.createElement('span');
     topRight.className = 'top-row__right';
-    topRight.append(infoBtn, this.muteBtn);
+    topRight.append(historyBtn, infoBtn, this.muteBtn);
     const topRow = section('top-row', this.roundEl, topRight);
     const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemySlotStrip.el, this.enemyView.el, this.enemyHand.el);
-    this.logEl.className = 'log';
-    this.logEl.setAttribute('aria-live', 'polite');
+    this.banner.className = 'turn-banner';
+    this.banner.hidden = true;
+    this.banner.setAttribute('aria-hidden', 'true'); // 同じ内容が、読み上げ用のログにも出る
+    this.enemyView.el.append(this.banner);
     this.playerHp.attach(this.buildRelicChips());
     this.playerArea = section('player-area', this.playerHand.el, this.slotStrip.el, this.playerHp.el);
 
@@ -82,13 +98,13 @@ export class BattleView {
 
     this.infoLayer.className = 'info-layer';
     this.infoLayer.hidden = true;
-    this.container.append(enemyArea, this.logEl, this.playerArea, actions, this.overlay, this.infoLayer);
+    this.container.append(enemyArea, this.playerArea, actions, this.log.liveEl, this.overlay, this.infoLayer);
     root.replaceChildren(this.container);
 
     this.unsubs.push(
       machine.onChange(() => this.render()),
-      machine.onLog((text) => this.appendLog(text)),
-      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender.id, p.hpLoss, p.absorbed)),
+      machine.onLog((text) => this.log.append(text)),
+      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage)),
       machine.bus.on('onBattleEnd', ({ winner }) => {
         if (winner.id === 'player') window.setTimeout(() => this.enemyView.play('defeated'), 300);
       }),
@@ -98,32 +114,55 @@ export class BattleView {
   }
 
   destroy(): void {
+    window.clearTimeout(this.bannerTimer);
     this.unsubs.forEach((u) => u());
     this.container.remove();
   }
 
-  /** 敵の ATK・特性・全スキルの数値を確認するシート。 */
-  private toggleEnemyInfo(show: boolean): void {
-    this.infoLayer.hidden = !show;
-    if (show) {
-      const { ctx } = this.machine;
-      this.infoLayer.replaceChildren(buildEnemyInfo(ctx.enemy, ctx.enemyDef, () => this.toggleEnemyInfo(false)));
+  /** 全面のシート（敵の技・戦闘の記録）を開く。閉じるボタンで閉じる。 */
+  private showSheet(build: (close: () => void) => HTMLElement): void {
+    this.infoLayer.replaceChildren(build(() => { this.infoLayer.hidden = true; }));
+    this.infoLayer.hidden = false;
+  }
+
+  /** 行動順の帯を、敵の舞台に少しのあいだ出す。 */
+  private showTurnBanner(): void {
+    const b = turnBanner(this.machine.ctx);
+    if (!b) return;
+    const main = document.createElement('span');
+    main.className = 'turn-banner__main';
+    main.textContent = b.main;
+    this.banner.replaceChildren(main);
+    if (b.sub) {
+      const sub = document.createElement('span');
+      sub.className = 'turn-banner__sub';
+      sub.textContent = b.sub;
+      this.banner.append(sub);
     }
+    this.banner.hidden = false;
+    this.banner.classList.remove('is-show');
+    void this.banner.offsetWidth; // アニメーション再始動
+    this.banner.classList.add('is-show');
+    window.clearTimeout(this.bannerTimer);
+    this.bannerTimer = window.setTimeout(() => { this.banner.hidden = true; }, 1900);
   }
 
   private act(input: 'hit' | 'stand' | 'surrender'): void {
     if (this.machine.submit(input)) audio.sfx('click');
   }
 
-  private playDamageEffects(attacker: 'player' | 'enemy' | null, defender: 'player' | 'enemy', hpLoss: number, absorbed: number): void {
+  private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number): void {
     const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : '';
     if (!text) return;
-    if (defender === 'enemy') {
+    // ログ欄の代わりに、数字の下へ内訳（Block が防いだ量・バーストの倍率）を添える
+    const mult = damageTakenMultiplier(target, this.machine.ctx.rules);
+    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : ''].filter(Boolean).join('・');
+    if (target.id === 'enemy') {
       if (hpLoss > 0) this.enemyView.play('hurt');
-      this.enemyView.floatText(text);
+      this.enemyView.floatText(text, 'damage', notes);
     } else {
       if (attacker === 'enemy') this.enemyView.play('attack');
-      floatText(this.playerArea, text);
+      floatText(this.playerArea, text, 'damage', notes);
       if (hpLoss > 0) {
         this.container.classList.remove('is-flash');
         void this.container.offsetWidth;
@@ -157,14 +196,6 @@ export class BattleView {
     return formatPreview(p, target.block, label);
   }
 
-  private appendLog(text: string): void {
-    const line = document.createElement('p');
-    line.textContent = text;
-    this.logEl.append(line);
-    while (this.logEl.childElementCount > 50) this.logEl.firstElementChild?.remove();
-    this.logEl.scrollTop = this.logEl.scrollHeight;
-  }
-
   private renderMute(): void {
     this.muteBtn.classList.toggle('mute--off', audio.muted);
     this.muteBtn.setAttribute('aria-pressed', String(audio.muted));
@@ -181,6 +212,11 @@ export class BattleView {
     this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : this.previewText(ctx.enemy, ctx.player), hidden);
     this.roundEl.textContent =
       ctx.round > 0 ? `ROUND ${ctx.round}` : '';
+    // 行動順が決まったら（伏せカードがめくられたあと）、帯で知らせる
+    if (ctx.turn !== this.shownTurn) {
+      this.shownTurn = ctx.turn;
+      if (ctx.turn) this.showTurnBanner();
+    }
 
     // Hit / Stand は PlayerAction で入力待ちのときのみ活性
     const active = this.machine.canAct;
