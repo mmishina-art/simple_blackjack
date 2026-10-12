@@ -6,7 +6,8 @@ export default defineConfig({
   base: './',
   plugins: [
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': 新しい版は待機させ、画面の「更新」ボタン（src/ui/UpdateBanner.ts）で切り替える
+      registerType: 'prompt',
       includeAssets: ['icons/icon.svg'],
       manifest: {
         name: 'Blackjack Roguelike',

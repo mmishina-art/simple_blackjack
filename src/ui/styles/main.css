@@ -775,3 +775,22 @@ section { min-width: 0; }
 
 .btn--notice { border-color: #e6c878; box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #8a6e2a, 0 0 14px rgba(230, 200, 120, 0.45); }
 .btn--notice .btn__sub { color: #f0d78c; }
+
+/* ---- 新しいバージョンのお知らせ（画面上部。戦闘の操作ボタンと重ならない位置） ---- */
+.update-banner {
+  position: fixed; z-index: 200;
+  top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px;
+  width: max-content; max-width: calc(100vw - 16px); padding: 6px 8px 6px 14px;
+  background: var(--panel-hi); border: 1px solid var(--gold-dim); border-radius: 8px;
+  color: var(--bone); font-size: 13px; letter-spacing: 0.04em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+.update-banner__btn {
+  flex: none; white-space: nowrap;
+  min-height: 44px; min-width: 44px; padding: 0 12px;
+  background: var(--ink); color: var(--bone); border: 1px solid var(--gold-dim); border-radius: 6px;
+  font: inherit; cursor: pointer;
+}
+.update-banner__btn--primary { background: var(--gold-dim); color: var(--bone); border-color: var(--gold); }
+.update-banner__btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
