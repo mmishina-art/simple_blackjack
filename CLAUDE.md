@@ -20,18 +20,17 @@ npm run build       # tsc --noEmit && vite build → dist/
 
 ## PWA
 
-- `vite.config.ts` の `VitePWA`(`registerType: 'autoUpdate'`)が Service Worker を自動生成する。ファイル一覧の手動更新は不要。
+- `vite.config.ts` の `VitePWA`(`registerType: 'prompt'`)が Service Worker を自動生成する。ファイル一覧の手動更新は不要。新しい版は待機し、`src/ui/UpdateBanner.ts` の「更新」ボタンで切り替える(戦闘の途中で勝手に切り替えない)。
 - Google Fonts は初回アクセス後にキャッシュする(`runtimeCaching`)。
 - 配色は「暗い固定」(`theme_color` `#0a0806`)。
 
 ## 現状と標準のずれ(直すときは別 PR で)
 
-- 更新が `autoUpdate`(新版を取得すると自動で切り替わる)。標準は `registerType: 'prompt'` + 画面の「更新」ボタン。戦闘の途中で切り替わらないようにしたい。
-- viewport に `user-scalable=no` が入っている → 標準はピンチ拡大を許可。
-- `maskable` アイコンが通常の `icon-512.png` の流用 → 安全領域に余白を取った専用画像にしたい。
+- バージョン表示がない → タイトル画面に表示したい(元は `package.json` の `version`)。
 - デフォルトブランチが `claude/determined-einstein-moflfm`(`main` がない)で、`pages.yml` は `main` と `claude/**` への push で公開する(作業ブランチが公開 URL に載りうる)。標準は「`main` のみ公開 + PR でテスト」。
 - Lint(ESLint)は入れず、`tsc` の型チェックで代替している。
-- インストール方法の説明がない(タイトル画面に入口を置きたい)。
+
+対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)。
 
 ## 共通ルール(PWA アプリ共通)
 
@@ -48,4 +47,5 @@ npm run build       # tsc --noEmit && vite build → dist/
 - 効果音は Web Audio で合成し、オン/オフ設定を用意する。
 - iPhone の安全領域(`env(safe-area-inset-*)`)を考慮する。
 - **最初の画面(タイトル/ホーム)に、インストール方法の説明への入口を置く。** iPhone は自動のインストール案内が出ないため、手順(iPhone / iPad は Safari の共有 → ホーム画面に追加、Android は Chrome のメニュー → アプリをインストール、パソコンはアドレスバーのインストールのマーク)を見せる。今使っている端末の説明を最初から開き、`beforeinstallprompt` が使えるときは「今すぐインストール」も出す。インストール済み(`display-mode: standalone`)のときは入口を出さない。実装の手本はテンプレート `mmishina-art/pwa-template` の `src/install.ts`。
+- **タイトル画面(最初の画面)にバージョンを表示する**(例: `v1.2`)。更新が反映されたかを、利用者がひと目で確認できるようにするため。バージョンの元は1か所に置き、公開のたびに上げる。キャッシュ優先の Service Worker を手で書いている場合は、キャッシュ名の番号と同じにして、食い違いをテストで検出する。
 - 変更を終える前にテストを通し、`python3 -m http.server` などで実際に起動して動作を確認する。
