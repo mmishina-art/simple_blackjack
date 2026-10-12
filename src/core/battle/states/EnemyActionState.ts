@@ -1,29 +1,29 @@
 import type { BattleContext } from '../BattleContext';
+import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
-/** 敵の自動行動: 伏せカードを公開し、AI に従って引く。 */
+/**
+ * 敵は先に AI に従って引ききり、手札を確定させる。
+ * 公開されるのは最後に引いた1枚を除く手札だけ（伏せカードは常に「最後の1枚」）。
+ * 新しく引くたびに、直前の伏せカードをめくってから次の1枚を伏せて引く。
+ * 伏せカードは行動順の決定（Initiative）まで公開されない。
+ */
 export class EnemyActionState implements BattleState {
   readonly id = 'EnemyAction' as const;
 
   async enter(ctx: BattleContext): Promise<StateId> {
     const { enemy, player, rules, enemyDef } = ctx;
-    ctx.log(`${enemy.name}のターン`);
-    await ctx.wait(500);
-    enemy.hand.revealAll();
-    ctx.notify();
-    await ctx.wait(500);
 
     while (!enemy.hand.isBust(rules) && enemyDef.ai.decide(enemy, player, rules) === 'hit') {
-      ctx.draw(enemy);
-      ctx.log(`${enemy.name}はヒット (合計 ${enemy.hand.total(rules)})`);
-      await ctx.wait(600);
+      enemy.hand.revealAll();
+      ctx.draw(enemy, { faceDown: true });
+      await ctx.wait(PACE.enemyHit);
     }
 
-    if (enemy.hand.isBust(rules)) ctx.log(`${enemy.name}がバースト！`);
-    else {
-      ctx.log(`${enemy.name}はスタンド`);
-      ctx.bus.emit('onStand', { entity: enemy });
-    }
-    return 'Initiative';
+    // バーストしたかどうかも伏せカードが明かすまで分からないので、ログには出さない
+    ctx.log(`${enemy.name}は${enemy.hand.size}枚で手札を決めた`);
+    if (!enemy.hand.isBust(rules)) ctx.bus.emit('onStand', { entity: enemy });
+    await ctx.wait(PACE.settle);
+    return 'PlayerDeal';
   }
 }

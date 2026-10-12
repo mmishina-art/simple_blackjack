@@ -18,13 +18,18 @@ export class HandView {
 
   update(entity: Entity, rules: RuleSet): void {
     const { hand } = entity;
-    const key = hand.cards.map((c) => c.suit + c.rank + (hand.isFaceDown(c) ? '*' : '')).join(',');
-    if (key !== (this.cardsEl.dataset.key ?? '')) {
+    const keys = hand.cards.map((c) => c.suit + c.rank + (hand.isFaceDown(c) ? '*' : ''));
+    const key = keys.join(',');
+    const prevKey = this.cardsEl.dataset.key ?? '';
+    if (key !== prevKey) {
+      const prev = prevKey.split(',');
       const isGrowth = hand.size > this.shown;
       this.cardsEl.replaceChildren(
         ...hand.cards.map((c, i) => {
           const el = cardElement(c, hand.isFaceDown(c));
           if (isGrowth && i >= this.shown) el.classList.add('card--deal');
+          // 伏せられていた札がめくられた
+          else if (prev[i] === `${keys[i]}*`) el.classList.add('card--flip');
           return el;
         }),
       );
