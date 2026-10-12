@@ -26,7 +26,7 @@ export class BattleView {
   private enemyHand = new HandView();
   private playerHand = new HandView();
   private slotStrip = new SlotStrip();
-  private enemySlotStrip = new SlotStrip();
+  private enemySlotStrip: SlotStrip;
   private log = new BattleLog();
   private banner = document.createElement('div');
   private bannerTimer = 0;
@@ -52,6 +52,8 @@ export class BattleView {
     this.container = document.createElement('main');
     this.container.className = 'battle';
     this.enemyView = new EnemyView(machine.ctx.enemyDef.id);
+    // 敵が「N以上になるまで引く」なら、N未満のスロットは出さない
+    this.enemySlotStrip = new SlotStrip(machine.ctx.enemyDef.ai.standOn);
 
     this.roundEl.className = 'round';
     this.muteBtn.className = 'mute';

@@ -388,7 +388,13 @@ section { min-width: 0; }
   color: #1a1206; background: linear-gradient(180deg, #d1ae5a, var(--gold)); border-color: #e6c878;
   box-shadow: 0 0 10px rgba(176, 141, 62, 0.65); transform: translateY(-2px);
 }
+/* 合計値がたまるメーター: 点灯（.slot--on）したスロットは明るく、下に金の線が入る。まだのスロットは暗い */
+.slot { position: relative; opacity: 0.5; transition: opacity 0.25s ease, transform 0.25s ease; }
+.slot--on { opacity: 1; }
+.slot--on::after { content: ''; position: absolute; left: 2px; right: 2px; bottom: 1px; height: 2px; background: var(--gold); border-radius: 1px; }
+.slot--active::after { background: #1a1206; }
 .slots--bust .slot { opacity: 0.45; }
+@media (prefers-reduced-motion: reduce) { .slot { transition: none; } }
 .slots__caption { min-height: 1.4em; font-size: 12px; letter-spacing: 0.06em; color: var(--bone-dim); }
 .slots--bust .slots__caption { color: var(--blood-hi); }
 

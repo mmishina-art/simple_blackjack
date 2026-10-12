@@ -90,6 +90,14 @@ describe('戦闘ログ欄（なくした）', () => {
   });
 });
 
+describe('スロット表のメーター', () => {
+  it('点灯したスロット（.slot--on）は明るく、まだのスロットは暗い', () => {
+    expect(css).toMatch(/\.slot\s*\{[^}]*opacity:\s*0\.5/);
+    expect(css).toMatch(/\.slot--on\s*\{[^}]*opacity:\s*1/);
+    expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.slot\s*\{[^}]*transition:\s*none/);
+  });
+});
+
 describe('短い画面の編成画面', () => {
   const LOADOUT_HEIGHT = 750;
 
