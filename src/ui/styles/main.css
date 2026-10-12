@@ -830,3 +830,14 @@ section { min-width: 0; }
 .boot-error { z-index: 300; }
 .boot-error[hidden] { display: none; }
 .boot-error small { display: block; font-size: 11px; color: var(--bone-dim); }
+
+/* ---- 記録のバックアップ（祭壇の下） ---- */
+.backup { margin: 12px 0 4px; padding: 2px 12px; border: 1px solid var(--gold-dim); border-radius: 8px; background: var(--panel); text-align: left; }
+.backup summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--bone); }
+.backup p { margin: 0 0 8px; color: var(--bone-dim); font-size: 13px; line-height: 1.6; }
+.backup__btn {
+  display: block; box-sizing: border-box; width: 100%; min-height: 44px; margin: 0 0 8px; padding: 10px 16px;
+  background: var(--ink); color: var(--bone); border: 1px solid var(--gold-dim); border-radius: 6px;
+  font: inherit; text-align: center; cursor: pointer;
+}
+.backup__btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

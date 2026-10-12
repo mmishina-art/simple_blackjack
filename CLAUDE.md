@@ -23,17 +23,18 @@ npm run build       # tsc --noEmit && vite build → dist/
 - `vite.config.ts` の `VitePWA`(`registerType: 'prompt'`)が Service Worker を自動生成する。ファイル一覧の手動更新は不要。新しい版は待機し、`src/ui/UpdateBanner.ts` の「更新」ボタンで切り替える(戦闘の途中で勝手に切り替えない)。
 - Google Fonts は初回アクセス後にキャッシュする(`runtimeCaching`)。
 - 配色は「暗い固定」(`theme_color` `#0a0806`)。
+- **記録のバックアップは `src/meta/backup.ts` と `src/ui/BackupSection.ts`**(「魂の祭壇」の下の「記録のバックアップ」)。メタ進行(`bj-meta-v1`)と音の設定(`bj-muted`)を、`app` 名と `schemaVersion` を入れた JSON ファイルに書き出し / 読み込む。別のアプリのファイル、新しすぎる版、壊れた中身は理由を示して断る。**今の記録より冒険した回数が少ない(古い)バックアップは、置き換えてよいか確認する**。読み込み後はページを読み込み直す。バックアップに入れるキーを増やすときは `BACKUP_KEYS` に足す。`tests/backup.test.ts` がテストする。
 - **起動に失敗したときの復旧は `public/boot.js`**(Vite を通さずそのまま配信される普通のスクリプトで、`index.html` で `main.ts` より先に読み込む)。起動できなかったとき、Service Worker とキャッシュを消して読み込み直す(1回目は自動、2分以内の2回目は `#boot-error` の「なおす」ボタン)。保存データは消さない。`src/main.ts` の最後で `window.__appStarted = true` にする(`tests/pwa.test.ts` が確認する)。
 - **公開のたびに `package.json` の `version` を上げる**(`vite.config.ts` が `__APP_VERSION__` として埋め込み、タイトル画面の下に `v0.2.0` のように表示される)。Service Worker のキャッシュは自動生成なので、手で合わせる番号はない。
 
 ## 現状と標準のずれ(直すときは別 PR で)
 
 - Lint(ESLint)は入れず、`tsc` の型チェックで代替している。
-- 保存データ(`src/meta/Meta.ts`)は `version: 1` を持つが、知らない版は初期値に戻す実装(`d.version !== 1`)で、移行処理がない。書き出し / 読み込みもない。
+- メタ進行(`src/meta/Meta.ts`)の `version` が `1` 以外のデータは、`loadMeta` が初期状態に戻す(保存の形を変えるときの移行処理がない)。保存の形を変えるときは、`version` を上げて、古い形を変換する処理を書く(キー名 `bj-meta-v1` は変えない)。
 - Google Fonts(外部)に依存している。初回アクセス後はキャッシュされるが、初回がオフラインだと代替フォントになる → フォントを同梱するか、許容する旨を明記する。
 - README に、画像・音・文章の出どころの記載がない。
 
-対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)、Dependabot(`.github/dependabot.yml`。npmは毎週、Actions は毎月)、バージョン表示(タイトル画面の下)、起動失敗時の復旧(`public/boot.js`)。
+対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)、Dependabot(`.github/dependabot.yml`。npmは毎週、Actions は毎月)、バージョン表示(タイトル画面の下)、起動失敗時の復旧(`public/boot.js`)、バックアップ(`src/meta/backup.ts`)。
 
 ## 共通ルール(PWA アプリ共通)
 
