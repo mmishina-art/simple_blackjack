@@ -31,10 +31,9 @@ npm run build       # tsc --noEmit && vite build → dist/
 - 起動に失敗したときの復旧(「なおす」ボタン)がない。
 - 保存データ(`src/meta/Meta.ts`)は `version: 1` を持つが、知らない版は初期値に戻す実装(`d.version !== 1`)で、移行処理がない。書き出し / 読み込みもない。
 - Google Fonts(外部)に依存している。初回アクセス後はキャッシュされるが、初回がオフラインだと代替フォントになる → フォントを同梱するか、許容する旨を明記する。
-- Dependabot の設定がない。
 - README に、画像・音・文章の出どころの記載がない。
 
-対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)。
+対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)、Dependabot(`.github/dependabot.yml`。npmは毎週、Actions は毎月)。
 
 ## 共通ルール(PWA アプリ共通)
 
