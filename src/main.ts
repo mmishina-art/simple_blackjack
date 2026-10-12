@@ -12,6 +12,7 @@ import {
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
 import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
+import { createInstallEntry } from './ui/InstallGuide';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import { setupUpdateBanner } from './ui/UpdateBanner';
@@ -226,6 +227,9 @@ function showTitle(): void {
   });
   sub2.append(prep, altar, codex);
   screen.append(art, h1, sub, start, sub2);
+  // 最初の画面に「インストールする方法」の入口を置く（インストール済みのアプリでは出ない）
+  const install = createInstallEntry();
+  if (install) screen.append(install);
   root.replaceChildren(screen);
 }
 
