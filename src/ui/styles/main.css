@@ -850,3 +850,43 @@ section { min-width: 0; }
   font: inherit; text-align: center; cursor: pointer;
 }
 .backup__btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---- 短い画面の戦闘画面（iPhone SE など） ----
+   戦闘画面は1画面に収める（Hit / Stand のボタンが画面の外に出ると押せない）。ところが高さが約 850px 以下だと、
+   ログ欄が潰れてプレイヤー欄と重なり、さらに低いと（iPhone SE など）下のボタンが画面の外に出ていた。
+   上のほうにも「小さい画面向け」の @media があるが、あとに書かれた通常の指定（.enemy-stage や .hand の高さなど）に上書きされて効かない。
+   そこで、ここで .battle の中に限って詰める（.battle .xxx は指定が詳しいので、書く順番に関係なく勝つ）。
+   詰めた分の高さは、残りの高さを使うログ欄に回る。
+   - 高さ 850px 以下: 少し詰める（ホーム画面アプリの iPhone、ブラウザで開いた iPhone、小さめの Android）
+   - 高さ 720px 以下: さらに詰める（iPhone SE は 667px。ホーム画面アプリでは 647px） */
+@media (max-height: 850px) {
+  .battle { gap: 6px; padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
+  .battle .enemy-area, .battle .player-area { padding: 10px 12px; gap: 5px; }
+  .battle .enemy-stage { height: 84px; }
+  .battle .enemy-sprite { height: 80px; width: 107px; }
+  .battle .hand { min-height: 64px; }
+  .battle .card { width: 44px; height: 64px; }
+  .battle .slots__caption { min-height: 1.4em; }
+  .battle .actions { gap: 10px; }
+  .battle .actions .btn { min-height: 60px; }
+  .battle .actions .btn--surrender { min-height: 46px; }
+  .battle .log { padding: 8px 14px; }
+  /* 手札が5枚以上（HandView が .hand--many を付ける）のときは、折り返さずにカードを少し重ねて1行に収める。
+     折り返すと手札の高さが増えて、ボタンが画面の外に出る */
+  .battle .hand--many .card + .card { margin-left: -16px; }
+}
+@media (max-height: 720px) {
+  .battle .enemy-area, .battle .player-area { padding: 8px 12px; gap: 4px; }
+  .battle .hpbar__row { margin-bottom: 2px; }
+  .battle .hpbar__track { height: 10px; }
+  .battle .slot { padding: 2px 0 1px; }
+  .battle .slots__caption { min-height: 1.3em; font-size: 11px; line-height: 1.3; }
+  .battle .enemy-stage { height: 76px; }
+  .battle .enemy-sprite { height: 72px; width: 96px; }
+  .battle .hand { min-height: 58px; }
+  .battle .card { width: 40px; height: 58px; }
+  .battle .actions { gap: 8px; }
+  .battle .actions .btn { min-height: 52px; }
+  .battle .actions .btn--surrender { min-height: 44px; }
+  .battle .log { padding: 6px 12px; font-size: 14px; line-height: 1.5; }
+}
