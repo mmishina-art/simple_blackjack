@@ -72,3 +72,29 @@ describe('短い画面の戦闘画面', () => {
     expect(mediaBlocks(850)).toMatch(/\.battle \.hand--many \.card \+ \.card\s*\{[^}]*margin-left:\s*-\d+px/);
   });
 });
+
+describe('短い画面の編成画面', () => {
+  const LOADOUT_HEIGHT = 750;
+
+  it(`高さ ${LOADOUT_HEIGHT}px 以下で、編成画面を詰める指定がある（スキル獲得直後の「あとでセットする」が画面の外に出ない）`, () => {
+    const block = mediaBlocks(LOADOUT_HEIGHT);
+    for (const selector of ['.loadout .loadout__head h1', '.loadout .loadout__slots', '.loadout .armed', '.loadout .loadout__btn']) {
+      expect(block, selector).toContain(selector);
+    }
+  });
+
+  it('詰める指定は .loadout の中だけにして、同じ部品を使う出撃準備など、ほかの画面に及ばない', () => {
+    const rules = rulesOf(mediaBlocks(LOADOUT_HEIGHT));
+    expect(rules.length).toBeGreaterThan(0);
+    for (const { selector } of rules) {
+      for (const one of selector.split(',').map((s) => s.trim())) expect(one, one).toMatch(/^\.loadout\b/);
+    }
+  });
+
+  it('スロットの行は詰めず、ボタンは 44px 以上にする（タップしやすさ）', () => {
+    const rules = rulesOf(mediaBlocks(LOADOUT_HEIGHT));
+    expect(rules.some((r) => /\.lslot/.test(r.selector))).toBe(false);
+    const button = rules.find((r) => r.selector === '.loadout .loadout__btn');
+    expect(Number(/min-height:\s*(\d+)px/.exec(button?.body ?? '')?.[1])).toBeGreaterThanOrEqual(44);
+  });
+});
