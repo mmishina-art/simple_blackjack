@@ -238,3 +238,6 @@ function showTitle(): void {
 
 showTitle();
 setupUpdateBanner();
+
+// ここまで来たら起動成功（public/boot.js が見ている）
+window.__appStarted = true;

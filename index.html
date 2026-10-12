@@ -16,6 +16,14 @@
   </head>
   <body>
     <div id="app"></div>
+
+    <!-- 起動できなかったときの復旧（main.ts が読み込めなくても動く、別のふつうのスクリプト） -->
+    <div id="boot-error" class="update-banner boot-error" role="alert" hidden>
+      <span>うまく読み込めませんでした<small>（記録は消えません）</small></span>
+      <button id="boot-repair" type="button" class="update-banner__btn update-banner__btn--primary">なおす</button>
+    </div>
+
+    <script src="boot.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

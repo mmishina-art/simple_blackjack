@@ -49,3 +49,20 @@ describe('バージョン表示', () => {
     expect(main).toMatch(/__APP_VERSION__/);
   });
 });
+
+describe('起動失敗時の復旧', () => {
+  const html = readFileSync(resolve(root, 'index.html'), 'utf8');
+
+  it('boot.js を main.ts より先に読み込み、復旧の表示（#boot-error / #boot-repair）を持つ', () => {
+    const boot = html.indexOf('src="boot.js"');
+    expect(boot).toBeGreaterThan(-1);
+    expect(boot).toBeLessThan(html.indexOf('src="/src/main.ts"'));
+    expect(html).toMatch(/id="boot-error"/);
+    expect(html).toMatch(/id="boot-repair"/);
+    expect(existsSync(resolve(root, 'public/boot.js'))).toBe(true);
+  });
+
+  it('main.ts は起動できたら window.__appStarted = true にする', () => {
+    expect(readFileSync(resolve(root, 'src/main.ts'), 'utf8')).toMatch(/window\.__appStarted = true/);
+  });
+});
