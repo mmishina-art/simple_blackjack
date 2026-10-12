@@ -27,7 +27,6 @@ npm run build       # tsc --noEmit && vite build → dist/
 ## 現状と標準のずれ(直すときは別 PR で)
 
 - バージョン表示がない → タイトル画面に表示したい(元は `package.json` の `version`)。
-- デフォルトブランチが `claude/determined-einstein-moflfm`(`main` がない)で、`pages.yml` は `main` と `claude/**` への push で公開する(作業ブランチが公開 URL に載りうる)。標準は「`main` のみ公開 + PR でテスト」。
 - Lint(ESLint)は入れず、`tsc` の型チェックで代替している。
 - 起動に失敗したときの復旧(「なおす」ボタン)がない。
 - 保存データ(`src/meta/Meta.ts`)は `version: 1` を持つが、知らない版は初期値に戻す実装(`d.version !== 1`)で、移行処理がない。書き出し / 読み込みもない。
@@ -35,7 +34,7 @@ npm run build       # tsc --noEmit && vite build → dist/
 - Dependabot の設定がない。
 - README に、画像・音・文章の出どころの記載がない。
 
-対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)。
+対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)。
 
 ## 共通ルール(PWA アプリ共通)
 
