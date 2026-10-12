@@ -14,6 +14,7 @@ import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
 import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
+import { setupUpdateBanner } from './ui/UpdateBanner';
 import { hasUnusedKitOpportunity } from './meta/prep';
 import { showAltar, showCodex, showPrep } from './ui/MetaScreens';
 import './ui/styles/main.css';
@@ -229,3 +230,4 @@ function showTitle(): void {
 }
 
 showTitle();
+setupUpdateBanner();

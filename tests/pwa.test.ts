@@ -30,3 +30,12 @@ describe('manifest のアイコン', () => {
     expect(srcs.filter((s) => s === maskable)).toHaveLength(1);
   });
 });
+
+describe('Service Worker の更新', () => {
+  const config = readFileSync(resolve(root, 'vite.config.ts'), 'utf8');
+
+  it('新しい版は待機し、更新ボタンで切り替える（戦闘中に勝手に再読み込みしない）', () => {
+    expect(config).toMatch(/registerType:\s*'prompt'/);
+    expect(config).not.toMatch(/registerType:\s*'autoUpdate'/);
+  });
+});
