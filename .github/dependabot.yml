@@ -7,6 +7,11 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
+      # 同時に更新しないと、組み合わせられない（別々だと CI が失敗する）パッケージは、1つの PR にまとめる。
+      # 例: vite 8 には vitest 5 と vite-plugin-pwa 2 が必要（さらに vitest の設定の書き換えも必要なことがある）。
+      # 先に書いたグループが優先される。
+      vite-family:
+        patterns: ["vite", "vitest", "@vitest/*", "vite-plugin-pwa", "workbox-window"]
       minor-and-patch:
         update-types: [minor, patch]
   - package-ecosystem: github-actions
