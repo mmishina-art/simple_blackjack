@@ -8,6 +8,7 @@ import {
 } from '../meta/Meta';
 import { placedElsewhere, prepCandidates, prepSlots, type PrepSlot } from '../meta/prep';
 import { RELIC_POOL } from '../relics/catalog';
+import { createBackupSection } from './BackupSection';
 import { openSheet, type SheetOption } from './components/SkillSheet';
 import { buildSlotRow } from './components/SlotRow';
 import { rarityBadge, rarityClass } from './rarity';
@@ -57,7 +58,7 @@ export function showAltar(root: HTMLElement, meta: MetaState, onClose: () => voi
       });
       list.append(card);
     }
-    screen.append(list, backButton('戻る', onClose));
+    screen.append(list, createBackupSection(), backButton('戻る', onClose));
     root.replaceChildren(screen);
   };
   render();
