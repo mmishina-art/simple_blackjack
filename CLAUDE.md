@@ -24,7 +24,7 @@ npm run build       # tsc --noEmit && vite build → dist/
 - Google Fonts は初回アクセス後にキャッシュする(`runtimeCaching`)。
 - 配色は「暗い固定」(`theme_color` `#0a0806`)。
 - **記録のバックアップは `src/meta/backup.ts` と `src/ui/BackupSection.ts`**(「魂の祭壇」の下の「記録のバックアップ」)。メタ進行(`bj-meta-v1`)と音の設定(`bj-muted`)を、`app` 名と `schemaVersion` を入れた JSON ファイルに書き出し / 読み込む。別のアプリのファイル、新しすぎる版、壊れた中身は理由を示して断る。**今の記録より冒険した回数が少ない(古い)バックアップは、置き換えてよいか確認する**。読み込み後はページを読み込み直す。バックアップに入れるキーを増やすときは `BACKUP_KEYS` に足す。`tests/backup.test.ts` がテストする。
-- **起動に失敗したときの復旧は `public/boot.js`**(Vite を通さずそのまま配信される普通のスクリプトで、`index.html` で `main.ts` より先に読み込む)。起動できなかったとき、Service Worker とキャッシュを消して読み込み直す(1回目は自動、2分以内の2回目は `#boot-error` の「なおす」ボタン)。保存データは消さない。`src/main.ts` の最後で `window.__appStarted = true` にする(`tests/pwa.test.ts` が確認する)。
+- **起動に失敗したときの復旧は `public/boot.js`**(Vite を通さずそのまま配信される普通のスクリプトで、`index.html` で `main.ts` より先に読み込む)。起動できなかったとき、Service Worker とキャッシュを消して読み込み直す(1回目は自動、2分以内の2回目は `#boot-error` の「なおす」ボタン)。保存データは消さない。`src/main.ts` の最後で `window.__appStarted = true` にする(`tests/pwa.test.ts` が確認する)。**消すのは、このアプリの Service Worker(`scope` が自分の置き場所)とキャッシュ(名前が `simple-blackjack-` で始まる、または Workbox の precache の名前の最後に自分の置き場所が付くもの)だけ**(同じサイトのほかのアプリのものを消さない)。
 - **公開のたびに `package.json` の `version` を上げる**(`vite.config.ts` が `__APP_VERSION__` として埋め込み、タイトル画面の下に `v0.2.0` のように表示される)。Service Worker のキャッシュは自動生成なので、手で合わせる番号はない。
 
 ## 現状と標準のずれ(直すときは別 PR で)
@@ -55,6 +55,7 @@ npm run build       # tsc --noEmit && vite build → dist/
 - **PR は1つの目的にする。** 他の PR の上に積まない(積むときは、本文に「どの PR の上か」を書き、下の PR から順にマージする)。デフォルトブランチは `main`。
 - **保存データには版番号(`schemaVersion` など)を持たせ、保存の形を変えるときは移行処理を書く。記録を残すアプリは、ファイルへの書き出し / 読み込みを用意する**(`localStorage` は、ブラウザの都合で消えることがある。特に iPhone)。手本はテンプレートの `src/backup.ts` と `src/storage.ts`、または `simple_quiz` の `js/backup.js`。
 - **起動に失敗したときの復旧を用意する。** キャッシュ優先の Service Worker は、ファイルが食い違うと起動しなくなることがある。メインとは別の普通のスクリプトで、起動できなかったとき、キャッシュを消して読み込み直す(1回目は自動、2分以内の2回目は「なおす」ボタン)。保存データは消さない。手本は `simple_quiz` の `js/boot.js` とテンプレートの `public/boot.js`。
+- **同じサイトに載るアプリ: 名前をアプリごとに別にする。** GitHub Pages では、すべてのアプリが同じサイト(`mmishina-art.github.io`)に載り、`localStorage`・`sessionStorage`・Service Worker・キャッシュはサイトの単位で共有される。保存データのキー、バックアップの `app` 名、キャッシュ名、`sessionStorage` のキーは、アプリごとに別の名前(接頭辞)にする。起動失敗の復旧(`boot.js`)と、Service Worker の古いキャッシュの片づけは、**自分のアプリの Service Worker とキャッシュだけ**を対象にする(`k !== CACHE` のように「自分以外すべて」を消さない)。
 - **外部のリソース(Web フォント、CDN のスクリプトなど)に頼らない。** オフラインで動かなくなるため。使うなら、Service Worker のキャッシュ対象にする。
 - **画像・音・問題文・文章は、自作するか、ライセンスを README に明記する。**
 - 画面を変えたら、スマホの幅・小さい画面(iPhone SE の大きさ)・ダークモード(対応しているアプリ)で実際に表示して確認する(スクリーンショットを見る)。PR の本文に、確認したこと(実機か、していないか)を書く。
