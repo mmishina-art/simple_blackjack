@@ -388,13 +388,25 @@ section { min-width: 0; }
   color: #1a1206; background: linear-gradient(180deg, #d1ae5a, var(--gold)); border-color: #e6c878;
   box-shadow: 0 0 10px rgba(176, 141, 62, 0.65); transform: translateY(-2px);
 }
-/* 合計値がたまるメーター: 点灯（.slot--on）したスロットは明るく、下に金の線が入る。まだのスロットは暗い */
-.slot { position: relative; opacity: 0.5; transition: opacity 0.25s ease, transform 0.25s ease; }
+/* 合計値がたまるメーター: 点灯（.slot--on）したスロットは、下から金の光が満ちて明るくなる（左から順に波のように）。まだのスロットは暗い */
+.slot { position: relative; isolation: isolate; opacity: 0.4; transition: opacity 0.3s ease, transform 0.25s ease; }
+.slot::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(0deg, rgba(235, 185, 75, 0.75), rgba(235, 185, 75, 0.22) 80%);
+  transform: scaleY(0); transform-origin: 50% 100%;
+  transition: transform 0.35s ease-out calc(var(--i, 0) * 30ms);
+}
 .slot--on { opacity: 1; }
-.slot--on::after { content: ''; position: absolute; left: 2px; right: 2px; bottom: 1px; height: 2px; background: var(--gold); border-radius: 1px; }
-.slot--active::after { background: #1a1206; }
-.slots--bust .slot { opacity: 0.45; }
-@media (prefers-reduced-motion: reduce) { .slot { transition: none; } }
+.slot--on::after { transform: scaleY(1); }
+.slots--bust .slot { opacity: 0.4; }
+@media (prefers-reduced-motion: reduce) { .slot, .slot::after { transition: none; } }
+
+/* 各マスの効果: 攻撃=ダメージ数 / 回復=+回復数 / Block=B+数（色だけでなく、先頭の文字でも区別する） */
+.slot__val { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 3px; min-height: 10px; font-family: var(--font-body); font-size: 10px; font-weight: 800; line-height: 1; }
+.slot__badge--attack { color: #ffa27e; }
+.slot__badge--heal { color: #8ee0a0; }
+.slot__badge--block { color: #8cc4f5; }
+.slot--active .slot__badge { color: #1a1206; }
 .slots__caption { min-height: 1.4em; font-size: 12px; letter-spacing: 0.06em; color: var(--bone-dim); }
 .slots--bust .slots__caption { color: var(--blood-hi); }
 

@@ -37,6 +37,16 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
   return { skill, parts };
 }
 
+/** スロット表の各マスに添える効果の短い表示。攻撃=ダメージ数 / 回復=+回復数 / Block=B+数。 */
+export function badgeText(part: PreviewPart): string {
+  return part.type === 'attack' ? String(part.value) : part.type === 'heal' ? `+${part.value}` : `B${part.value}`;
+}
+
+/** 全スロットの予測（スロット表に効果を出すため）。previewSkill と同じフックを通すので、レリック・特性・相手のバーストも反映される。 */
+export function previewAllSlots(env: { bus: EventBus; rules: RuleSet }, user: Entity, target: Entity, keys: readonly number[]): Map<number, PreviewPart[]> {
+  return new Map(keys.map((k) => [k, previewSkill(env, user, target, k).parts]));
+}
+
 /** 「大攻撃 → 10ダメージ」のような表示用テキスト。 */
 /** nameOverride: スロット未設定（通常攻撃）のときの表示名など。 */
 export function formatPreview(p: SkillPreview, targetBlock = 0, nameOverride?: string): string {

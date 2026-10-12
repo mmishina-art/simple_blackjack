@@ -3,7 +3,7 @@ import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { makeCard, type Rank } from '../src/core/cards/Card';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { Slime } from '../src/core/entities/enemies/Slime';
-import { formatPreview, previewSkill } from '../src/core/skills/preview';
+import { badgeText, formatPreview, previewAllSlots, previewSkill } from '../src/core/skills/preview';
 import { attackFormula, attackValue, describeSkill, getSkill } from '../src/core/skills/Skill';
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
@@ -149,6 +149,40 @@ describe('予測ダメージ', () => {
     const n = machine();
     give(n, 'player', ['K', 'K']);
     expect(formatPreview(previewSkill(n.ctx, n.ctx.player, n.ctx.enemy, 20), 5)).toContain('Block吸収後 5');
+  });
+});
+
+describe('スロット表の各マスの効果', () => {
+  const badges = (m: BattleMachine, who: 'player' | 'enemy') => {
+    const [user, target] = who === 'player' ? [m.ctx.player, m.ctx.enemy] : [m.ctx.enemy, m.ctx.player];
+    const all = previewAllSlots(m.ctx, user, target, Array.from({ length: 11 }, (_, i) => 11 + i));
+    return Object.fromEntries([...all].map(([k, parts]) => [k, parts.map(badgeText).join(' ')]));
+  };
+
+  it('攻撃はダメージ数、Block は B+数。空きスロットは通常攻撃の数', () => {
+    const b = badges(machine(), 'player');
+    expect(b).toMatchObject({ 11: '2', 12: '5', 15: 'B6', 18: 'B8', 20: '10', 21: '15' });
+  });
+
+  it('回復は +数。複数の効果は並べる（吸精: 攻撃と回復）', () => {
+    expect(badgeText({ type: 'heal', value: 4 })).toBe('+4');
+    const m = machine({ playerSlots: { 17: 'drain', 16: 'shield_bash' } });
+    expect(badges(m, 'player')).toMatchObject({ 17: '6 +4', 16: '5 B5' });
+  });
+
+  it('レリックで変わった効果が出る（砥石 ATK+2: 大攻撃 12）。敵のスロットも同じ', () => {
+    expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('12');
+    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '8', 20: '12' }); // スライム ATK3: 溶解 ATK×2+2 / 飲み込み ATK×4
+  });
+
+  it('相手がバーストしているときは 1.5倍、伏せカードがあるうちは等倍', () => {
+    const m = machine();
+    give(m, 'player', ['K', 'Q', '5']); // バースト
+    expect(badges(m, 'enemy')[17]).toBe('12'); // 8 × 1.5
+    const n = machine();
+    give(n, 'enemy', ['K', 'Q']);
+    n.ctx.enemy.hand.add(makeCard('5', 'S'), { faceDown: true });
+    expect(badges(n, 'player')[20]).toBe('10'); // 伏せカードのバーストは漏らさない
   });
 });
 

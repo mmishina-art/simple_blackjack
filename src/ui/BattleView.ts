@@ -9,8 +9,8 @@ import { buildEnemyInfo } from './components/EnemyInfo';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
 import { rarityClass } from './rarity';
-import { formatPreview, previewSkill } from '../core/skills/preview';
-import { fallbackLabel, slotKeyOf } from '../core/skills/Skill';
+import { formatPreview, previewAllSlots, previewSkill } from '../core/skills/preview';
+import { fallbackLabel, slotKeyOf, SLOT_KEYS } from '../core/skills/Skill';
 import { damageTakenMultiplier } from '../core/rules/bust';
 import { turnBanner } from './turnBanner';
 import type { TurnInfo } from '../core/rules/initiative';
@@ -209,9 +209,9 @@ export class BattleView {
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block, ctx.player.attack);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
-    this.slotStrip.update(ctx.player, ctx.rules, this.previewText(ctx.player, ctx.enemy));
+    this.slotStrip.update(ctx.player, ctx.rules, this.previewText(ctx.player, ctx.enemy), false, previewAllSlots(ctx, ctx.player, ctx.enemy, SLOT_KEYS));
     const hidden = ctx.enemy.hand.hasHidden;
-    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : this.previewText(ctx.enemy, ctx.player), hidden);
+    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : this.previewText(ctx.enemy, ctx.player), hidden, previewAllSlots(ctx, ctx.enemy, ctx.player, SLOT_KEYS));
     this.roundEl.textContent =
       ctx.round > 0 ? `ROUND ${ctx.round}` : '';
     // 行動順が決まったら（伏せカードがめくられたあと）、帯で知らせる
