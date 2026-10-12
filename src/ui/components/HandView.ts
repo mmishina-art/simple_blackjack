@@ -2,6 +2,9 @@ import type { Entity } from '../../core/entities/Entity';
 import type { RuleSet } from '../../core/rules/RuleSet';
 import { cardElement } from './CardView';
 
+/** 手札がこの枚数以上になったら、短い画面ではカードを重ねて1行に収める（折り返すと高さが増えるため）。 */
+const MANY_CARDS = 5;
+
 /** 手札と合計値の表示。 */
 export class HandView {
   readonly el = document.createElement('div');
@@ -18,6 +21,8 @@ export class HandView {
 
   update(entity: Entity, rules: RuleSet): void {
     const { hand } = entity;
+    // 枚数が多いときは、短い画面でカードを重ねて1行に収める（CSS の .hand--many）
+    this.el.classList.toggle('hand--many', hand.size >= MANY_CARDS);
     const keys = hand.cards.map((c) => c.suit + c.rank + (hand.isFaceDown(c) ? '*' : ''));
     const key = keys.join(',');
     const prevKey = this.cardsEl.dataset.key ?? '';
