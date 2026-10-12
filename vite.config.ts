@@ -1,9 +1,14 @@
 /// <reference types="vitest" />
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
+
 export default defineConfig({
   base: './',
+  // 画面に表示するバージョン（package.json の version。公開のたびに上げる）
+  define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [
     VitePWA({
       // 'prompt': 新しい版は待機させ、画面の「更新」ボタン（src/ui/UpdateBanner.ts）で切り替える

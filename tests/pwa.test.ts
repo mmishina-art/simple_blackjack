@@ -39,3 +39,13 @@ describe('Service Worker の更新', () => {
     expect(config).not.toMatch(/registerType:\s*'autoUpdate'/);
   });
 });
+
+describe('バージョン表示', () => {
+  const config = readFileSync(resolve(root, 'vite.config.ts'), 'utf8');
+  const main = readFileSync(resolve(root, 'src/main.ts'), 'utf8');
+
+  it('package.json の version を埋め込み、タイトル画面に表示する', () => {
+    expect(config).toMatch(/__APP_VERSION__:\s*JSON\.stringify\(version\)/);
+    expect(main).toMatch(/__APP_VERSION__/);
+  });
+});
