@@ -825,3 +825,8 @@ section { min-width: 0; }
 }
 .install-dialog__btn--primary { background: var(--gold-dim); border-color: var(--gold); }
 .install-dialog__btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---- 起動できなかったときの復旧（public/boot.js が表示する。更新のお知らせと同じ見た目） ---- */
+.boot-error { z-index: 300; }
+.boot-error[hidden] { display: none; }
+.boot-error small { display: block; font-size: 11px; color: var(--bone-dim); }
