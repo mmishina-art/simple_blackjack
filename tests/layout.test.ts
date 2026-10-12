@@ -8,6 +8,8 @@ const root = resolve(__dirname, '..');
 // コメントの中の { } や文言が、解析のじゃまにならないよう取り除く
 const css = readFileSync(resolve(root, 'src/ui/styles/main.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const handView = readFileSync(resolve(root, 'src/ui/components/HandView.ts'), 'utf8');
+const battleView = readFileSync(resolve(root, 'src/ui/BattleView.ts'), 'utf8');
+const battleLog = readFileSync(resolve(root, 'src/ui/components/BattleLog.ts'), 'utf8');
 
 /** `@media (max-height: Npx) { ... }` の中身を、すべて連結して返す（{ } の数を数えて閉じ括弧を探す）。 */
 function mediaBlocks(maxHeight: number): string {
@@ -38,7 +40,7 @@ const TIERS = [850, 720];
 describe('短い画面の戦闘画面', () => {
   it.each(TIERS)('高さ %ipx 以下で、戦闘画面を詰める指定がある', (height) => {
     const block = mediaBlocks(height);
-    for (const selector of ['.battle .enemy-stage', '.battle .enemy-sprite', '.battle .hand', '.battle .card', '.battle .actions .btn', '.battle .log']) {
+    for (const selector of ['.battle .enemy-stage', '.battle .hand', '.battle .card', '.battle .actions .btn']) {
       expect(block, `${height}px: ${selector}`).toContain(selector);
     }
   });
@@ -70,6 +72,21 @@ describe('短い画面の戦闘画面', () => {
   it('手札が多いときは折り返さずカードを重ねる（HandView が .hand--many を付け、CSS が重ねる）', () => {
     expect(handView).toMatch(/classList\.toggle\('hand--many'/);
     expect(mediaBlocks(850)).toMatch(/\.battle \.hand--many \.card \+ \.card\s*\{[^}]*margin-left:\s*-\d+px/);
+  });
+});
+
+describe('戦闘ログ欄（なくした）', () => {
+  it('中央のログ欄は出さない。空いた高さは敵の舞台が使う', () => {
+    expect(css).not.toMatch(/\.log\b/);
+    expect(battleView).not.toMatch(/className = 'log'/);
+    expect(css).toMatch(/\.battle \.enemy-stage\s*\{[^}]*flex:\s*1 1 auto/);
+  });
+
+  it('ログは読み上げ用（aria-live）の領域に残し、「記録」ボタンのシートで見返せる', () => {
+    expect(battleLog).toMatch(/setAttribute\('aria-live', 'polite'\)/);
+    expect(battleView).toMatch(/liveEl/);
+    expect(battleView).toMatch(/'記録'/);
+    expect(css).toMatch(/\.sr-only\s*\{[^}]*clip:/);
   });
 });
 

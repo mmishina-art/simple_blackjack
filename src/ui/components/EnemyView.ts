@@ -24,15 +24,22 @@ export class EnemyView {
     else this.sprite.classList.add(anim === 'hurt' ? 'is-hurt' : 'is-attack');
   }
 
-  floatText(text: string, kind: 'damage' | 'heal' = 'damage'): void {
-    floatText(this.el, text, kind);
+  floatText(text: string, kind: 'damage' | 'heal' = 'damage', note = ''): void {
+    floatText(this.el, text, kind, note);
   }
 }
 
-export function floatText(parent: HTMLElement, text: string, kind: 'damage' | 'heal' = 'damage'): void {
+/** 数字が浮かび上がる演出。note は数字の下に添える内訳（例: Block 5・バースト×1.5）。 */
+export function floatText(parent: HTMLElement, text: string, kind: 'damage' | 'heal' = 'damage', note = ''): void {
   const el = document.createElement('div');
   el.className = `float float--${kind}`;
   el.textContent = text;
+  if (note) {
+    const small = document.createElement('small');
+    small.className = 'float__note';
+    small.textContent = note;
+    el.append(small);
+  }
   parent.append(el);
   el.addEventListener('animationend', () => el.remove());
   window.setTimeout(() => el.remove(), 1500);
