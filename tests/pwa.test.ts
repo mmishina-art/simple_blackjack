@@ -66,3 +66,13 @@ describe('起動失敗時の復旧', () => {
     expect(readFileSync(resolve(root, 'src/main.ts'), 'utf8')).toMatch(/window\.__appStarted = true/);
   });
 });
+
+describe('同じサイトのほかのアプリを消さない', () => {
+  const boot = readFileSync(resolve(root, 'public/boot.js'), 'utf8');
+
+  it('boot.js の復旧は、このアプリの Service Worker とキャッシュだけを対象にする', () => {
+    expect(boot).toContain('regs.filter(isMyRegistration)');
+    expect(boot).toContain('keys.filter(isMyCache)');
+    expect(boot).toMatch(/var APP_ID = 'simple-blackjack'/);
+  });
+});
