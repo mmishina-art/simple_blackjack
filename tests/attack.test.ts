@@ -114,6 +114,34 @@ describe('予測ダメージ', () => {
     expect(40 - m.ctx.enemy.hp).toBe(predicted);
   });
 
+  it('相手がバーストしているなら、予測にも1.5倍が出て、実際のダメージと一致する', async () => {
+    const m = machine();
+    give(m, 'player', ['K', 'K']);      // 20: 大攻撃 10
+    give(m, 'enemy', ['K', 'Q', '5']);  // 25: バースト
+    const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20);
+    expect(p.parts).toEqual([{ type: 'attack', value: 15 }]);
+    m.ctx.enemy.hp = 40;
+    await m.runFrom('Initiative', ['Deal']);
+    expect(40 - m.ctx.enemy.hp).toBe(15);
+  });
+
+  it('敵の予測も、バーストしたプレイヤーへの1.5倍を反映する', () => {
+    const m = machine();
+    give(m, 'player', ['K', 'Q', '5']); // 25: バースト
+    give(m, 'enemy', ['9', '9']);       // 18: 溶解 8
+    expect(previewSkill(m.ctx, m.ctx.enemy, m.ctx.player, 18).parts[0].value).toBe(12);
+  });
+
+  it('伏せカードがあるうちは、敵のバーストを予測に漏らさない（めくられたら1.5倍）', () => {
+    const m = machine();
+    give(m, 'player', ['K', 'K']);
+    give(m, 'enemy', ['K', 'Q']);
+    m.ctx.enemy.hand.add(makeCard('5', 'S'), { faceDown: true }); // 伏せた1枚で 25 のバースト
+    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(10);
+    m.ctx.enemy.hand.revealAll();
+    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(15);
+  });
+
   it('防御スキルは Block の値を出す。敵の Block 吸収後も示す', () => {
     const m = machine();
     give(m, 'player', ['7', '8']); // 15: シールド

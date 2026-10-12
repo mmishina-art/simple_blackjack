@@ -1,9 +1,10 @@
+import { bustPenaltyText } from '../../rules/bust';
 import { decideInitiative } from '../../rules/initiative';
 import type { BattleContext } from '../BattleContext';
 import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
-/** 行動順の決定: 伏せカードをめくり、合計値の大きい方が先攻。バースト側はスキルが発動しない。 */
+/** 行動順の決定: 伏せカードをめくり、合計値の大きい方が先攻。バースト側はスキルが発動せず、受けるダメージが増える。 */
 export class InitiativeState implements BattleState {
   readonly id = 'Initiative' as const;
 
@@ -33,7 +34,8 @@ export class InitiativeState implements BattleState {
         break;
       case 'bustSkip': {
         const bust = turn.first === 'player' ? enemy : player;
-        ctx.log(`${bust.name}はバースト！ スキルは発動しない。${ctx.entityOf(turn.first!).name}だけが行動する`);
+        ctx.log(`${bust.name}はバースト！ ${bustPenaltyText(rules)}`);
+        ctx.log(`${ctx.entityOf(turn.first!).name}だけが行動する`);
         break;
       }
       case 'defend':

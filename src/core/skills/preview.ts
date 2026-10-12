@@ -1,11 +1,12 @@
 import type { EventBus } from '../events/EventBus';
 import type { Entity } from '../entities/Entity';
+import { damageTakenMultiplier } from '../rules/bust';
 import type { RuleSet } from '../rules/RuleSet';
 import { attackValue, getSkill, slotKeyOf, type SkillDef } from './Skill';
 
 export interface PreviewPart {
   type: 'attack' | 'block' | 'heal';
-  /** 値（攻撃はレリック・特性の補正後、敵の Block 吸収前）。 */
+  /** 値（攻撃はレリック・特性・相手のバーストによる補正後、相手の Block 吸収前）。 */
   value: number;
 }
 
@@ -27,8 +28,8 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
   const parts: PreviewPart[] = skill.effects.map((e): PreviewPart => {
     if (e.type === 'attack') {
       const raw = attackValue(e, user.attack);
-      const damage = env.bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: raw, skill }).damage;
-      return { type: 'attack', value: Math.max(0, Math.floor(damage)) };
+      const calc = env.bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: raw, skill });
+      return { type: 'attack', value: Math.max(0, Math.floor(calc.damage * damageTakenMultiplier(calc.defender, env.rules))) };
     }
     if (e.type === 'block') return { type: 'block', value: Math.max(0, Math.floor(env.bus.emit('onBlockGained', { entity: user, amount: e.amount }).amount)) };
     return { type: 'heal', value: Math.max(0, Math.floor(env.bus.emit('onHealed', { entity: user, amount: e.amount }).amount)) };
