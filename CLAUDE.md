@@ -61,4 +61,6 @@ npm run build       # tsc --noEmit && vite build → dist/
 - 画面を変えたら、スマホの幅・小さい画面(iPhone SE の大きさ)・ダークモード(対応しているアプリ)で実際に表示して確認する(スクリーンショットを見る)。PR の本文に、確認したこと(実機か、していないか)を書く。
 - **利用者が入力した文字は `textContent` で表示し、`innerHTML` に入れない。**
 - **依存パッケージと Actions の更新は Dependabot に任せる**(`.github/dependabot.yml`)。更新の PR は、CI が緑なのを確認してからマージする。
+  - **`vite`・`vitest`・`vite-plugin-pwa` は、同時に更新しないと組み合わせられないので、1つの PR にまとめる設定**(`dependabot.yml` の `vite-family`)。vite 8 と vitest 5 は、別々だと CI が失敗し、`vite.config.ts` の型の参照(`/// <reference types="vitest/config" />`)の書き換えも必要だった。
+  - 更新の PR が失敗したら、閉じる前に、失敗の理由(`gh run view --log-failed`)を確認する。依存の順序の問題のこともある。
 - 変更を終える前にテストを通し、`python3 -m http.server` などで実際に起動して動作を確認する。
