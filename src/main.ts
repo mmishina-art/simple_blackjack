@@ -230,6 +230,9 @@ function showTitle(): void {
   // 最初の画面に「インストールする方法」の入口を置く（インストール済みのアプリでは出ない）
   const install = createInstallEntry();
   if (install) screen.append(install);
+  const ver = el('p', 'title__version', `v${__APP_VERSION__}`);
+  ver.id = 'app-version';
+  screen.append(ver);
   root.replaceChildren(screen);
 }
 
