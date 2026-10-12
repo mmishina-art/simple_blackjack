@@ -222,16 +222,16 @@ describe('ラウンドの行動順', () => {
     expect(m.ctx.player.hp).toBe(60);
   });
 
-  it('プレイヤーがバースト: スキルは発動しないだけ。敵は通常どおり行動する', async () => {
+  it('プレイヤーがバースト: スキルは発動せず、受けるダメージが1.5倍。敵は通常どおり行動する', async () => {
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] }); // 25 vs 18
     expect(m.ctx.turn).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null });
-    expect(m.ctx.player.hp).toBe(60 - 8);   // 溶解8
+    expect(m.ctx.player.hp).toBe(60 - 12);  // 溶解8 ×1.5
     expect(m.ctx.enemy.hp).toBe(16);        // プレイヤーは行動不能
   });
 
-  it('敵がバースト: 敵のスキルは発動しない。プレイヤーは通常どおり行動する', async () => {
+  it('敵がバースト: 敵のスキルは発動せず、受けるダメージが1.5倍。プレイヤーは通常どおり行動する', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 10); // 大攻撃 ATK+5
+    expect(m.ctx.enemy.hp).toBe(40 - 15); // 大攻撃 ATK+5 = 10 ×1.5
     expect(m.ctx.player.hp).toBe(60);
   });
 
@@ -251,6 +251,89 @@ describe('ラウンドの行動順', () => {
   it('未設定スロットでは基本攻撃が発動する', async () => {
     const m = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 40 }); // 13 vs 7
     expect(m.ctx.enemy.hp).toBe(35); // 通常攻撃 = ATK×1 = 5
+  });
+});
+
+describe('バーストのペナルティ（受けるダメージ 1.5倍）', () => {
+  const give = (m: BattleMachine, who: 'player' | 'enemy', ranks: Rank[]) => {
+    m.ctx[who].hand.clear();
+    ranks.forEach((r) => m.ctx[who].hand.add(makeCard(r, who === 'player' ? 'S' : 'H')));
+  };
+
+  it('倍率は RuleSet の bustDamageMultiplier で変えられる（1 なら等倍に戻る）', async () => {
+    const plain = { bustDamageMultiplier: 1 };
+    const p = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], rules: plain });
+    expect(p.ctx.player.hp).toBe(60 - 8);
+    const e = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40, rules: plain });
+    expect(e.ctx.enemy.hp).toBe(40 - 10);
+    const x2 = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], rules: { bustDamageMultiplier: 2 } });
+    expect(x2.ctx.player.hp).toBe(60 - 16);
+  });
+
+  it('バーストしていない側は等倍: 先攻・後攻・同値のどれでも増えない', async () => {
+    const seq = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40 }); // 20 vs 18
+    expect(40 - seq.ctx.enemy.hp).toBe(10);
+    expect(seq.ctx.player.hp).toBe(60 - 8);
+    expect(seq.logs.some((l) => l.includes('バースト'))).toBe(false);
+    const tie = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q'], enemyHp: 40 }); // 20 vs 20
+    expect(40 - tie.ctx.enemy.hp).toBe(10);
+    expect(tie.logs.some((l) => l.includes('バースト'))).toBe(false);
+  });
+
+  it('端数は切り捨てる（通常攻撃 3 → 4）', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['3', '4'] }); // 敵 7: ぬめる体当たり 3
+    expect(m.ctx.player.hp).toBe(60 - 4);
+  });
+
+  it('Block は、増えたあとのダメージを先に吸収する（溶解 8 → 12、Block 5 で吸収して HP -7）', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], playerBlock: 5 });
+    expect(m.ctx.player.block).toBe(0);
+    expect(m.ctx.player.hp).toBe(60 - 7);
+  });
+
+  it('レリックの補正のあとに掛かる（鋼の胸当て: (8 - 2) × 1.5 = 9）', async () => {
+    const { Breastplate } = await import('../src/relics/catalog');
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [Breastplate] });
+    expect(m.ctx.player.hp).toBe(60 - 9);
+  });
+
+  it('身代わりの人形で防いだあとの2回目のバーストは、1.5倍のダメージを受ける', async () => {
+    const { ScapegoatDoll } = await import('../src/relics/catalog');
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [ScapegoatDoll] });
+    expect(m.ctx.player.hp).toBe(60); // 最初のバーストは、敵も行動しない
+    give(m, 'player', ['K', 'Q', '5']);
+    give(m, 'enemy', ['9', '9']);
+    await m.runFrom('Initiative', ['Deal']);
+    expect(m.ctx.player.hp).toBe(60 - 12);
+  });
+
+  it('両者バーストなら誰も行動しないので、倍率の出番はない', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['K', 'Q', '4'] });
+    expect(m.ctx.player.hp).toBe(60);
+    expect(m.ctx.enemy.hp).toBe(16);
+    expect(m.logs.some((l) => l.includes('バースト ×'))).toBe(false);
+  });
+
+  it('ログ: バーストの発表と、倍率がかかった攻撃が分かる', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] });
+    expect(m.logs).toContain('あなたはバースト！ スキル不発・受けるダメージ1.5倍');
+    expect(m.logs).toContain('スライムだけが行動する');
+    expect(m.logs).toContain('あなたに12ダメージ（バースト ×1.5）');
+    const e = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
+    expect(e.logs).toContain('スライムはバースト！ スキル不発・受けるダメージ1.5倍');
+    expect(e.logs).toContain('スライムに15ダメージ（バースト ×1.5）');
+  });
+
+  it('Block で全部防いだときも、倍率がかかったことが分かる', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], playerBlock: 20 });
+    expect(m.ctx.player.hp).toBe(60);
+    expect(m.ctx.player.block).toBe(8); // 12 を吸収
+    expect(m.logs).toContain('あなたは Block で防いだ（12・バースト ×1.5）');
+  });
+
+  it('ログ: Block を一部消費したときは、同じ括弧にまとめて出る', async () => {
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], playerBlock: 5 });
+    expect(m.logs).toContain('あなたに7ダメージ（Block 5 を消費・バースト ×1.5）');
   });
 });
 

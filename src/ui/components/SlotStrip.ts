@@ -1,4 +1,5 @@
 import type { Entity } from '../../core/entities/Entity';
+import { bustPenaltyText } from '../../core/rules/bust';
 import type { RuleSet } from '../../core/rules/RuleSet';
 import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, SLOT_KEYS, slotKeyOf, slotLabel } from '../../core/skills/Skill';
 import { slotLook } from '../../core/skills/look';
@@ -50,7 +51,7 @@ export class SlotStrip {
 
     if (size === 0) this.caption.textContent = '';
     else if (totalHidden) this.caption.textContent = '最後の1枚が伏せられている（合計は不明）';
-    else if (bust) this.caption.textContent = 'バースト！ スキルは発動しない';
+    else if (bust) this.caption.textContent = `バースト！ ${bustPenaltyText(rules)}`;
     else {
       const id = entity.slots[slotKeyOf(total)];
       const skill = getSkill(id ?? entity.fallbackSkill);

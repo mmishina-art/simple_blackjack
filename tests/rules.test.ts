@@ -3,6 +3,7 @@ import { makeCard, type Rank } from '../src/core/cards/Card';
 import { Deck } from '../src/core/cards/Deck';
 import { Hand } from '../src/core/cards/Hand';
 import { Entity } from '../src/core/entities/Entity';
+import { bustPenaltyText, damageTakenMultiplier } from '../src/core/rules/bust';
 import { decideInitiative } from '../src/core/rules/initiative';
 import { createRuleSet } from '../src/core/rules/RuleSet';
 import { DEFAULT_PLAYER_SLOTS } from '../src/core/skills/catalog';
@@ -124,4 +125,41 @@ describe('行動順（decideInitiative）', () => {
     expect(decideInitiative({ ...base, playerTotal: 25, enemyTotal: 24, playerBust: true, enemyBust: true }).mode).toBe('none');
   });
 
+});
+
+describe('バーストしたときの被ダメージ倍率（damageTakenMultiplier）', () => {
+  const entityWith = (...ranks: Rank[]) => {
+    const e = new Entity('player', 'p', 10);
+    ranks.forEach((r) => e.hand.add(makeCard(r, 'S')));
+    return e;
+  };
+
+  it('初期値は 1.5 倍。バーストした側だけに掛かる', () => {
+    expect(rules.bustDamageMultiplier).toBe(1.5);
+    expect(damageTakenMultiplier(entityWith('K', 'Q', '5'), rules)).toBe(1.5);
+    expect(damageTakenMultiplier(entityWith('K', 'Q'), rules)).toBe(1);   // 20 はバーストではない
+    expect(damageTakenMultiplier(entityWith('A', 'K'), rules)).toBe(1);   // 21 ちょうども等倍
+    expect(damageTakenMultiplier(entityWith(), rules)).toBe(1);
+  });
+
+  it('倍率と bustLimit は RuleSet で変えられる', () => {
+    expect(damageTakenMultiplier(entityWith('K', 'Q', '5'), createRuleSet({ bustDamageMultiplier: 2 }))).toBe(2);
+    expect(damageTakenMultiplier(entityWith('K', 'Q', '5'), createRuleSet({ bustDamageMultiplier: 1 }))).toBe(1);
+    expect(damageTakenMultiplier(entityWith('K', 'Q', '5'), createRuleSet({ bustLimit: 25 }))).toBe(1);
+  });
+
+  it('画面・ログの説明文は倍率に合わせる（等倍なら、スキル不発だけを伝える）', () => {
+    expect(bustPenaltyText(rules)).toBe('スキル不発・受けるダメージ1.5倍');
+    expect(bustPenaltyText(createRuleSet({ bustDamageMultiplier: 2 }))).toBe('スキル不発・受けるダメージ2倍');
+    expect(bustPenaltyText(createRuleSet({ bustDamageMultiplier: 1 }))).toBe('スキル不発');
+  });
+
+  it('伏せカードがあるうちは等倍（予測表示が、まだ見えないバーストを漏らさない）', () => {
+    const e = entityWith('K', 'Q');
+    e.hand.add(makeCard('5', 'S'), { faceDown: true });
+    expect(e.hand.isBust(rules)).toBe(true);
+    expect(damageTakenMultiplier(e, rules)).toBe(1);
+    e.hand.revealAll();
+    expect(damageTakenMultiplier(e, rules)).toBe(1.5);
+  });
 });

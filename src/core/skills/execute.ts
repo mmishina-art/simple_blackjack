@@ -1,5 +1,6 @@
 import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
+import { damageTakenMultiplier } from '../rules/bust';
 import { attackValue, getSkill, slotKeyOf, type SkillDef } from './Skill';
 
 /** ダメージ適用。HP より先に Block を減らす。piercing なら Block を無視する。 */
@@ -49,13 +50,18 @@ export function applyEffects(
     if (effect.type === 'attack') {
       const base = attackValue(effect, user.attack);
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
-      const damage = Math.max(0, Math.floor(calc.damage));
+      // バーストした側が受けるダメージは、レリック・特性の補正のあとに増える（そのあと Block が吸収する）
+      const mult = damageTakenMultiplier(calc.defender, ctx.rules);
+      const damage = Math.max(0, Math.floor(calc.damage * mult));
       const { absorbed, hpLoss } = applyDamage(calc.defender, damage);
       bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, skill });
-      const guard = absorbed > 0 ? `（Block ${absorbed} を消費）` : '';
-      ctx.log(hpLoss > 0 || absorbed === 0
-        ? `${calc.defender.name}に${hpLoss}ダメージ${guard}`
-        : `${calc.defender.name}は Block で防いだ（${absorbed}）`);
+      const burst = mult !== 1 && damage > 0 ? `バースト ×${mult}` : '';
+      if (hpLoss > 0 || absorbed === 0) {
+        const notes = [absorbed > 0 ? `Block ${absorbed} を消費` : '', burst].filter(Boolean);
+        ctx.log(`${calc.defender.name}に${hpLoss}ダメージ${notes.length > 0 ? `（${notes.join('・')}）` : ''}`);
+      } else {
+        ctx.log(`${calc.defender.name}は Block で防いだ（${[absorbed, burst].filter(Boolean).join('・')}）`);
+      }
     } else {
       if (effect.type === 'block') {
         const { amount } = bus.emit('onBlockGained', { entity: user, amount: effect.amount });
