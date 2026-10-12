@@ -16,6 +16,7 @@ import { DealState } from './states/DealState';
 import { EnemyActionState } from './states/EnemyActionState';
 import { InitState } from './states/InitState';
 import { PlayerActionState } from './states/PlayerActionState';
+import { PlayerDealState } from './states/PlayerDealState';
 import { TRANSITIONS, type BattleState, type PlayerInput, type StateId } from './types';
 
 export interface BattleOptions {
@@ -101,8 +102,9 @@ export class BattleMachine {
     this.states = {
       Init: new InitState(),
       Deal: new DealState(),
-      PlayerAction: new PlayerActionState(),
       EnemyAction: new EnemyActionState(),
+      PlayerDeal: new PlayerDealState(),
+      PlayerAction: new PlayerActionState(),
       Initiative: new InitiativeState(),
       FirstAction: new FirstActionState(),
       SurvivalCheck: new SurvivalCheckState(),

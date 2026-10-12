@@ -1,15 +1,19 @@
 import { decideInitiative } from '../../rules/initiative';
 import type { BattleContext } from '../BattleContext';
+import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
-/** 行動順の決定: 合計値の大きい方が先攻。バースト側はスキルが発動しない。 */
+/** 行動順の決定: 伏せカードをめくり、合計値の大きい方が先攻。バースト側はスキルが発動しない。 */
 export class InitiativeState implements BattleState {
   readonly id = 'Initiative' as const;
 
   async enter(ctx: BattleContext): Promise<StateId> {
     const { player, enemy, rules } = ctx;
-    enemy.hand.revealAll();
-    ctx.notify();
+    if (enemy.hand.hasHidden) {
+      enemy.hand.revealAll();
+      ctx.notify();
+      await ctx.wait(PACE.reveal);
+    }
 
     const playerTotal = player.hand.total(rules);
     const enemyTotal = enemy.hand.total(rules);
@@ -42,7 +46,7 @@ export class InitiativeState implements BattleState {
         ctx.log(`${ctx.entityOf(turn.first!).name}が先攻！`);
         break;
     }
-    await ctx.wait(900);
+    await ctx.wait(PACE.initiative);
     return turn.mode === 'none' ? 'CheckDeath' : 'FirstAction';
   }
 }

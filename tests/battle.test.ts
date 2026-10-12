@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import type { AudioManager } from '../src/audio/AudioManager';
+import { bindBattleSounds } from '../src/audio/bindBattleSounds';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
-import type { PlayerInput } from '../src/core/battle/types';
+import { TRANSITIONS, type PlayerInput } from '../src/core/battle/types';
 import { DealerAI } from '../src/core/entities/enemies/ai/DealerAI';
 import { Slime } from '../src/core/entities/enemies/Slime';
 import { seededRng } from '../src/core/util/Rng';
-import { makeCard } from '../src/core/cards/Card';
+import { makeCard, type Rank } from '../src/core/cards/Card';
 import { noWait, playRound } from './helpers';
 
 /** 入力待ちのたびに policy で入力を自動送信して最後まで走らせる。 */
@@ -28,13 +30,20 @@ describe('BattleMachine の進行', () => {
     expect(m.ctx.player.isDead || m.ctx.enemy.isDead).toBe(true);
   });
 
-  it('Stand 後は EnemyAction → Initiative → FirstAction の順に進む', async () => {
+  it('敵が先に引いて確定 → プレイヤーが配牌・入力 → Stand したらすぐ Initiative → FirstAction へ進む', async () => {
     const m = machine(3);
     const visited = await play(m, () => 'stand');
-    const i = visited.indexOf('EnemyAction');
-    expect(visited.slice(0, 3)).toEqual(['Init', 'Deal', 'PlayerAction']);
-    expect(visited.slice(i, i + 3)).toEqual(['EnemyAction', 'Initiative', 'FirstAction']);
+    expect(visited.slice(0, 7)).toEqual(['Init', 'Deal', 'EnemyAction', 'PlayerDeal', 'PlayerAction', 'Initiative', 'FirstAction']);
     expect(visited.at(-1)).toBe('CheckDeath');
+  });
+
+  it('敵の行動（ドロー）は必ずプレイヤーの配牌より前で、プレイヤーの行動後に敵が引き直すことはない', async () => {
+    const m = machine(14);
+    const visited = await play(m, (b) => (b.ctx.player.hand.total(b.ctx.rules) < 14 ? 'hit' : 'stand'));
+    visited.forEach((s, i) => {
+      if (s === 'EnemyAction') expect(visited.slice(i - 1, i + 2)).toEqual(['Deal', 'EnemyAction', 'PlayerDeal']);
+      if (s === 'PlayerAction') expect(visited[i + 1]).not.toBe('EnemyAction');
+    });
   });
 
   it('PlayerAction 以外では入力を受け付けない', () => {
@@ -55,7 +64,7 @@ describe('BattleMachine の進行', () => {
     const m = machine(9);
     const visited = await play(m, () => 'surrender');
     const i = visited.indexOf('Surrender');
-    expect(visited.slice(i, i + 4)).toEqual(['Surrender', 'EnemyAction', 'Initiative', 'FirstAction']);
+    expect(visited.slice(i - 1, i + 3)).toEqual(['PlayerAction', 'Surrender', 'Initiative', 'FirstAction']);
     expect(m.isFinished).toBe(true);
   });
 
@@ -87,6 +96,115 @@ describe('BattleMachine の進行', () => {
     ['9', '9'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as never, 'H')));
     await m.runFrom('Initiative', ['Deal']);
     expect(m.ctx.enemy.hp).toBe(16); // プレイヤーのスキルは不発
+  });
+});
+
+interface InputSnapshot {
+  round: number;
+  cards: string[];
+  hidden: boolean[];
+  visible: number;
+  settled: boolean;
+  playerCards: number;
+}
+
+/**
+ * プレイヤーの入力待ちのたびに敵の手札を記録し（ラウンドごと）、行動順の決定後（FirstAction）の敵の手札も記録して、最後まで走らせる。
+ * 初手ブラックジャックのラウンドは入力待ちが発生しない。
+ */
+async function observeBattle(m: BattleMachine, policy: (m: BattleMachine) => PlayerInput) {
+  const { enemy, player, rules } = m.ctx;
+  const inputs: InputSnapshot[] = [];
+  const actions = new Map<number, string[]>();
+  m.onChange(() => {
+    if (m.state === 'FirstAction' && !actions.has(m.ctx.round)) actions.set(m.ctx.round, enemy.hand.cards.map((c) => c.suit + c.rank));
+    if (!m.canAct) return;
+    if (!inputs.some((i) => i.round === m.ctx.round)) {
+      inputs.push({
+        round: m.ctx.round,
+        cards: enemy.hand.cards.map((c) => c.suit + c.rank),
+        hidden: enemy.hand.cards.map((c) => enemy.hand.isFaceDown(c)),
+        visible: enemy.hand.visibleTotal(rules),
+        settled: m.ctx.enemyDef.ai.decide(enemy, player, rules) === 'stand' || enemy.hand.isBust(rules),
+        playerCards: player.hand.size,
+      });
+    }
+    queueMicrotask(() => m.submit(policy(m)));
+  });
+  await m.run();
+  return { inputs, actions };
+}
+
+/** 1ラウンド目の配牌を固定する（敵 K,6 → ヒット → K / プレイヤー 5,6）。 */
+function forceFirstRound(m: BattleMachine) {
+  const forced = { enemy: ['K', '6', 'K'] as Rank[], player: ['5', '6'] as Rank[] };
+  m.bus.on('onCardDrawn', (p) => {
+    const queue = p.entity.id === 'enemy' ? forced.enemy : forced.player;
+    return queue.length ? { ...p, card: makeCard(queue.shift()!, p.entity.id === 'enemy' ? 'H' : 'S') } : undefined;
+  });
+}
+
+describe('敵先行のラウンド（敵の手札が先に確定し、最後の1枚だけ伏せられる）', () => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])('seed %i: プレイヤーの入力時点で敵は引き終えており、伏せは最後の1枚だけ', async (seed) => {
+    const { inputs } = await observeBattle(machine(seed), () => 'stand');
+    expect(inputs.length).toBeGreaterThan(0);
+    for (const i of inputs) {
+      expect(i.playerCards).toBe(2);
+      expect(i.settled).toBe(true); // AI がこれ以上引かない（またはバースト）状態
+      expect(i.hidden.at(-1)).toBe(true);
+      expect(i.hidden.filter(Boolean)).toHaveLength(1);
+    }
+  });
+
+  it('プレイヤーが何回 Hit しても敵の手札は変わらず、行動順の決定で伏せカードが公開される', async () => {
+    const m = machine(4);
+    const { inputs, actions } = await observeBattle(m, (b) => (b.ctx.player.hand.total(b.ctx.rules) < 12 ? 'hit' : 'stand'));
+    expect(inputs.length).toBeGreaterThan(0);
+    for (const i of inputs) if (actions.has(i.round)) expect(actions.get(i.round)).toEqual(i.cards);
+  });
+
+  it('撤退しても敵の手札は確定済み（追加ドローなし）で、そのまま Initiative で公開される', async () => {
+    const m = machine(6);
+    const { inputs, actions } = await observeBattle(m, () => 'surrender');
+    expect(inputs.length).toBeGreaterThan(0);
+    for (const i of inputs) if (actions.has(i.round)) expect(actions.get(i.round)).toEqual(i.cards);
+    expect(m.logs.some((l) => l.includes('防御に徹した'))).toBe(true);
+  });
+
+  it('伏せカードでバーストしていても、入力時点では公開札しか見えず合計は不明のまま', async () => {
+    const m = machine(2);
+    forceFirstRound(m);
+    const { inputs } = await observeBattle(m, () => 'stand');
+    expect(inputs[0]).toMatchObject({ round: 1, cards: ['HK', 'H6', 'HK'], hidden: [false, false, true], visible: 16, playerCards: 2 });
+    const settled = m.logs.findIndex((l) => l.includes('枚で手札を決めた'));
+    const turn = m.logs.findIndex((l) => l.includes('あなたのターン'));
+    const bust = m.logs.findIndex((l) => l.includes('スライムはバースト'));
+    expect(settled).toBeGreaterThanOrEqual(0);
+    expect(turn).toBeGreaterThan(settled);
+    expect(bust).toBeGreaterThan(turn); // バーストは伏せカードが公開されたあとに分かる
+  });
+
+  it('敵のバースト音は、伏せカードがめくられる行動順の発表まで鳴らない（情報を漏らさない）', async () => {
+    const m = machine(2);
+    forceFirstRound(m);
+    const sfx: string[] = [];
+    bindBattleSounds(m, { sfx: (name: string) => { sfx.push(name); } } as unknown as AudioManager);
+    const heard: string[][] = [];
+    m.onChange(() => {
+      if (!m.canAct) return;
+      if (heard.length === 0) heard.push([...sfx]);
+      queueMicrotask(() => m.submit('stand'));
+    });
+    await m.run();
+    expect(heard[0]).not.toContain('bust');
+    expect(sfx).toContain('bust');
+  });
+
+  it('遷移表: プレイヤーの勝負後に敵へ戻る遷移や、敵の行動から直接 Initiative へ進む遷移は存在しない', () => {
+    expect(TRANSITIONS.PlayerAction).not.toContain('EnemyAction');
+    expect(TRANSITIONS.Surrender).toEqual(['Initiative']);
+    expect(TRANSITIONS.EnemyAction).toEqual(['PlayerDeal']);
+    expect(TRANSITIONS.Deal).toEqual(['EnemyAction']);
   });
 });
 

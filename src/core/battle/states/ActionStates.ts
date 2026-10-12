@@ -1,5 +1,6 @@
 import { activateSkill, applyEffects, skillForTotal } from '../../skills/execute';
 import type { BattleContext } from '../BattleContext';
+import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
 /**
@@ -24,9 +25,9 @@ export class FirstActionState implements BattleState {
       const plan = [player, enemy].map((user) => ({ user, target: user === player ? enemy : player, skill: declare(user) }));
       for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'block');
       for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'heal');
-      await ctx.wait(600);
+      await ctx.wait(PACE.block);
       for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'attack');
-      await ctx.wait(800);
+      await ctx.wait(PACE.action);
       return 'CheckDeath';
     }
 
@@ -37,7 +38,7 @@ export class FirstActionState implements BattleState {
     // 単独行動（バースト・サレンダー）: そのままの順序で処理
     if (!turn.second) {
       if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'all');
-      await ctx.wait(900);
+      await ctx.wait(PACE.action);
       return 'CheckDeath';
     }
 
@@ -45,9 +46,9 @@ export class FirstActionState implements BattleState {
     const secondSkill = declare(other);
     if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'block');
     if (secondSkill) applyEffects(ctx, other, first, secondSkill, 'block');
-    await ctx.wait(500);
+    await ctx.wait(PACE.block);
     if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'rest');
-    await ctx.wait(900);
+    await ctx.wait(PACE.action);
     return 'SurvivalCheck';
   }
 }
@@ -76,7 +77,7 @@ export class SecondActionState implements BattleState {
       const skill = activateSkill(ctx, second, skillForTotal(second, second.hand.total(ctx.rules)));
       if (skill) applyEffects(ctx, second, other, skill, 'all');
     }
-    await ctx.wait(900);
+    await ctx.wait(PACE.action);
     return 'CheckDeath';
   }
 }

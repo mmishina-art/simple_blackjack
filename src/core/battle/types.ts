@@ -1,16 +1,23 @@
 export type StateId =
-  | 'Init' | 'Deal' | 'PlayerAction' | 'EnemyAction'
+  | 'Init' | 'Deal' | 'EnemyAction' | 'PlayerDeal' | 'PlayerAction'
   | 'Initiative' | 'FirstAction' | 'SurvivalCheck' | 'SecondAction'
   | 'Surrender' | 'CheckDeath';
 
-/** 許可された遷移表。これ以外の遷移は例外になる（厳密なステート管理）。 */
+/**
+ * 許可された遷移表。これ以外の遷移は例外になる（厳密なステート管理）。
+ *
+ * ラウンドの流れ: 敵が先に引ききって手札を確定させ（最後の1枚だけ伏せ）、そのあとプレイヤーが引く。
+ * プレイヤーが勝負（Stand / バースト / 撤退）したら、敵の追加ドローはなく、すぐ行動順の決定→攻撃へ進む。
+ */
 export const TRANSITIONS: Record<StateId | 'START', readonly StateId[]> = {
   START: ['Init'],
   Init: ['Deal'],
-  Deal: ['PlayerAction'],
-  // Hit なら自身へ再突入 / Stand なら敵の行動 / バーストなら敵の行動を飛ばして行動順へ / サレンダー
-  PlayerAction: ['PlayerAction', 'EnemyAction', 'Initiative', 'Surrender'],
-  EnemyAction: ['Initiative'],
+  // 敵への配牌（初手2枚）→ 敵が引ききって手札確定 → プレイヤーへの配牌 → プレイヤーの入力
+  Deal: ['EnemyAction'],
+  EnemyAction: ['PlayerDeal'],
+  PlayerDeal: ['PlayerAction'],
+  // Hit なら自身へ再突入 / Stand・バーストは行動順の決定へ / 撤退はサレンダー
+  PlayerAction: ['PlayerAction', 'Initiative', 'Surrender'],
   // 両者バーストなら誰も行動せず CheckDeath へ
   Initiative: ['FirstAction', 'CheckDeath'],
   // 同時攻撃・後攻なし（バースト）は CheckDeath へ直行
@@ -18,7 +25,7 @@ export const TRANSITIONS: Record<StateId | 'START', readonly StateId[]> = {
   SurvivalCheck: ['SecondAction', 'CheckDeath'],
   SecondAction: ['CheckDeath'],
   // サレンダー: Block を得て自分のスキルは不発。敵だけが行動する
-  Surrender: ['EnemyAction'],
+  Surrender: ['Initiative'],
   CheckDeath: ['Deal'],
 };
 

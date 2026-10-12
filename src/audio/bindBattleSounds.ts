@@ -6,7 +6,13 @@ export function bindBattleSounds(machine: BattleMachine, audio: AudioManager): (
   const { bus } = machine;
   const offs = [
     bus.on('onCardDrawn', () => audio.sfx('deal')),
-    bus.on('onBust', () => audio.sfx('bust')),
+    // 敵は最後の1枚を伏せて引くので、敵のバースト音はその場では鳴らさず、カードがめくられた行動順の発表で鳴らす
+    bus.on('onBust', ({ entity }) => {
+      if (entity.id === 'player') audio.sfx('bust');
+    }),
+    bus.on('onInitiativeDecided', ({ enemyBust }) => {
+      if (enemyBust) audio.sfx('bust');
+    }),
     bus.on('onDamageDealt', ({ defender, hpLoss, absorbed }) => {
       if (hpLoss === 0 && absorbed > 0) audio.sfx('guard');
       else if (defender.id === 'enemy') audio.sfx('attack');

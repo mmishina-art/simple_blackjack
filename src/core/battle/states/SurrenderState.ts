@@ -1,9 +1,10 @@
 import type { BattleContext } from '../BattleContext';
+import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
 /**
  * サレンダー: 自分のスキルは発動せず、防御として Block を得る。
- * 敵は通常どおり手札を引いて行動する（行動順の比較はなし）。
+ * 敵の手札は確定済みなので、そのまま Initiative へ進み、敵だけが行動する（行動順の比較はなし）。
  */
 export class SurrenderState implements BattleState {
   readonly id = 'Surrender' as const;
@@ -18,7 +19,7 @@ export class SurrenderState implements BattleState {
     player.block += gained;
     ctx.log(`${player.name}は Block を ${gained} 得た`);
     ctx.notify();
-    await ctx.wait(700);
-    return 'EnemyAction';
+    await ctx.wait(PACE.surrender);
+    return 'Initiative';
   }
 }

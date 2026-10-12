@@ -49,7 +49,7 @@ export class SlotStrip {
     }
 
     if (size === 0) this.caption.textContent = '';
-    else if (totalHidden) this.caption.textContent = '手札が伏せられている（合計は不明）';
+    else if (totalHidden) this.caption.textContent = '最後の1枚が伏せられている（合計は不明）';
     else if (bust) this.caption.textContent = 'バースト！ スキルは発動しない';
     else {
       const id = entity.slots[slotKeyOf(total)];

@@ -150,10 +150,16 @@ section { min-width: 0; }
     radial-gradient(circle at 50% 40%, #5a1717, #260808);
   box-shadow: inset 0 0 0 3px #1a0505, inset 0 0 0 4px var(--gold-dim), 0 3px 8px rgba(0, 0, 0, 0.7);
 }
-.card--deal { animation: deal 0.25s ease-out; }
+.card--deal { animation: deal 0.2s ease-out; }
 @keyframes deal {
   from { transform: translateY(-14px) rotate(-4deg) scale(0.9); opacity: 0; }
   to { transform: none; opacity: 1; }
+}
+/* 伏せカードがめくられる */
+.card--flip { animation: flip 0.3s ease-out; }
+@keyframes flip {
+  from { transform: perspective(260px) rotateY(-88deg); filter: brightness(1.5); }
+  to { transform: none; filter: none; }
 }
 
 /* Log: 記録の羊皮紙 */
@@ -323,7 +329,7 @@ section { min-width: 0; }
   .title .enemy-sprite { width: 180px; height: 135px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .enemy-sprite, .card--deal, .stage-fog, .slime-eyes, .overlay { animation: none; }
+  .enemy-sprite, .card--deal, .card--flip, .stage-fog, .slime-eyes, .overlay { animation: none; }
 }
 .enemy-sprite.is-defeated { opacity: 0; }
 

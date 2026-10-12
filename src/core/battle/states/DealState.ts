@@ -1,7 +1,8 @@
 import type { BattleContext } from '../BattleContext';
+import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
-/** 配牌: 双方に2枚ずつ。敵の1枚目は表、2枚目は裏。 */
+/** ラウンド開始: 手札を片付け、敵に初手を配る（1枚目は表、2枚目は伏せ）。プレイヤーへの配牌は敵の手札確定後。 */
 export class DealState implements BattleState {
   readonly id = 'Deal' as const;
 
@@ -22,12 +23,9 @@ export class DealState implements BattleState {
     ctx.notify();
 
     for (let i = 0; i < rules.initialCards; i++) {
-      ctx.draw(player);
-      await ctx.wait(250);
-      ctx.draw(enemy, { faceDown: i === 1 });
-      await ctx.wait(250);
+      ctx.draw(enemy, { faceDown: i === rules.initialCards - 1 });
+      await ctx.wait(PACE.card);
     }
-    ctx.bus.emit('onDealt', { player, enemy });
-    return 'PlayerAction';
+    return 'EnemyAction';
   }
 }

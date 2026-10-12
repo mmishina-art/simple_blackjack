@@ -1,7 +1,10 @@
 import type { BattleContext } from '../BattleContext';
 import type { BattleState, StateId } from '../types';
 
-/** プレイヤー入力待ち。Hit なら自身へ再突入、Stand なら EnemyAction、バーストなら Initiative、撤退なら Surrender へ。 */
+/**
+ * プレイヤー入力待ち（敵の手札は確定済み）。
+ * Hit なら自身へ再突入。Stand・バーストならそのまま Initiative（即バトル）、撤退なら Surrender へ。
+ */
 export class PlayerActionState implements BattleState {
   readonly id = 'PlayerAction' as const;
 
@@ -12,7 +15,7 @@ export class PlayerActionState implements BattleState {
     if (player.hand.isBlackjack(rules)) {
       ctx.log('ブラックジャック！');
       ctx.bus.emit('onStand', { entity: player });
-      return 'EnemyAction';
+      return 'Initiative';
     }
 
     if (player.hand.size === rules.initialCards) ctx.log('あなたのターン');
@@ -23,7 +26,7 @@ export class PlayerActionState implements BattleState {
     if (input === 'stand') {
       ctx.log('スタンド');
       ctx.bus.emit('onStand', { entity: player });
-      return 'EnemyAction';
+      return 'Initiative';
     }
 
     ctx.draw(player);
