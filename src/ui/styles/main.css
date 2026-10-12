@@ -890,3 +890,18 @@ section { min-width: 0; }
   .battle .actions .btn--surrender { min-height: 44px; }
   .battle .log { padding: 6px 12px; font-size: 14px; line-height: 1.5; }
 }
+
+/* ---- 短い画面の編成画面 ----
+   スキル獲得直後の編成画面（置くスキルのバナー付き）は、約 743px の高さが必要で、それより低い画面では「あとでセットする」のボタンが画面の外に出ていた。
+   通常の編成画面も、約 673px より低いとはみ出していた。
+   高さ 750px 以下で .loadout の中だけを少し詰めて、約 695px の高さまで収める（スロットの行は、押しやすさのため 42px のまま）。
+   それより低い画面（iPhone SE の 667px など）は対象外で、スクロールすればボタンに届く。 */
+@media (max-height: 750px) {
+  .loadout { gap: 6px; padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
+  .loadout .loadout__head h1 { font-size: 20px; line-height: 1.2; }
+  .loadout .loadout__head p { margin-top: 2px; line-height: 1.3; }
+  .loadout .loadout__slots { gap: 2px; }
+  .loadout .armed { padding: 4px 12px; }
+  .loadout .armed .medal { width: 40px; height: 40px; font-size: 20px; }
+  .loadout .loadout__btn { min-height: 48px; }
+}
