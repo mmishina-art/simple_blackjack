@@ -20,7 +20,7 @@ const noop = (): void => {};
 /**
  * 外部ファイルを使わず Web Audio で合成する BGM / SE。
  * ブラウザの自動再生制限のため、unlock() は必ずユーザー操作の中で呼ぶこと。
- * 最初のタップ（どこでも）で自動的に unlock するので、タイトル画面でも BGM が鳴る。
+ * 音は、ボタン（冒険を始める・出撃準備・祭壇・図鑑・音のオン/オフ）を押したときに始まる（unlock）。画面のほかの場所をタップしても始まらない。
  * スリープ・ロック・別アプリから戻ったあとに音が止まったままのときは、戻った時と次のタップで音を戻す（recover）。
  */
 export class AudioManager {
@@ -52,9 +52,9 @@ export class AudioManager {
     for (const ev of GESTURES) document.addEventListener(ev, () => this.onGesture(), { capture: true, passive: true });
   }
 
+  /** タップ・キー操作のたびに呼ばれる。音を始める（unlock）のはボタンを押したときだけで、ここでは、止まった音を戻すだけ。 */
   private onGesture(): void {
-    if (!this.ctx) this.unlock();
-    else this.recover(true);
+    this.recover(true);
   }
 
   /**
@@ -109,8 +109,7 @@ export class AudioManager {
   }
 
   /**
-   * AudioContext を作成し BGM を開始する。起動時にも呼ぶ（タイトルの BGM を最初から鳴らすため）。
-   * 自動再生が許されない環境では、止まった状態（suspended）で待ち、最初のタップで resume されて鳴り始める。
+   * AudioContext を作成し BGM を開始する。ボタンを押したときに呼ぶ（ブラウザの自動再生制限のため、ユーザー操作の中で）。
    */
   unlock(): void {
     if (!this.ctx) {

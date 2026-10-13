@@ -1,4 +1,4 @@
-// スリープ明けに音が出ない問題と、タイトル画面の BGM（最初のタップで鳴る）のテスト。
+// 音を始めるタイミング（ボタンを押したとき）と、スリープ明けに音が出ない問題のテスト。
 // ブラウザの AudioContext は無いので、最小限の偽物で、状態の遷移（suspended / interrupted / running）だけを確かめる。
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioManager } from '../src/audio/AudioManager';
@@ -59,49 +59,46 @@ afterEach(() => {
 
 const ctxOf = () => FakeContext.instances.at(-1)!;
 
-describe('タイトル画面の BGM', () => {
-  it('起動時に unlock() しておけば、自動再生が許される環境ではタップなしで鳴り、許されない環境では最初のタップで鳴る', () => {
-    // 許される環境（resume() がそのまま running になる）
-    const a = new AudioManager();
-    a.unlock();
-    expect(ctxOf().state).toBe('running');
-    // 許されない環境（resume() しても suspended のまま）→ 最初のタップで鳴り始める
-    FakeContext.instances = [];
-    for (const k of Object.keys(listeners)) delete listeners[k];
-    FakeContext.resumeTo = 'suspended';
-    const b = new AudioManager();
-    b.unlock();
-    expect(ctxOf().state).toBe('suspended');
-    FakeContext.resumeTo = 'running';
+describe('音を始めるタイミング（ボタンを押したとき）', () => {
+  it('画面のどこかをタップ・キー操作しただけでは、音は始まらない（AudioContext も作らない）', () => {
+    new AudioManager();
     fire('click');
-    expect(ctxOf().state).toBe('running');
-    expect(FakeContext.instances).toHaveLength(1); // 作り直さず、そのまま鳴らす
+    fire('touchend');
+    fire('keydown');
+    expect(FakeContext.instances).toHaveLength(0);
   });
 
-  it('起動時に unlock() しなくても、最初のタップ（どこでも）で AudioContext を作り、BGM を始める', () => {
-    new AudioManager();
-    expect(FakeContext.instances).toHaveLength(0);
-    fire('click');
+  it('ボタンを押して unlock() すると、AudioContext を作って BGM を始める', () => {
+    const a = new AudioManager();
+    a.unlock();
     expect(FakeContext.instances).toHaveLength(1);
     expect(ctxOf().resume).toHaveBeenCalled();
+    expect(ctxOf().state).toBe('running');
     vi.advanceTimersByTime(300);
     expect(vi.getTimerCount()).toBeGreaterThan(0); // BGM のスケジューラが動いている
   });
 
-  it('touchend・keydown でも始まる（iOS は touchstart では許可されない）', () => {
-    new AudioManager();
-    fire('touchend');
+  it('unlock() は何度呼んでも、AudioContext は1つだけ（ボタンを押すたびに呼ばれる）', () => {
+    const a = new AudioManager();
+    a.unlock();
+    a.unlock();
+    a.unlock();
     expect(FakeContext.instances).toHaveLength(1);
-    const b = new AudioManager();
-    b.unlock();
-    expect(FakeContext.instances.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('作ったあとは、タップのたびに、止まった音を戻す（スリープ明けなど）', () => {
+    const a = new AudioManager();
+    a.unlock();
+    ctxOf().state = 'suspended';
+    fire('click');
+    expect(ctxOf().state).toBe('running');
   });
 });
 
 describe('スリープ・ロックから戻ったとき', () => {
   const started = () => {
     const a = new AudioManager();
-    fire('click');
+    a.unlock(); // ボタンを押して音を始めた
     ctxOf().state = 'running';
     return a;
   };
@@ -112,7 +109,7 @@ describe('スリープ・ロックから戻ったとき', () => {
     doc.hidden = true; fire('visibilitychange');
     expect(c.suspend).toHaveBeenCalled();
     doc.hidden = false; fire('visibilitychange');
-    expect(c.resume).toHaveBeenCalledTimes(2); // 最初のタップと、戻ったとき
+    expect(c.resume).toHaveBeenCalledTimes(2); // 音を始めたときと、戻ったとき
     expect(c.state).toBe('running');
   });
 
@@ -180,7 +177,7 @@ describe('スリープ・ロックから戻ったとき', () => {
 describe('カードの効果音（軽く落ち着いた音。ほかの効果音と区別する）', () => {
   const unlocked = () => {
     const a = new AudioManager();
-    fire('click');
+    a.unlock();
     ctxOf().state = 'running';
     return a;
   };
@@ -228,7 +225,7 @@ describe('カードの効果音（軽く落ち着いた音。ほかの効果音�
 describe('Block・回復の効果音', () => {
   const play = (name: Parameters<AudioManager['sfx']>[0]) => {
     const a = new AudioManager();
-    fire('click');
+    a.unlock();
     ctxOf().state = 'running';
     const c = ctxOf();
     const o0 = c.oscs.length;
