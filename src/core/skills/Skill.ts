@@ -112,27 +112,37 @@ export function supportFormula(effect: { amount: number; mult?: number }): strin
   return effect.amount ? `${mult}+${effect.amount}` : mult;
 }
 
-/** 効果の要約。atkMin を渡すと実数値も併記し、atkMax が違えば「6〜30」のように範囲で示す（スロットが決まっていないとき用）。 */
-function describeEffects(skill: SkillDef, atkMin?: number, atkMax = atkMin): string {
-  const range = (value: (atk: number) => number): string => {
-    if (atkMin === undefined) return '';
-    const lo = value(atkMin);
-    const hi = value(atkMax ?? atkMin);
-    return lo === hi ? `＝${lo}` : `＝${lo}〜${hi}`;
-  };
+/** 効果の要約。atk を渡すと実数値（＝16）も併記する。 */
+function describeEffects(skill: SkillDef, atk?: number): string {
+  const value = (v: (atk: number) => number): string => (atk === undefined ? '' : `＝${v(atk)}`);
   return skill.effects
     .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${range((a) => attackValue(e, a))}${e.pierce ? '（Block無視・破壊）' : ''}`;
+      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${value((a) => attackValue(e, a))}${e.pierce ? '（Block無視・破壊）' : ''}`;
       const label = e.type === 'block' ? 'Block' : '回復';
       // 固定量（mult なし）は、基本攻撃力に関係ないので、数字だけ
-      return e.mult ? `${label} ${supportFormula(e)}${range((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
+      return e.mult ? `${label} ${supportFormula(e)}${value((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
     })
     .join(' + ');
 }
 
-/** 範囲つきの要約（「攻撃 ATK+5＝7〜15」「Block ATK+3＝5〜13」）。スロットが決まっていない一覧（報酬・持ち物）用。 */
-export function describeSkillRange(skill: SkillDef, atkMin: number, atkMax: number): string {
-  return describeEffects(skill, atkMin, atkMax);
+/** 基本攻撃力に対する上乗せの表記: 「+5」「×1.5+3」。倍率が 1 で上乗せがなければ「+0」。 */
+function bonusFormula(mult: number, add: number): string {
+  if (mult === 1) return `+${add}`;
+  return add ? `×${mult}+${add}` : `×${mult}`;
+}
+
+/**
+ * スロットが決まっていない一覧（報酬・持ち物・バナー）用の短い説明。基本攻撃力はスロットで変わるので、幅（「7〜15」）では示さず、
+ * 基本攻撃力に対する上乗せだけを示す（「攻撃 +5」「Block +3」「回復 +3」「攻撃 ×1.5+3」）。固定量は数字のまま。
+ */
+export function describeSkillBonus(skill: SkillDef): string {
+  return skill.effects
+    .map((e) => {
+      if (e.type === 'attack') return `攻撃 ${bonusFormula(e.mult, e.add ?? 0)}${e.pierce ? '（Block無視・破壊）' : ''}`;
+      const label = e.type === 'block' ? 'Block' : '回復';
+      return e.mult ? `${label} ${bonusFormula(e.mult, e.amount)}` : `${label} ${e.amount}`;
+    })
+    .join(' + ');
 }
 
 /** 「攻撃 ATK×3+2＝14」「Block ATK+3＝8」のような効果の要約。atk を渡すと実数値も併記する。 */
