@@ -290,7 +290,7 @@ export class BattleView {
   private renderDefend(): void {
     const { ctx } = this.machine;
     const cap = ctx.player.armorCap ?? ctx.rules.defendCap;
-    const text = `ダメージ最大 ${cap}`;
+    const text = `上限 ${cap}`;
     if (this.surrenderSub.textContent !== text) this.surrenderSub.textContent = text;
     // 短い表示では伝えきれない説明は、読み上げ・ホバー用に残す
     this.surrenderBtn.title = this.surrenderBtn.ariaLabel = `防御: 被ダメージ最大 ${cap}・このラウンドはスキルが発動しない`;

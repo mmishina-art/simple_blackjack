@@ -164,7 +164,7 @@ section { min-width: 0; }
 }
 
 /* Actions (thumb zone): 鉄板に金縁 */
-.actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr 0.78fr; gap: 8px; }
 .btn {
   min-height: 72px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
@@ -452,7 +452,7 @@ section { min-width: 0; }
 .slots__caption { min-height: 1.4em; font-size: 12px; letter-spacing: 0.06em; color: var(--bone-dim); }
 .slots--bust .slots__caption { color: var(--blood-hi); }
 
-.actions { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.actions { grid-template-columns: 1fr 1fr 0.78fr; gap: 8px; }
 
 @media (max-height: 760px) {
   .slot__icon { font-size: 12px; }
@@ -1240,3 +1240,5 @@ section { min-width: 0; }
 .btn--surrender .btn__sub { font-size: 11px; letter-spacing: 0.02em; color: #9fd0c4; white-space: nowrap; }
 .btn__shield { width: 20px; height: 20px; flex: none; color: #8fd4c4; }
 .btn--hit .btn__sub--odds { gap: 8px; }
+
+.btn--surrender .btn__main { font-size: 20px; }
