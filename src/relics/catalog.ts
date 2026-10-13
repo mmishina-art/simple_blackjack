@@ -13,7 +13,7 @@ export const Whetstone: Relic = {
 };
 
 export const Breastplate: Relic = {
-  id: 'breastplate', rarity: 'rare', name: '鋼の胸当て', icon: '胸',
+  id: 'breastplate', rarity: 'legend', name: '金剛の鎧', icon: '鎧', // 常時 -1 は効く回数が多く（実測でクリア率 +16 前後）、レジェンドに
   description: '受ける攻撃ダメージ -1（最低1）',
   apply({ bus, player }) {
     bus.on('onDamageCalculated', (p) => {

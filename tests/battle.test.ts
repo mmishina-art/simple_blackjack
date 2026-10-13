@@ -459,7 +459,7 @@ describe('バーストのペナルティ（受けるダメージ 1.5倍）', () 
     expect(m.ctx.player.hp).toBe(60 - (BUST - 2));
   });
 
-  it('レリックの補正のあとに掛かる（鋼の胸当て: (溶解 - 1) × 1.5）', async () => {
+  it('レリックの補正のあとに掛かる（金剛の鎧: (溶解 - 1) × 1.5）', async () => {
     const { Breastplate } = await import('../src/relics/catalog');
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [Breastplate] });
     expect(m.ctx.player.hp).toBe(60 - Math.floor((MELT - 1) * 1.5));
