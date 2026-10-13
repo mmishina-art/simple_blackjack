@@ -242,6 +242,16 @@ export function canCustomize(meta: MetaState, key: SlotKey): boolean {
 }
 
 /**
+ * 出撃準備で変えた初期装備を、すべて初期装備（素の状態）に戻す。魂片・祭壇の強化・図鑑は変えない。
+ * 戻した数（有効だった変更の数）を返す。
+ */
+export function resetStartingSkills(meta: MetaState): number {
+  const n = customCount(meta);
+  meta.startingSkills = {};
+  return n;
+}
+
+/**
  * 初期装備を設定する。null か「初期装備と同じスキル」を渡すと、変更なし（初期装備のまま）に戻る。
  * 変えられないスロット・図鑑にないスキル・枠数超過なら false。
  */

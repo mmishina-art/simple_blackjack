@@ -5,7 +5,7 @@ import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, useInn } from '../src/map/events';
 import {
   buyUpgrade, canBuy, canCustomize, CODEX_SKILL_TOTAL, computeBonus, computeShards, customCount, discoverRelic, discoverSkill,
-  emptyMeta, finishRun, isSkillDiscovered, loadMeta, META_KEY, nextCost, saveMeta, selectableStartingSkills, setStartingSkill,
+  emptyMeta, finishRun, resetStartingSkills, isSkillDiscovered, loadMeta, META_KEY, nextCost, saveMeta, selectableStartingSkills, setStartingSkill,
   startingCapacity, STARTING_SLOT_KEYS, UPGRADES, validStartingSkills, type MetaState,
 } from '../src/meta/Meta';
 import { getSkill, rarityOfSkill } from '../src/core/skills/Skill';
@@ -302,5 +302,23 @@ describe('セーブデータ', () => {
     const bad = { getItem: () => { throw new Error('x'); }, setItem: () => { throw new Error('x'); } };
     expect(() => saveMeta(emptyMeta(), bad)).not.toThrow();
     expect(loadMeta(bad)).toEqual(emptyMeta());
+  });
+});
+
+describe('スキルの初期化（出撃準備の初期装備を、素の状態に戻す）', () => {
+  it('変えた初期装備がすべて戻り、魂片・祭壇・図鑑は変わらない', () => {
+    const meta = emptyMeta();
+    meta.shards = 100;
+    meta.upgrades = { hp: 2, slots: 1 };
+    meta.codex.skills.push('slash', 'heavy');
+    expect(setStartingSkill(meta, 13, 'slash')).toBe(true);
+    expect(customCount(meta)).toBe(1);
+    expect(resetStartingSkills(meta)).toBe(1);
+    expect(customCount(meta)).toBe(0);
+    expect(meta.startingSkills).toEqual({});
+    expect(meta.shards).toBe(100);
+    expect(meta.upgrades).toEqual({ hp: 2, slots: 1 });
+    expect(meta.codex.skills).toEqual(expect.arrayContaining(['slash', 'heavy']));
+    expect(resetStartingSkills(meta)).toBe(0); // 何もなければ 0
   });
 });
