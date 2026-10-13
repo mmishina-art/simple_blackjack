@@ -29,7 +29,7 @@ export interface SlotRowOptions {
 }
 
 /**
- * スロット一覧の1行（編成・出撃準備で共通）。
+ * スロット一覧の1行（装備画面で使う）。
  * 選べる行は右端に「›」が付く。固定スロットは枠なしの平らな行。11以下・21 は専用の色、ほかはレア度の色。
  */
 export function buildSlotRow(o: SlotRowOptions): HTMLElement {

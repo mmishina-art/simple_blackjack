@@ -115,7 +115,7 @@ function showMapScreen(message = ''): void {
 /** ショップの品揃え（マスごと。出入りしても変わらない）。 */
 const shopOffers = new Map<string, ShopOffer[]>();
 
-/** ショップ。スキル・道具・防具を買うと、編成画面で置き先（スロット / 道具袋）を決める。 */
+/** ショップ。スキル・道具・防具を買うと、装備画面で置き先（スロット / 道具袋）を決める。 */
 function openShop(tile: TileDef, offers: ShopOffer[], note = ''): void {
   showShop(root, run, {
     offers, note,
@@ -317,7 +317,7 @@ function offerStageRelic(): void {
   });
 }
 
-/** 敵を倒した報酬: スキルを3択で獲得し、そのまま編成画面でセットする。 */
+/** 敵を倒した報酬: スキルを3択で獲得し、そのまま装備画面でセットする。 */
 function offerSkillReward(enemyId?: string): void {
   const ids = offerSkills(defaultRng, run, enemyId);
   const dropFrom = enemyId ? getEnemy(enemyId).name : '';
