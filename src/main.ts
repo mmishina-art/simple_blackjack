@@ -1,7 +1,7 @@
 import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
-import { customCount, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
+import { customCount, resetStartingSkills, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
 import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
@@ -15,6 +15,7 @@ import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
 import { createInstallEntry } from './ui/InstallGuide';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
+import { openSheet } from './ui/components/SkillSheet';
 import { showShrine } from './ui/ShrineScreen';
 import { setupUpdateBanner } from './ui/UpdateBanner';
 import { hasUnusedKitOpportunity } from './meta/prep';
@@ -244,7 +245,27 @@ function showTitle(): void {
     showCodex(root, meta, showTitle);
   });
   sub2.append(prep, altar, codex);
-  screen.append(mute, art, h1, sub, start, sub2);
+  const reset = el('button', 'title__reset', 'スキルを初期化');
+  reset.addEventListener('click', () => {
+    unlock();
+    const n = customCount(meta);
+    openSheet({
+      title: 'スキルを初期化する？',
+      subtitle: n > 0
+        ? `出撃準備で変えた初期装備 ${n} 件を、素の状態（初期装備）に戻す。魂片・祭壇の強化・図鑑は変わらない`
+        : '出撃準備で変えた初期装備はない（すでに素の状態）。魂片・祭壇の強化・図鑑は変わらない',
+      options: [{
+        kind: 'reset', icon: '戻', name: '初期装備に戻す', detail: '小攻撃・薬草・シールド・盾・大攻撃・会心の一撃（防具は鉄の盾）',
+        disabled: n === 0,
+        onPick() {
+          resetStartingSkills(meta);
+          saveMeta(meta);
+          showTitle();
+        },
+      }],
+    });
+  });
+  screen.append(mute, art, h1, sub, start, sub2, reset);
   // 最初の画面に「インストールする方法」の入口を置く（インストール済みのアプリでは出ない）
   const install = createInstallEntry();
   if (install) screen.append(install);

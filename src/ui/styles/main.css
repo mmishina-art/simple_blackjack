@@ -311,6 +311,10 @@ section { min-width: 0; }
 }
 .title h1 small { display: block; margin-top: 6px; font-size: 15px; letter-spacing: 0.7em; color: var(--bone-dim); }
 .title p { margin: 0; color: var(--bone-dim); font-size: 14px; letter-spacing: 0.1em; text-wrap: balance; }
+.title__reset {
+  margin-top: -2px; min-height: 44px; padding: 0 14px; background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: 13px; letter-spacing: 0.08em; color: var(--bone-dim); text-decoration: underline; text-underline-offset: 4px;
+}
 .title__start { width: 100%; max-width: 320px; margin-top: 8px; }
 .title .title__version { margin: -8px 0 0; font-size: 11px; letter-spacing: 0.1em; opacity: 0.7; }
 
