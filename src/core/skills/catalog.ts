@@ -56,7 +56,7 @@ export const ACE_STRIKE_ID: SkillId = defineSkill({
   id: 'ace_strike', name: '会心の一撃', icon: '会',
   effects: [{ type: 'attack', mult: 1.5, pierce: true }], // ブロックを無視して破壊する（ほかの攻撃との違い）
 }).id;
-/** 覇王の宝珠で会心の一撃が置き換わるスキル。会心の一撃の 1.5 倍が 2 倍になり、ブロックも付く。 */
+/** 祠のバージョンアップで、会心の一撃が変わる先（報酬には出ない）。会心の一撃の 1.5 倍が 2 倍になり、ブロックも付く。 */
 defineSkill({
   id: 'overlord_strike', name: '覇王の一撃', icon: '覇',
   effects: [{ type: 'attack', mult: 2, pierce: true }, { type: 'block', amount: 8 }],
@@ -99,11 +99,14 @@ assignRarity(['smash', 'overlord_strike', 'fortress', 'aegis', 'siphon', 'guard_
 const UPGRADES: Record<SkillId, SkillId> = {
   jab: 'big_attack', slash: 'heavy', big_attack: 'smash', heavy: 'smash',
   guard: 'bulwark', shield: 'bulwark', bulwark: 'fortress',
-  rally: 'shield_bash', shield_bash: 'aegis', drain: 'siphon',
+  ace_strike: 'overlord_strike', rally: 'shield_bash', shield_bash: 'aegis', drain: 'siphon',
   lunge: 'pierce_stab', pierce_stab: 'impale', chop: 'berserk', berserk: 'rampage',
   mend: 'holy_light', holy_light: 'miracle', twin_strike: 'flurry',
 };
 for (const [from, to] of Object.entries(UPGRADES)) getSkill(from).upgradesTo = to;
+
+/** 報酬には出ず、バージョンアップでだけ手に入るスキル（図鑑には載る）。 */
+export const UPGRADE_ONLY_SKILLS: readonly SkillId[] = ['overlord_strike'];
 
 /** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。基本パワーが基準で、スロットが高いほど強い。 */
 export const SKILL_POOL: readonly SkillId[] = [

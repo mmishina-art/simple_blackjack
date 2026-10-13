@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
-import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
+import { ARMOR_POOL, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
 import { canPlaceAt, getSkill, hasSkill, minSlotOf, placementNote, RARITY_MIN_SLOT, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
@@ -9,7 +9,7 @@ import { STAGES, stageRowOffset, stageRows } from '../src/map/stages';
 import { RARITY_RATE, rarityRates, tierWeights } from '../src/core/rarity';
 import { nextTiles, tileOf, type TileKind } from '../src/map/StageMap';
 import {
-  Boots, Breastplate, FateRing, LifeCandle, OverlordOrb, RELIC_POOL, ScapegoatDoll, SealKey, SturdyShield,
+  Boots, Breastplate, FateRing, LifeCandle, RELIC_POOL, ScapegoatDoll, SealKey, SturdyShield,
   VampireFang, Whetstone,
 } from '../src/relics/catalog';
 import {
@@ -287,13 +287,14 @@ describe('祠: 入れ替えとバージョンアップ', () => {
     expect(rarityOfSkill(getSkill('fortress'))).toBe('legend');
     expect(upgradeSlot(run, 18)).toBeNull(); // レジェンドはこれ以上不可
     expect(canUpgradeSlot(run, 12)).toBe(false); // 薬草（道具）
-    expect(canUpgradeSlot(run, 11)).toBe(false); // 固定
-    expect(canUpgradeSlot(run, 21)).toBe(false);
+    expect(canUpgradeSlot(run, 11)).toBe(false); // 固定（強化先がない）
+    expect(canUpgradeSlot(run, 21)).toBe(true); // 固定でも、会心の一撃は覇王の一撃にできる
     expect(run.slots[12]).toBe('herb');
   });
 
   it('強化先は必ず1つ上のレア度で、道具には強化先がない', () => {
     const order = ['common', 'rare', 'legend'];
+    expect(order.indexOf(rarityOfSkill(getSkill('overlord_strike')))).toBe(order.indexOf(rarityOfSkill(getSkill('ace_strike'))) + 1);
     for (const id of SKILL_POOL) {
       const to = getSkill(id).upgradesTo;
       if (to) expect(order.indexOf(rarityOfSkill(getSkill(to)))).toBe(order.indexOf(rarityOfSkill(getSkill(id))) + 1);
@@ -355,7 +356,7 @@ describe('マスのイベント', () => {
     expect(offerRelics(run, seededRng(1))).toHaveLength(3);
     run.relics.push(Whetstone);
     expect(offerRelics(run, seededRng(1)).some((r) => r.id === 'whetstone')).toBe(false);
-    expect(RELIC_POOL).toHaveLength(21);
+    expect(RELIC_POOL).toHaveLength(20);
   });
 });
 
@@ -403,10 +404,21 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(33);
   });
 
-  it('覇王の宝珠: 会心の一撃（POW×1.5）が覇王の一撃（POW×2 + ブロック 8）に変わる', async () => {
-    const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['3', '4'], enemyHp: 100, relics: [OverlordOrb], stopAt: ['CheckDeath'] });
-    expect(m.ctx.enemy.hp).toBe(100 - 22); // 21 は POW 11: POW×2（宝珠なしなら ×1.5 = 16）
+  it('覇王の一撃（祠で会心の一撃をバージョンアップ）: POW×2 + ブロック 8', async () => {
+    const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['3', '4'], enemyHp: 100, playerSlots: { ...DEFAULT_PLAYER_SLOTS, 21: 'overlord_strike' }, stopAt: ['CheckDeath'] });
+    expect(m.ctx.enemy.hp).toBe(100 - 22); // 21 は POW 11: POW×2（会心の一撃のままなら ×1.5 = 16）
     expect(m.ctx.player.block).toBe(8 - 3); // 敵の基本攻撃3はブロックで吸収
+  });
+
+  it('祠のバージョンアップ: 固定スロット 21 の会心の一撃は、覇王の一撃にできる（入れ替え・上書きはできないまま）', () => {
+    const run = createRun();
+    expect(run.slots[21]).toBe('ace_strike');
+    expect(canUpgradeSlot(run, 21)).toBe(true);
+    expect(upgradeSlot(run, 21)).toBe('overlord_strike');
+    expect(run.slots[21]).toBe('overlord_strike');
+    expect(canUpgradeSlot(run, 21)).toBe(false); // もう上はない
+    expect(swapSlots(run, 21, 20)).toBe(false); // 固定スロットは、動かせないまま
+    expect(canUpgradeSlot(run, 11)).toBe(false); // 11以下（小攻撃）には強化先がない
   });
 });
 

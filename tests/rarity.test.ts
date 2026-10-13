@@ -22,7 +22,7 @@ describe('レア度', () => {
     }
     expect(rarityOfSkill(getSkill('ace_strike'))).toBe('rare');
     expect(rarityOfSkill(getSkill('overlord_strike'))).toBe('legend');
-    expect(RELIC_POOL.find((r) => r.id === 'orb')!.rarity).toBe('legend');
+    expect(RELIC_POOL.find((r) => r.id === 'key')!.rarity).toBe('legend');
   });
 
   it('重み付き抽選: 重複なし。レア度が高いほど出にくい', () => {
@@ -98,7 +98,7 @@ describe('固定スロットの解錠（11以下はレリックで変更でき�
 
 describe('レリックによる上書きの検出（編成画面の赤字表示）', async () => {
   const { effectiveSlotSkills } = await import('../src/run/effective');
-  const { TitanBlood, Whetstone, OverlordOrb } = await import('../src/relics/catalog');
+  const { TitanBlood, Whetstone } = await import('../src/relics/catalog');
 
   it('レリックなしなら、どのスロットも上書きなし', () => {
     for (const eff of effectiveSlotSkills(createRun()).values()) expect(eff.changed).toBe(false);
@@ -123,15 +123,6 @@ describe('レリックによる上書きの検出（編成画面の赤字表示�
     expect(all.get(20)!.changed).toBe(true);
     expect(all.get(15)!.text).toBe('ブロック POW+1＝7'); // ブロックも POW 基準: 15 は POW 5 + 砥石 1
     expect(all.get(15)!.changed).toBe(true);
-  });
-
-  it('覇王の宝珠: 21 のスキルが別のスキル（覇王の一撃）に上書きされる', () => {
-    const run = createRun();
-    run.relics.push(OverlordOrb);
-    const eff = effectiveSlotSkills(run).get(21)!;
-    expect(eff.skill.id).toBe('overlord_strike');
-    expect(eff.base.id).toBe('ace_strike');
-    expect(eff.changed).toBe(true);
   });
 });
 

@@ -141,10 +141,10 @@ describe('第2・第3階層のレリック', () => {
     expect(dead.ctx.player.hp).toBe(0);
   });
 
-  it('レリックは 21 個で、不屈の心はレジェンド', () => {
-    expect(RELIC_POOL).toHaveLength(21);
+  it('レリックは 20 個で、不屈の心はレジェンド', () => {
+    expect(RELIC_POOL).toHaveLength(20);
     expect(Unyielding.rarity).toBe('legend');
-    expect(new Set(RELIC_POOL.map((r) => r.id)).size).toBe(21);
+    expect(new Set(RELIC_POOL.map((r) => r.id)).size).toBe(20);
   });
 });
 
