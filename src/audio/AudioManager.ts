@@ -13,9 +13,15 @@ const ARP: number[][] = [
 ];
 const STEP_SEC = 60 / 84 / 2; // 84bpm の8分音符
 
+/** 音を出してよい操作（ブラウザの自動再生制限。iOS は touchstart / pointerdown では許可されず、touchend / click で許可される）。 */
+const GESTURES = ['click', 'touchend', 'keydown'] as const;
+const noop = (): void => {};
+
 /**
  * 外部ファイルを使わず Web Audio で合成する BGM / SE。
  * ブラウザの自動再生制限のため、unlock() は必ずユーザー操作の中で呼ぶこと。
+ * 最初のタップ（どこでも）で自動的に unlock するので、タイトル画面でも BGM が鳴る。
+ * スリープ・ロック・別アプリから戻ったあとに音が止まったままのときは、戻った時と次のタップで音を戻す（recover）。
  */
 export class AudioManager {
   private ctx: AudioContext | null = null;
@@ -27,6 +33,8 @@ export class AudioManager {
   private nextTime = 0;
   private step = 0;
   private _muted = false;
+  /** 戻した（resume）あとも動かなかった。次のタップで、AudioContext を作り直す。 */
+  private needsRebuild = false;
 
   constructor() {
     try {
@@ -34,11 +42,56 @@ export class AudioManager {
     } catch {
       /* ストレージ不可でも動作させる */
     }
+    if (typeof document === 'undefined') return;
     document.addEventListener('visibilitychange', () => {
       if (!this.ctx) return;
-      if (document.hidden) void this.ctx.suspend();
-      else void this.ctx.resume();
+      if (document.hidden) void this.ctx.suspend().catch(noop);
+      else this.recover(false);
     });
+    window.addEventListener('pageshow', () => this.recover(false));
+    for (const ev of GESTURES) document.addEventListener(ev, () => this.onGesture(), { capture: true, passive: true });
+  }
+
+  private onGesture(): void {
+    if (!this.ctx) this.unlock();
+    else this.recover(true);
+  }
+
+  /**
+   * スリープ・画面ロックなどのあとに、止まった AudioContext を動かす。
+   * iOS では、戻っても 'interrupted' のまま resume() が効かないことがあるので、タップの中で作り直す（作成は操作の中でないと許可されない）。
+   */
+  private recover(fromGesture: boolean): void {
+    const ctx = this.ctx;
+    if (!ctx || document.hidden) return;
+    const state = ctx.state as string;
+    if (state === 'running') {
+      this.needsRebuild = false;
+      return;
+    }
+    if (fromGesture && (state === 'interrupted' || state === 'closed' || this.needsRebuild)) {
+      this.rebuild();
+      return;
+    }
+    void ctx.resume().catch(noop);
+    if (fromGesture) {
+      window.setTimeout(() => {
+        if (this.ctx === ctx && (ctx.state as string) !== 'running' && !document.hidden) this.needsRebuild = true;
+      }, 400);
+    }
+  }
+
+  /** AudioContext を作り直して、BGM を最初から鳴らす。ユーザー操作の中で呼ぶこと。 */
+  private rebuild(): void {
+    if (this.timer !== null) {
+      window.clearInterval(this.timer);
+      this.timer = null;
+    }
+    const old = this.ctx;
+    this.ctx = null;
+    this.needsRebuild = false;
+    void old?.close().catch(noop);
+    this.unlock();
   }
 
   get muted(): boolean {
@@ -76,13 +129,14 @@ export class AudioManager {
       this.sfxGain.connect(this.master);
       this.noiseBuf = this.makeNoise();
     }
-    void this.ctx.resume();
+    void this.ctx.resume().catch(noop);
     this.startBgm();
   }
 
   sfx(name: SfxName, delaySec = 0): void {
     const ctx = this.ctx;
     if (!ctx || this._muted) return;
+    if (ctx.state !== 'running') void ctx.resume().catch(noop);
     const t = ctx.currentTime + delaySec;
     switch (name) {
       case 'click':

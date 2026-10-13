@@ -196,6 +196,19 @@ function showTitle(): void {
   const screen = el('main', 'title');
   const art = el('div', 'enemy-stage title-stage');
   art.append(el('div', 'enemy-backdrop', STAGE_BACKDROP), el('div', 'title-art', TITLE_ART));
+  // 音の切り替え（タイトルでも BGM が鳴るので、ここでも止められるようにする）
+  const mute = el('button', 'mute title__mute', '♪');
+  mute.setAttribute('aria-label', 'サウンドの切り替え');
+  const renderMute = () => {
+    mute.classList.toggle('mute--off', audio.muted);
+    mute.setAttribute('aria-pressed', String(audio.muted));
+  };
+  mute.addEventListener('click', () => {
+    audio.setMuted(!audio.muted);
+    audio.sfx('click');
+    renderMute();
+  });
+  renderMute();
   const h1 = el('h1', '', 'BLACKJACK<small>ROGUELIKE</small>');
   const sub = el('p', '', '二十一に近き者が先を制す。分かれ道を選び、地下墓所の主を討て。');
   const start = el('button', 'btn btn--hit title__start', '<span class="btn__main">冒険を始める</span>');
@@ -226,7 +239,7 @@ function showTitle(): void {
     showCodex(root, meta, showTitle);
   });
   sub2.append(prep, altar, codex);
-  screen.append(art, h1, sub, start, sub2);
+  screen.append(mute, art, h1, sub, start, sub2);
   // 最初の画面に「インストールする方法」の入口を置く（インストール済みのアプリでは出ない）
   const install = createInstallEntry();
   if (install) screen.append(install);
