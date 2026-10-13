@@ -29,7 +29,7 @@ describe('行動順の帯（ログ欄の代わりに、敵の舞台へ出す）'
     expect(await bannerFor(['K', 'Q', '5'], ['K', 'Q', '4'])).toEqual({ main: '誰も行動しない' });
   });
 
-  it('撤退（防御）: 敵だけが行動する', async () => {
+  it('防御: 敵だけが行動する', async () => {
     expect(await bannerFor(['K', '5'], ['9', '9'], { from: 'Surrender' })).toEqual({ main: '防御に徹する', sub: `${Slime.name}だけが行動` });
   });
 

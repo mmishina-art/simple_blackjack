@@ -36,6 +36,7 @@ export class BattleView {
   private roundEl = document.createElement('div');
   private hitBtn = document.createElement('button');
   private hitSub!: HTMLElement;
+  private surrenderSub!: HTMLElement;
   private standBtn = document.createElement('button');
   private surrenderBtn = document.createElement('button');
   private muteBtn = document.createElement('button');
@@ -93,7 +94,9 @@ export class BattleView {
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
     this.surrenderBtn.className = 'btn btn--surrender';
-    this.surrenderBtn.innerHTML = `<span class="btn__main">撤退</span><span class="btn__sub">Block +${machine.ctx.rules.surrenderBlock}・スキル発動なし</span>`;
+    this.surrenderBtn.innerHTML = '<span class="btn__main">防御</span><span class="btn__sub"></span>';
+    this.surrenderSub = this.surrenderBtn.querySelector('.btn__sub')!;
+    this.renderDefend();
     const actions = section('actions', this.hitBtn, this.standBtn, this.surrenderBtn);
     this.hitBtn.addEventListener('click', () => this.act('hit'));
     this.standBtn.addEventListener('click', () => this.act('stand'));
@@ -238,10 +241,19 @@ export class BattleView {
     const active = this.machine.canAct;
     this.hitBtn.disabled = !active;
     this.renderOdds(active);
+    this.renderDefend();
     this.standBtn.disabled = !active;
     this.surrenderBtn.disabled = !active;
 
     if (ctx.winner) this.showResult(ctx.winner === ctx.player);
+  }
+
+  /** 防御ボタンの説明。実際に得る Block（レリックの補正後）を出す。 */
+  private renderDefend(): void {
+    const { ctx } = this.machine;
+    const block = Math.max(0, Math.floor(ctx.bus.emit('onBlockGained', { entity: ctx.player, amount: ctx.rules.surrenderBlock }).amount));
+    const text = `Block +${block}・スキルは発動しない`;
+    if (this.surrenderSub.textContent !== text) this.surrenderSub.textContent = text;
   }
 
   /** Hit ボタンの下に、次に引いたときのバースト・ブラックジャックの確率を、アイコン + 数字で出す（入力待ちのときだけ）。 */

@@ -3,7 +3,7 @@ import type { BattleState, StateId } from '../types';
 
 /**
  * プレイヤー入力待ち（敵の手札は確定済み）。
- * Hit なら自身へ再突入。Stand・バーストならそのまま Initiative（即バトル）、撤退なら Surrender へ。
+ * Hit なら自身へ再突入。Stand・バーストならそのまま Initiative（即バトル）、防御なら Surrender へ。
  */
 export class PlayerActionState implements BattleState {
   readonly id = 'PlayerAction' as const;

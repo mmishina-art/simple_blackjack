@@ -189,7 +189,7 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
     for (const i of inputs) if (actions.has(i.round)) expect(actions.get(i.round)).toEqual(i.cards);
   });
 
-  it('撤退しても敵の手札は確定済み（追加ドローなし）で、そのまま Initiative で公開される', async () => {
+  it('防御しても敵の手札は確定済み（追加ドローなし）で、そのまま Initiative で公開される', async () => {
     const m = machine(6);
     const { inputs, actions } = await observeBattle(m, () => 'surrender');
     expect(inputs.length).toBeGreaterThan(0);
