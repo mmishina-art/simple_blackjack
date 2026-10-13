@@ -1,5 +1,5 @@
 export type SfxName =
-  | 'click' | 'deal' | 'flip' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
+  | 'click' | 'deal' | 'flip' | 'block' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
 
 const STORAGE_KEY = 'bj-muted';
 
@@ -148,14 +148,14 @@ export class AudioManager {
       case 'deal': {
         // カードを置く・配る音: 軽くて落ち着いた、紙がすべる小さな音。毎回ほんの少し高さを変える（同じ音が続かないように）
         const r = 0.9 + Math.random() * 0.2;
-        this.noise(t, 0.08, 2600 * r, 0.14, undefined, 0.012);
-        this.tone(1500 * r, t + 0.015, 0.04, 'sine', 0.035, 1000 * r);
+        this.noise(t, 0.08, 2600 * r, 0.32, undefined, 0.012);
+        this.tone(1500 * r, t + 0.015, 0.04, 'sine', 0.07, 1000 * r);
         break;
       }
       case 'flip': {
         // 伏せカードをめくる音: 「しゅっ」と上がる紙の音。置く音より少し長く、明るい
-        this.sweepNoise(t, 0.16, 1400, 4600, 0.2, 0.03);
-        this.tone(900, t + 0.1, 0.07, 'sine', 0.05, 1300);
+        this.sweepNoise(t, 0.16, 1400, 4600, 0.4, 0.03);
+        this.tone(900, t + 0.1, 0.07, 'sine', 0.08, 1300);
         break;
       }
       case 'attack':
@@ -181,13 +181,24 @@ export class AudioManager {
           this.tone(f, t + i * 0.13, i === 5 ? 0.7 : 0.16, 'square', 0.22),
         );
         break;
+      case 'block':
+        // Block を得る: 盾を構える。低いどっしりした響きの上に、澄んだ金属の余韻が上へ立ち上がる
+        this.tone(190, t, 0.16, 'sine', 0.42, 95);
+        this.bell(1175, t + 0.01, 0.42, 0.2);
+        this.bell(1760, t + 0.07, 0.3, 0.1);
+        this.sweepNoise(t, 0.12, 900, 3200, 0.07, 0.02);
+        break;
       case 'guard':
-        this.noise(t, 0.08, 4200, 0.4);
-        this.tone(880, t, 0.14, 'square', 0.18, 660);
-        this.tone(1320, t + 0.02, 0.1, 'triangle', 0.15);
+        // Block が攻撃を防いだ: 短く硬い「ガキン」（Block を得る音とは別。鋭く、余韻は短い）
+        this.noise(t, 0.05, 3400, 0.38);
+        this.bell(780, t, 0.16, 0.22);
+        this.tone(120, t, 0.09, 'sine', 0.3, 70);
         break;
       case 'heal':
-        [523, 659, 784].forEach((f, i) => this.tone(f, t + i * 0.07, 0.22, 'sine', 0.3));
+        // 回復: やさしく上がる鈴の4音（ドミソド）が重なって、ゆっくり消える。あたたかい低音と、最後にきらめき
+        [523.25, 659.25, 784, 1046.5].forEach((f, i) => this.chime(f, t + i * 0.075, i === 3 ? 0.8 : 0.5, 0.2 + i * 0.02));
+        this.tone(261.63, t, 0.9, 'sine', 0.1);
+        this.tone(2093, t + 0.3, 0.18, 'triangle', 0.05);
         break;
       case 'pick':
         this.tone(440, t, 0.08, 'square', 0.2);
@@ -222,6 +233,19 @@ export class AudioManager {
       this.nextTime += STEP_SEC;
       this.step++;
     }
+  }
+
+  /** 金属の鈴: 基音に、整数倍でない倍音（2.76 倍・5.4 倍）を短く重ねる。 */
+  private bell(freq: number, start: number, dur: number, vol: number): void {
+    this.tone(freq, start, dur, 'sine', vol);
+    this.tone(freq * 2.76, start, dur * 0.6, 'sine', vol * 0.35);
+    this.tone(freq * 5.4, start, dur * 0.35, 'sine', vol * 0.15);
+  }
+
+  /** やわらかい鈴: 基音と 1 オクターブ上の sine だけ（金属っぽくならない、あたたかい音）。 */
+  private chime(freq: number, start: number, dur: number, vol: number): void {
+    this.tone(freq, start, dur, 'sine', vol);
+    this.tone(freq * 2, start, dur * 0.6, 'sine', vol * 0.3);
   }
 
   private tone(

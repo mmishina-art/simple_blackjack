@@ -20,7 +20,7 @@ export function bindBattleSounds(machine: BattleMachine, audio: AudioManager): (
       else audio.sfx('damage');
     }),
     // Block・回復の音は「実際に起きたとき」の通知で鳴らす（onBlockGained / onHealed は予測表示のたびにも発火する）
-    bus.on('onBlockApplied', () => audio.sfx('guard')),
+    bus.on('onBlockApplied', () => audio.sfx('block')),
     bus.on('onHealApplied', () => audio.sfx('heal')),
     bus.on('onCardsRevealed', () => audio.sfx('flip')),
     bus.on('onBattleEnd', ({ winner }) => audio.sfx(winner.id === 'player' ? 'victory' : 'defeat', 0.7)),

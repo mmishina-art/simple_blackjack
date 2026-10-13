@@ -224,3 +224,49 @@ describe('カードの効果音（軽く落ち着いた音。ほかの効果音�
     expect(c2.filters.slice(before2).some((f) => (f.frequency as { exponentialRampToValueAtTime: { mock: { calls: unknown[] } } }).exponentialRampToValueAtTime.mock.calls.length > 0)).toBe(false);
   });
 });
+
+describe('Block・回復の効果音', () => {
+  const play = (name: Parameters<AudioManager['sfx']>[0]) => {
+    const a = new AudioManager();
+    fire('click');
+    ctxOf().state = 'running';
+    const c = ctxOf();
+    const o0 = c.oscs.length;
+    const f0 = c.filters.length;
+    a.sfx(name);
+    const oscs = c.oscs.slice(o0).map((o) => ({
+      type: o.type as string,
+      freq: ((o.frequency as { setValueAtTime: { mock: { calls: number[][] } } }).setValueAtTime.mock.calls[0] ?? [0, 0])[0],
+      at: ((o.frequency as { setValueAtTime: { mock: { calls: number[][] } } }).setValueAtTime.mock.calls[0] ?? [0, 0])[1],
+    }));
+    const filters = c.filters.slice(f0);
+    const swept = filters.some((f) => (f.frequency as { exponentialRampToValueAtTime: { mock: { calls: unknown[] } } }).exponentialRampToValueAtTime.mock.calls.length > 0);
+    return { oscs, filters, swept };
+  };
+
+  it('回復: sine と triangle だけの、やさしい4音（ドミソド）が順に上がる', () => {
+    const { oscs } = play('heal');
+    for (const o of oscs) expect(['sine', 'triangle']).toContain(o.type);
+    // 基音の開始時刻（ド の1オクターブ上の倍音も 1046.5 なので、いちばん遅い開始を、その音の基音とみなす）
+    const rising = [523.25, 659.25, 784, 1046.5].map((f) => Math.max(...oscs.filter((o) => o.freq === f).map((o) => o.at)));
+    expect(rising).toEqual([...rising].sort((a, b) => a - b));
+    expect(new Set(rising).size).toBe(4);
+  });
+
+  it('Block を得る: 低い響きと、高い金属の余韻（鋭い矩形波・鋸波は使わない）', () => {
+    const { oscs, swept } = play('block');
+    for (const o of oscs) expect(['sine']).toContain(o.type);
+    expect(oscs.some((o) => o.freq < 250)).toBe(true);
+    expect(oscs.some((o) => o.freq > 1000)).toBe(true);
+    expect(swept).toBe(true); // 立ち上がる空気
+  });
+
+  it('防いだ音（guard）は、Block を得る音（block）と別の音: 帯域は動かず、短く硬い', () => {
+    const guard = play('guard');
+    const block = play('block');
+    expect(guard.swept).toBe(false);
+    expect(block.swept).toBe(true);
+    expect(guard.oscs.some((o) => o.freq < 150)).toBe(true); // 低いどすっ
+    expect(guard.oscs.length).not.toBe(block.oscs.length);
+  });
+});

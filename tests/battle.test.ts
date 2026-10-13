@@ -243,13 +243,25 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
       expect(heard).toEqual([]);
     });
 
-    it('Block のスキルが実際に発動したときは、guard が1回だけ鳴る', async () => {
+    it('Block のスキルが実際に発動したときは、block が1回だけ鳴る', async () => {
       const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
       const heard = bind(m);
       ['7', '8'].forEach((r) => m.ctx.player.hand.add(makeCard(r as Rank, 'S')));   // 15: シールド
       ['K', 'Q', '5'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as Rank, 'H'))); // 敵はバースト（攻撃が来ないので、防ぐ音は鳴らない）
       await m.runFrom('Initiative', ['Deal']);
+      expect(heard.filter((s) => s === 'block')).toHaveLength(1);
+      expect(heard).not.toContain('guard');
+    });
+
+    it('Block が攻撃を防いだときは、guard が鳴る（Block を得る音とは別）', async () => {
+      const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, playerBlock: 20 });
+      const heard = bind(m);
+      ['K', 'Q', '5'].forEach((r) => m.ctx.player.hand.add(makeCard(r as Rank, 'S')));
+      ['9', '9'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as Rank, 'H')));
+      await m.runFrom('Initiative', ['Deal']);
       expect(heard.filter((s) => s === 'guard')).toHaveLength(1);
+      expect(heard).not.toContain('damage');
+      expect(heard).not.toContain('block');
     });
 
     it('回復のスキルが発動したときは、heal が1回だけ鳴る', async () => {
