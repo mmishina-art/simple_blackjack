@@ -1,6 +1,6 @@
 import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
-import { describeSkill, describeSkillRange, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { describeSkill, describeSkillBonus, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
 import { equipSkill, isSlotLocked, unequipSlot, type RunState } from '../run/Run';
@@ -40,7 +40,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const banner = document.createElement('div');
       banner.className = `armed ${rarityClass(rarityOfSkill(skill))}`;
       banner.innerHTML = `<span class="medal">${skill.icon}</span>
-        <span class="armed__text"><strong>${skill.name} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillRange(skill, slotAttack(run.baseAttack, 12), slotAttack(run.baseAttack, 20))}</span></span>`;
+        <span class="armed__text"><strong>${skill.name} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}</span></span>`;
       screen.append(banner);
     }
 
@@ -86,7 +86,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const skill = getSkill(e.id);
       const chip = document.createElement('div');
       chip.className = `chip chip--static ${rarityClass(rarityOfSkill(skill))}`;
-      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillRange(skill, slotAttack(run.baseAttack, 12), slotAttack(run.baseAttack, 20))}</small></span>`;
+      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
       chips.append(chip);
     }
     inv.append(chips);

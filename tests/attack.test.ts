@@ -6,7 +6,7 @@ import { Slime } from '../src/core/entities/enemies/Slime';
 import { badgeText, formatPreview, previewAllSlots, previewSkill } from '../src/core/skills/preview';
 import { fxChips } from '../src/ui/callout';
 import { slotAttack } from '../src/core/skills/catalog';
-import { attackFormula, attackValue, describeSkill, describeSkillRange, getSkill } from '../src/core/skills/Skill';
+import { attackFormula, attackValue, describeSkill, describeSkillBonus, getSkill } from '../src/core/skills/Skill';
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
@@ -99,11 +99,18 @@ describe('スロットごとの基本攻撃力（プレイヤー）', () => {
     expect(attackValue({ mult: 0 }, 5)).toBe(0);
   });
 
-  it('スロットが決まっていない一覧（報酬・持ち物）では、置ける範囲（12〜20）の実数値を範囲で示す', () => {
-    const big = getSkill('big_attack');
-    expect(describeSkillRange(big, slotAttack(5, 12), slotAttack(5, 20))).toBe('攻撃 ATK+5＝7〜15');
-    expect(describeSkillRange(getSkill('shield'), 2, 10)).toBe('Block ATK+3＝5〜13');
-    expect(describeSkillRange(getSkill('skel_guard'), 2, 10)).toBe('Block 6'); // 固定量は範囲にならない
+  it('スロットが決まっていない一覧（報酬・持ち物）では、幅（7〜15）ではなく、上乗せだけを示す（+5 など）', () => {
+    expect(describeSkillBonus(getSkill('big_attack'))).toBe('攻撃 +5');
+    expect(describeSkillBonus(getSkill('jab'))).toBe('攻撃 +1');
+    expect(describeSkillBonus(getSkill('basic_attack'))).toBe('攻撃 +0');
+    expect(describeSkillBonus(getSkill('heavy'))).toBe('攻撃 ×1.5+3');
+    expect(describeSkillBonus(getSkill('smash'))).toBe('攻撃 ×2+5');
+    expect(describeSkillBonus(getSkill('shield'))).toBe('Block +3');
+    expect(describeSkillBonus(getSkill('recover'))).toBe('回復 +3');
+    expect(describeSkillBonus(getSkill('drain'))).toBe('攻撃 +1 + 回復 ×0.5+2');
+    expect(describeSkillBonus(getSkill('ace_strike'))).toBe('攻撃 ×1.5（Block無視・破壊）');
+    expect(describeSkillBonus(getSkill('skel_guard'))).toBe('Block 6'); // 固定量は数字のまま
+    for (const id of ['big_attack', 'shield', 'drain']) expect(describeSkillBonus(getSkill(id))).not.toMatch(/〜|＝/);
   });
 
   it('実際の戦闘で、同じスキルでも合計値が高いスロットほど強い', async () => {
