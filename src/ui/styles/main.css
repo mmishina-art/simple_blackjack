@@ -705,9 +705,9 @@ section { min-width: 0; }
 .slot--special.slot--active .slot__key { color: #4a3410; }
 .slot--special.slot--active::before { background: #fff6d8; }
 
-/* 編成・出撃準備・敵の技の行: 11以下・21 は金 */
+/* 編成・敵の技の行 */
 
-/* ---- Meta: 祭壇 / 図鑑 / 出撃準備 ---- */
+/* ---- Meta: 祭壇 / 図鑑 ---- */
 .meta-screen {
   min-height: 100dvh; max-width: 480px; margin: 0 auto;
   padding: max(var(--safe-top), calc(env(safe-area-inset-top) + 16px)) 12px calc(env(safe-area-inset-bottom) + 14px);
@@ -829,18 +829,6 @@ section { min-width: 0; }
   background: transparent; border: 1px solid #3a2f22; border-radius: 3px;
 }
 
-/* 出撃準備 */
-.prep-cap {
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 10px 14px;
-  background: linear-gradient(180deg, var(--panel-hi), var(--panel)); border: 1px solid var(--gold-dim); border-radius: 3px;
-  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px var(--gold-dim);
-}
-.prep-cap__label { font-size: 13px; letter-spacing: 0.1em; color: var(--bone); }
-.prep-cap__pips { font-size: 15px; letter-spacing: 0.2em; color: var(--gold); text-align: right; }
-.prep-cap__num { font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--gold); min-width: 3.2em; text-align: right; }
-.prep-cap__sub { grid-column: 1 / -1; font-size: 11px; color: var(--bone-dim); letter-spacing: 0.04em; }
-.prep-hint { margin: 0; font-size: 13px; color: var(--bone); text-align: center; letter-spacing: 0.05em; }
-.prep .loadout__actions { margin-top: 4px; }
 .title__sub--3 { grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 360px; }
 .title__sub--3 .btn__main { font-size: 17px; letter-spacing: 0.06em; }
 .title__sub--3 .btn__sub { font-size: 11px; letter-spacing: 0.08em; }
@@ -1091,9 +1079,9 @@ section { min-width: 0; }
 .loadout__kind { width: 100%; margin: 4px 0 0; font-size: 11px; font-weight: 800; letter-spacing: 0.25em; color: var(--gold); }
 
 /* ---- 編成のスロット行: すべて同じ枠。レア度はアイコンの色・光だけ。静かに見せる ---- */
-.loadout__slots .lslot, .prep .lslot { background: #120e09; border: 1px solid #2a2118; box-shadow: none; }
-.loadout__slots .lslot .medal, .prep .lslot .medal { animation: none; }
-.loadout__slots .lslot .lslot__key, .prep .lslot .lslot__key { color: var(--bone-dim); }
+.loadout__slots .lslot { background: #120e09; border: 1px solid #2a2118; box-shadow: none; }
+.loadout__slots .lslot .medal { animation: none; }
+.loadout__slots .lslot .lslot__key { color: var(--bone-dim); }
 .lslot--armor .lslot__key { color: var(--bone-dim); }
 
 /* ---- ビフォーアフターの比較（セットする前の確認） ---- */
@@ -1110,3 +1098,29 @@ section { min-width: 0; }
 .compare__diff { list-style: none; margin: 10px 0 0; padding: 0; text-align: center; font-size: 14px; line-height: 1.9; color: var(--bone); }
 .compare__note { margin: 6px 0 0; font-size: 12px; line-height: 1.6; text-align: center; color: #ff9b8a; }
 .loadout .chip--static { background: #120e09; border: 1px solid #2a2118; box-shadow: none; }
+.lslot--blocked { opacity: 0.45; }
+
+/* ---- ショップ・ゴールド ---- */
+.tile--shop .tile__bg { stroke: #e0a040; }
+.tile--shop .tile__icon { fill: #e0a040; }
+.shop { grid-template-rows: auto minmax(0, 1fr) auto auto; }
+.shop__gold { color: var(--bone); }
+.shop__gold strong { color: var(--gold); font-family: var(--font-display); font-size: 18px; }
+.shop__list { display: flex; flex-direction: column; gap: 6px; }
+.shop__row { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 8px; text-align: left; color: var(--bone); background: #14100b; border: 1px solid var(--rar, var(--gold-dim)); border-radius: 3px; font: inherit; font-size: 13px; cursor: pointer; }
+.shop__row:disabled { opacity: 0.5; cursor: default; }
+.shop__row--sold { opacity: 0.35; }
+.shop__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.shop__text small { font-size: 11px; color: var(--bone-dim); }
+.shop__price { display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap; }
+.shop__price b { color: var(--gold); }
+.shop__price small { font-size: 11px; color: var(--bone-dim); }
+.shop__kind { font-size: 11px; color: var(--bone-dim); }
+.shop__empty { margin: 0; font-size: 12px; color: var(--bone-dim); }
+.shop__note { margin: 0; min-height: 1.2em; text-align: center; font-size: 13px; color: var(--bone-dim); }
+.map-hud__gold { color: var(--gold); margin-left: 8px; }
+.result__gold { color: var(--gold); }
+.loadout__gold { color: var(--gold); font-weight: 800; }
+.chip { font: inherit; color: inherit; text-align: left; cursor: pointer; background: #14100b; }
+.lslot__arrow { color: var(--bone-dim); }
+.lslot__after { color: var(--gold); }

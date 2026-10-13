@@ -7,7 +7,7 @@ import { previewSkill } from '../src/core/skills/preview';
 import { getSkill, isItem } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
-import { CODEX_ITEM_TOTAL, CODEX_SKILL_TOTAL, emptyMeta, isSkillDiscovered, selectableStartingSkills } from '../src/meta/Meta';
+import { CODEX_ITEM_TOTAL, CODEX_SKILL_TOTAL, emptyMeta, isSkillDiscovered } from '../src/meta/Meta';
 import { ArtisanTools, HerbalistBag, RELIC_POOL, Whetstone } from '../src/relics/catalog';
 import { createRun, START_MAX_HP } from '../src/run/Run';
 import { calloutOf } from '../src/ui/callout';
@@ -95,13 +95,12 @@ describe('道具を強化するレリック', () => {
 });
 
 describe('図鑑・祠と道具', () => {
-  it('薬草は最初から図鑑にあり、ほかの道具は入手すると出撃準備で選べる', () => {
+  it('薬草は最初から図鑑にあり、ほかの道具は入手すると図鑑に載る', () => {
     const meta = emptyMeta();
     expect(isSkillDiscovered(meta, 'herb')).toBe(true);
-    expect(selectableStartingSkills(meta)).toContain('herb');
-    expect(selectableStartingSkills(meta)).not.toContain('bomb');
+    expect(isSkillDiscovered(meta, 'bomb')).toBe(false);
     meta.codex.skills.push('bomb');
-    expect(selectableStartingSkills(meta)).toContain('bomb');
+    expect(isSkillDiscovered(meta, 'bomb')).toBe(true);
   });
 
   it('図鑑の総数は、スキルと道具を分けて数える', () => {

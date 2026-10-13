@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
-import { getSkill, hasSkill, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
+import { canPlaceAt, getSkill, hasSkill, minSlotOf, placementNote, RARITY_MIN_SLOT, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
 import { STAGES, stageRowOffset, stageRows } from '../src/map/stages';
@@ -276,15 +276,16 @@ describe('祠: 入れ替えとバージョンアップ', () => {
     expect(run.inventory).toEqual([]);
   });
 
-  it('バージョンアップ: コモン→レア、レア→レジェンド。道具・固定スキルは不可', () => {
+  it('バージョンアップ: コモン→レア、レア→レジェンド。道具・固定スキルは不可（強化先のレア度が置けるスロットで）', () => {
     const run = createRun();
     run.slots = { ...WITH_BLOCKS };
-    expect(canUpgradeSlot(run, 15)).toBe(true); // シールド(コモン)
-    expect(upgradeSlot(run, 15)).toBe('bulwark');
+    run.slots[18] = 'guard';
+    expect(canUpgradeSlot(run, 18)).toBe(true); // シールド(コモン)
+    expect(upgradeSlot(run, 18)).toBe('bulwark');
     expect(rarityOfSkill(getSkill('bulwark'))).toBe('rare');
-    expect(upgradeSlot(run, 15)).toBe('fortress');
+    expect(upgradeSlot(run, 18)).toBe('fortress');
     expect(rarityOfSkill(getSkill('fortress'))).toBe('legend');
-    expect(upgradeSlot(run, 15)).toBeNull(); // レジェンドはこれ以上不可
+    expect(upgradeSlot(run, 18)).toBeNull(); // レジェンドはこれ以上不可
     expect(canUpgradeSlot(run, 12)).toBe(false); // 薬草（道具）
     expect(canUpgradeSlot(run, 11)).toBe(false); // 固定
     expect(canUpgradeSlot(run, 21)).toBe(false);
@@ -447,5 +448,73 @@ describe('敵の特性', () => {
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon'), playerSlots: WITH_BLOCKS });
     expect(m.ctx.player.hp).toBe(60 - (18 - 11)); // 業火 ATK6×2+3 + 息吹3 = 18。後攻の盾 Block 11 が先に付与される
+  });
+});
+
+describe('レア度ごとの、置けるスロットの制限（スキル・道具）', () => {
+  it('コモンはどこでも、レアは 15 以上、レジェンドは 18 以上', () => {
+    expect(RARITY_MIN_SLOT).toEqual({ common: 11, rare: 15, legend: 18 });
+    expect([minSlotOf(getSkill('jab')), minSlotOf(getSkill('big_attack')), minSlotOf(getSkill('smash'))]).toEqual([11, 15, 18]);
+    expect(canPlaceAt(getSkill('jab'), 12)).toBe(true);
+    expect(canPlaceAt(getSkill('big_attack'), 14)).toBe(false);
+    expect(canPlaceAt(getSkill('big_attack'), 15)).toBe(true);
+    expect(canPlaceAt(getSkill('smash'), 17)).toBe(false);
+    expect(canPlaceAt(getSkill('smash'), 18)).toBe(true);
+    expect(canPlaceAt(getSkill('iron_shield'), 20)).toBe(false); // 防具はスロットに置けない
+  });
+
+  it('道具にも同じ制限（霊薬はレジェンド=18 以上、回復薬はレア=15 以上、薬草はどこでも）', () => {
+    expect(canPlaceAt(getSkill('herb'), 12)).toBe(true);
+    expect(canPlaceAt(getSkill('tonic'), 14)).toBe(false);
+    expect(canPlaceAt(getSkill('elixir'), 17)).toBe(false);
+    expect(canPlaceAt(getSkill('elixir'), 19)).toBe(true);
+  });
+
+  it('初期装備は、すべて制限に合っている', () => {
+    const run = createRun();
+    for (const [key, id] of Object.entries(run.slots)) expect(canPlaceAt(getSkill(id!), Number(key)), `${key}:${id}`).toBe(true);
+  });
+
+  it('equipSkill: 置けないスロットには置けず、持ち物から減らない', () => {
+    const run = createRun();
+    run.inventory.push('smash', 'jab');
+    expect(equipSkill(run, 16, 'smash')).toBe(false);
+    expect(run.inventory).toEqual(['smash', 'jab']);
+    expect(equipSkill(run, 19, 'smash')).toBe(true);
+    expect(equipSkill(run, 12, 'jab')).toBe(true);
+  });
+
+  it('入れ替え: どちらか一方でも、入れ替え後の場所が制限に合わなければできない', () => {
+    const run = createRun();
+    run.slots[19] = 'smash'; // レジェンド
+    run.slots[13] = 'jab';   // コモン
+    expect(swapSlots(run, 19, 13)).toBe(false); // 13 にレジェンドは置けない
+    expect(run.slots[19]).toBe('smash');
+    run.slots[18] = 'slash'; // コモン
+    expect(swapSlots(run, 19, 18)).toBe(true); // 18 にも置ける
+    expect([run.slots[18], run.slots[19]]).toEqual(['smash', 'slash']);
+    run.slots[16] = 'heavy'; // レア
+    expect(swapSlots(run, 16, 13)).toBe(false); // 13 にレアは置けない
+    expect(swapSlots(run, 16, 19)).toBe(true);
+  });
+
+  it('バージョンアップ: 強化先のレア度が置けないスロットでは、強化できない（先に入れ替える）', () => {
+    const run = createRun();
+    run.slots[16] = 'big_attack'; // レア。強化先の渾身の一撃はレジェンド（18 以上）
+    expect(canUpgradeSlot(run, 16)).toBe(false);
+    expect(upgradeSlot(run, 16)).toBeNull();
+    run.slots[18] = 'big_attack';
+    expect(upgradeSlot(run, 18)).toBe('smash');
+    run.slots[13] = 'jab'; // コモン → レア（15 以上）
+    expect(canUpgradeSlot(run, 13)).toBe(false);
+    run.slots[15] = 'jab';
+    expect(canUpgradeSlot(run, 15)).toBe(true);
+  });
+
+  it('置ける場所の説明', () => {
+    expect(placementNote(getSkill('jab'))).toBe('');
+    expect(placementNote(getSkill('big_attack'))).toBe('15 以上のスロットにだけ置ける');
+    expect(placementNote(getSkill('smash'))).toBe('18 以上のスロットにだけ置ける');
+    expect(placementNote(getSkill('iron_shield'))).toBe('');
   });
 });

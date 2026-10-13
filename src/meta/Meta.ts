@@ -1,5 +1,5 @@
-import { ALL_POOL, ARMOR_POOL, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
-import type { SkillId, SlotKey } from '../core/skills/Skill';
+import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
+import type { SkillId } from '../core/skills/Skill';
 import { RELIC_POOL } from '../relics/catalog';
 
 /**
@@ -14,14 +14,16 @@ export interface MetaState {
   upgrades: Record<string, number>;
   codex: { skills: SkillId[]; relics: string[] };
   /** 出撃時に最初から置くスキル（空きスロットのキー → スキルID）。 */
-  startingSkills: Record<number, SkillId>;
   stats: { runs: number; clears: number; bestRow: number };
 }
 
 export const META_KEY = 'bj-meta-v1';
 
+/** 廃止した強化「初期装備枠」の、レベルごとのコスト（買っていた分の返金に使う）。 */
+const REMOVED_KIT_COSTS = [50, 100];
+
 export function emptyMeta(): MetaState {
-  return { version: 1, shards: 0, upgrades: {}, codex: { skills: [], relics: [] }, startingSkills: {}, stats: { runs: 0, clears: 0, bestRow: 0 } };
+  return { version: 1, shards: 0, upgrades: {}, codex: { skills: [], relics: [] }, stats: { runs: 0, clears: 0, bestRow: 0 } };
 }
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
@@ -48,11 +50,12 @@ export function loadMeta(storage: StorageLike | null = defaultStorage()): MetaSt
     if (d.version !== 1) return meta;
     if (typeof d.shards === 'number' && d.shards >= 0) meta.shards = Math.floor(d.shards);
     if (isNumRecord(d.upgrades)) meta.upgrades = { ...d.upgrades };
+    // 廃止した強化「初期装備枠」（出撃準備の廃止に伴う）: 買った分の魂片を返して、記録から消す（保存キーは変えない）
+    const kit = meta.upgrades.kit ?? 0;
+    if (kit > 0) meta.shards += REMOVED_KIT_COSTS.slice(0, kit).reduce((a, b) => a + b, 0);
+    delete meta.upgrades.kit;
     if (d.codex && isStringArray(d.codex.skills)) meta.codex.skills = [...new Set(d.codex.skills)];
     if (d.codex && isStringArray(d.codex.relics)) meta.codex.relics = [...new Set(d.codex.relics)];
-    if (d.startingSkills && typeof d.startingSkills === 'object') {
-      for (const [k, v] of Object.entries(d.startingSkills)) if (typeof v === 'string') meta.startingSkills[Number(k)] = v;
-    }
     if (d.stats && isNumRecord(d.stats)) meta.stats = { ...meta.stats, ...d.stats };
   } catch {
     /* 壊れたデータは無視して初期状態から */
@@ -85,7 +88,6 @@ export const UPGRADES: readonly UpgradeDef[] = [
   { id: 'ward', name: '守りの心得', icon: '護', costs: [25, 45, 70], describe: (l) => `戦闘開始時の Block +${l * 2}` },
   { id: 'rest', name: '安らぎの心得', icon: '休', costs: [20, 40, 70], describe: (l) => `宿屋の回復量 +${l * 10}%` },
   { id: 'insight', name: '見る目', icon: '眼', costs: [90], describe: (l) => `敵撃破の報酬スキルの選択肢 +${l}` },
-  { id: 'kit', name: '初期装備枠', icon: '枠', costs: [50, 100], describe: (l) => `出撃時に装備を変えられるスロット数: ${1 + l}（出撃準備で設定）` },
 ];
 
 export function upgradeLevel(meta: MetaState, id: string): number {
@@ -201,79 +203,7 @@ export const CODEX_ITEM_TOTAL = ITEM_POOL.length;
 export const CODEX_ARMOR_TOTAL = ARMOR_POOL.length;
 export const CODEX_RELIC_TOTAL = RELIC_POOL.length;
 
-// ---- 出撃時の初期装備（出撃準備） ----
-/**
- * 出撃準備で装備を変えられるスロット（12〜20）。11以下（小攻撃）と 21（会心の一撃）は固定。
- * 初期スロット（15=シールド、18=盾、20=大攻撃）も置き換えられる。
- */
-export const STARTING_SLOT_KEYS: readonly SlotKey[] = [12, 13, 14, 15, 16, 17, 18, 19, 20];
-
-/** 出撃時に装備を変えられるスロットの数（初期 1 + 祭壇「初期装備枠」）。 */
-export function startingCapacity(meta: MetaState): number {
-  return 1 + upgradeLevel(meta, 'kit');
-}
-
-/** 図鑑に載っていて、初期装備に選べるスキル・道具（報酬プールのもの）。 */
-export function selectableStartingSkills(meta: MetaState): SkillId[] {
-  return ALL_POOL.filter((id) => isSkillDiscovered(meta, id));
-}
-
-/**
- * 保存されている初期装備のうち、現在も有効なもの。
- * 有効 = 変えられるスロット・図鑑にあるスキル・初期装備と違うスキル・枠数以内。
- */
-export function validStartingSkills(meta: MetaState): Record<number, SkillId> {
-  const out: Record<number, SkillId> = {};
-  const ok = selectableStartingSkills(meta);
-  const capacity = startingCapacity(meta);
-  for (const key of STARTING_SLOT_KEYS) {
-    const id = meta.startingSkills[key];
-    if (!id || !ok.includes(id) || id === DEFAULT_PLAYER_SLOTS[key]) continue;
-    if (Object.keys(out).length >= capacity) break;
-    out[key] = id;
-  }
-  return out;
-}
-
-/** 装備を変えているスロットの数（枠の使用数）。 */
-export function customCount(meta: MetaState): number {
-  return Object.keys(validStartingSkills(meta)).length;
-}
-
-/** そのスロットの装備を変えられるか（変えられるスロットで、すでに変更済みか、枠に空きがある）。 */
-export function canCustomize(meta: MetaState, key: SlotKey): boolean {
-  return STARTING_SLOT_KEYS.includes(key) && (key in validStartingSkills(meta) || customCount(meta) < startingCapacity(meta));
-}
-
 /** 記録をすべて消して、最初の状態に戻す（魂片・祭壇の強化・図鑑・初期装備・戦績）。meta オブジェクトはそのまま使い続けられる。 */
 export function resetAllMeta(meta: MetaState): void {
   Object.assign(meta, emptyMeta());
-}
-
-/**
- * 出撃準備で変えた初期装備を、すべて初期装備（素の状態）に戻す。魂片・祭壇の強化・図鑑は変えない。
- * 戻した数（有効だった変更の数）を返す。
- */
-export function resetStartingSkills(meta: MetaState): number {
-  const n = customCount(meta);
-  meta.startingSkills = {};
-  return n;
-}
-
-/**
- * 初期装備を設定する。null か「初期装備と同じスキル」を渡すと、変更なし（初期装備のまま）に戻る。
- * 変えられないスロット・図鑑にないスキル・枠数超過なら false。
- */
-export function setStartingSkill(meta: MetaState, key: SlotKey, id: SkillId | null): boolean {
-  if (!STARTING_SLOT_KEYS.includes(key)) return false;
-  const current = { ...validStartingSkills(meta) };
-  if (id === null || id === DEFAULT_PLAYER_SLOTS[key]) {
-    delete current[key];
-    meta.startingSkills = current;
-    return true;
-  }
-  if (!selectableStartingSkills(meta).includes(id)) return false;
-  if (!(key in current) && Object.keys(current).length >= startingCapacity(meta)) return false;
-  meta.startingSkills = { ...current, [key]: id };
-  return true;
 }

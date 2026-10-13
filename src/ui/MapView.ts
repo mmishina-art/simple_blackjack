@@ -15,7 +15,7 @@ const boardHeight = (rows: number): number => (rows <= FIT_ROWS ? 640 : PAD * 2 
 const ROW_Y = (row: number, rows: number): number =>
   rows <= FIT_ROWS ? 586 - row * ((586 - 64) / Math.max(1, rows - 1)) : boardHeight(rows) - PAD - row * ROW_STEP;
 
-const ICON: Record<TileKind, string> = { start: '始', empty: '', enemy: '敵', chest: '宝', inn: '宿', shrine: '祠', boss: '王' };
+const ICON: Record<TileKind, string> = { start: '始', empty: '', enemy: '敵', chest: '宝', inn: '宿', shrine: '祠', boss: '王', shop: '店' };
 
 export interface MapHandlers {
   onMove(tileId: string): void;
@@ -37,7 +37,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   // 上部: HP と所持レリック
   const hud = document.createElement('section');
   hud.className = 'map-hud';
-  hud.innerHTML = `<div class="map-hud__row"><strong>第${run.stage}階層　${run.map.name}</strong><span>HP ${run.hp} / ${run.maxHp}</span></div>
+  hud.innerHTML = `<div class="map-hud__row"><strong>第${run.stage}階層　${run.map.name}</strong><span>HP ${run.hp} / ${run.maxHp}<span class="map-hud__gold">${run.gold} G</span></span></div>
     <div class="map-hud__bar"><div class="map-hud__fill" style="width:${Math.max(0, (run.hp / run.maxHp) * 100)}%"></div></div>`;
   const relics = document.createElement('div');
   relics.className = 'map-hud__relics';

@@ -20,7 +20,7 @@ export const STAGE_1: StageMap = {
     t('A', 'enemy', 1, 1, ['L1', 'M1', 'R1'], 'slime'),
 
     t('L1', 'chest', 0, 2, ['L2']),
-    t('M1', 'empty', 1, 2, ['M2']),
+    t('M1', 'shop', 1, 2, ['M2']),
     t('R1', 'enemy', 2, 2, ['R2'], 'skeleton'),
 
     t('L2', 'shrine', 0, 3, ['L3', 'M3']),

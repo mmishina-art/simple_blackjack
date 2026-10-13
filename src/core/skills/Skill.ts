@@ -238,3 +238,25 @@ export function diffLines(before: EffectTotals, after: EffectTotals): string[] {
   }
   return lines.length > 0 ? lines : ['効果は変わらない'];
 }
+
+/**
+ * レア度ごとの、置けるスロットの下限（合計値）。コモン=どこでも / レア=15 以上 / レジェンド=18 以上。
+ * スキルと道具に適用する（防具は防御スロット専用）。強いものほど、高い合計値でしか発動できない。
+ */
+export const RARITY_MIN_SLOT: Record<Rarity, number> = { common: SLOT_MIN, rare: 15, legend: 18 };
+
+/** そのスキル・道具が置ける、いちばん小さいスロット。 */
+export function minSlotOf(skill: SkillDef): number {
+  return RARITY_MIN_SLOT[rarityOfSkill(skill)];
+}
+
+/** そのスロットに置けるか（レア度の制限。防具は、スロットには置けない）。 */
+export function canPlaceAt(skill: SkillDef, key: SlotKey): boolean {
+  return !isArmor(skill) && key >= minSlotOf(skill);
+}
+
+/** 置ける場所の説明（制限がなければ空）。例: `18 以上のスロットにだけ置ける`。 */
+export function placementNote(skill: SkillDef): string {
+  const min = minSlotOf(skill);
+  return min > SLOT_MIN && !isArmor(skill) ? `${min} 以上のスロットにだけ置ける` : '';
+}

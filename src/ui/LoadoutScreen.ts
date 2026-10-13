@@ -1,10 +1,11 @@
 import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
-import { describeSkill, describeSkillBonus, describeSkillShort, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
+import { canPlaceAt, describeSkill, describeSkillBonus, describeSkillShort, placementNote, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
 import { previewSlot } from '../run/effective';
 import { buildArmorCompare, buildSlotCompare } from './components/Compare';
+import { sellFromInventory, sellPrice } from '../run/shop';
 import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
 import { buildSlotRow } from './components/SlotRow';
 import { openSheet, type SheetOption } from './components/SkillSheet';
@@ -36,7 +37,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const head = document.createElement('header');
     head.className = 'loadout__head';
     head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : '置きたいスロットをタップ') : 'スロットをタップして、持ち物を置く（上書きのみ。置き換えた元のものは失われる）'}</p>`;
+      <p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : 'スロットをタップして、持ち物を置く（上書きのみ。置き換えた元のものは失われる）'}</p>`;
     screen.append(head);
 
     if (armed) {
@@ -44,7 +45,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const banner = document.createElement('div');
       banner.className = `armed ${rarityClass(rarityOfSkill(skill))}`;
       banner.innerHTML = `<span class="medal${medalKindClass(kindOfSkill(skill))}">${skill.icon}</span>
-        <span class="armed__text"><strong>${skill.name} ${kindTag(skill, true)} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}</span></span>`;
+        <span class="armed__text"><strong>${skill.name} ${kindTag(skill, true)} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}${placementNote(skill) ? `<br>${placementNote(skill)}` : ''}</span></span>`;
       screen.append(banner);
     }
 
@@ -63,9 +64,12 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         atk: slotAttack(run.baseAttack, key),
         locked,
         effective: effective.get(key),
-        target: !!armed && !isArmor(getSkill(armed)) && !locked,
+        target: !!armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key),
+        blocked: !!armed && !isArmor(getSkill(armed)) && !canPlaceAt(getSkill(armed), key),
+        after: armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key) ? previewSlot(run, key, armed).short : undefined,
         onTap: () => {
           if (armed && isArmor(getSkill(armed))) return; // 防具は、下の防具の欄に装備する
+          if (armed && !canPlaceAt(getSkill(armed), key)) return; // レア度の制限: ここには置けない
           if (armed) {
             const skill = getSkill(armed);
             confirmPlace(key, armed, () => {
@@ -86,7 +90,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     // 持ち物（表示のみ。置くときはスロットをタップする）。セット待ちのときは上のバナーに集中させるため隠す
     const inv = document.createElement('div');
     inv.className = 'loadout__inv';
-    inv.innerHTML = `<div class="loadout__inv-title">持ち物（${run.inventory.length}）</div>`;
+    inv.innerHTML = `<div class="loadout__inv-title">持ち物（${run.inventory.length}）　<span class="loadout__gold">${run.gold} G</span>　タップで売る</div>`;
     const chips = document.createElement('div');
     chips.className = 'loadout__chips';
     if (entries.length === 0) chips.textContent = 'なし（敵を倒すとスキル・道具が手に入る）';
@@ -101,8 +105,14 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       chips.append(h);
       for (const e of group) {
         const skill = getSkill(e.id);
-        const chip = document.createElement('div');
-        chip.className = 'chip chip--static'; // 枠は同じ。レア度はアイコンだけで示す
+        const chip = document.createElement('button');
+        chip.className = 'chip'; // 枠は同じ。レア度はアイコンだけで示す。タップで売る
+        chip.title = `売る（${sellPrice(e.id)} G）`;
+        chip.addEventListener('click', () => openSheet({
+          title: `「${skill.name}」を売る？`,
+          subtitle: `${sellPrice(e.id)} G で売れる（所持 ${run.gold} G）。売ったものは戻らない`,
+          options: [{ kind: 'confirm', icon: '売', name: `売る（+${sellPrice(e.id)} G）`, detail: describeSkillBonus(skill), onPick() { if (sellFromInventory(run, e.id) !== null) { audio.sfx('click'); render(); } } }],
+        }));
         chip.innerHTML = `<span class="medal medal--sm ${rarityClass(rarityOfSkill(skill))}${medalKindClass(kind)}">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
         chips.append(chip);
       }
@@ -134,7 +144,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     row.innerHTML = `<span class="lslot__key">防御</span>
       <span class="medal medal--sm medal--armor">${cur.icon}</span>
       <span class="lslot__name">${cur.name} ${kindTag(cur, true)}</span>
-      <span class="lslot__desc">${describeSkillShort(cur, 0)}</span>
+      <span class="lslot__desc">${describeSkillShort(cur, 0)}${target ? ` → <strong class="lslot__after">${describeSkillShort(getSkill(armed!), 0)}</strong>` : ''}</span>
       <span class="lslot__go" aria-hidden="true">›</span>`;
     row.addEventListener('click', () => {
       if (armed && isArmor(getSkill(armed))) {
@@ -210,7 +220,8 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
           icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: KIND_LABEL[kind], skillKind: kind,
           detail: `${now.short} → ${previewSlot(run, key, e.id).short}`,
           badge: e.count > 1 ? `×${e.count}` : undefined,
-          note: current ? `いまの「${current.name}」は失われる（上書き）` : undefined,
+          disabled: !canPlaceAt(skill, key),
+          note: !canPlaceAt(skill, key) ? placementNote(skill) : current ? `いまの「${current.name}」は失われる（上書き）` : undefined,
           onPick() { confirmPlace(key, e.id, () => { if (equipSkill(run, key, e.id)) render(); }); },
         });
       }

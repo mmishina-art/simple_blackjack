@@ -1,4 +1,4 @@
-export type TileKind = 'start' | 'empty' | 'enemy' | 'chest' | 'inn' | 'shrine' | 'boss';
+export type TileKind = 'start' | 'empty' | 'enemy' | 'chest' | 'inn' | 'shrine' | 'shop' | 'boss';
 
 export interface TileDef {
   id: string;
@@ -20,7 +20,7 @@ export interface StageMap {
 }
 
 export const TILE_LABEL: Record<TileKind, string> = {
-  start: 'スタート', empty: '何もない', enemy: '敵', chest: '宝箱', inn: '宿屋', shrine: '祠', boss: 'ボス',
+  start: 'スタート', empty: '何もない', enemy: '敵', chest: '宝箱', inn: '宿屋', shrine: '祠', shop: 'ショップ', boss: 'ボス',
 };
 
 export function tileOf(map: StageMap, id: string): TileDef {
