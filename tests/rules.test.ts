@@ -71,7 +71,8 @@ describe('スロット', () => {
   it('未設定の合計値は fallbackSkill（基本攻撃）が発動する', () => {
     const e = new Entity('player', 'p', 60, { ...DEFAULT_PLAYER_SLOTS });
     expect(skillForTotal(e, 8).id).toBe('small_attack');
-    expect(skillForTotal(e, 15).id).toBe('basic_attack'); // シールドは初期装備ではない
+    expect(skillForTotal(e, 15).id).toBe('herb'); // 15 は薬草（シールドは初期装備ではない）
+    expect(skillForTotal(e, 16).id).toBe('basic_attack');
     expect(skillForTotal(e, 13).id).toBe('basic_attack');
     expect(skillForTotal(e, 20).id).toBe('big_attack');
     expect(skillForTotal(e, 21).id).toBe('ace_strike');

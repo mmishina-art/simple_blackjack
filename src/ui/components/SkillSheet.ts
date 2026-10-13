@@ -16,7 +16,7 @@ export interface SheetOption {
   note?: string;
   disabled?: boolean;
   /** reset は「外す」「初期装備に戻す」のような操作の選択肢（スキルとは別の見た目）。 */
-  kind?: 'skill' | 'reset';
+  kind?: 'skill' | 'reset' | 'confirm';
   /** この選択肢が属する区分（「スキル」「道具」）。区分が変わるところに見出しが出る。 */
   section?: string;
   /** スキル・道具・防具の区分（メダルの形と札）。 */
@@ -29,6 +29,8 @@ export interface SheetConfig {
   subtitle?: string;
   /** 選べない理由などの注意書き。 */
   notice?: string;
+  /** 見出しと選択肢の間に出す、好きな内容（ビフォーアフターの比較など）。 */
+  content?: HTMLElement;
   options: SheetOption[];
   /** 選択肢が1つもないときの文言。 */
   empty?: string;
@@ -60,6 +62,8 @@ export function openSheet(cfg: SheetConfig): () => void {
     sheet.append(notice);
   }
 
+  if (cfg.content) sheet.append(cfg.content);
+
   const list = document.createElement('div');
   list.className = 'sheet__list';
   const close = (): void => {
@@ -82,7 +86,7 @@ export function openSheet(cfg: SheetConfig): () => void {
     }
     lastSection = opt.section ?? lastSection;
     const btn = document.createElement('button');
-    btn.className = `pick ${opt.kind === 'reset' ? 'pick--reset' : rarityClass(opt.rarity)}`;
+    btn.className = `pick ${opt.kind === 'reset' ? 'pick--reset' : opt.kind === 'confirm' ? 'pick--confirm' : rarityClass(opt.rarity)}`;
     btn.disabled = !!opt.disabled;
     btn.innerHTML = `<span class="medal${opt.skillKind ? medalKindClass(opt.skillKind) : ''}">${opt.icon}</span>
       <span class="pick__text">
@@ -90,7 +94,7 @@ export function openSheet(cfg: SheetConfig): () => void {
         <span class="pick__detail">${opt.detail}</span>
         ${opt.note ? `<span class="pick__note">${opt.note}</span>` : ''}
       </span>
-      ${opt.kind === 'reset' ? '' : rarityBadge(opt.rarity)}`;
+      ${opt.kind === 'reset' || opt.kind === 'confirm' ? '' : rarityBadge(opt.rarity)}`;
     btn.addEventListener('click', () => {
       if (opt.disabled) return;
       audio.sfx('pick');

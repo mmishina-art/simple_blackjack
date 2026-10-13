@@ -3,6 +3,8 @@ import { slotAttack } from '../core/skills/catalog';
 import { describeSkill, describeSkillBonus, describeSkillShort, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
+import { previewSlot } from '../run/effective';
+import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
 import { buildSlotRow } from './components/SlotRow';
 import { openSheet, type SheetOption } from './components/SkillSheet';
@@ -66,7 +68,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
           if (armed && isArmor(getSkill(armed))) return; // 防具は、下の防具の欄に装備する
           if (armed) {
             const skill = getSkill(armed);
-            confirmOverwrite(key, armed, () => {
+            confirmPlace(key, armed, () => {
               if (equipSkill(run, key, skill.id)) {
                 audio.sfx('pick');
                 opts.onClose(`「${skill.name}」を ${slotLabel(key)} にセットした。`);
@@ -100,8 +102,8 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       for (const e of group) {
         const skill = getSkill(e.id);
         const chip = document.createElement('div');
-        chip.className = `chip chip--static ${rarityClass(rarityOfSkill(skill))}`;
-        chip.innerHTML = `<span class="medal medal--sm${medalKindClass(kind)}">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
+        chip.className = 'chip chip--static'; // 枠は同じ。レア度はアイコンだけで示す
+        chip.innerHTML = `<span class="medal medal--sm ${rarityClass(rarityOfSkill(skill))}${medalKindClass(kind)}">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
         chips.append(chip);
       }
     }
@@ -149,17 +151,15 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     return row;
   }
 
-  /** 防具を上書きする確認。いまの防具は失われる。 */
+  /** 防具を装備する前の確認。ビフォーアフターを見せて、選ばせる。 */
   const confirmArmor = (id: SkillId, done: () => void): void => {
     const cur = getSkill(run.armor);
     const next = getSkill(id);
     openSheet({
-      title: '防具を上書きする？',
-      subtitle: `「${cur.name}」は失われ、持ち物にも戻らない`,
-      options: [{
-        kind: 'reset', icon: '上', name: `「${next.name}」で上書きする`,
-        detail: `${describeSkill(cur)} → ${describeSkill(next)}`, onPick: done,
-      }],
+      title: `「${next.name}」を装備する？`,
+      subtitle: '防御スロットは上書きのみ',
+      content: buildArmorCompare(cur, next),
+      options: [{ kind: 'confirm', icon: '装', name: '装備する', detail: `${cur.name} → ${next.name}`, onPick: done }],
     });
   };
 
@@ -170,8 +170,9 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       .map((e) => {
         const a = getSkill(e.id);
         return {
-          icon: a.icon, name: a.name, rarity: rarityOfSkill(a), skillKind: 'armor' as const, detail: describeSkill(a),
-          note: `いまの「${cur.name}」は失われる（上書き）`,
+          icon: a.icon, name: a.name, rarity: rarityOfSkill(a), skillKind: 'armor' as const,
+          detail: `${describeSkillShort(cur, 0)} → ${describeSkillShort(a, 0)}`,
+          note: describeSkill(a),
           onPick() { confirmArmor(e.id, () => { if (equipArmor(run, e.id)) render(); }); },
         };
       });
@@ -183,19 +184,15 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     });
   };
 
-  /** 上書きの確認。空きスロットならそのまま、スキルが入っていれば「失われる」ことを確認する。 */
-  const confirmOverwrite = (key: number, id: SkillId, done: () => void): void => {
-    const currentId = run.slots[key];
-    if (!currentId) return done();
-    const cur = getSkill(currentId);
-    const next = getSkill(id);
+  /** セットする前の確認: ビフォーアフターを見せて、選ばせる（空きスロットでも、上書きでも）。 */
+  const confirmPlace = (key: number, id: SkillId, done: () => void): void => {
+    const before = previewSlot(run, key, run.slots[key] ?? null);
+    const after = previewSlot(run, key, id);
     openSheet({
-      title: `${slotLabel(key)} を上書きする？`,
-      subtitle: `「${cur.name}」は失われ、持ち物にも戻らない`,
-      options: [{
-        kind: 'reset', icon: '上', name: `「${next.name}」で上書きする`,
-        detail: describeSkill(next, slotAttack(run.baseAttack, key)), onPick: done,
-      }],
+      title: `${slotLabel(key)} に「${after.name}」を置く？`,
+      subtitle: `このスロットの基本値（ATK）は ${after.atk}`,
+      content: buildSlotCompare(before, after),
+      options: [{ kind: 'confirm', icon: '置', name: 'セットする', detail: `${before.short} → ${after.short}`, onPick: done }],
     });
   };
 
@@ -204,22 +201,23 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const currentId = run.slots[key];
     const current = currentId ? getSkill(currentId) : null;
     const options: SheetOption[] = [];
+    const now = previewSlot(run, key, currentId ?? null);
     const entries = inventoryEntries(run);
     for (const kind of ['skill', 'item'] as const) {
       for (const e of entries.filter((x) => kindOfSkill(getSkill(x.id)) === kind)) {
         const skill = getSkill(e.id);
         options.push({
           icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: KIND_LABEL[kind], skillKind: kind,
-          detail: describeSkill(skill, slotAttack(run.baseAttack, key)),
+          detail: `${now.short} → ${previewSlot(run, key, e.id).short}`,
           badge: e.count > 1 ? `×${e.count}` : undefined,
           note: current ? `いまの「${current.name}」は失われる（上書き）` : undefined,
-          onPick() { confirmOverwrite(key, e.id, () => { if (equipSkill(run, key, e.id)) render(); }); },
+          onPick() { confirmPlace(key, e.id, () => { if (equipSkill(run, key, e.id)) render(); }); },
         });
       }
     }
     openSheet({
       title: `${slotLabel(key)} のスロット`,
-      subtitle: current ? `いま: ${current.name}（${describeSkill(current, slotAttack(run.baseAttack, key))}）` : 'いま: 通常攻撃（空き）',
+      subtitle: `いま: ${now.name}（${now.short}）　選ぶと、セット後の変化を確認できる`,
       options,
       empty: '置けるものがない。敵を倒すとスキルや道具が手に入る。',
     });

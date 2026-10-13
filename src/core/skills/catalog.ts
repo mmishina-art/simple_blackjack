@@ -124,10 +124,10 @@ export const DEFAULT_ARMOR_ID: SkillId = 'iron_shield';
 /** スロットに置けるものすべて（スキル + 道具。防具は防御スロット専用）。図鑑・出撃準備・祠の抽選に使う。 */
 export const ALL_POOL: readonly SkillId[] = [...SKILL_POOL, ...ITEM_POOL];
 
-/** プレイヤーの初期スロット。12 は薬草（道具）、20 は大攻撃、21 は会心の一撃で固定（守りは防具が受け持つので、シールド・盾は初期装備にしない）。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
+/** プレイヤーの初期スロット。15 は薬草（道具）、20 は大攻撃、21 は会心の一撃で固定（守りは防具が受け持つので、シールド・盾は初期装備にしない）。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
 export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   11: 'small_attack',
-  12: 'herb', // 初期から回復を持つ（低い合計値で止まったときの、HP を保つ手段。薬草は固定の回復）
+  15: 'herb', // 初期から回復を持つ。15 は「止まるか、引くか」を迷う合計値（バースト確率が約 54%）なので、止まる理由になる。試算でも最もクリア率が高い位置（14 と並ぶ）
   20: 'big_attack',
   21: ACE_STRIKE_ID,
 };

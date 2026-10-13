@@ -6,11 +6,12 @@ import { Slime } from '../src/core/entities/enemies/Slime';
 import { badgeText, formatPreview, previewAllSlots, previewSkill } from '../src/core/skills/preview';
 import { fxChips } from '../src/ui/callout';
 import { slotAttack } from '../src/core/skills/catalog';
-import { attackFormula, attackValue, describeSkill, describeSkillBonus, describeSkillShort, circledNumber, getSkill } from '../src/core/skills/Skill';
+import { attackFormula, attackValue, describeSkill, describeSkillBonus, describeSkillShort, circledNumber, diffLines, effectTotals, getSkill } from '../src/core/skills/Skill';
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
-import { OverlordOrb, Whetstone } from '../src/relics/catalog';
+import { Bracer, OverlordOrb, Whetstone } from '../src/relics/catalog';
+import { previewSlot } from '../src/run/effective';
 import { createRun } from '../src/run/Run';
 import { noWait, playRound, WITH_BLOCKS } from './helpers';
 
@@ -45,7 +46,7 @@ describe('基本攻撃力（ATK）', () => {
 
   it('初期スロットにはシールド・盾はない（守りは防具が受け持つ）。回復スキルも入っていない（回復は薬草）', () => {
     const m = machine();
-    expect(m.ctx.player.slots[15]).toBeUndefined();
+    expect(m.ctx.player.slots[15]).toBe('herb'); // 15 は薬草（止まるか迷う合計値）
     expect(m.ctx.player.slots[18]).toBeUndefined();
     expect(Object.values(m.ctx.player.slots).sort()).toEqual(['ace_strike', 'big_attack', 'herb', 'small_attack']);
     expect(Object.values(m.ctx.player.slots)).not.toContain('mend');
@@ -408,5 +409,34 @@ describe('スロット表の右側の短い表示と、基本値の丸数字', (
     expect([21, 35].map(circledNumber)).toEqual(['㉑', '㉟']);
     expect(circledNumber(36)).toBe('(36)');
     expect(circledNumber(0)).toBe('(0)');
+  });
+});
+
+describe('ビフォーアフター（セット前の比較）', () => {
+  it('diffLines: 種類ごとに「いま → 後（差）」。増減は符号と文字で分かる', () => {
+    expect(diffLines({ attack: 5, block: 0, heal: 0 }, { attack: 8, block: 0, heal: 0 })).toEqual(['攻撃 5 → 8（+3）']);
+    expect(diffLines({ attack: 0, block: 0, heal: 8 }, { attack: 6, block: 0, heal: 0 })).toEqual(['攻撃 なし → 6（+6）', '回復 8 → なし（−8）']);
+    expect(diffLines({ attack: 0, block: 6, heal: 0 }, { attack: 7, block: 6, heal: 5 })).toEqual(['攻撃 なし → 7（+7）', 'Block 6 → 6（変わらない）', '回復 なし → 5（+5）']);
+    expect(diffLines({ attack: 0, block: 0, heal: 0 }, { attack: 0, block: 0, heal: 0 })).toEqual(['効果は変わらない']);
+  });
+
+  it('effectTotals: 攻撃は複数回の合計、Block・回復は種類ごと', () => {
+    expect(effectTotals(getSkill('twin_strike'), slotAttack(5, 17))).toEqual({ attack: 12, block: 0, heal: 0 });
+    expect(effectTotals(getSkill('drain'), slotAttack(5, 17))).toEqual({ attack: 8, block: 0, heal: 5 });
+    expect(effectTotals(getSkill('herb'), slotAttack(5, 12))).toEqual({ attack: 0, block: 0, heal: 8 });
+  });
+
+  it('previewSlot: そのスロットに置いたときの値（空きは通常攻撃）。run は変えない。レリックの補正が入る', () => {
+    const run = createRun();
+    const slotsBefore = JSON.stringify(run.slots);
+    const empty = previewSlot(run, 15, null);
+    expect(empty.name).toContain('通常攻撃');
+    expect(empty.short).toBe('攻撃 5');
+    const placed = previewSlot(run, 15, 'big_attack'); // 15 は ATK 5: 大攻撃 ATK+5
+    expect(placed.short).toBe('攻撃 10');
+    expect(diffLines(empty.totals, placed.totals)).toEqual(['攻撃 5 → 10（+5）']);
+    expect(JSON.stringify(run.slots)).toBe(slotsBefore);
+    run.relics.push(Bracer); // 大攻撃が ATK×2+5 に
+    expect(previewSlot(run, 15, 'big_attack').short).toBe('攻撃 15');
   });
 });
