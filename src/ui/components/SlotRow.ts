@@ -30,7 +30,6 @@ export interface SlotRowOptions {
  */
 export function buildSlotRow(o: SlotRowOptions): HTMLElement {
   const look = slotLook(o.key, o.skill);
-  const tone = look.special ? ` lslot--special lslot--${look.tone}` : '';
   const shown = o.skill ?? o.fallback;
   const eff = o.skill ? o.effective : undefined;
 
@@ -47,12 +46,11 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
   const interactive = !o.locked && !!o.onTap;
 
   const row = document.createElement(interactive ? 'button' : 'div');
-  row.className = o.locked
-    ? `lslot lslot--fixed${tone}`
-    : `lslot lslot--set ${rarityClass(look.rarity)}${tone}${o.target ? ' lslot--target' : ''}${interactive ? ' lslot--tap' : ''}`;
+  // 枠はどの行も同じデザイン。レア度は、アイコン（メダル）の色と光だけで示す。固定スロットは、少し薄く出す
+  row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${interactive ? ' lslot--tap' : ''}`;
   row.title = detail;
   row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}<span class="lslot__atk" aria-label="基本値 ${o.atk}">${circledNumber(o.atk)}</span></span>
-    <span class="medal medal--sm${o.skill ? medalKindClass(kindOfSkill(o.skill)) : ''}">${o.skill ? o.skill.icon : BASIC_ICON}</span>
+    <span class="medal medal--sm ${rarityClass(look.rarity)}${o.skill ? medalKindClass(kindOfSkill(o.skill)) : ''}">${o.skill ? o.skill.icon : BASIC_ICON}</span>
     <span class="lslot__name">${name}${o.skill ? ` ${kindTag(o.skill)}` : ''}${o.tag ? ` <em class="lslot__tag${o.tagTone === 'custom' ? ' lslot__tag--custom' : ''}">${o.tag}</em>` : ''}</span>
     <span class="lslot__desc">${desc}</span>
     <span class="lslot__go" aria-hidden="true">${interactive ? '›' : ''}</span>`;

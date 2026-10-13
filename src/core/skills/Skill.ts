@@ -208,3 +208,33 @@ export function circledNumber(n: number): string {
   if (n <= 35) return String.fromCharCode(0x3251 + n - 21);
   return `(${n})`;
 }
+
+export interface EffectTotals { attack: number; block: number; heal: number }
+
+/** スキルの効果を、種類ごとの合計にする（攻撃は複数回の合計）。ビフォーアフターの比較に使う。atk は、そのスロットの基本攻撃力。 */
+export function effectTotals(skill: SkillDef, atk: number): EffectTotals {
+  const t: EffectTotals = { attack: 0, block: 0, heal: 0 };
+  for (const e of skill.effects) {
+    if (e.type === 'attack') t.attack += attackValue(e, atk);
+    else if (e.type === 'block') t.block += supportValue(e, atk);
+    else t.heal += supportValue(e, atk);
+  }
+  return t;
+}
+
+/**
+ * ビフォーアフターの差分の行。例: `攻撃 5 → 8（+3）` / `回復 8 → なし（−8）` / `Block なし → 6（+6）`。
+ * どちらにもない種類は出さない。ぜんぶ同じなら「効果は変わらない」。色だけに頼らず、符号と文字でも増減が分かる。
+ */
+export function diffLines(before: EffectTotals, after: EffectTotals): string[] {
+  const lines: string[] = [];
+  for (const [key, label] of [['attack', '攻撃'], ['block', 'Block'], ['heal', '回復']] as const) {
+    const b = before[key];
+    const a = after[key];
+    if (b === 0 && a === 0) continue;
+    const show = (v: number): string => (v === 0 ? 'なし' : String(v));
+    const delta = a - b === 0 ? '変わらない' : `${a > b ? '+' : '−'}${Math.abs(a - b)}`;
+    lines.push(`${label} ${show(b)} → ${show(a)}（${delta}）`);
+  }
+  return lines.length > 0 ? lines : ['効果は変わらない'];
+}
