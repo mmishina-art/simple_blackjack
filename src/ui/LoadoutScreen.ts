@@ -31,7 +31,6 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const head = document.createElement('header');
     head.className = 'loadout__head';
     head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__atk">基本攻撃力 ATK ${slotAttack(run.baseAttack, 11)}〜${slotAttack(run.baseAttack, 21)}（スロットが高いほど強い）</p>
       <p class="loadout__hint">${armed ? '置きたいスロットをタップ' : '変えたいスロットをタップして、持ち物のスキルを置く'}</p>`;
     screen.append(head);
 
