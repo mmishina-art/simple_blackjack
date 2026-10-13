@@ -1,5 +1,6 @@
 import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
+import { drawOdds, formatPercent } from '../core/cards/odds';
 import type { Entity } from '../core/entities/Entity';
 import { BattleLog } from './components/BattleLog';
 import { EnemyView, floatText, playFx } from './components/EnemyView';
@@ -34,6 +35,7 @@ export class BattleView {
   private shownTurn: TurnInfo | null = null;
   private roundEl = document.createElement('div');
   private hitBtn = document.createElement('button');
+  private hitSub!: HTMLElement;
   private standBtn = document.createElement('button');
   private surrenderBtn = document.createElement('button');
   private muteBtn = document.createElement('button');
@@ -87,6 +89,7 @@ export class BattleView {
 
     this.hitBtn.className = 'btn btn--hit';
     this.hitBtn.innerHTML = '<span class="btn__main">Hit</span><span class="btn__sub">引く</span>';
+    this.hitSub = this.hitBtn.querySelector('.btn__sub')!;
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
     this.surrenderBtn.className = 'btn btn--surrender';
@@ -234,10 +237,28 @@ export class BattleView {
     // Hit / Stand は PlayerAction で入力待ちのときのみ活性
     const active = this.machine.canAct;
     this.hitBtn.disabled = !active;
+    this.renderOdds(active);
     this.standBtn.disabled = !active;
     this.surrenderBtn.disabled = !active;
 
     if (ctx.winner) this.showResult(ctx.winner === ctx.player);
+  }
+
+  /** Hit ボタンの下に、次に引いたときのバースト・21 の確率を出す（入力待ちのときだけ）。 */
+  private renderOdds(active: boolean): void {
+    const { ctx } = this.machine;
+    const odds = active ? drawOdds(ctx.deck, ctx.player.hand, ctx.enemy.hand, ctx.rules) : null;
+    const text = odds ? `バースト ${formatPercent(odds.bust)} 21 ${formatPercent(odds.twentyOne)}` : '引く';
+    if (this.hitSub.dataset.text === text) return;
+    this.hitSub.dataset.text = text;
+    this.hitSub.classList.toggle('btn__sub--odds', !!odds);
+    if (!odds) return void (this.hitSub.textContent = '引く');
+    const chip = (label: string, p: number): HTMLElement => {
+      const el = document.createElement('span');
+      el.textContent = `${label} ${formatPercent(p)}`;
+      return el;
+    };
+    this.hitSub.replaceChildren(chip('バースト', odds.bust), chip('21', odds.twentyOne));
   }
 
   private showResult(won: boolean): void {

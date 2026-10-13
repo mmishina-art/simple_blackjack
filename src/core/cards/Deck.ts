@@ -12,6 +12,11 @@ export class Deck {
     return this.cards.length;
   }
 
+  /** 山札に残っているカード（順序は意味を持たない。確率の計算用で、引く順は分からない前提で使う）。 */
+  get contents(): readonly Card[] {
+    return this.cards;
+  }
+
   /** 52枚を作り直してシャッフルする。 */
   reset(): void {
     this.cards = [];
