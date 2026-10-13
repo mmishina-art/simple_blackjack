@@ -1008,6 +1008,12 @@ section { min-width: 0; }
   background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.75), rgba(160, 205, 250, 0.32) 32%, transparent 60%);
   animation: fxBurst 0.5s ease-out forwards;
 }
+.fx--break {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 244, 200, 0.9), rgba(255, 170, 70, 0.45) 30%, transparent 62%),
+    repeating-conic-gradient(from 8deg at 50% 45%, rgba(255, 200, 110, 0.55) 0 4deg, transparent 4deg 22deg);
+  animation: fxBurst 0.6s ease-out forwards;
+}
 @keyframes fxPulse { 0% { opacity: 0; transform: scale(0.96); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.03); } }
 @keyframes fxRise { 0% { opacity: 1; transform: translateY(14px); } 100% { opacity: 0; transform: translateY(-34px); } }
 @keyframes fxBurst { 0% { opacity: 0; transform: scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: scale(1.25); } }

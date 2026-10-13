@@ -33,15 +33,15 @@ defineSkill({
   effects: [{ type: 'block', mult: 1, amount: 0 }, { type: 'heal', mult: 0.5, amount: 2 }],
 });
 
-/** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。ATK×1.5。 */
+/** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。ATK×1.5。相手の Block を無視して破壊する。 */
 export const ACE_STRIKE_ID: SkillId = defineSkill({
   id: 'ace_strike', name: '会心の一撃', icon: '会',
-  effects: [{ type: 'attack', mult: 1.5 }],
+  effects: [{ type: 'attack', mult: 1.5, pierce: true }], // Block を無視して破壊する（ほかの攻撃との違い）
 }).id;
 /** 覇王の宝珠で会心の一撃が置き換わるスキル。会心の一撃の 1.5 倍が 2 倍になり、Block も付く。 */
 defineSkill({
   id: 'overlord_strike', name: '覇王の一撃', icon: '覇',
-  effects: [{ type: 'attack', mult: 2 }, { type: 'block', amount: 8 }],
+  effects: [{ type: 'attack', mult: 2, pierce: true }, { type: 'block', amount: 8 }],
 });
 
 assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike'], 'rare');

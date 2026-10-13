@@ -48,10 +48,10 @@ export function floatText(parent: HTMLElement, text: string, kind: FloatKind = '
 }
 
 /**
- * 効果の画面演出（その場が光る）。block=Block を得た（青い盾の光）/ heal=回復（緑の光とささやかな粒）/ guard=攻撃を Block が防いだ（白青の火花）。
+ * 効果の画面演出（その場が光る）。block=Block を得た（青い盾の光）/ heal=回復（緑の光とささやかな粒）/ guard=攻撃を Block が防いだ（白青の火花）/ break=Block を破壊した（金と橙の砕け散る光）。
  * 親は position: relative であること。アニメーションが終わると自動で消える。
  */
-export function playFx(parent: HTMLElement, kind: 'block' | 'heal' | 'guard'): void {
+export function playFx(parent: HTMLElement, kind: 'block' | 'heal' | 'guard' | 'break'): void {
   const el = document.createElement('div');
   el.className = `fx fx--${kind}`;
   el.setAttribute('aria-hidden', 'true');

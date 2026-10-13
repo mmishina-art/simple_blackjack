@@ -56,8 +56,12 @@ export async function applyEffects(
       // バーストした側が受けるダメージは、レリック・特性の補正のあとに増える（そのあと Block が吸収する）
       const mult = damageTakenMultiplier(calc.defender, ctx.rules);
       const damage = Math.max(0, Math.floor(calc.damage * mult));
-      const { absorbed, hpLoss } = applyDamage(calc.defender, damage);
-      bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, skill });
+      // Block を無視する攻撃（会心の一撃）は、Block に吸われず、相手の Block をすべて破壊する
+      const broken = effect.pierce ? calc.defender.block : 0;
+      const { absorbed, hpLoss } = applyDamage(calc.defender, damage, !!effect.pierce);
+      if (effect.pierce) calc.defender.block = 0;
+      bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, broken, skill });
+      if (broken > 0) ctx.log(`${calc.defender.name}の Block ${broken} を破壊した`);
       const burst = mult !== 1 && damage > 0 ? `バースト ×${mult}` : '';
       if (hpLoss > 0 || absorbed === 0) {
         const notes = [absorbed > 0 ? `Block ${absorbed} を消費` : '', burst].filter(Boolean);

@@ -23,7 +23,7 @@ export interface FxChip {
   main: string;
   /** 数字の横の単位。 */
   unit: string;
-  /** 補足（攻撃が Block に吸収されたあとの値）。 */
+  /** 補足（攻撃が Block に吸収されたあとの値。Block を無視する攻撃は「Block無視」）。 */
   note?: string;
 }
 
@@ -31,7 +31,8 @@ export interface FxChip {
 export function fxChips(parts: readonly PreviewPart[], targetBlock: number): FxChip[] {
   return parts.map((part): FxChip => {
     if (part.type === 'attack') {
-      return { type: 'attack', main: String(part.value), unit: 'ダメージ', note: targetBlock > 0 ? `Block吸収後 ${Math.max(0, part.value - targetBlock)}` : undefined };
+      const note = part.pierce ? (targetBlock > 0 ? `Block ${targetBlock} を破壊` : 'Block無視') : targetBlock > 0 ? `Block吸収後 ${Math.max(0, part.value - targetBlock)}` : undefined;
+      return { type: 'attack', main: String(part.value), unit: 'ダメージ', note };
     }
     return part.type === 'heal'
       ? { type: 'heal', main: `+${part.value}`, unit: 'HP' }

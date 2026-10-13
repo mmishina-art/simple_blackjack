@@ -2,8 +2,8 @@ import type { Rarity } from '../rarity';
 
 /** スキルの効果。判別共用体なので、バフやドロー等を後から追加できる。 */
 export type SkillEffect =
-  /** 基本攻撃力（ATK）を基準にしたダメージ: floor(ATK × mult) + add。 */
-  | { type: 'attack'; mult: number; add?: number }
+  /** 基本攻撃力（ATK）を基準にしたダメージ: floor(ATK × mult) + add。pierce なら相手の Block を無視して、その Block を破壊する（会心の一撃）。 */
+  | { type: 'attack'; mult: number; add?: number; pierce?: boolean }
   /**
    * 回復・Block も基本攻撃力が基準: floor(ATK × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
    * mult を省略すると固定量（敵のスキルなど）で、amount のまま。
@@ -122,7 +122,7 @@ function describeEffects(skill: SkillDef, atkMin?: number, atkMax = atkMin): str
   };
   return skill.effects
     .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${range((a) => attackValue(e, a))}`;
+      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${range((a) => attackValue(e, a))}${e.pierce ? '（Block無視・破壊）' : ''}`;
       const label = e.type === 'block' ? 'Block' : '回復';
       // 固定量（mult なし）は、基本攻撃力に関係ないので、数字だけ
       return e.mult ? `${label} ${supportFormula(e)}${range((a) => supportValue(e, a))}` : `${label} ${e.amount}`;

@@ -8,6 +8,8 @@ export interface PreviewPart {
   type: 'attack' | 'block' | 'heal';
   /** 値（攻撃はレリック・特性・相手のバーストによる補正後、相手の Block 吸収前）。 */
   value: number;
+  /** 攻撃が相手の Block を無視して破壊する（会心の一撃）。 */
+  pierce?: boolean;
 }
 
 export interface SkillPreview {
@@ -29,7 +31,7 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
     if (e.type === 'attack') {
       const raw = attackValue(e, user.attackAt(total));
       const calc = env.bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: raw, skill });
-      return { type: 'attack', value: Math.max(0, Math.floor(calc.damage * damageTakenMultiplier(calc.defender, env.rules))) };
+      return { type: 'attack', value: Math.max(0, Math.floor(calc.damage * damageTakenMultiplier(calc.defender, env.rules))), ...(e.pierce ? { pierce: true } : {}) };
     }
     const amount = supportValue(e, user.attackAt(total));
     if (e.type === 'block') return { type: 'block', value: Math.max(0, Math.floor(env.bus.emit('onBlockGained', { entity: user, amount }).amount)) };
@@ -55,7 +57,7 @@ export function formatPreview(p: SkillPreview, targetBlock = 0, nameOverride?: s
   const bits = p.parts.map((part) => {
     if (part.type === 'block') return `Block +${part.value}`;
     if (part.type === 'heal') return `HP +${part.value}`;
-    const absorbed = targetBlock > 0 ? `（Block吸収後 ${Math.max(0, part.value - targetBlock)}）` : '';
+    const absorbed = part.pierce ? '（Block無視）' : targetBlock > 0 ? `（Block吸収後 ${Math.max(0, part.value - targetBlock)}）` : '';
     return `${part.value}ダメージ${absorbed}`;
   });
   return `${nameOverride ?? p.skill.name} → ${bits.join('・')}`;

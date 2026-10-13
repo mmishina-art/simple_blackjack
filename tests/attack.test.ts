@@ -4,6 +4,7 @@ import { makeCard, type Rank } from '../src/core/cards/Card';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { Slime } from '../src/core/entities/enemies/Slime';
 import { badgeText, formatPreview, previewAllSlots, previewSkill } from '../src/core/skills/preview';
+import { fxChips } from '../src/ui/callout';
 import { slotAttack } from '../src/core/skills/catalog';
 import { attackFormula, attackValue, describeSkill, describeSkillRange, getSkill } from '../src/core/skills/Skill';
 import { describeSlotTable } from '../src/core/skills/table';
@@ -32,7 +33,7 @@ describe('基本攻撃力（ATK）', () => {
   it('初期スキルの式: 11以下=ATK×0.5 / 剛=ATK+5 / 会=ATK×1.5（クリティカルの概念はない）', () => {
     expect(describeSkill(getSkill('small_attack'), 5)).toBe('攻撃 ATK×0.5＝2');
     expect(describeSkill(getSkill('big_attack'), 5)).toBe('攻撃 ATK+5＝10');
-    expect(describeSkill(getSkill('ace_strike'), 5)).toBe('攻撃 ATK×1.5＝7');
+    expect(describeSkill(getSkill('ace_strike'), 5)).toBe('攻撃 ATK×1.5＝7（Block無視・破壊）');
     expect(describeSkill(getSkill('big_attack'))).toBe('攻撃 ATK+5');
     expect(describeSkill(getSkill('shield'))).toBe('Block ATK+3'); // Block・回復も基本攻撃力が基準
     expect(describeSkill(getSkill('shield'), 8)).toBe('Block ATK+3＝11');
@@ -161,6 +162,67 @@ describe('防御・回復もスロットの基本攻撃力が基準（上位の�
   });
 });
 
+describe('会心の一撃は Block を無視して破壊する（ほかの攻撃との違い）', () => {
+  const fight = async (player: Rank[], enemyBlock: number) => {
+    const waits: string[] = []; // 敵が受けたダメージの内訳（HP / 吸収 / 破壊）
+    const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
+    m.bus.on('onDamageDealt', ({ broken, absorbed, hpLoss, defender }) => { if (defender.id === 'enemy') waits.push(`${hpLoss}/${absorbed}/${broken}`); });
+    player.forEach((r) => m.ctx.player.hand.add(makeCard(r, 'S')));
+    (['2', '3'] as Rank[]).forEach((r) => m.ctx.enemy.hand.add(makeCard(r, 'H')));
+    m.ctx.enemy.hp = 99;
+    m.ctx.enemy.block = enemyBlock;
+    await m.runFrom('Initiative', ['Deal']);
+    return { m, waits };
+  };
+
+  it('Block に吸われず、フルダメージが入り、相手の Block はすべて破壊される', async () => {
+    const { m, waits } = await fight(['A', 'K'], 10); // 21: 会心の一撃 16
+    expect(99 - m.ctx.enemy.hp).toBe(16);
+    expect(m.ctx.enemy.block).toBe(0);
+    expect(waits).toEqual(['16/0/10']); // HP 16 / 吸収 0 / 破壊 10
+    expect(m.logs).toContain('スライムの Block 10 を破壊した');
+  });
+
+  it('ほかの攻撃（大攻撃など）は、従来どおり Block に吸われる', async () => {
+    const { m, waits } = await fight(['K', 'K'], 10); // 20: 大攻撃 15
+    expect(99 - m.ctx.enemy.hp).toBe(5);
+    expect(m.ctx.enemy.block).toBe(0);
+    expect(waits).toEqual(['5/10/0']);
+    expect(m.logs.some((l) => l.includes('を破壊した'))).toBe(false);
+  });
+
+  it('相手に Block がないときは、破壊の表示は出ない', async () => {
+    const { m, waits } = await fight(['A', 'K'], 0);
+    expect(waits).toEqual(['16/0/0']);
+    expect(m.logs.some((l) => l.includes('を破壊した'))).toBe(false);
+  });
+
+  it('予測と大きな表示にも出る（Block を破壊 / Block無視）', () => {
+    const m = machine();
+    give(m, 'player', ['A', 'K']);
+    m.ctx.enemy.block = 7;
+    const parts = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 21).parts;
+    expect(parts[0]).toEqual({ type: 'attack', value: 16, pierce: true });
+    expect(fxChips(parts, 7)[0]).toMatchObject({ main: '16', note: 'Block 7 を破壊' });
+    expect(fxChips(parts, 0)[0].note).toBe('Block無視');
+    expect(formatPreview({ skill: getSkill('ace_strike'), parts }, 7)).toContain('Block無視');
+  });
+
+  it('覇王の宝珠の覇王の一撃も、Block を無視する', () => {
+    expect(getSkill('overlord_strike').effects[0]).toMatchObject({ type: 'attack', pierce: true });
+  });
+
+  it('プレイヤーも同じ: 敵の会心の一撃のような pierce 攻撃は、プレイヤーの Block を破壊する', async () => {
+    const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, playerBlock: 9 });
+    m.ctx.enemy.slots = { 17: 'ace_strike' }; // 敵に会心の一撃を持たせる（pierce の効果は誰が使っても同じ）
+    ['K', 'Q', '5'].forEach((r) => m.ctx.player.hand.add(makeCard(r as Rank, 'S'))); // バースト
+    ['9', '8'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as Rank, 'H')));       // 17
+    await m.runFrom('Initiative', ['Deal']);
+    expect(m.ctx.player.block).toBe(0);
+    expect(m.ctx.player.hp).toBeLessThan(60);
+  });
+});
+
 describe('予測ダメージ', () => {
   it('通常のスキル: 発動するスキルとダメージを出す', () => {
     const m = machine();
@@ -176,7 +238,7 @@ describe('予測ダメージ', () => {
     give(m, 'player', ['A', 'K']);
     const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 21);
     expect(p.skill?.id).toBe('ace_strike');
-    expect(p.parts[0]).toEqual({ type: 'attack', value: 16 });
+    expect(p.parts[0]).toEqual({ type: 'attack', value: 16, pierce: true });
   });
 
   it('レリックと敵の特性による補正を反映する', () => {

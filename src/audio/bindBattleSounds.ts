@@ -14,7 +14,8 @@ export function bindBattleSounds(machine: BattleMachine, audio: AudioManager): (
     bus.on('onInitiativeDecided', ({ enemyBust }) => {
       if (enemyBust) audio.sfx('bust');
     }),
-    bus.on('onDamageDealt', ({ defender, hpLoss, absorbed }) => {
+    bus.on('onDamageDealt', ({ defender, hpLoss, absorbed, broken }) => {
+      if (broken) audio.sfx('break', 0.06); // 会心の一撃が Block を破壊した（攻撃・ダメージの音に重ねる）
       if (hpLoss === 0 && absorbed > 0) audio.sfx('guard');
       else if (defender.id === 'enemy') audio.sfx('attack');
       else audio.sfx('damage');

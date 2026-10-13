@@ -111,7 +111,7 @@ export class BattleView {
       machine.bus.on('onSkillUsed', ({ user, skill }) => floatText(this.areaOf(user), `「${skill.name}」`, 'skill')),
       machine.bus.on('onBlockApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'block', amount)),
       machine.bus.on('onHealApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'heal', amount)),
-      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage)),
+      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage, p.broken ?? 0)),
       machine.bus.on('onBattleEnd', ({ winner }) => {
         if (winner.id === 'player') window.setTimeout(() => this.enemyView.play('defeated'), 300);
       }),
@@ -171,14 +171,15 @@ export class BattleView {
     floatText(area, `+${amount}`, kind, kind === 'block' ? 'Block' : 'HP');
   }
 
-  private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number): void {
+  private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number, broken = 0): void {
     const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : '';
     if (!text) return;
     const kind = hpLoss > 0 ? 'damage' : 'block'; // 全部防いだときは、ダメージの色ではなく Block の色
     if (absorbed > 0) playFx(this.areaOf(target), 'guard');
+    if (broken > 0) playFx(this.areaOf(target), 'break'); // Block を破壊（会心の一撃）
     // ログ欄の代わりに、数字の下へ内訳（Block が防いだ量・バーストの倍率）を添える
     const mult = damageTakenMultiplier(target, this.machine.ctx.rules);
-    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : ''].filter(Boolean).join('・');
+    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', broken > 0 ? `Block破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : ''].filter(Boolean).join('・');
     if (target.id === 'enemy') {
       if (hpLoss > 0) this.enemyView.play('hurt');
       this.enemyView.floatText(text, kind, notes);

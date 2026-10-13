@@ -274,6 +274,23 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
       expect(heard.filter((s) => s === 'heal')).toHaveLength(1);
     });
 
+    it('Block を破壊する攻撃（会心の一撃）のときだけ break が鳴る', async () => {
+      const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
+      const heard = bind(m);
+      ['A', 'K'].forEach((r) => m.ctx.player.hand.add(makeCard(r as Rank, 'S')));
+      ['2', '3'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as Rank, 'H')));
+      m.ctx.enemy.block = 6;
+      await m.runFrom('Initiative', ['Deal']);
+      expect(heard.filter((s) => s === 'break')).toHaveLength(1);
+      const n = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
+      const heardN = bind(n);
+      ['K', 'K'].forEach((r) => n.ctx.player.hand.add(makeCard(r as Rank, 'S')));
+      ['2', '3'].forEach((r) => n.ctx.enemy.hand.add(makeCard(r as Rank, 'H')));
+      n.ctx.enemy.block = 6;
+      await n.runFrom('Initiative', ['Deal']);
+      expect(heardN).not.toContain('break');
+    });
+
     it('伏せカードがめくられたときだけ flip が鳴る（伏せがなければ鳴らない）', async () => {
       const withHidden = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
       const heardA = bind(withHidden);
