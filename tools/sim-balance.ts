@@ -113,7 +113,7 @@ const stageReached: Record<number, number> = {};
       if (tile.kind === 'enemy' || tile.kind === 'boss') {
         const def = enemyOfTile(tile);
         const lv = enemyLevel(def);
-        const m = new BattleMachine({ enemy: def, playerMaxHp: run.maxHp, playerHp: run.hp, playerSlots: run.slots, playerFallback: run.fallbackSkill, playerAttack: run.baseAttack, playerArmorCap: armorCap(run), relics: run.relics, rng, pace: async () => {} });
+        const m = new BattleMachine({ enemy: def, playerMaxHp: run.maxHp, playerHp: run.hp, playerSlots: run.slots, playerFallback: run.fallbackSkill, playerAttack: run.baseAttack, playerBlock: run.bonus.startBlock, playerArmorCap: armorCap(run), relics: run.relics, rng, pace: async () => {} });
         m.bus.on('onRoundEnd', () => { stat.rounds++; (perEnemy[def.id] ??= { n: 0, w: 0, hp: 0, rounds: 0 }).rounds++; });
         m.onChange(() => {
           if (!m.canAct) return;

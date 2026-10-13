@@ -23,8 +23,6 @@ export const META_KEY = 'bj-meta-v1';
 
 /** 廃止した強化「初期装備枠」の、レベルごとのコスト（買っていた分の返金に使う）。 */
 const REMOVED_KIT_COSTS = [50, 100];
-/** 廃止した強化「守りの心得」（戦闘開始時のブロック。商人の心得に置き換え）の、レベルごとのコスト。 */
-const REMOVED_WARD_COSTS = [25, 45, 70];
 
 export function emptyMeta(): MetaState {
   return { version: 1, shards: 0, upgrades: {}, codex: { skills: [], relics: [], enemies: [] }, stats: { runs: 0, clears: 0, bestRow: 0 } };
@@ -58,10 +56,6 @@ export function loadMeta(storage: StorageLike | null = defaultStorage()): MetaSt
     const kit = meta.upgrades.kit ?? 0;
     if (kit > 0) meta.shards += REMOVED_KIT_COSTS.slice(0, kit).reduce((a, b) => a + b, 0);
     delete meta.upgrades.kit;
-    // 廃止した強化「守りの心得」も同じく、買った分の魂片を返して、記録から消す
-    const ward = Math.min(meta.upgrades.ward ?? 0, REMOVED_WARD_COSTS.length);
-    if (ward > 0) meta.shards += REMOVED_WARD_COSTS.slice(0, ward).reduce((a, b) => a + b, 0);
-    delete meta.upgrades.ward;
     if (d.codex && isStringArray(d.codex.skills)) meta.codex.skills = [...new Set(d.codex.skills)];
     if (d.codex && isStringArray(d.codex.relics)) meta.codex.relics = [...new Set(d.codex.relics)];
     // モンスター図鑑（あとから加えた項目。古い保存データには無いので、空から始める）
@@ -95,8 +89,9 @@ export interface UpgradeDef {
 export const UPGRADES: readonly UpgradeDef[] = [
   { id: 'vitality', name: '強き肉体', icon: '体', costs: [12, 20, 30, 45, 60], describe: (l) => `初期 HP +${l * 5}` },
   { id: 'might', name: '闘気の目覚め', icon: '気', costs: [40, 80, 140], describe: (l) => `初期 POW +${l}` },
-  { id: 'greed', name: '商人の心得', icon: '金', costs: [25, 45, 70], describe: (l) => `取得ゴールド +${l * 10}%` },
+  { id: 'ward', name: '守りの心得', icon: '護', costs: [25, 45, 70], describe: (l) => `戦闘開始時のブロック +${l * 2}` },
   { id: 'rest', name: '安らぎの心得', icon: '休', costs: [20, 40, 70], describe: (l) => `宿屋の回復量 +${l * 10}%` },
+  { id: 'greed', name: '商人の心得', icon: '金', costs: [25, 45, 70], describe: (l) => `取得ゴールド +${l * 20}%` },
   { id: 'insight', name: '見る目', icon: '眼', costs: [90], describe: (l) => `敵撃破の報酬スキルの選択肢 +${l}` },
 ];
 
@@ -132,20 +127,22 @@ export function buyUpgrade(meta: MetaState, id: string): boolean {
 export interface RunBonus {
   maxHp: number;
   attack: number;
-  /** 敵を倒して得るゴールドの増える割合（0.1 = +10%）。 */
+  startBlock: number;
+  /** 敵を倒して得るゴールドの増える割合（0.2 = +20%）。 */
   goldRate: number;
   innHeal: number;
   extraChoices: number;
 }
 
-export const NO_BONUS: RunBonus = { maxHp: 0, attack: 0, goldRate: 0, innHeal: 0, extraChoices: 0 };
+export const NO_BONUS: RunBonus = { maxHp: 0, attack: 0, startBlock: 0, goldRate: 0, innHeal: 0, extraChoices: 0 };
 
 export function computeBonus(meta: MetaState): RunBonus {
   const l = (id: string) => upgradeLevel(meta, id);
   return {
     maxHp: l('vitality') * 5,
     attack: l('might'),
-    goldRate: l('greed') * 0.1,
+    startBlock: l('ward') * 2,
+    goldRate: l('greed') * 0.2,
     innHeal: l('rest') * 0.1,
     extraChoices: l('insight'),
   };

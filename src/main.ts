@@ -196,6 +196,7 @@ function startBattle(tile: TileDef): void {
     playerSlots: run.slots,
     playerArmorCap: armorCap(run),
     playerFallback: run.fallbackSkill,
+    playerBlock: run.bonus.startBlock,
     playerAttack: run.baseAttack,
     relics: run.relics,
   });
