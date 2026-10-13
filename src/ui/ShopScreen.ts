@@ -9,13 +9,17 @@ import type { RunState } from '../run/Run';
 
 export interface ShopOptions {
   offers: ShopOffer[];
+  /** スキル・道具・防具を買った（編成画面で置き先を決める）。 */
+  onBought(offer: ShopOffer): void;
+  /** 最初に出す一言。 */
+  note?: string;
   /** ショップを出る。 */
   onLeave(): void;
 }
 
 /** ショップ。ゴールドでスキル・道具・防具・遺物を買い、持ち物を売る。 */
 export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): void {
-  let note = '';
+  let note = opts.note ?? '';
   const render = (): void => {
     const screen = document.createElement('main');
     screen.className = 'loadout shop';
@@ -55,7 +59,7 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
           `${sk.name} ${kindTag(sk, true)} ${rarityBadge(rarityOfSkill(sk))}`,
           `${describeSkillBonus(sk)}${where ? `（${where}）` : ''}`,
           offer.price, offer.sold ? '売り切れ' : run.gold < offer.price ? 'G不足' : '買う', !offer.sold && run.gold >= offer.price,
-          () => { if (buyOffer(run, offer)) { audio.sfx('pick'); note = `「${sk.name}」を買った（持ち物へ）。`; render(); } });
+          () => { if (buyOffer(run, offer)) { audio.sfx('pick'); opts.onBought(offer); } });
       } else {
         const relic = RELIC_POOL.find((r) => r.id === offer.id)!;
         row(`${rarityClass(relic.rarity ?? 'common')}${offer.sold ? ' shop__row--sold' : ''}`, relic.icon, rarityClass(relic.rarity ?? 'common'),
@@ -65,12 +69,12 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
       }
     }
 
-    section('持ち物を売る');
+    section('道具袋の中身を売る');
     const entries = inventoryEntries(run);
     if (entries.length === 0) {
       const p = document.createElement('p');
       p.className = 'shop__empty';
-      p.textContent = '売れるものがない（セットしていないスキル・道具・防具が売れる）';
+      p.textContent = '道具袋は空（置かなかったものを 1 つ入れておける）';
       list.append(p);
     }
     for (const e of entries) {

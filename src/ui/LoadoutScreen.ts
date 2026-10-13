@@ -2,7 +2,7 @@ import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
 import { canPlaceAt, describeSkill, describeSkillBonus, describeSkillShort, placementNote, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
-import { inventoryEntries } from '../run/loadout';
+import { inventoryEntries, stashInPouch } from '../run/loadout';
 import { previewSlot } from '../run/effective';
 import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { sellFromInventory, sellPrice } from '../run/shop';
@@ -15,6 +15,13 @@ import { rarityBadge, rarityClass } from './rarity';
 export interface LoadoutOptions {
   /** スキル獲得直後など、あらかじめ「セット待ち」にしておく持ち物のスキル。置いたら自動で閉じる。 */
   armed?: SkillId;
+  /**
+   * セット待ちになった経緯。reward = 報酬・祈りで得た（袋に入れる / 売る）、pouch = 袋から取り出した（やめる / 売る）、
+   * shop = ショップで買った（袋に入れる / 買うのをやめて返金）。省略時は reward。
+   */
+  mode?: 'reward' | 'pouch' | 'shop';
+  /** shop のとき、「買うのをやめる」で呼ぶ（返金して売り切れを戻す）。 */
+  undo?(): void;
   /** 閉じる。message があればマップ画面に表示する。 */
   onClose(message?: string): void;
 }
@@ -29,6 +36,7 @@ const KINDS: readonly SkillKind[] = ['skill', 'item', 'armor'];
 
 export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptions): void {
   let armed: SkillId | null = opts.armed && run.inventory.includes(opts.armed) ? opts.armed : null;
+  let armedMode = opts.mode ?? 'reward';
 
   const render = (): void => {
     const screen = document.createElement('main');
@@ -90,10 +98,10 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     // 持ち物（表示のみ。置くときはスロットをタップする）。セット待ちのときは上のバナーに集中させるため隠す
     const inv = document.createElement('div');
     inv.className = 'loadout__inv';
-    inv.innerHTML = `<div class="loadout__inv-title">持ち物（${run.inventory.length}）　<span class="loadout__gold">${run.gold} G</span>　タップで売る</div>`;
+    inv.innerHTML = `<div class="loadout__inv-title">道具袋（${run.inventory.length} / 1）　<span class="loadout__gold">${run.gold} G</span>　タップで置く・売る</div>`;
     const chips = document.createElement('div');
     chips.className = 'loadout__chips';
-    if (entries.length === 0) chips.textContent = 'なし（敵を倒すとスキル・道具が手に入る）';
+    if (entries.length === 0) chips.textContent = '空（得たものを 1 つだけ入れておける）';
     // スキルと道具に分けて並べる
     for (const kind of KINDS) {
       const label = KIND_LABEL[kind];
@@ -109,9 +117,12 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         chip.className = 'chip'; // 枠は同じ。レア度はアイコンだけで示す。タップで売る
         chip.title = `売る（${sellPrice(e.id)} G）`;
         chip.addEventListener('click', () => openSheet({
-          title: `「${skill.name}」を売る？`,
-          subtitle: `${sellPrice(e.id)} G で売れる（所持 ${run.gold} G）。売ったものは戻らない`,
-          options: [{ kind: 'confirm', icon: '売', name: `売る（+${sellPrice(e.id)} G）`, detail: describeSkillBonus(skill), onPick() { if (sellFromInventory(run, e.id) !== null) { audio.sfx('click'); render(); } } }],
+          title: `「${skill.name}」`,
+          subtitle: `道具袋の中身（所持 ${run.gold} G）`,
+          options: [
+            { kind: 'confirm', icon: '置', name: 'スロットに置く', detail: '置きたいスロットを選ぶ', onPick() { armed = e.id; armedMode = 'pouch'; render(); } },
+            { kind: 'confirm', icon: '売', name: `売る（+${sellPrice(e.id)} G）`, detail: describeSkillBonus(skill), onPick() { if (sellFromInventory(run, e.id) !== null) { audio.sfx('click'); render(); } } },
+          ],
         }));
         chip.innerHTML = `<span class="medal medal--sm ${rarityClass(rarityOfSkill(skill))}${medalKindClass(kind)}">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
         chips.append(chip);
@@ -120,27 +131,47 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     inv.append(chips);
     if (!armed) screen.append(inv);
 
-    const close = document.createElement('button');
-    close.className = 'btn btn--retry loadout__btn';
-    close.innerHTML = armed
-      ? `<span class="btn__main">セットしない（売る）</span><span class="btn__sub">+${sellPrice(armed)} G</span>`
-      : '<span class="btn__main">閉じる</span>';
-    close.addEventListener('click', () => {
-      audio.sfx('click');
-      if (!armed) return opts.onClose();
+    const actions = document.createElement('div');
+    actions.className = 'loadout__actions';
+    const mk = (cls: string, main: string, sub: string, onClick: () => void): HTMLButtonElement => {
+      const b = document.createElement('button');
+      b.className = `btn ${cls} loadout__btn`;
+      b.innerHTML = `<span class="btn__main">${main}</span>${sub ? `<span class="btn__sub">${sub}</span>` : ''}`;
+      b.addEventListener('click', () => { audio.sfx('click'); onClick(); });
+      return b;
+    };
+    if (!armed) {
+      actions.append(mk('btn--retry', '閉じる', '', () => opts.onClose()));
+    } else {
       const id = armed;
       const sk = getSkill(id);
-      openSheet({
+      const mode = armedMode;
+      const sellIt = (): void => { openSheet({
         title: `「${sk.name}」を売る？`,
         subtitle: `セットしないものは売却する（${sellPrice(id)} G）。売ったものは戻らない`,
         options: [{ kind: 'confirm', icon: '売', name: `売る（+${sellPrice(id)} G）`, detail: describeSkillBonus(sk), onPick() {
           if (sellFromInventory(run, id) !== null) { audio.sfx('click'); opts.onClose(`「${sk.name}」を ${sellPrice(id)} G で売った（所持 ${run.gold} G）。`); }
         } }],
-      });
-    });
-    const actions = document.createElement('div');
-    actions.className = 'loadout__actions';
-    actions.append(close);
+      }); };
+      const stash = (): void => {
+        const old = run.inventory.filter((x, i) => !(x === id && i === run.inventory.indexOf(id)));
+        const doStash = (): void => { const r = stashInPouch(run, id); if (r) { audio.sfx('pick'); opts.onClose(`「${sk.name}」を道具袋に入れた${r.sold.length ? `（元の「${r.sold.map((x) => getSkill(x).name).join('」「')}」は ${r.gold} G で売った）` : ''}。`); } };
+        if (old.length === 0) return doStash();
+        const oldSk = getSkill(old[0]);
+        openSheet({
+          title: `「${sk.name}」を袋に入れる？`,
+          subtitle: `袋は 1 つだけ。いまの「${oldSk.name}」は売られる（+${sellPrice(old[0])} G）`,
+          options: [{ kind: 'confirm', icon: '袋', name: '袋に入れる', detail: `${oldSk.name} → ${sk.name}`, onPick: doStash }],
+        });
+      };
+      if (mode === 'pouch') {
+        actions.append(mk('btn--stand', 'やめる', '袋にもどす', () => opts.onClose()), mk('btn--retry', '売る', `+${sellPrice(id)} G`, sellIt));
+      } else if (mode === 'shop') {
+        actions.append(mk('btn--stand', '買うのをやめる', '返金', () => { opts.undo?.(); opts.onClose(); }), mk('btn--retry', '袋に入れる', '道具袋', stash));
+      } else {
+        actions.append(mk('btn--stand', '袋に入れる', '道具袋', stash), mk('btn--retry', '売る', `+${sellPrice(id)} G`, sellIt));
+      }
+    }
     screen.append(actions);
     root.replaceChildren(screen);
   };
