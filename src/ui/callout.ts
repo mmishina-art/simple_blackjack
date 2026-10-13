@@ -15,7 +15,7 @@ export interface Callout {
   targetBlock: number;
   /** 不発（スキルが発動しない）。 */
   fizzled: boolean;
-  /** 道具（効果が基本攻撃力に関係なく固定）。 */
+  /** 道具（効果が基本パワーに関係なく固定）。 */
   item: boolean;
 }
 

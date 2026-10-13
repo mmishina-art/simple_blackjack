@@ -2,10 +2,10 @@ import type { Rarity } from '../rarity';
 
 /** スキルの効果。判別共用体なので、バフやドロー等を後から追加できる。 */
 export type SkillEffect =
-  /** 基本攻撃力（ATK）を基準にしたダメージ: floor(ATK × mult) + add。pierce なら相手の Block を無視して、その Block を破壊する（会心の一撃）。 */
+  /** 基本パワー（POW）を基準にしたダメージ: floor(POW × mult) + add。pierce なら相手の Block を無視して、その Block を破壊する（会心の一撃）。 */
   | { type: 'attack'; mult: number; add?: number; pierce?: boolean }
   /**
-   * 回復・Block も基本攻撃力が基準: floor(ATK × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
+   * 回復・Block も基本パワーが基準: floor(POW × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
    * mult を省略すると固定量（敵のスキルなど）で、amount のまま。
    */
   | { type: 'heal'; amount: number; mult?: number }
@@ -15,8 +15,8 @@ export type SkillId = string;
 
 export interface SkillDef {
   /**
-   * 'skill'（省略時）= 基本攻撃力（ATK）が基準で、スロットが高いほど強い。
-   * 'item'（道具）= ATK に関係なく、効果は固定。レリックで強化できるものもある。スロットに置く。
+   * 'skill'（省略時）= 基本パワー（POW）が基準で、スロットが高いほど強い。
+   * 'item'（道具）= POW に関係なく、効果は固定。レリックで強化できるものもある。スロットに置く。
    * 'armor'（防具）= 防御スロットに置く。防御したラウンドの被ダメージの上限（damageCap）を決める。
    */
   kind?: 'skill' | 'item' | 'armor';
@@ -91,7 +91,7 @@ export function fallbackLabel(skill: SkillDef): string {
   return skill.id === 'basic_attack' ? '通常攻撃' : `通常攻撃（${skill.name}）`;
 }
 
-/** 道具（効果が基本攻撃力に関係なく固定）か。 */
+/** 道具（効果が基本パワーに関係なく固定）か。 */
 export function isItem(skill: SkillDef): boolean {
   return skill.kind === 'item';
 }
@@ -118,29 +118,29 @@ export function hasAttack(skill: SkillDef): boolean {
   return skill.effects.some((e) => e.type === 'attack');
 }
 
-/** 攻撃効果のダメージ: floor(ATK × 倍率) + 加算。 */
+/** 攻撃効果のダメージ: floor(POW × 倍率) + 加算。 */
 export function attackValue(effect: { mult: number; add?: number }, atk: number): number {
   const value = Math.floor(atk * effect.mult) + (effect.add ?? 0);
-  // 攻撃スキルは、最低でも 1 ダメージ（基本攻撃力が 1 のスロットで、小攻撃が 0 にならないように）
+  // 攻撃スキルは、最低でも 1 ダメージ（基本パワーが 1 のスロットで、小攻撃が 0 にならないように）
   return effect.mult > 0 ? Math.max(1, value) : value;
 }
 
-/** 「ATK×3+2」のような計算式の表記。 */
+/** 「POW×3+2」のような計算式の表記。 */
 export function attackFormula(effect: { mult: number; add?: number }): string {
   if (!effect.mult) return String(effect.add ?? 0); // 固定ダメージ（道具）
-  const mult = effect.mult === 1 ? 'ATK' : `ATK×${effect.mult}`;
+  const mult = effect.mult === 1 ? 'POW' : `POW×${effect.mult}`;
   return effect.add ? `${mult}+${effect.add}` : mult;
 }
 
-/** Block・回復の量: floor(ATK × mult) + amount（mult を省略した固定量は amount のまま）。 */
+/** Block・回復の量: floor(POW × mult) + amount（mult を省略した固定量は amount のまま）。 */
 export function supportValue(effect: { amount: number; mult?: number }, atk: number): number {
   return Math.max(0, Math.floor(atk * (effect.mult ?? 0)) + effect.amount);
 }
 
-/** 「ATK+3」「ATK×0.5+2」のような表記。固定量は数字だけ。 */
+/** 「POW+3」「POW×0.5+2」のような表記。固定量は数字だけ。 */
 export function supportFormula(effect: { amount: number; mult?: number }): string {
   if (!effect.mult) return String(effect.amount);
-  const mult = effect.mult === 1 ? 'ATK' : `ATK×${effect.mult}`;
+  const mult = effect.mult === 1 ? 'POW' : `POW×${effect.mult}`;
   return effect.amount ? `${mult}+${effect.amount}` : mult;
 }
 
@@ -152,21 +152,21 @@ function describeEffects(skill: SkillDef, atk?: number): string {
     .map((e) => {
       if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（Block無視・破壊）' : ''}`;
       const label = e.type === 'block' ? 'Block' : '回復';
-      // 固定量（mult なし）は、基本攻撃力に関係ないので、数字だけ
+      // 固定量（mult なし）は、基本パワーに関係ないので、数字だけ
       return e.mult ? `${label} ${supportFormula(e)}${value((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
     })
     .join(' + ');
 }
 
-/** 基本攻撃力に対する上乗せの表記: 「+5」「×1.5+3」。倍率が 1 で上乗せがなければ「+0」。 */
+/** 基本パワーに対する上乗せの表記: 「+5」「×1.5+3」。倍率が 1 で上乗せがなければ「+0」。 */
 function bonusFormula(mult: number, add: number): string {
   if (mult === 1) return `+${add}`;
   return add ? `×${mult}+${add}` : `×${mult}`;
 }
 
 /**
- * スロットが決まっていない一覧（報酬・持ち物・バナー）用の短い説明。基本攻撃力はスロットで変わるので、幅（「7〜15」）では示さず、
- * 基本攻撃力に対する上乗せだけを示す（「攻撃 +5」「Block +3」「回復 +3」「攻撃 ×1.5+3」）。固定量は数字のまま。
+ * スロットが決まっていない一覧（報酬・持ち物・バナー）用の短い説明。基本パワーはスロットで変わるので、幅（「7〜15」）では示さず、
+ * 基本パワーに対する上乗せだけを示す（「攻撃 +5」「Block +3」「回復 +3」「攻撃 ×1.5+3」）。固定量は数字のまま。
  */
 export function describeSkillBonus(skill: SkillDef): string {
   if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? `・HP +${skill.defendHeal}` : ''}`;
@@ -179,14 +179,14 @@ export function describeSkillBonus(skill: SkillDef): string {
     .join(' + ');
 }
 
-/** 「攻撃 ATK×3+2＝14」「Block ATK+3＝8」のような効果の要約。atk を渡すと実数値も併記する。 */
+/** 「攻撃 POW×3+2＝14」「Block POW+3＝8」のような効果の要約。atk を渡すと実数値も併記する。 */
 export function describeSkill(skill: SkillDef, atk?: number): string {
   return describeEffects(skill, atk);
 }
 
 /**
  * スロット表の右側に出す、短い効果表示（種類と値だけ）。例: `攻撃 15` / `Block 6` / `攻撃 6×2`（2回攻撃）/ `攻撃 8 + 回復 5`。
- * 計算式は describeSkill（マウスを乗せたときの詳細）にある。atk は、そのスロットの基本攻撃力。
+ * 計算式は describeSkill（マウスを乗せたときの詳細）にある。atk は、そのスロットの基本パワー。
  */
 export function describeSkillShort(skill: SkillDef, atk: number): string {
   if (skill.damageCap !== undefined) return `被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? ` + 回復 ${skill.defendHeal}` : ''}`;
@@ -211,7 +211,7 @@ export function circledNumber(n: number): string {
 
 export interface EffectTotals { attack: number; block: number; heal: number }
 
-/** スキルの効果を、種類ごとの合計にする（攻撃は複数回の合計）。ビフォーアフターの比較に使う。atk は、そのスロットの基本攻撃力。 */
+/** スキルの効果を、種類ごとの合計にする（攻撃は複数回の合計）。ビフォーアフターの比較に使う。atk は、そのスロットの基本パワー。 */
 export function effectTotals(skill: SkillDef, atk: number): EffectTotals {
   const t: EffectTotals = { attack: 0, block: 0, heal: 0 };
   for (const e of skill.effects) {

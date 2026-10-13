@@ -43,7 +43,7 @@ describe('スキルと道具', () => {
     expect(isItem(getSkill('big_attack'))).toBe(false);
   });
 
-  it('道具の効果は固定: スロット・ATK の強化に関係なく、いつも同じ', () => {
+  it('道具の効果は固定: スロット・POW の強化に関係なく、いつも同じ', () => {
     for (const [id, value] of [['herb', 8], ['tonic', 14], ['bomb', 10]] as const) {
       const values = [12, 15, 20].flatMap((k) => [effectAt(id, k)[0], effectAt(id, k, [Whetstone], 8)[0]]);
       expect(new Set(values), id).toEqual(new Set([value]));

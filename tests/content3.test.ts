@@ -26,7 +26,7 @@ describe('第2・第3階層のスキル', () => {
     }
   });
 
-  it('レア度が高いほど強い（スロット 17、ATK 7 での、攻撃・回復の合計）', () => {
+  it('レア度が高いほど強い（スロット 17、POW 7 での、攻撃・回復の合計）', () => {
     const power = (sk: SkillDef): number => sk.effects.reduce((sum, e) => sum + (e.type === 'attack' ? attackValue(e, slotAttack(5, 17)) : e.type === 'heal' ? supportValue(e, slotAttack(5, 17)) : 0), 0);
     expect(power(getSkill('pierce_stab'))).toBeGreaterThan(power(getSkill('lunge')));
     expect(power(getSkill('impale'))).toBeGreaterThan(power(getSkill('pierce_stab')));
@@ -40,7 +40,7 @@ describe('第2・第3階層のスキル', () => {
   it('多段攻撃: 二連斬は 2 回、乱舞は 3 回、別々に Block へ吸われる', async () => {
     expect(getSkill('twin_strike').effects.filter((e) => e.type === 'attack')).toHaveLength(2);
     expect(getSkill('flurry').effects.filter((e) => e.type === 'attack')).toHaveLength(3);
-    // 17（ATK 7）: 二連斬 = floor(7×0.8)+1 = 6 を 2 回
+    // 17（POW 7）: 二連斬 = floor(7×0.8)+1 = 6 を 2 回
     const m = await playRound({ player: ['K', '7'], enemyHand: ['K', 'K', '5'], playerSlots: { 17: 'twin_strike' }, enemyHp: 40 });
     expect(40 - m.ctx.enemy.hp).toBe(6 * 2 * 1.5); // 敵がバーストしているので、1 回ごとに ×1.5（6 → 9）
   });
@@ -50,7 +50,7 @@ describe('第2・第3階層のスキル', () => {
     expect(describeSkill(getSkill('impale'))).toContain('Block無視');
   });
 
-  it('癒しの術・聖光・奇跡は ATK に応じて回復する', () => {
+  it('癒しの術・聖光・奇跡は POW に応じて回復する', () => {
     expect(supportValue(getSkill('mend').effects[0] as never, slotAttack(5, 17))).toBe(7 + 3);
     expect(supportValue(getSkill('miracle').effects[0] as never, slotAttack(5, 17))).toBe(7 + 10);
     expect(hasAttack(getSkill('mend'))).toBe(false);
@@ -115,7 +115,7 @@ describe('第2・第3階層のレリック', () => {
 
   it('棘の鎧: HP を削られたとき、その 1/3（切り上げ）を敵にも与える', async () => {
     const m = await playRound({ player: ['K', '7'], enemyHand: ['K', 'K'], enemy: enemy('knight'), relics: [ThornMail], enemyHp: 30 });
-    // 騎士 20: 断罪の一閃 ATK4×2 = 8 → HP -8（17 は未設定で Block なし）→ 棘 3、そのあと後攻の通常攻撃 7
+    // 騎士 20: 断罪の一閃 POW4×2 = 8 → HP -8（17 は未設定で Block なし）→ 棘 3、そのあと後攻の通常攻撃 7
     expect(m.ctx.player.hp).toBe(60 - 8);
     expect(m.ctx.enemy.hp).toBe(30 - 3 - 7);
   });
@@ -222,7 +222,7 @@ describe('第1〜3階層の敵の特性', () => {
 
   it('炎の精霊: 攻撃ダメージ +2。業火の悪魔: 同値なら必ず先攻', async () => {
     const flame = await playRound({ player: ['K', '7'], enemyHand: ['K', 'K'], enemy: enemy('flame') });
-    // 20: 紅蓮 ATK5×2+2 = 12、燃焼 +2 = 14（17 は未設定で Block なし）
+    // 20: 紅蓮 POW5×2+2 = 12、燃焼 +2 = 14（17 は未設定で Block なし）
     expect(flame.ctx.player.hp).toBe(60 - 14);
     const imp = await playRound({ player: ['K', 'Q'], enemyHand: ['K', 'K'], enemy: enemy('imp') });
     expect(imp.ctx.turn).toMatchObject({ mode: 'sequential', first: 'enemy', second: 'player' });

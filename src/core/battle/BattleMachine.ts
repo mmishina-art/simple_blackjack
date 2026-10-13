@@ -28,7 +28,7 @@ export interface BattleOptions {
   playerSlots?: SlotTable;
   /** スロット未設定の合計値で発動するスキル（キャラクターごとの初期能力）。 */
   playerFallback?: SkillId;
-  /** プレイヤーの基本攻撃力（ATK）。省略時は初期値。 */
+  /** プレイヤーの基本パワー（POW）。省略時は初期値。 */
   playerAttack?: number;
   /** 装備している防具の被ダメージ上限（防御したラウンドに効く）。省略時は RuleSet.defendCap。 */
   playerArmorCap?: number;
@@ -67,7 +67,7 @@ export class BattleMachine {
     const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp, { ...opts.enemy.slots }, opts.enemy.fallbackSkill, opts.enemy.attack);
     player.armorCap = opts.playerArmorCap;
     player.defendHeal = opts.playerDefendHeal ?? 0;
-    player.scaleAttackBySlot = true; // プレイヤーの基本攻撃力は、スロットごとに変わる（敵は固定）
+    player.scaleAttackBySlot = true; // プレイヤーの基本パワーは、スロットごとに変わる（敵は固定）
     player.block = opts.playerBlock ?? 0;
     if (opts.playerHp !== undefined) player.hp = Math.min(opts.playerHp, player.maxHp);
 

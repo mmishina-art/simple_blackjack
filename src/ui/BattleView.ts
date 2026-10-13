@@ -257,7 +257,7 @@ export class BattleView {
   private render(): void {
     const { ctx } = this.machine;
     this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, this.enemyLv);
-    // 自分の ATK は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の LV（攻撃するときの平均ダメージ）は出す
+    // 自分の POW は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の LV（攻撃するときの平均ダメージ）は出す
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);

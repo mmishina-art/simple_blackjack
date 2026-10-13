@@ -331,7 +331,7 @@ describe('ラウンドの行動順', () => {
   it('合計値が大きい方が先攻: 先攻の攻撃 → 後攻の攻撃', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'] }); // 20 vs 18
     expect(m.ctx.turn).toMatchObject({ mode: 'sequential', first: 'player', second: 'enemy' });
-    expect(m.ctx.enemy.hp).toBe(1);   // 16 - 大攻撃（20 は ATK 10: ATK+5 = 15）
+    expect(m.ctx.enemy.hp).toBe(1);   // 16 - 大攻撃（20 は POW 10: POW+5 = 15）
     expect(m.ctx.player.hp).toBe(60 - MELT); // 溶解
   });
 
@@ -350,7 +350,7 @@ describe('ラウンドの行動順', () => {
 
   it('敵がバースト: 敵のスキルは発動せず、受けるダメージが1.5倍。プレイヤーは通常どおり行動する', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 22); // 大攻撃 ATK+5 = 15 ×1.5（端数切り捨て）
+    expect(m.ctx.enemy.hp).toBe(40 - 22); // 大攻撃 POW+5 = 15 ×1.5（端数切り捨て）
     expect(m.ctx.player.hp).toBe(60);
   });
 
@@ -360,16 +360,16 @@ describe('ラウンドの行動順', () => {
     expect(m.ctx.enemy.hp).toBe(16);
   });
 
-  it('スロット21は会心の一撃（ATK×1.5）。ブラックジャック（初手21）でも特別な効果はない', async () => {
+  it('スロット21は会心の一撃（POW×1.5）。ブラックジャック（初手21）でも特別な効果はない', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 16); // 21 は ATK 11: ATK×1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 16); // 21 は POW 11: POW×1.5
     const bj = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
     expect(bj.ctx.enemy.hp).toBe(40 - 16);
   });
 
   it('未設定スロットでは基本攻撃が発動する', async () => {
     const m = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 40 }); // 13 vs 7
-    expect(m.ctx.enemy.hp).toBe(37); // 13 は ATK 3: 通常攻撃 = ATK×1 = 3
+    expect(m.ctx.enemy.hp).toBe(37); // 13 は POW 3: 通常攻撃 = POW×1 = 3
   });
 });
 
@@ -509,7 +509,7 @@ describe('同時攻撃（同値）', () => {
   it('防御 → 攻撃の順で処理される（同時の Block が同時の攻撃を防ぐ）', async () => {
     const m = await playRound({ player: ['A', '7'], enemyHand: ['9', '9'], playerHp: 50, playerSlots: WITH_BLOCKS }); // 18 vs 18
     expect(m.ctx.turn?.mode).toBe('simultaneous');
-    expect(m.ctx.player.hp).toBe(50); // 18 は ATK 8: 盾 ATK+3 = Block 11 で溶解を完全に防ぐ
+    expect(m.ctx.player.hp).toBe(50); // 18 は POW 8: 盾 POW+3 = Block 11 で溶解を完全に防ぐ
     expect(m.ctx.player.block).toBe(11 - MELT);
   });
 
@@ -530,7 +530,7 @@ describe('Block とサレンダー', () => {
     const { Skeleton } = await import('../src/core/entities/enemies/catalog');
     const m = await playRound({ player: ['6', '8'], enemyHand: ['8', '8'], enemy: Skeleton }); // 14 vs 16
     expect(m.ctx.turn?.first).toBe('enemy');
-    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 14 は ATK 4: 通常攻撃 4 - 骨の鎧2 = 2 は盾(6)で防がれる
+    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 14 は POW 4: 通常攻撃 4 - 骨の鎧2 = 2 は盾(6)で防がれる
     expect(m.ctx.enemy.block).toBe(4);
   });
 
@@ -605,7 +605,7 @@ describe('Block は後攻でも最初に付与される', () => {
 
   it('後攻の攻撃は、先攻の Block が先にあるため通りにくい', async () => {
     const { Skeleton } = await import('../src/core/entities/enemies/catalog');
-    // プレイヤー 17（ATK 7、未設定: 通常攻撃7）が先攻、骸骨兵 16（シールド6）が後攻
+    // プレイヤー 17（POW 7、未設定: 通常攻撃7）が先攻、骸骨兵 16（シールド6）が後攻
     const m = await playRound({ player: ['K', '7'], enemyHand: ['8', '8'], enemy: Skeleton });
     expect(m.ctx.turn).toMatchObject({ first: 'player', second: 'enemy' });
     expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 通常攻撃7-骨の鎧2=5 は、後攻の Block 6 に先に防がれる

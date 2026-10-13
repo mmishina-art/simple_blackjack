@@ -556,7 +556,7 @@ section { min-width: 0; }
 .notice__text { font-size: 16px !important; line-height: 1.7; color: var(--bone) !important; letter-spacing: 0.06em !important; }
 @media (max-height: 760px) { .lslot { min-height: 32px; } }
 
-/* ---- ATK ---- */
+/* ---- POW（基本パワー） ---- */
 .atk-chip {
   font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
   padding: 1px 8px; color: #f0d9a0; background: linear-gradient(180deg, #5a3a14, #2a1a08);

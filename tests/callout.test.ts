@@ -24,7 +24,7 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     const m = machine({ playerSlots: { 17: 'drain', 16: 'shield_bash', 15: 'guard' } });
     give(m, 'player', ['9', '8']); // 17: 吸精（攻撃+回復）
     const c = calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!;
-    expect(fxChips(c.parts, 0).map((x) => `${x.main}${x.unit}`)).toEqual(['8ダメージ', '+5HP']) // 17 は ATK 7 + 1;
+    expect(fxChips(c.parts, 0).map((x) => `${x.main}${x.unit}`)).toEqual(['8ダメージ', '+5HP']) // 17 は POW 7 + 1;
     const n = machine({ playerSlots: { 15: 'guard' } });
     give(n, 'player', ['7', '8']);
     expect(fxChips(calloutOf(n.ctx, n.ctx.player, n.ctx.enemy)!.parts, 0)).toEqual([{ type: 'block', main: '+6', unit: 'Block' }]);
@@ -36,10 +36,10 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     m.ctx.enemy.block = 2;
     const c = calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!;
     expect(c).toMatchObject({ name: '通常攻撃', icon: '攻' });
-    expect(fxChips(c.parts, c.targetBlock)[0]).toMatchObject({ main: '3', note: 'Block吸収後 1' }); // 13 は ATK 3
+    expect(fxChips(c.parts, c.targetBlock)[0]).toMatchObject({ main: '3', note: 'Block吸収後 1' }); // 13 は POW 3
   });
 
-  it('レリックの補正が出る（砥石: 大攻撃 ATK 11 + 5 = 16）', () => {
+  it('レリックの補正が出る（砥石: 大攻撃 POW 11 + 5 = 16）', () => {
     const m = machine({ relics: [Whetstone] });
     give(m, 'player', ['K', 'K']);
     expect(fxChips(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!.parts, 0)[0].main).toBe('16');

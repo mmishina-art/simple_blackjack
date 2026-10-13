@@ -6,7 +6,7 @@ export interface EnemyDef {
   id: string;
   name: string;
   maxHp: number;
-  /** 基本攻撃力（ATK）。 */
+  /** 基本パワー（POW）。 */
   attack: number;
   /** 特性による攻撃ダメージの上乗せ（LV の計算用。黒竜の息吹の +3 など）。 */
   attackBonus?: number;
