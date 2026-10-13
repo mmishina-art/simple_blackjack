@@ -48,7 +48,7 @@ export function applyEffects(
     const wanted = part === 'all' || part === effect.type || (part === 'rest' && effect.type !== 'block');
     if (!wanted) continue;
     if (effect.type === 'attack') {
-      const base = attackValue(effect, user.attack);
+      const base = attackValue(effect, user.attackAt(user.hand.total(ctx.rules)));
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
       // バーストした側が受けるダメージは、レリック・特性の補正のあとに増える（そのあと Block が吸収する）
       const mult = damageTakenMultiplier(calc.defender, ctx.rules);

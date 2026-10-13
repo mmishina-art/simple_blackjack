@@ -85,13 +85,25 @@ export function hasAttack(skill: SkillDef): boolean {
 
 /** 攻撃効果のダメージ: floor(ATK × 倍率) + 加算。 */
 export function attackValue(effect: { mult: number; add?: number }, atk: number): number {
-  return Math.floor(atk * effect.mult) + (effect.add ?? 0);
+  const value = Math.floor(atk * effect.mult) + (effect.add ?? 0);
+  // 攻撃スキルは、最低でも 1 ダメージ（基本攻撃力が 1 のスロットで、小攻撃が 0 にならないように）
+  return effect.mult > 0 ? Math.max(1, value) : value;
 }
 
 /** 「ATK×3+2」のような計算式の表記。 */
 export function attackFormula(effect: { mult: number; add?: number }): string {
   const mult = effect.mult === 1 ? 'ATK' : `ATK×${effect.mult}`;
   return effect.add ? `${mult}+${effect.add}` : mult;
+}
+
+/** 範囲つきの要約。攻撃は「攻撃 ATK×3＝6〜30」のように、基本攻撃力が atkMin〜atkMax のときの実数値を示す（スロットが決まっていないとき用）。 */
+export function describeSkillRange(skill: SkillDef, atkMin: number, atkMax: number): string {
+  return skill.effects
+    .map((e) => {
+      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}＝${attackValue(e, atkMin)}〜${attackValue(e, atkMax)}`;
+      return e.type === 'block' ? `Block ${e.amount}` : `回復 ${e.amount}`;
+    })
+    .join(' + ');
 }
 
 /** 「攻撃 ATK×3+2＝14」「Block 6」のような効果の要約。atk を渡すと実数値も併記する。 */

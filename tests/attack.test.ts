@@ -4,7 +4,8 @@ import { makeCard, type Rank } from '../src/core/cards/Card';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { Slime } from '../src/core/entities/enemies/Slime';
 import { badgeText, formatPreview, previewAllSlots, previewSkill } from '../src/core/skills/preview';
-import { attackFormula, attackValue, describeSkill, getSkill } from '../src/core/skills/Skill';
+import { slotAttack } from '../src/core/skills/catalog';
+import { attackFormula, attackValue, describeSkill, describeSkillRange, getSkill } from '../src/core/skills/Skill';
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
@@ -53,10 +54,10 @@ describe('基本攻撃力（ATK）', () => {
   it('ATK が上がると、すべての攻撃スキルが伸びる', async () => {
     const base = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 60 });
     const buffed = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 60, playerAttack: 7 });
-    expect(60 - base.ctx.enemy.hp).toBe(10);   // ATK+5
-    expect(60 - buffed.ctx.enemy.hp).toBe(12);
+    expect(60 - base.ctx.enemy.hp).toBe(15);   // 20 は ATK 10: 大攻撃 ATK+5
+    expect(60 - buffed.ctx.enemy.hp).toBe(17); // 強化 +2 は、どのスロットにも足される
     const plain = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 60, playerAttack: 7 });
-    expect(60 - plain.ctx.enemy.hp).toBe(7);   // 未設定は通常攻撃 = ATK×1
+    expect(60 - plain.ctx.enemy.hp).toBe(5);   // 13 は ATK 3 + 強化 2。未設定は通常攻撃 = ATK×1
   });
 
   it('砥石は ATK +2。祠（力）でも ATK が上がる', () => {
@@ -71,29 +72,66 @@ describe('基本攻撃力（ATK）', () => {
   });
 });
 
+describe('スロットごとの基本攻撃力（プレイヤー）', () => {
+  it('11以下=1 から、スロットが1上がるごとに +1（21=11）。強化はどのスロットにも同じだけ足される', () => {
+    expect([11, 12, 13, 15, 18, 20, 21].map((k) => slotAttack(5, k))).toEqual([1, 2, 3, 5, 8, 10, 11]);
+    expect(slotAttack(5, 4)).toBe(1);   // 11 未満（合計 4 など）は「11以下」のスロット
+    expect(slotAttack(5, 25)).toBe(11); // 21 を超える値は 21 に丸める
+    expect([11, 15, 21].map((k) => slotAttack(7, k))).toEqual([3, 7, 13]); // 強化 +2
+    expect(slotAttack(5, 15)).toBe(5);  // 標準では、スロット15 が従来の固定値と同じ
+  });
+
+  it('プレイヤーは合計値で変わり、敵は固定のまま', () => {
+    const m = machine();
+    expect(m.ctx.player.attackAt(11)).toBe(1);
+    expect(m.ctx.player.attackAt(20)).toBe(10);
+    expect(m.ctx.enemy.attackAt(11)).toBe(Slime.attack);
+    expect(m.ctx.enemy.attackAt(21)).toBe(Slime.attack);
+  });
+
+  it('攻撃スキルは最低 1 ダメージ（ATK 1 の小攻撃 ATK×0.5 が 0 にならない）。Block・回復は対象外', () => {
+    expect(attackValue({ mult: 0.5 }, 1)).toBe(1);
+    expect(attackValue({ mult: 0.5 }, 5)).toBe(2);
+    expect(attackValue({ mult: 0 }, 5)).toBe(0);
+  });
+
+  it('スロットが決まっていない一覧（報酬・持ち物）では、置ける範囲（12〜20）の実数値を範囲で示す', () => {
+    const big = getSkill('big_attack');
+    expect(describeSkillRange(big, slotAttack(5, 12), slotAttack(5, 20))).toBe('攻撃 ATK+5＝7〜15');
+    expect(describeSkillRange(getSkill('shield'), 2, 10)).toBe('Block 8');
+  });
+
+  it('実際の戦闘で、同じスキルでも合計値が高いスロットほど強い', async () => {
+    const low = await playRound({ player: ['6', '7'], enemyHand: ['2', '3'], enemyHp: 99 });   // 13: 空き → 通常攻撃 ATK 3
+    expect(99 - low.ctx.enemy.hp).toBe(3);
+    const custom = await playRound({ player: ['9', '9'], enemyHand: ['2', '3'], enemyHp: 99, playerSlots: {} }); // 18 が空き: 通常攻撃 ATK 8
+    expect(99 - custom.ctx.enemy.hp).toBe(8);
+  });
+});
+
 describe('予測ダメージ', () => {
   it('通常のスキル: 発動するスキルとダメージを出す', () => {
     const m = machine();
     give(m, 'player', ['K', 'K']); // 20: 大攻撃
     const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20);
     expect(p.skill?.id).toBe('big_attack');
-    expect(p.parts).toEqual([{ type: 'attack', value: 10 }]);
-    expect(formatPreview(p)).toBe('大攻撃 → 10ダメージ');
+    expect(p.parts).toEqual([{ type: 'attack', value: 15 }]);
+    expect(formatPreview(p)).toBe('大攻撃 → 15ダメージ');
   });
 
-  it('21 は会心の一撃（ATK×3 = 15）。ブラックジャックでも変わらない', () => {
+  it('21 は会心の一撃（ATK 11 × 3 = 33）。ブラックジャックでも変わらない', () => {
     const m = machine();
     give(m, 'player', ['A', 'K']);
     const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 21);
     expect(p.skill?.id).toBe('ace_strike');
-    expect(p.parts[0]).toEqual({ type: 'attack', value: 15 });
+    expect(p.parts[0]).toEqual({ type: 'attack', value: 33 });
   });
 
   it('レリックと敵の特性による補正を反映する', () => {
     const m = machine({ enemy: ENEMY_LINEUP.find((e) => e.id === 'skeleton')!, relics: [Whetstone] });
     give(m, 'player', ['K', 'K']);
-    // ATK7 → 大攻撃 ATK+5 = 12、骨の鎧 -2 → 10
-    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(10);
+    // 20 は ATK 10 + 砥石 2 = 12 → 大攻撃 ATK+5 = 17、骨の鎧 -2 → 15
+    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(15);
   });
 
   it('予測は戦闘の状態を変えない（副作用なし）', () => {
@@ -116,13 +154,13 @@ describe('予測ダメージ', () => {
 
   it('相手がバーストしているなら、予測にも1.5倍が出て、実際のダメージと一致する', async () => {
     const m = machine();
-    give(m, 'player', ['K', 'K']);      // 20: 大攻撃 10
+    give(m, 'player', ['K', 'K']);      // 20: 大攻撃 15
     give(m, 'enemy', ['K', 'Q', '5']);  // 25: バースト
     const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20);
-    expect(p.parts).toEqual([{ type: 'attack', value: 15 }]);
+    expect(p.parts).toEqual([{ type: 'attack', value: 22 }]); // 15 × 1.5
     m.ctx.enemy.hp = 40;
     await m.runFrom('Initiative', ['Deal']);
-    expect(40 - m.ctx.enemy.hp).toBe(15);
+    expect(40 - m.ctx.enemy.hp).toBe(22);
   });
 
   it('敵の予測も、バーストしたプレイヤーへの1.5倍を反映する', () => {
@@ -137,9 +175,9 @@ describe('予測ダメージ', () => {
     give(m, 'player', ['K', 'K']);
     give(m, 'enemy', ['K', 'Q']);
     m.ctx.enemy.hand.add(makeCard('5', 'S'), { faceDown: true }); // 伏せた1枚で 25 のバースト
-    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(10);
-    m.ctx.enemy.hand.revealAll();
     expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(15);
+    m.ctx.enemy.hand.revealAll();
+    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(22); // 15 × 1.5
   });
 
   it('防御スキルは Block の値を出す。敵の Block 吸収後も示す', () => {
@@ -148,7 +186,7 @@ describe('予測ダメージ', () => {
     expect(formatPreview(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 15))).toBe('シールド → Block +6');
     const n = machine();
     give(n, 'player', ['K', 'K']);
-    expect(formatPreview(previewSkill(n.ctx, n.ctx.player, n.ctx.enemy, 20), 5)).toContain('Block吸収後 5');
+    expect(formatPreview(previewSkill(n.ctx, n.ctx.player, n.ctx.enemy, 20), 5)).toContain('Block吸収後 10'); // 15 - 5
   });
 });
 
@@ -161,17 +199,18 @@ describe('スロット表の各マスの効果', () => {
 
   it('攻撃はダメージ数、Block は B+数。空きスロットは通常攻撃の数', () => {
     const b = badges(machine(), 'player');
-    expect(b).toMatchObject({ 11: '2', 12: '5', 15: 'B6', 18: 'B8', 20: '10', 21: '15' });
+    // 基本攻撃力は 11以下=1、スロットが上がるごとに +1（小攻撃 ATK×0.5 は最低 1）
+    expect(b).toMatchObject({ 11: '1', 12: '2', 13: '3', 15: 'B6', 18: 'B8', 20: '15', 21: '33' });
   });
 
   it('回復は +数。複数の効果は並べる（吸精: 攻撃と回復）', () => {
     expect(badgeText({ type: 'heal', value: 4 })).toBe('+4');
     const m = machine({ playerSlots: { 17: 'drain', 16: 'shield_bash' } });
-    expect(badges(m, 'player')).toMatchObject({ 17: '6 +4', 16: '5 B5' });
+    expect(badges(m, 'player')).toMatchObject({ 17: '8 +4', 16: '6 B5' }); // 17 は ATK 7 + 1、16 は ATK 6
   });
 
   it('レリックで変わった効果が出る（砥石 ATK+2: 大攻撃 12）。敵のスロットも同じ', () => {
-    expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('12');
+    expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('17'); // ATK 10 + 2 = 12、ATK+5
     expect(badges(machine(), 'enemy')).toMatchObject({ 17: '8', 20: '12' }); // スライム ATK3: 溶解 ATK×2+2 / 飲み込み ATK×4
   });
 
@@ -182,7 +221,7 @@ describe('スロット表の各マスの効果', () => {
     const n = machine();
     give(n, 'enemy', ['K', 'Q']);
     n.ctx.enemy.hand.add(makeCard('5', 'S'), { faceDown: true });
-    expect(badges(n, 'player')[20]).toBe('10'); // 伏せカードのバーストは漏らさない
+    expect(badges(n, 'player')[20]).toBe('15'); // 伏せカードのバーストは漏らさない
   });
 });
 

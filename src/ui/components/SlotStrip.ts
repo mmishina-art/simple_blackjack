@@ -68,8 +68,8 @@ export class SlotStrip {
       }
       cell.append(val);
       cell.title = skill
-        ? `${skill.name}（${describeSkill(skill, entity.attack)}）`
-        : `${fallbackLabel(fallback)}（空きスロット・${describeSkill(fallback, entity.attack)}）`;
+        ? `${skill.name}（${describeSkill(skill, entity.attackAt(key))}）`
+        : `${fallbackLabel(fallback)}（空きスロット・${describeSkill(fallback, entity.attackAt(key))}）`;
     }
 
     const text = (s: string) => {
@@ -84,7 +84,7 @@ export class SlotStrip {
     else {
       const id = entity.slots[slotKeyOf(total)];
       const skill = getSkill(id ?? entity.fallbackSkill);
-      text(`発動: ${id ? skill.name : fallbackLabel(skill)}（${describeSkill(skill, entity.attack)}）`);
+      text(`発動: ${id ? skill.name : fallbackLabel(skill)}（${describeSkill(skill, entity.attackAt(total))}）`);
     }
     this.el.classList.toggle('slots--bust', bust);
   }

@@ -303,7 +303,7 @@ describe('ラウンドの行動順', () => {
   it('合計値が大きい方が先攻: 先攻の攻撃 → 後攻の攻撃', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'] }); // 20 vs 18
     expect(m.ctx.turn).toMatchObject({ mode: 'sequential', first: 'player', second: 'enemy' });
-    expect(m.ctx.enemy.hp).toBe(6);   // 16 - 大攻撃(ATK+5=10)
+    expect(m.ctx.enemy.hp).toBe(1);   // 16 - 大攻撃（20 は ATK 10: ATK+5 = 15）
     expect(m.ctx.player.hp).toBe(52); // 60 - 溶解8
   });
 
@@ -322,7 +322,7 @@ describe('ラウンドの行動順', () => {
 
   it('敵がバースト: 敵のスキルは発動せず、受けるダメージが1.5倍。プレイヤーは通常どおり行動する', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 15); // 大攻撃 ATK+5 = 10 ×1.5
+    expect(m.ctx.enemy.hp).toBe(40 - 22); // 大攻撃 ATK+5 = 15 ×1.5（端数切り捨て）
     expect(m.ctx.player.hp).toBe(60);
   });
 
@@ -334,14 +334,14 @@ describe('ラウンドの行動順', () => {
 
   it('スロット21は会心の一撃（ATK×3）。ブラックジャック（初手21）でも特別な効果はない', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 15); // ATK×3
+    expect(m.ctx.enemy.hp).toBe(40 - 33); // 21 は ATK 11: ATK×3
     const bj = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(bj.ctx.enemy.hp).toBe(40 - 15);
+    expect(bj.ctx.enemy.hp).toBe(40 - 33);
   });
 
   it('未設定スロットでは基本攻撃が発動する', async () => {
     const m = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 40 }); // 13 vs 7
-    expect(m.ctx.enemy.hp).toBe(35); // 通常攻撃 = ATK×1 = 5
+    expect(m.ctx.enemy.hp).toBe(37); // 13 は ATK 3: 通常攻撃 = ATK×1 = 3
   });
 });
 
@@ -356,18 +356,18 @@ describe('バーストのペナルティ（受けるダメージ 1.5倍）', () 
     const p = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], rules: plain });
     expect(p.ctx.player.hp).toBe(60 - 8);
     const e = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40, rules: plain });
-    expect(e.ctx.enemy.hp).toBe(40 - 10);
+    expect(e.ctx.enemy.hp).toBe(40 - 15);
     const x2 = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], rules: { bustDamageMultiplier: 2 } });
     expect(x2.ctx.player.hp).toBe(60 - 16);
   });
 
   it('バーストしていない側は等倍: 先攻・後攻・同値のどれでも増えない', async () => {
     const seq = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40 }); // 20 vs 18
-    expect(40 - seq.ctx.enemy.hp).toBe(10);
+    expect(40 - seq.ctx.enemy.hp).toBe(15);
     expect(seq.ctx.player.hp).toBe(60 - 8);
     expect(seq.logs.some((l) => l.includes('バースト'))).toBe(false);
     const tie = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q'], enemyHp: 40 }); // 20 vs 20
-    expect(40 - tie.ctx.enemy.hp).toBe(10);
+    expect(40 - tie.ctx.enemy.hp).toBe(15);
     expect(tie.logs.some((l) => l.includes('バースト'))).toBe(false);
   });
 
@@ -412,7 +412,7 @@ describe('バーストのペナルティ（受けるダメージ 1.5倍）', () 
     expect(m.logs).toContain('あなたに12ダメージ（バースト ×1.5）');
     const e = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 40 });
     expect(e.logs).toContain('スライムはバースト！ スキル不発・受けるダメージ1.5倍');
-    expect(e.logs).toContain('スライムに15ダメージ（バースト ×1.5）');
+    expect(e.logs).toContain('スライムに22ダメージ（バースト ×1.5）');
   });
 
   it('Block で全部防いだときも、倍率がかかったことが分かる', async () => {
@@ -453,8 +453,8 @@ describe('Block とサレンダー', () => {
     const { Skeleton } = await import('../src/core/entities/enemies/catalog');
     const m = await playRound({ player: ['6', '8'], enemyHand: ['8', '8'], enemy: Skeleton }); // 14 vs 16
     expect(m.ctx.turn?.first).toBe('enemy');
-    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 通常攻撃5 - 骨の鎧2 = 3 は盾(6)で防がれる
-    expect(m.ctx.enemy.block).toBe(3);
+    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 14 は ATK 4: 通常攻撃 4 - 骨の鎧2 = 2 は盾(6)で防がれる
+    expect(m.ctx.enemy.block).toBe(4);
   });
 
   it('サレンダー: Block 5 を得て、敵の攻撃を受け止める。自分のスキルは不発', async () => {
@@ -508,10 +508,10 @@ describe('Block は後攻でも最初に付与される', () => {
 
   it('後攻の攻撃は、先攻の Block が先にあるため通りにくい', async () => {
     const { Skeleton } = await import('../src/core/entities/enemies/catalog');
-    // プレイヤー 17（ATK×? 未設定: 通常攻撃5）が先攻、骸骨兵 16（シールド6）が後攻
+    // プレイヤー 17（ATK 7、未設定: 通常攻撃7）が先攻、骸骨兵 16（シールド6）が後攻
     const m = await playRound({ player: ['K', '7'], enemyHand: ['8', '8'], enemy: Skeleton });
     expect(m.ctx.turn).toMatchObject({ first: 'player', second: 'enemy' });
-    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 通常攻撃5-骨の鎧2=3 は、後攻の Block 6 に先に防がれる
-    expect(m.ctx.enemy.block).toBe(3);
+    expect(m.ctx.enemy.hp).toBe(Skeleton.maxHp); // 通常攻撃7-骨の鎧2=5 は、後攻の Block 6 に先に防がれる
+    expect(m.ctx.enemy.block).toBe(1);
   });
 });

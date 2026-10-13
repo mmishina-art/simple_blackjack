@@ -27,7 +27,7 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
 
   const parts: PreviewPart[] = skill.effects.map((e): PreviewPart => {
     if (e.type === 'attack') {
-      const raw = attackValue(e, user.attack);
+      const raw = attackValue(e, user.attackAt(total));
       const calc = env.bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: raw, skill });
       return { type: 'attack', value: Math.max(0, Math.floor(calc.damage * damageTakenMultiplier(calc.defender, env.rules))) };
     }

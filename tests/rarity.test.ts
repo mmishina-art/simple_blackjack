@@ -109,13 +109,13 @@ describe('レリックによる上書きの検出（編成画面の赤字表示�
     for (const eff of effectiveSlotSkills(createRun()).values()) expect(eff.changed).toBe(false);
   });
 
-  it('巨人の血: 11以下の小攻撃が ATK×0.5＝2 から ATK＝5 に上書きされる', () => {
+  it('巨人の血: 11以下の小攻撃が ATK×0.5＝1 から ATK×3＝3 に上書きされる', () => {
     const run = createRun();
     run.relics.push(TitanBlood);
     const eff = effectiveSlotSkills(run).get(11)!;
     expect(eff.changed).toBe(true);
-    expect(eff.baseText).toBe('攻撃 ATK×0.5＝2');
-    expect(eff.text).toBe('攻撃 ATK＝5');
+    expect(eff.baseText).toBe('攻撃 ATK×0.5＝1'); // 11以下の ATK は 1（攻撃は最低 1）
+    expect(eff.text).toBe('攻撃 ATK×3＝3');
     expect(effectiveSlotSkills(run).get(20)!.changed).toBe(false);
   });
 
@@ -123,7 +123,7 @@ describe('レリックによる上書きの検出（編成画面の赤字表示�
     const run = createRun();
     run.relics.push(Whetstone);
     const all = effectiveSlotSkills(run);
-    expect(all.get(20)!.text).toBe('攻撃 ATK+5＝12');
+    expect(all.get(20)!.text).toBe('攻撃 ATK+5＝17'); // 20 は ATK 10 + 砥石 2
     expect(all.get(20)!.changed).toBe(true);
     expect(all.get(15)!.changed).toBe(false);
   });

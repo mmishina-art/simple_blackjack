@@ -125,9 +125,9 @@ export const Bracer: Relic = {
 
 export const TitanBlood: Relic = {
   id: 'titan', rarity: 'rare', name: '巨人の血', icon: '巨',
-  description: '小攻撃（11以下）が「ATK×0.5」から「ATK×1」に変わる',
+  description: '小攻撃（11以下）が「ATK×0.5」から「ATK×3」に変わる',
   apply({ bus, player }) {
-    reshapeSkill(bus, player, 'small_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 1, add: 0 }] }));
+    reshapeSkill(bus, player, 'small_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 3, add: 0 }] }));
   },
 };
 

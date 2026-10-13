@@ -16,6 +16,6 @@ export function describeSlotTable(entity: Entity): SlotRow[] {
   return SLOT_KEYS.map((key) => {
     const id = entity.slots[key];
     const skill = getSkill(id ?? entity.fallbackSkill);
-    return { key, label: slotLabel(key), skill, isFallback: !id, text: describeSkill(skill, entity.attack) };
+    return { key, label: slotLabel(key), skill, isFallback: !id, text: describeSkill(skill, entity.attackAt(key)) };
   });
 }

@@ -196,7 +196,10 @@ export class BattleView {
   private render(): void {
     const { ctx } = this.machine;
     this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, ctx.enemy.attack);
-    this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block, ctx.player.attack);
+    // プレイヤーの ATK は発動するスロットで変わる: 合計が分かる間はその値、そうでなければ範囲（11以下〜21）
+    const total = ctx.player.hand.total(ctx.rules);
+    const atk = ctx.player.hand.size > 0 && total <= ctx.rules.bustLimit ? String(ctx.player.attackAt(total)) : `${ctx.player.attackAt(11)}〜${ctx.player.attackAt(21)}`;
+    this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block, atk);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
     this.slotStrip.update(ctx.player, ctx.rules, calloutOf(ctx, ctx.player, ctx.enemy), false, previewAllSlots(ctx, ctx.player, ctx.enemy, SLOT_KEYS));

@@ -1,3 +1,4 @@
+import { slotAttack } from '../core/skills/catalog';
 import { audio } from '../audio/AudioManager';
 import { rarityClass } from './rarity';
 import { isCleared, reachableTiles, type RunState } from '../run/Run';
@@ -31,7 +32,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   // 上部: HP と所持レリック
   const hud = document.createElement('section');
   hud.className = 'map-hud';
-  hud.innerHTML = `<div class="map-hud__row"><strong>${run.map.name}</strong><span>ATK ${run.baseAttack}　HP ${run.hp} / ${run.maxHp}</span></div>
+  hud.innerHTML = `<div class="map-hud__row"><strong>${run.map.name}</strong><span>ATK ${slotAttack(run.baseAttack, 11)}〜${slotAttack(run.baseAttack, 21)}　HP ${run.hp} / ${run.maxHp}</span></div>
     <div class="map-hud__bar"><div class="map-hud__fill" style="width:${Math.max(0, (run.hp / run.maxHp) * 100)}%"></div></div>`;
   const relics = document.createElement('div');
   relics.className = 'map-hud__relics';

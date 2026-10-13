@@ -59,6 +59,15 @@ export const DEFAULT_PLAYER_SLOTS: SlotTable = {
 };
 /** プレイヤーの初期の基本攻撃力。 */
 export const START_ATTACK = 5;
+
+/**
+ * プレイヤーの基本攻撃力は、攻撃スキルが発動するスロットで変わる: 11以下=1、スロットが1上がるごとに +1（21=11）。
+ * attack は「START_ATTACK + 強化（祭壇・砥石・祠）」で、強化はどのスロットにも同じだけ足される
+ * （標準の attack=5 のとき、スロット15の攻撃力が 5 で、従来の固定値と同じ）。
+ */
+export function slotAttack(attack: number, key: number): number {
+  return attack - START_ATTACK + (Math.max(11, Math.min(key, 21)) - 10);
+}
 export const DEFAULT_PLAYER_FALLBACK: SkillId = BASIC_ATTACK_ID;
 
 // ---- 敵 ----

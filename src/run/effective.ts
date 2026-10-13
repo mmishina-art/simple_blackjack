@@ -1,5 +1,6 @@
 import { BattleMachine } from '../core/battle/BattleMachine';
 import { Slime } from '../core/entities/enemies/Slime';
+import { slotAttack } from '../core/skills/catalog';
 import { describeSkill, getSkill, type SkillDef, type SlotKey } from '../core/skills/Skill';
 import type { RunState } from './Run';
 
@@ -31,9 +32,11 @@ export function effectiveSlotSkills(run: RunState): Map<SlotKey, EffectiveSkill>
   for (const [key, id] of Object.entries(run.slots)) {
     const base = getSkill(id!);
     const skill = probe.bus.emit('onSkillActivated', { user: player, skill: base }).skill ?? base;
-    const baseText = describeSkill(base, run.baseAttack);
-    const text = describeSkill(skill, player.attack);
-    out.set(Number(key), { base, skill, atk: player.attack, baseText, text, changed: text !== baseText || skill.id !== base.id });
+    const atkBase = slotAttack(run.baseAttack, Number(key));
+    const atk = player.attackAt(Number(key));
+    const baseText = describeSkill(base, atkBase);
+    const text = describeSkill(skill, atk);
+    out.set(Number(key), { base, skill, atk, baseText, text, changed: text !== baseText || skill.id !== base.id });
   }
   return out;
 }
