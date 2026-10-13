@@ -22,10 +22,6 @@ class FakeContext {
   destination = node();
   resume = vi.fn(async () => { this.state = FakeContext.resumeTo; });
   suspend = vi.fn(async () => { this.state = 'suspended'; });
-  handlers: Array<() => void> = [];
-  addEventListener = (_type: string, h: () => void) => { this.handlers.push(h); };
-  /** 状態を変えて、statechange を発火する。 */
-  setState(s: State) { this.state = s; this.handlers.forEach((h) => h()); }
   close = vi.fn(async () => { this.state = 'closed'; });
   gains: Array<Record<string, unknown>> = [];
   createGain = () => { const n = node(); this.gains.push(n); return n; };
@@ -272,41 +268,5 @@ describe('Block・回復の効果音', () => {
     expect(block.swept).toBe(true);
     expect(guard.oscs.some((o) => o.freq < 150)).toBe(true); // 低いどすっ
     expect(guard.oscs.length).not.toBe(block.oscs.length);
-  });
-});
-
-describe('「タップして始める」の幕のための状態（running / onStateChange）', () => {
-  it('自動再生が許されないあいだは running が false。タップで resume されると true になり、購読に知らせる', () => {
-    FakeContext.resumeTo = 'suspended';
-    const a = new AudioManager();
-    a.unlock();
-    expect(a.running).toBe(false);
-    const seen: boolean[] = [];
-    const off = a.onStateChange(() => seen.push(a.running));
-    ctxOf().setState('running'); // タップで resume されて、鳴り始めた
-    expect(a.running).toBe(true);
-    expect(seen).toEqual([true]);
-    off();
-    ctxOf().setState('suspended');
-    expect(seen).toEqual([true]); // 解除後は知らせない
-  });
-
-  it('自動再生が許される環境では、unlock() のすぐあとから running', () => {
-    const a = new AudioManager();
-    a.unlock();
-    expect(a.running).toBe(true);
-  });
-
-  it('作り直したあとの AudioContext の変化も、同じ購読に届く', () => {
-    const a = new AudioManager();
-    a.unlock();
-    const seen: number[] = [];
-    a.onStateChange(() => seen.push(FakeContext.instances.length));
-    fire('click');
-    ctxOf().state = 'interrupted';
-    fire('click'); // 作り直す
-    expect(FakeContext.instances).toHaveLength(2);
-    ctxOf().setState('running');
-    expect(seen.at(-1)).toBe(2);
   });
 });

@@ -1018,17 +1018,3 @@ section { min-width: 0; }
 @keyframes fxRise { 0% { opacity: 1; transform: translateY(14px); } 100% { opacity: 0; transform: translateY(-34px); } }
 @keyframes fxBurst { 0% { opacity: 0; transform: scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: scale(1.25); } }
 @media (prefers-reduced-motion: reduce) { .fx, .fx::before { animation: none; opacity: 0.55; } }
-
-/* ---- 「タップして始める」の幕（自動再生が許されない環境で、音楽を始めるためのタップを求める） ---- */
-.tap-gate {
-  position: fixed; inset: 0; z-index: 60; border: 0; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  padding: 0 16px;
-  background: radial-gradient(ellipse at center, rgba(5, 3, 2, 0.9) 0%, rgba(5, 3, 2, 0.7) 55%, rgba(5, 3, 2, 0.5));
-  color: var(--gold); touch-action: manipulation;
-}
-.tap-gate__main { font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: 0.2em; text-shadow: 0 2px 0 #000; animation: gatePulse 1.8s ease-in-out infinite; }
-.tap-gate__sub { font-size: 13px; letter-spacing: 0.15em; color: var(--bone-dim); }
-.tap-gate:focus-visible { outline: 2px solid var(--gold); outline-offset: -6px; }
-@keyframes gatePulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .tap-gate__main { animation: none; } }

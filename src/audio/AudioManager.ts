@@ -35,7 +35,6 @@ export class AudioManager {
   private _muted = false;
   /** 戻した（resume）あとも動かなかった。次のタップで、AudioContext を作り直す。 */
   private needsRebuild = false;
-  private stateListeners = new Set<() => void>();
 
   constructor() {
     try {
@@ -95,17 +94,6 @@ export class AudioManager {
     this.unlock();
   }
 
-  /** 音が実際に鳴っている状態か（自動再生が許されず止まっている間は false）。 */
-  get running(): boolean {
-    return this.ctx?.state === 'running';
-  }
-
-  /** 鳴り始めた・止まった、などの変化を購読する。解除する関数を返す。 */
-  onStateChange(listener: () => void): () => void {
-    this.stateListeners.add(listener);
-    return () => this.stateListeners.delete(listener);
-  }
-
   get muted(): boolean {
     return this._muted;
   }
@@ -129,8 +117,6 @@ export class AudioManager {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return;
       this.ctx = new Ctor();
-      // 状態が変わったら（自動再生が許されて鳴り始めた、止められた、など）、購読している側に知らせる
-      this.ctx.addEventListener?.('statechange', () => this.stateListeners.forEach((l) => l()));
       this.master = this.ctx.createGain();
       this.master.gain.value = this._muted ? 0 : 1;
       this.master.connect(this.ctx.destination);
