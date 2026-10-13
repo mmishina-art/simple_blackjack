@@ -139,6 +139,7 @@ describe('第2・第3階層のレリック', () => {
   it('レリックは 21 個で、不屈の心はレジェンド', () => {
     expect(RELIC_POOL).toHaveLength(21);
     expect(Unyielding.rarity).toBe('legend');
+    expect(RELIC_POOL.find((r) => r.id === 'breastplate')).toMatchObject({ rarity: 'legend', name: '金剛の鎧' });
     expect(new Set(RELIC_POOL.map((r) => r.id)).size).toBe(21);
   });
 });
