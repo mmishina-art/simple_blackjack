@@ -160,9 +160,9 @@ async function observeBattle(m: BattleMachine, policy: (m: BattleMachine) => Pla
   return { inputs, actions };
 }
 
-/** 1ラウンド目の配牌を固定する（敵 K,6 → ヒット → K / プレイヤー 5,6）。 */
+/** 1ラウンド目の配牌を固定する（敵 K,3 → 13 なのでヒット → K でバースト / プレイヤー 5,6）。スライムは14以上で止まる。 */
 function forceFirstRound(m: BattleMachine) {
-  const forced = { enemy: ['K', '6', 'K'] as Rank[], player: ['5', '6'] as Rank[] };
+  const forced = { enemy: ['K', '3', 'K'] as Rank[], player: ['5', '6'] as Rank[] };
   m.bus.on('onCardDrawn', (p) => {
     const queue = p.entity.id === 'enemy' ? forced.enemy : forced.player;
     return queue.length ? { ...p, card: makeCard(queue.shift()!, p.entity.id === 'enemy' ? 'H' : 'S') } : undefined;
@@ -200,7 +200,7 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
     const m = machine(2);
     forceFirstRound(m);
     const { inputs } = await observeBattle(m, () => 'stand');
-    expect(inputs[0]).toMatchObject({ round: 1, cards: ['HK', 'H6', 'HK'], hidden: [false, false, true], visible: 16, playerCards: 2 });
+    expect(inputs[0]).toMatchObject({ round: 1, cards: ['HK', 'H3', 'HK'], hidden: [false, false, true], visible: 13, playerCards: 2 });
     const settled = m.logs.findIndex((l) => l.includes('枚で手札を決めた'));
     const turn = m.logs.findIndex((l) => l.includes('あなたのターン'));
     const bust = m.logs.findIndex((l) => l.includes('スライムはバースト'));

@@ -90,6 +90,19 @@ describe('戦闘ログ欄（なくした）', () => {
   });
 });
 
+describe('スロット表のメーター', () => {
+  it('点灯したスロット（.slot--on）は下から光が満ちて明るく、まだのスロットは暗い', () => {
+    expect(css).toMatch(/\.slot\s*\{[^}]*opacity:\s*0\.4/);
+    expect(css).toMatch(/\.slot--on\s*\{[^}]*opacity:\s*1/);
+    expect(css).toMatch(/\.slot--on::after\s*\{[^}]*scaleY\(1\)/);
+    expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.slot,\s*\.slot::after\s*\{[^}]*transition:\s*none/);
+  });
+
+  it('各マスの効果の色は、攻撃・回復・Block で分ける', () => {
+    for (const type of ['attack', 'heal', 'block']) expect(css).toContain(`.slot__badge--${type}`);
+  });
+});
+
 describe('短い画面の編成画面', () => {
   const LOADOUT_HEIGHT = 750;
 

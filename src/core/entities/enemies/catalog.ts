@@ -44,7 +44,7 @@ const DragonBreath: Relic = {
 };
 
 export const Skeleton: EnemyDef = {
-  id: 'skeleton', name: '骸骨兵', maxHp: 24, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
+  id: 'skeleton', name: '骸骨兵', maxHp: 24, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
   trait: '骨の鎧（受けるダメージ -2）', relics: [BoneArmor],
 };
 
@@ -54,7 +54,7 @@ export const GiantBat: EnemyDef = {
 };
 
 export const Ghoul: EnemyDef = {
-  id: 'ghoul', name: '屍食鬼', maxHp: 26, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
+  id: 'ghoul', name: '屍食鬼', maxHp: 26, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
   trait: '屍の渇き（HPを削るたびに回復）', relics: [CorpseThirst],
 };
 
