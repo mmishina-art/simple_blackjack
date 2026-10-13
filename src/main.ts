@@ -1,7 +1,7 @@
 import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
-import { customCount, resetStartingSkills, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
+import { discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, type MetaState, type RunSummary } from './meta/Meta';
 import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
@@ -20,14 +20,13 @@ import { showShrine } from './ui/ShrineScreen';
 import { showSettings } from './ui/SettingsScreen';
 import { showEnding } from './ui/EndingScreen';
 import { setupUpdateBanner } from './ui/UpdateBanner';
-import { hasUnusedKitOpportunity } from './meta/prep';
-import { showAltar, showCodex, showPrep } from './ui/MetaScreens';
+import { showAltar, showCodex } from './ui/MetaScreens';
 import './ui/styles/main.css';
 
 const root = document.getElementById('app')!;
 const meta: MetaState = loadMeta();
 let run: RunState = createRun(undefined, meta);
-/** 素の状態で挑んでいる冒険か（祭壇の強化・図鑑・初期装備の変更を使わず、魂片・図鑑も記録しない）。 */
+/** 素の状態で挑んでいる冒険か（祭壇の強化・図鑑の効果を使わず、魂片・図鑑も記録しない）。 */
 let bareRun = false;
 let view: BattleView | null = null;
 let unbindSounds: (() => void) | null = null;
@@ -158,7 +157,7 @@ function startAdventure(): void {
 function startBareAdventure(): void {
   bareRun = true;
   run = createRun();
-  showMapScreen('素の状態で出発した（祭壇の強化・初期装備の変更は使わず、記録も残らない）');
+  showMapScreen('素の状態で出発した（祭壇の強化は使わず、記録も残らない）');
 }
 
 function restartRun(): void {
@@ -267,17 +266,11 @@ function showTitle(): void {
     audio.sfx('click');
     startAdventure();
   });
-  const sub2 = el('div', 'title__sub title__sub--3');
+  const sub2 = el('div', 'title__sub');
   const unlock = () => {
     audio.unlock();
     audio.sfx('click');
   };
-  const prep = el('button', 'btn btn--stand', `<span class="btn__main">出撃準備</span><span class="btn__sub">装備 ${customCount(meta)}/${startingCapacity(meta)}</span>`);
-  if (hasUnusedKitOpportunity(meta)) prep.classList.add('btn--notice');
-  prep.addEventListener('click', () => {
-    unlock();
-    showPrep(root, meta, startAdventure, showTitle);
-  });
   const altar = el('button', 'btn btn--stand', `<span class="btn__main">祭壇</span><span class="btn__sub">魂片 ${meta.shards}</span>`);
   altar.addEventListener('click', () => {
     unlock();
@@ -288,33 +281,13 @@ function showTitle(): void {
     unlock();
     showCodex(root, meta, showTitle);
   });
-  sub2.append(prep, altar, codex);
-  const reset = el('button', 'title__reset', 'スキルを初期化');
-  reset.addEventListener('click', () => {
-    unlock();
-    const n = customCount(meta);
-    openSheet({
-      title: 'スキルを初期化する？',
-      subtitle: n > 0
-        ? `出撃準備で変えた初期装備 ${n} 件を、素の状態（初期装備）に戻す。魂片・祭壇の強化・図鑑は変わらない`
-        : '出撃準備で変えた初期装備はない（すでに素の状態）。魂片・祭壇の強化・図鑑は変わらない',
-      options: [{
-        kind: 'reset', icon: '戻', name: '初期装備に戻す', detail: '小攻撃・薬草・シールド・盾・大攻撃・会心の一撃（防具は鉄の盾）',
-        disabled: n === 0,
-        onPick() {
-          resetStartingSkills(meta);
-          saveMeta(meta);
-          showTitle();
-        },
-      }],
-    });
-  });
+  sub2.append(altar, codex);
   const bare = el('button', 'title__reset', '素の状態で挑む');
   bare.addEventListener('click', () => {
     unlock();
     openSheet({
       title: '素の状態で挑む？',
-      subtitle: '祭壇の強化・図鑑・出撃準備の変更を使わずに始める。この冒険では魂片も図鑑も記録されない（いまの記録は消えない）',
+      subtitle: '祭壇の強化・図鑑の効果を使わずに始める。この冒険では魂片も図鑑も記録されない（いまの記録は消えない）',
       options: [{
         kind: 'reset', icon: '素', name: '素の状態で始める', detail: 'HP 30・初期装備・鉄の盾で出発',
         onPick: startBareAdventure,
@@ -327,7 +300,7 @@ function showTitle(): void {
     showSettings(root, meta, showTitle);
   });
   const links = el('div', 'title__links');
-  links.append(bare, reset, settings);
+  links.append(bare, settings);
   screen.append(mute, art, h1, sub, start, sub2, links);
   // 最初の画面に「インストールする方法」の入口を置く（インストール済みのアプリでは出ない）
   const install = createInstallEntry();

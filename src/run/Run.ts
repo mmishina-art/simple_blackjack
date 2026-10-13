@@ -4,7 +4,7 @@ import { ARMOR_POOL, DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_S
 import { pickWeighted, tierWeights } from '../core/rarity';
 import { getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
-import { NO_BONUS, computeBonus, validStartingSkills, type MetaState, type RunBonus } from '../meta/Meta';
+import { NO_BONUS, computeBonus, type MetaState, type RunBonus } from '../meta/Meta';
 import { STAGES, stageRowOffset } from '../map/stages';
 import { nextTiles, tileOf, type StageMap, type TileDef } from '../map/StageMap';
 import { RELIC_POOL } from '../relics/catalog';
@@ -52,7 +52,7 @@ export const FIXED_SLOTS: readonly SlotKey[] = [11, 21];
 export function createRun(map: StageMap = STAGES[0], meta?: MetaState): RunState {
   const bonus = meta ? computeBonus(meta) : { ...NO_BONUS };
   const maxHp = START_MAX_HP + bonus.maxHp;
-  const slots = { ...DEFAULT_PLAYER_SLOTS, ...(meta ? validStartingSkills(meta) : {}) };
+  const slots = { ...DEFAULT_PLAYER_SLOTS };
   return {
     map, stage: Math.max(1, STAGES.findIndex((m) => m.id === map.id) + 1), position: map.start, cleared: [],
     maxHp, hp: maxHp, baseAttack: START_ATTACK + bonus.attack,
