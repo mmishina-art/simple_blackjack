@@ -1,5 +1,5 @@
-/** ブロックのマーク: 身を包む半円のバリアー（光の膜と、膜の面を示す線）。 */
-const BARRIER_ICON = '<svg class="block-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19a9 9 0 0 1 18 0" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 19a5 5 0 0 1 10 0M12 10v9" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.8"/><path d="M4.5 21h15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+/** ブロックのマーク: 多角形（六角形）のバリア。外枠と内側の六角形を、線でつないだ結晶のような形。 */
+const BARRIER_ICON = '<svg class="block-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,1.5 21.1,6.75 21.1,17.25 12,22.5 2.9,17.25 2.9,6.75" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><polygon points="12,7 16.4,9.5 16.4,14.5 12,17 7.6,14.5 7.6,9.5" fill="currentColor" fill-opacity="0.35" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="M12 1.5V7M21.1 6.75 16.4 9.5M21.1 17.25 16.4 14.5M12 22.5V17M2.9 17.25 7.6 14.5M2.9 6.75 7.6 9.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.8"/></svg>';
 
 export class HpBar {
   readonly el = document.createElement('div');
