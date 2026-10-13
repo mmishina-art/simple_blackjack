@@ -42,6 +42,14 @@ export interface BattleEvents {
   onBlockGained: { entity: Entity; amount: number };
   /** 回復直前。amount の書き換えが可能。 */
   onHealed: { entity: Entity; amount: number };
+  /**
+   * Block・回復が実際に反映された後（通知のみ）。onBlockGained / onHealed は、スロット表や予測表示が効果を計算するときにも
+   * 発火するので、効果音のように「本当に起きたとき」だけ反応したいものは、こちらを使う。
+   */
+  onBlockApplied: { entity: Entity; amount: number };
+  onHealApplied: { entity: Entity; amount: number };
+  /** 敵の伏せカードがめくられた（通知のみ）。 */
+  onCardsRevealed: { entity: Entity };
   onSurrender: { entity: Entity };
   onRoundEnd: { round: number };
   onBattleEnd: { winner: Entity };

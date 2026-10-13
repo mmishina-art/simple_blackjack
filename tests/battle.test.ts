@@ -225,6 +225,60 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
     expect(sfx).toContain('bust');
   });
 
+  describe('効果音は、実際に起きたときだけ鳴る（予測表示では鳴らない）', () => {
+    const bind = (m: BattleMachine) => {
+      const heard: string[] = [];
+      bindBattleSounds(m, { sfx: (name: string) => { heard.push(name); } } as unknown as AudioManager);
+      return heard;
+    };
+
+    it('スロット表・予測のために効果を計算しても、Block や回復の音は鳴らない', async () => {
+      const { previewAllSlots } = await import('../src/core/skills/preview');
+      const m = machine(1);
+      const heard = bind(m);
+      for (let i = 0; i < 5; i++) {
+        previewAllSlots(m.ctx, m.ctx.player, m.ctx.enemy, [11, 15, 18, 20, 21]);
+        previewAllSlots(m.ctx, m.ctx.enemy, m.ctx.player, [11, 15, 18, 20, 21]);
+      }
+      expect(heard).toEqual([]);
+    });
+
+    it('Block のスキルが実際に発動したときは、guard が1回だけ鳴る', async () => {
+      const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
+      const heard = bind(m);
+      ['7', '8'].forEach((r) => m.ctx.player.hand.add(makeCard(r as Rank, 'S')));   // 15: シールド
+      ['K', 'Q', '5'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as Rank, 'H'))); // 敵はバースト（攻撃が来ないので、防ぐ音は鳴らない）
+      await m.runFrom('Initiative', ['Deal']);
+      expect(heard.filter((s) => s === 'guard')).toHaveLength(1);
+    });
+
+    it('回復のスキルが発動したときは、heal が1回だけ鳴る', async () => {
+      const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, playerSlots: { 15: 'recover' }, playerHp: 30 });
+      const heard = bind(m);
+      ['7', '8'].forEach((r) => m.ctx.player.hand.add(makeCard(r as Rank, 'S')));
+      ['K', 'Q', '5'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as Rank, 'H')));
+      await m.runFrom('Initiative', ['Deal']);
+      expect(heard.filter((s) => s === 'heal')).toHaveLength(1);
+    });
+
+    it('伏せカードがめくられたときだけ flip が鳴る（伏せがなければ鳴らない）', async () => {
+      const withHidden = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
+      const heardA = bind(withHidden);
+      ['K', 'K'].forEach((r) => withHidden.ctx.player.hand.add(makeCard(r as Rank, 'S')));
+      withHidden.ctx.enemy.hand.add(makeCard('9', 'H'));
+      withHidden.ctx.enemy.hand.add(makeCard('9', 'H'), { faceDown: true });
+      await withHidden.runFrom('Initiative', ['Deal']);
+      expect(heardA.filter((s) => s === 'flip')).toHaveLength(1);
+
+      const none = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait });
+      const heardB = bind(none);
+      ['K', 'K'].forEach((r) => none.ctx.player.hand.add(makeCard(r as Rank, 'S')));
+      ['9', '9'].forEach((r) => none.ctx.enemy.hand.add(makeCard(r as Rank, 'H')));
+      await none.runFrom('Initiative', ['Deal']);
+      expect(heardB).not.toContain('flip');
+    });
+  });
+
   it('遷移表: プレイヤーの勝負後に敵へ戻る遷移や、敵の行動から直接 Initiative へ進む遷移は存在しない', () => {
     expect(TRANSITIONS.PlayerAction).not.toContain('EnemyAction');
     expect(TRANSITIONS.Surrender).toEqual(['Initiative']);

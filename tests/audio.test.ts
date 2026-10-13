@@ -25,8 +25,10 @@ class FakeContext {
   close = vi.fn(async () => { this.state = 'closed'; });
   gains: Array<Record<string, unknown>> = [];
   createGain = () => { const n = node(); this.gains.push(n); return n; };
-  createBiquadFilter = node;
-  createOscillator = node;
+  filters: Array<Record<string, unknown>> = [];
+  oscs: Array<Record<string, unknown>> = [];
+  createBiquadFilter = () => { const n = node(); this.filters.push(n); return n; };
+  createOscillator = () => { const n = node(); this.oscs.push(n); return n; };
   createBufferSource = node;
   createBuffer = () => ({ getChannelData: () => new Float32Array(8) });
   constructor() { FakeContext.instances.push(this); }
@@ -154,5 +156,53 @@ describe('スリープ・ロックから戻ったとき', () => {
     expect(a.muted).toBe(true);
     const master = ctxOf().gains[0].gain as { value: number }; // 最初に作る gain がマスター
     expect(master.value).toBe(0);
+  });
+});
+
+describe('カードの効果音（軽く落ち着いた音。ほかの効果音と区別する）', () => {
+  const unlocked = () => {
+    const a = new AudioManager();
+    fire('click');
+    ctxOf().state = 'running';
+    return a;
+  };
+
+  it('配る音（deal）は、やわらかいノイズと小さな sine だけ。square や sawtooth は使わない', () => {
+    const a = unlocked();
+    const c = ctxOf();
+    const before = { oscs: c.oscs.length, filters: c.filters.length }; // BGM が作った分は除く
+    a.sfx('deal');
+    const oscs = c.oscs.slice(before.oscs);
+    expect(oscs.length).toBeGreaterThan(0);
+    for (const o of oscs) expect(o.type).toBe('sine');
+    expect(c.filters.length - before.filters).toBe(1); // 紙のすべる音（ノイズ）
+  });
+
+  it('配る音は、毎回ほんの少し高さが変わる（同じ音が続かない）', () => {
+    const a = unlocked();
+    const c = ctxOf();
+    const before = c.filters.length;
+    const rand = vi.spyOn(Math, 'random');
+    rand.mockReturnValueOnce(0).mockReturnValueOnce(1);
+    a.sfx('deal');
+    a.sfx('deal');
+    rand.mockRestore();
+    const [x, y] = c.filters.slice(before).map((f) => (f.frequency as { value: number }).value);
+    expect(x).not.toBe(y);
+    expect(Math.abs(x - y) / x).toBeLessThan(0.3); // 別の音になるほどは変えない
+  });
+
+  it('めくる音（flip）は、配る音と別の音: 帯域が上へ動く「しゅっ」という音', () => {
+    const a = unlocked();
+    const c = ctxOf();
+    const before = c.filters.length;
+    a.sfx('flip');
+    const swept = c.filters.slice(before).some((f) => (f.frequency as { exponentialRampToValueAtTime: { mock: { calls: unknown[] } } }).exponentialRampToValueAtTime.mock.calls.length > 0);
+    expect(swept).toBe(true);
+    const d = unlocked();
+    const c2 = ctxOf();
+    const before2 = c2.filters.length;
+    d.sfx('deal');
+    expect(c2.filters.slice(before2).some((f) => (f.frequency as { exponentialRampToValueAtTime: { mock: { calls: unknown[] } } }).exponentialRampToValueAtTime.mock.calls.length > 0)).toBe(false);
   });
 });

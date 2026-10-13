@@ -1,5 +1,5 @@
 export type SfxName =
-  | 'click' | 'deal' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
+  | 'click' | 'deal' | 'flip' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
 
 const STORAGE_KEY = 'bj-muted';
 
@@ -142,10 +142,19 @@ export class AudioManager {
       case 'click':
         this.tone(660, t, 0.06, 'square', 0.25, 880);
         break;
-      case 'deal':
-        this.noise(t, 0.05, 3500, 0.35);
-        this.tone(300, t, 0.05, 'triangle', 0.2, 200);
+      case 'deal': {
+        // カードを置く・配る音: 軽くて落ち着いた、紙がすべる小さな音。毎回ほんの少し高さを変える（同じ音が続かないように）
+        const r = 0.9 + Math.random() * 0.2;
+        this.noise(t, 0.08, 2600 * r, 0.14, undefined, 0.012);
+        this.tone(1500 * r, t + 0.015, 0.04, 'sine', 0.035, 1000 * r);
         break;
+      }
+      case 'flip': {
+        // 伏せカードをめくる音: 「しゅっ」と上がる紙の音。置く音より少し長く、明るい
+        this.sweepNoise(t, 0.16, 1400, 4600, 0.2, 0.03);
+        this.tone(900, t + 0.1, 0.07, 'sine', 0.05, 1300);
+        break;
+      }
       case 'attack':
         this.noise(t, 0.18, 1800, 0.5);
         this.tone(520, t, 0.22, 'sawtooth', 0.35, 90);
@@ -230,15 +239,38 @@ export class AudioManager {
     osc.stop(start + dur + 0.05);
   }
 
-  private noise(start: number, dur: number, cutoff: number, vol: number, dest?: AudioNode): void {
+  /** attack > 0 なら、立ち上がりをなだらかにする（やわらかい音）。 */
+  private noise(start: number, dur: number, cutoff: number, vol: number, dest?: AudioNode, attack = 0): void {
     const ctx = this.ctx!;
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = cutoff;
+    this.envelope(src, filter, start, dur, vol, attack, dest);
+  }
+
+  /** 帯域が from → to へ動くノイズ（しゅっという紙の音）。 */
+  private sweepNoise(start: number, dur: number, from: number, to: number, vol: number, attack: number): void {
+    const ctx = this.ctx!;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(from, start);
+    filter.frequency.exponentialRampToValueAtTime(to, start + dur);
+    this.envelope(src, filter, start, dur, vol, attack);
+  }
+
+  private envelope(src: AudioBufferSourceNode, filter: BiquadFilterNode, start: number, dur: number, vol: number, attack: number, dest?: AudioNode): void {
+    const ctx = this.ctx!;
     const g = ctx.createGain();
-    g.gain.setValueAtTime(vol, start);
+    if (attack > 0) {
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.linearRampToValueAtTime(vol, start + attack);
+    } else {
+      g.gain.setValueAtTime(vol, start);
+    }
     g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
     src.connect(filter).connect(g).connect(dest ?? this.sfxGain);
     src.start(start);

@@ -127,6 +127,7 @@ Initiative → FirstAction → SurvivalCheck → SecondAction → CheckDeath →
 
 ### 音（`src/audio/AudioManager.ts`）
 BGM・SE は Web Audio で合成する（外部ファイルなし）。ブラウザの自動再生制限のため、**最初のタップ（どこでも）で鳴り始める**ので、タイトル画面でも BGM が流れる（タップする前は無音）。タイトルと戦闘画面の ♪ ボタンで、オン/オフを切り替えられる（保存される）。
+効果音の方針: カードを配る音（`deal`）は軽く落ち着いた紙の音で、毎回ほんの少し高さを変える。伏せカードをめくる音（`flip`）は別の音（上へ動く「しゅっ」）。Block・回復の音は、**実際に起きたとき**の通知（`onBlockApplied` / `onHealApplied`）で鳴らす（`onBlockGained` / `onHealed` はスロット表や予測の計算のたびにも発火するので、音には使わない）。
 スリープ・画面ロック・別アプリから戻ったときは、戻った時に再開を試み、それでも止まったままなら次のタップで再開する。iOS で `interrupted` のまま戻らない場合は、タップの中で `AudioContext` を作り直す（`tests/audio.test.ts`）。
 
 ## イベントフック（レリック拡張）

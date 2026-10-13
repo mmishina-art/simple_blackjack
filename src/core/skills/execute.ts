@@ -65,13 +65,16 @@ export function applyEffects(
     } else {
       if (effect.type === 'block') {
         const { amount } = bus.emit('onBlockGained', { entity: user, amount: effect.amount });
-        user.block += Math.max(0, Math.floor(amount));
-        ctx.log(`${user.name}は Block を ${Math.max(0, Math.floor(amount))} 得た`);
+        const gained = Math.max(0, Math.floor(amount));
+        user.block += gained;
+        ctx.log(`${user.name}は Block を ${gained} 得た`);
+        bus.emit('onBlockApplied', { entity: user, amount: gained });
       } else {
         const { amount } = bus.emit('onHealed', { entity: user, amount: effect.amount });
         const before = user.hp;
         user.hp = Math.min(user.maxHp, user.hp + Math.max(0, Math.floor(amount)));
         ctx.log(`${user.name}は HP を ${user.hp - before} 回復した`);
+        bus.emit('onHealApplied', { entity: user, amount: user.hp - before });
       }
     }
   }

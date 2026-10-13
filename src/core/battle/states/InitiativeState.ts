@@ -12,6 +12,7 @@ export class InitiativeState implements BattleState {
     const { player, enemy, rules } = ctx;
     if (enemy.hand.hasHidden) {
       enemy.hand.revealAll();
+      ctx.bus.emit('onCardsRevealed', { entity: enemy });
       ctx.notify();
       await ctx.wait(PACE.reveal);
     }
