@@ -9,7 +9,8 @@ import { slotAttack } from '../src/core/skills/catalog';
 import { attackValue, canPlaceAt, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
-import { upgradeCost, buyOffer, enemyGold, generateShop, sellFromInventory } from '../src/run/shop';
+import { upgradeCost, buyOffer, rewardGold, generateShop, sellFromInventory } from '../src/run/shop';
+import { emptyMeta } from '../src/meta/Meta';
 import { advanceStage, armorCap, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, upgradeSlot, type RunState } from '../src/run/Run';
 
 const N = Number(process.argv[2] ?? 600);
@@ -49,6 +50,14 @@ function place(run: RunState, id: SkillId): void {
   if (bestK > 0) equipSkill(run, bestK, id);
 }
 
+/** UPG=ward:3,might:2 のように、祭壇の強化レベルを指定して試算する（省略時は強化なし）。 */
+function upgMeta() {
+  if (!process.env.UPG) return undefined;
+  const meta = emptyMeta();
+  for (const pair of process.env.UPG.split(',')) { const [id, lv] = pair.split(':'); meta.upgrades[id] = Number(lv); }
+  return meta;
+}
+
 // 調整用の上書き（試算専用）: ENEMY_SCALE=敵の攻撃倍率 / PLAYER_HP=初期最大HP / ENEMY_HP_SCALE=敵HP倍率
 const STAGE_OF: Record<string, number> = { slime: 1, skeleton: 1, bat: 1, ghoul: 1, knight: 1, merman: 2, gargoyle: 2, wraith: 2, serpent: 2, flame: 3, golem: 3, imp: 3, dragon: 3 };
 const ESS = [1, 2, 3].map((n) => Number(process.env[`ES${n}`] ?? process.env.ENEMY_SCALE ?? 1));
@@ -72,7 +81,7 @@ const stageReached: Record<number, number> = {};
 (async () => {
   for (let i = 0; i < N; i++) {
     const rng = seededRng(1000 + i);
-    const run = createRun();
+    const run = createRun(undefined, upgMeta());
     if (process.env.PLAYER_HP) { run.maxHp = Number(process.env.PLAYER_HP); run.hp = run.maxHp; }
     if (process.env.START_ARMOR) run.armor = process.env.START_ARMOR;
     if (process.env.HERB) (getSkill('herb').effects[0] as { amount: number }).amount = Number(process.env.HERB);
@@ -104,7 +113,7 @@ const stageReached: Record<number, number> = {};
       if (tile.kind === 'enemy' || tile.kind === 'boss') {
         const def = enemyOfTile(tile);
         const lv = enemyLevel(def);
-        const m = new BattleMachine({ enemy: def, playerMaxHp: run.maxHp, playerHp: run.hp, playerSlots: run.slots, playerFallback: run.fallbackSkill, playerAttack: run.baseAttack, playerArmorCap: armorCap(run), playerBlock: run.bonus.startBlock, relics: run.relics, rng, pace: async () => {} });
+        const m = new BattleMachine({ enemy: def, playerMaxHp: run.maxHp, playerHp: run.hp, playerSlots: run.slots, playerFallback: run.fallbackSkill, playerAttack: run.baseAttack, playerBlock: run.bonus.startBlock, playerArmorCap: armorCap(run), relics: run.relics, rng, pace: async () => {} });
         m.bus.on('onRoundEnd', () => { stat.rounds++; (perEnemy[def.id] ??= { n: 0, w: 0, hp: 0, rounds: 0 }).rounds++; });
         m.onChange(() => {
           if (!m.canAct) return;
@@ -135,7 +144,7 @@ const stageReached: Record<number, number> = {};
         if (m.ctx.winner !== m.ctx.player) { dead = tile.id; break; }
         pe.w++; stat.won++;
         run.hp = m.ctx.player.hp;
-        if (!process.env.NO_GOLD) run.gold += enemyGold(def, tile.kind === 'boss');
+        if (!process.env.NO_GOLD) run.gold += rewardGold(run, def, tile.kind === 'boss');
         if (tile.kind === 'enemy') {
           const offer = offerSkills(rng, run, def.id);
           const best = [...offer].sort((a, b) => rewardScore(b, run) - rewardScore(a, run))[0];
