@@ -1,5 +1,5 @@
 import { audio } from '../audio/AudioManager';
-import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, placementNote, rarityOfSkill } from '../core/skills/Skill';
+import { describeSkillBonus, getSkill, kindOfSkill, placementNote, rarityOfSkill } from '../core/skills/Skill';
 import { inventoryEntries } from '../run/loadout';
 import { buyOffer, sellFromInventory, sellPrice, type ShopOffer } from '../run/shop';
 import { RELIC_POOL } from '../relics/catalog';
@@ -56,7 +56,7 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
         const kind = kindOfSkill(sk);
         const where = placementNote(sk);
         row(`${rarityClass(rarityOfSkill(sk))}${offer.sold ? ' shop__row--sold' : ''}`, sk.icon, `${rarityClass(rarityOfSkill(sk))}${medalKindClass(kind)}`,
-          `${sk.name} ${kindTag(sk, true)} ${rarityBadge(rarityOfSkill(sk))}`,
+          `${sk.name} ${kindTag(sk)} ${rarityBadge(rarityOfSkill(sk))}`,
           `${describeSkillBonus(sk)}${where ? `（${where}）` : ''}`,
           offer.price, offer.sold ? '売り切れ' : run.gold < offer.price ? 'G不足' : '買う', !offer.sold && run.gold >= offer.price,
           () => { if (buyOffer(run, offer)) { audio.sfx('pick'); opts.onBought(offer); } });
@@ -80,7 +80,7 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
     for (const e of entries) {
       const sk = getSkill(e.id);
       row(rarityClass(rarityOfSkill(sk)), sk.icon, `${rarityClass(rarityOfSkill(sk))}${medalKindClass(kindOfSkill(sk))}`,
-        `${sk.name}${e.count > 1 ? ` ×${e.count}` : ''} <span class="shop__kind">${KIND_LABEL[kindOfSkill(sk)]}</span>`, describeSkillBonus(sk),
+        `${sk.name}${e.count > 1 ? ` ×${e.count}` : ''} ${kindTag(sk)}`, describeSkillBonus(sk),
         sellPrice(e.id), '売る', true,
         () => {
           const g = sellFromInventory(run, e.id);

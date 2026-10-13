@@ -128,3 +128,15 @@ describe('短い画面の編成画面', () => {
     expect(Number(/min-height:\s*(\d+)px/.exec(button?.body ?? '')?.[1])).toBeGreaterThanOrEqual(44);
   });
 });
+
+describe('CSS の形', () => {
+  it('{ } の数が合っていて、深さが 0 未満にならない（不要なルールを消したときの消し残しを検出する）', () => {
+    let depth = 0;
+    for (const ch of css) {
+      if (ch === '{') depth++;
+      if (ch === '}') depth--;
+      expect(depth).toBeGreaterThanOrEqual(0);
+    }
+    expect(depth).toBe(0);
+  });
+});

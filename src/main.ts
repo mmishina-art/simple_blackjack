@@ -17,7 +17,8 @@ import { POUCH_SIZE } from './run/loadout';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
-import { generateShop, enemyGold, type ShopOffer } from './run/shop';
+import { addGold, enemyGold, generateShop, MAX_GOLD, type ShopOffer } from './run/shop';
+import { isDebug } from './debug';
 import { showShop } from './ui/ShopScreen';
 import { showShrine } from './ui/ShrineScreen';
 import { showSettings } from './ui/SettingsScreen';
@@ -31,6 +32,9 @@ const meta: MetaState = loadMeta();
 let run: RunState = createRun(undefined, meta);
 /** 素の状態で挑んでいる冒険か（祭壇の強化・図鑑の効果を使わず、魂片・図鑑も記録しない）。 */
 let bareRun = false;
+/** デバッグの操作（ゴールド最大・即勝利）を使った冒険。記録（魂片・図鑑・戦績）を残さない。 */
+let cheated = false;
+let machineNow: BattleMachine | null = null;
 let view: BattleView | null = null;
 let unbindSounds: (() => void) | null = null;
 
@@ -62,13 +66,35 @@ function refreshStatus(): void {
 }
 function setStatus(visible: boolean): void {
   statusBar.hidden = !visible;
+  debugPanel.hidden = !(visible && isDebug());
   if (visible) refreshStatus();
 }
+
+/** デバッグモード中だけ、冒険の画面の左上に出る操作。使った冒険は、記録を残さない。 */
+const debugPanel = el('div', 'debug-panel');
+debugPanel.hidden = true;
+{
+  const mk = (label: string, title: string, onClick: () => void): void => {
+    const b = el('button', 'debug-panel__btn', label);
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    b.addEventListener('click', () => {
+      cheated = true;
+      onClick();
+      refreshStatus();
+    });
+    debugPanel.append(b);
+  };
+  mk('G', `ゴールドを最大（${MAX_GOLD}）にする`, () => { run.gold = MAX_GOLD; });
+  mk('勝', 'いまの戦闘にすぐ勝つ', () => machineNow?.debugWin());
+}
+document.body.append(debugPanel);
 // 画面が切り替わる（買う・売る・マップへ戻るなど）たびに、数値を更新する
 new MutationObserver(() => { if (!statusBar.hidden) refreshStatus(); }).observe(root, { childList: true });
 
 function leaveBattle(): void {
   liveHp = null;
+  machineNow = null;
   view?.destroy();
   view = null;
   unbindSounds?.();
@@ -97,7 +123,7 @@ function openShop(tile: TileDef, offers: ShopOffer[], note = ''): void {
       undo() {
         const i = run.inventory.indexOf(offer.id);
         if (i >= 0) run.inventory.splice(i, 1);
-        run.gold += offer.price;
+        addGold(run, offer.price);
         offer.sold = false;
       },
       onClose: (msg) => openShop(tile, offers, msg ?? ''),
@@ -174,6 +200,7 @@ function startBattle(tile: TileDef): void {
     playerBlock: run.bonus.startBlock,
     relics: run.relics,
   });
+  machineNow = machine;
   unbindSounds = bindBattleSounds(machine, audio);
   liveHp = machine.ctx.player.hp;
   machine.onChange(() => { liveHp = machine.ctx.player.hp; refreshStatus(); });
@@ -183,7 +210,7 @@ function startBattle(tile: TileDef): void {
 
 /** 持っているスキル・レリックを図鑑に登録する（負けても残る）。 */
 function syncCodex(): void {
-  if (bareRun) return; // 素の状態の冒険は、図鑑に記録しない
+  if (bareRun || cheated) return; // 素の状態・デバッグを使った冒険は、図鑑に記録しない
   let changed = false;
   for (const id of [...Object.values(run.slots), run.armor, ...run.inventory]) if (id) changed = discoverSkill(meta, id) || changed;
   for (const r of run.relics) changed = discoverRelic(meta, r.id) || changed;
@@ -192,7 +219,7 @@ function syncCodex(): void {
 
 /** 冒険の終了処理: 魂片を獲得して保存する。獲得量を返す。 */
 function endRun(cleared: boolean): number {
-  if (bareRun) return 0; // 魂片・戦績も記録しない
+  if (bareRun || cheated) return 0; // 魂片・戦績も記録しない
   syncCodex();
   const summary: RunSummary = { maxRow: run.stats.maxRow, enemiesDefeated: run.stats.enemiesDefeated, cleared, stagesCleared: run.stage - 1 };
   const gained = finishRun(meta, summary);
@@ -203,6 +230,7 @@ function endRun(cleared: boolean): number {
 /** 冒険を始める。装備は出撃準備で決めた保存済みの設定が使われる。 */
 function startAdventure(): void {
   bareRun = false;
+  cheated = false;
   shopOffers.clear();
   run = createRun(undefined, meta);
   setStatus(true);
@@ -212,6 +240,7 @@ function startAdventure(): void {
 /** 素の状態で冒険を始める: 祭壇の強化・図鑑・出撃準備の変更を使わず、記録も残さない（バランスを試すため）。 */
 function startBareAdventure(): void {
   bareRun = true;
+  cheated = false;
   shopOffers.clear();
   run = createRun();
   setStatus(true);
@@ -230,7 +259,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     won ? '勝　利<small>VICTORY</small>' : '敗　北<small>DEFEAT</small>'));
 
   const shardsLine = (gained: number) =>
-    el('p', 'result__line result__shards', bareRun ? '素の状態の冒険（魂片・図鑑は記録されない）' : `魂片 +${gained}（所持 ${meta.shards}）`);
+    el('p', 'result__line result__shards', cheated ? 'デバッグを使った冒険（魂片・図鑑は記録されない）' : bareRun ? '素の状態の冒険（魂片・図鑑は記録されない）' : `魂片 +${gained}（所持 ${meta.shards}）`);
   const endButtons = (retry: string) => {
     const altar = button('魂の祭壇', () => { setStatus(false); showAltar(root, meta, showTitle); });
     altar.classList.replace('btn--retry', 'btn--stand');
@@ -246,7 +275,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   run.stats.enemiesDefeated++;
   markCleared(run, tile.id);
   const gold = enemyGold(enemyOfTile(tile), tile.kind === 'boss');
-  run.gold += gold;
+  addGold(run, gold);
   box.append(el('p', 'result__line result__gold', `ゴールド +${gold}（所持 ${run.gold} G）`));
 
   if (tile.kind === 'boss' && !isFinalStage(run)) {
@@ -258,7 +287,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     const gained = endRun(true);
     box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('エンディングへ', () => {
       setStatus(false);
-      showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun }, showTitle);
+      showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun || cheated }, showTitle);
     }));
     return box;
   }

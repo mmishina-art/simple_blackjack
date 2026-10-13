@@ -1,5 +1,6 @@
 import { audio } from '../audio/AudioManager';
 import { CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, resetAllMeta, saveMeta, type MetaState } from '../meta/Meta';
+import { isDebug, setDebug } from '../debug';
 import { openSheet } from './components/SkillSheet';
 
 /**
@@ -49,6 +50,20 @@ export function showSettings(root: HTMLElement, meta: MetaState, onClose: () => 
   });
   box.append(danger);
 
+  const dbg = document.createElement('section');
+  dbg.className = 'settings__box';
+  dbg.innerHTML = `<h2>デバッグモード</h2>
+    <p>冒険中の画面の左上に、「G」（ゴールドを最大にする）と「勝」（いまの戦闘にすぐ勝つ）のボタンが出る。<strong>使った冒険は、魂片・図鑑・戦績を記録しない</strong>。</p>`;
+  const toggle = document.createElement('button');
+  toggle.className = 'btn btn--stand loadout__btn';
+  const renderToggle = (): void => {
+    toggle.innerHTML = `<span class="btn__main">デバッグモード: ${isDebug() ? 'オン' : 'オフ'}</span>`;
+    toggle.setAttribute('aria-pressed', String(isDebug()));
+  };
+  renderToggle();
+  toggle.addEventListener('click', () => { audio.sfx('click'); setDebug(!isDebug()); renderToggle(); });
+  dbg.append(toggle);
+
   const back = document.createElement('button');
   back.className = 'btn btn--retry loadout__btn';
   back.innerHTML = '<span class="btn__main">戻る</span>';
@@ -58,7 +73,7 @@ export function showSettings(root: HTMLElement, meta: MetaState, onClose: () => 
   });
   const body = document.createElement('div');
   body.className = 'meta-body';
-  body.append(box);
+  body.append(box, dbg);
   screen.append(head, body, back);
   root.replaceChildren(screen);
 }

@@ -364,7 +364,6 @@ section { min-width: 0; }
   display: flex; align-items: center; gap: 10px; min-height: 26px;
   font-family: var(--font-display); font-size: 12px; letter-spacing: 0.12em; color: var(--bone-dim);
 }
-.status-strip__lv { color: var(--gold); font-weight: 800; font-size: 14px; }
 .status-strip__relics { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 
 .medal {
@@ -406,7 +405,6 @@ section { min-width: 0; }
 
 .result { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 20px; text-align: center; }
 .result__line { margin: 0; font-size: 16px; letter-spacing: 0.1em; color: var(--bone); }
-.result__levelup-unused { margin: 4px 0 0; font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: 0.14em; color: var(--gold); text-shadow: 0 0 16px rgba(176, 141, 62, 0.6); }
 .result .btn { margin-top: 10px; min-width: 220px; }
 
 /* ---- Slots / Block / Surrender ---- */
@@ -538,7 +536,7 @@ section { min-width: 0; }
   display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 8px;
 }
 .loadout__head { text-align: center; }
-.loadout__head h1 { margin: 0; font-family: var(--font-display); font-size: 22px; letter-spacing: 0.3em; color: var(--gold); }
+.loadout__head h1 { margin: 0; font-family: var(--font-display); font-size: 24px; letter-spacing: 0.3em; color: var(--gold); text-shadow: 0 3px 0 #000; }
 .loadout__head p { margin: 4px 0 0; font-size: 13px; color: var(--bone-dim); letter-spacing: 0.06em; }
 .loadout__slots { display: flex; flex-direction: column; gap: 3px; }
 .lslot {
@@ -547,22 +545,11 @@ section { min-width: 0; }
   background: #0d0a07; color: var(--bone-dim); border: 1px solid #2a2118; border-radius: 2px; font-family: var(--font-body);
 }
 .lslot--set { background: #17110b; border-color: var(--gold-dim); color: var(--bone); }
-.lslot--selected { border-color: #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.5); }
 .lslot--target { border-color: var(--gold); animation: reach 1.2s ease-in-out infinite; }
-.lslot--locked { cursor: default; opacity: 0.75; }
 .lslot__key { font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--gold); }
 .lslot__name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lslot__desc { font-size: 11px; color: var(--bone-dim); white-space: nowrap; }
-.lslot__lock { font-size: 12px; font-weight: 800; color: var(--blood-hi); border: 1px solid var(--blood-hi); border-radius: 2px; padding: 0 4px; }
 .loadout__inv { min-height: 0; overflow-y: auto; padding: 8px 10px; background: var(--panel); border: 1px solid var(--gold-dim); border-radius: 3px; }
-.loadout__inv-title { font-size: 12px; letter-spacing: 0.2em; color: var(--gold); margin-bottom: 6px; }
-.loadout__chips { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; color: var(--bone-dim); }
-.chip {
-  display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px; cursor: pointer;
-  background: #17110b; color: var(--bone); border: 1px solid var(--gold-dim); border-radius: 3px; font-family: var(--font-body); font-size: 13px; text-align: left;
-}
-.chip small { display: block; font-size: 11px; color: var(--bone-dim); }
-.chip--armed { border-color: #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.6); }
 .loadout__actions { display: flex; gap: 10px; }
 .loadout__btn { flex: 1; min-height: 52px; }
 .notice .btn { align-self: center; min-width: 220px; }
@@ -641,10 +628,6 @@ section { min-width: 0; }
   color: #1a1206; background: linear-gradient(180deg, #d1ae5a, var(--gold)); border: 1px solid #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.65);
 }
 
-.chip { border-color: var(--rar, var(--gold-dim)); }
-.chip.rar-rare { box-shadow: 0 0 8px var(--rar-glow); }
-.chip.rar-legend { box-shadow: 0 0 12px var(--rar-glow); background: #241608; }
-.chip small { margin-top: 2px; }
 
 /* 敵のスロット表を追加した分、敵ステージを少し低くする */
 .enemy-stage { height: 100px; }
@@ -784,7 +767,6 @@ section { min-width: 0; }
 .loadout { grid-template-rows: auto auto minmax(0, 1fr) auto; align-content: start; }
 .loadout--armed { grid-template-rows: auto auto auto 1fr auto; }
 .loadout__hint { color: var(--bone) !important; font-size: 13px; letter-spacing: 0.08em; }
-.chip--static { cursor: default; }
 
 /* 選択シート（下から出る） */
 .sheet-layer {
@@ -829,13 +811,8 @@ section { min-width: 0; }
   background: transparent; border: 1px solid #3a2f22; border-radius: 3px;
 }
 
-.title__sub--3 { grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 360px; }
-.title__sub--3 .btn__main { font-size: 17px; letter-spacing: 0.06em; }
-.title__sub--3 .btn__sub { font-size: 11px; letter-spacing: 0.08em; }
 @media (prefers-reduced-motion: reduce) { .sheet, .sheet-layer, .lslot--target { animation: none; } }
 
-.btn--notice { border-color: #e6c878; box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #8a6e2a, 0 0 14px rgba(230, 200, 120, 0.45); }
-.btn--notice .btn__sub { color: #f0d78c; }
 
 /* ---- 新しいバージョンのお知らせ（画面上部。戦闘の操作ボタンと重ならない位置） ---- */
 .update-banner {
@@ -1097,7 +1074,6 @@ section { min-width: 0; }
 .compare__arrow { font-size: 20px; color: var(--gold); }
 .compare__diff { list-style: none; margin: 10px 0 0; padding: 0; text-align: center; font-size: 14px; line-height: 1.9; color: var(--bone); }
 .compare__note { margin: 6px 0 0; font-size: 12px; line-height: 1.6; text-align: center; color: #ff9b8a; }
-.loadout .chip--static { background: #120e09; border: 1px solid #2a2118; box-shadow: none; }
 .lslot--blocked { opacity: 0.45; }
 
 /* ---- ショップ・ゴールド ---- */
@@ -1115,12 +1091,9 @@ section { min-width: 0; }
 .shop__price { display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap; }
 .shop__price b { color: var(--gold); }
 .shop__price small { font-size: 11px; color: var(--bone-dim); }
-.shop__kind { font-size: 11px; color: var(--bone-dim); }
 .shop__empty { margin: 0; font-size: 12px; color: var(--bone-dim); }
 .shop__note { margin: 0; min-height: 1.2em; text-align: center; font-size: 13px; color: var(--bone-dim); }
 .result__gold { color: var(--gold); }
-.loadout__gold { color: var(--gold); font-weight: 800; }
-.chip { font: inherit; color: inherit; text-align: left; cursor: pointer; background: #14100b; }
 .lslot__arrow { color: var(--bone-dim); }
 .lslot__after { color: var(--gold); }
 
@@ -1163,3 +1136,16 @@ section { min-width: 0; }
   .battle .hand__side .callout__name { font-size: 16px; }
   .battle .hand__side .callout__fx b { font-size: 24px; }
 }
+
+/* 一覧の行（ショップ・図鑑）も、編成と同じ静かな枠。レア度は、アイコンの色と札で示す */
+.shop__row, .codex__item { border-color: #2a2118; box-shadow: none; background: #120e09; }
+.shop__row.rar-legend, .codex__item.rar-legend { background: #120e09; }
+
+/* デバッグモードのボタン（冒険中の左上。上端の余白の中に収める） */
+.debug-panel { position: fixed; top: calc(env(safe-area-inset-top) + 2px); left: 6px; z-index: 6; display: flex; gap: 4px; }
+.debug-panel[hidden] { display: none; }
+.debug-panel__btn {
+  min-width: 28px; height: 22px; padding: 0 6px; font: 800 12px var(--font-body); color: #1a1206;
+  background: #d39a3a; border: 1px solid #ffd27a; border-radius: 4px; cursor: pointer; opacity: 0.85;
+}
+.settings__box .loadout__btn { width: 100%; }

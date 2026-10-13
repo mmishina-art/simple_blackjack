@@ -8,6 +8,14 @@ import { RELIC_POOL } from '../relics/catalog';
 import type { Relic } from '../relics/Relic';
 import { CODEX_BOOST, type RunState } from './Run';
 
+/** 持てるゴールドの上限。 */
+export const MAX_GOLD = 9999;
+
+/** ゴールドを増やす（上限を超えない）。 */
+export function addGold(run: RunState, amount: number): void {
+  run.gold = Math.min(MAX_GOLD, run.gold + amount);
+}
+
 /** 売値は、買値のこの割合（切り捨て）。 */
 export const SELL_RATIO = 0.5;
 
@@ -100,7 +108,7 @@ export function sellFromInventory(run: RunState, id: SkillId): number | null {
   if (idx < 0) return null;
   run.inventory.splice(idx, 1);
   const gold = sellPrice(id);
-  run.gold += gold;
+  addGold(run, gold);
   return gold;
 }
 

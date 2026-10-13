@@ -23,6 +23,8 @@ export interface BattleContext {
   /** このラウンドでプレイヤーがサレンダー（防御）を選んだ。 */
   playerSurrendered: boolean;
   winner: Entity | null;
+  /** デバッグ用: 次の死亡判定で、敵を倒した（プレイヤーの勝ち）ことにする。 */
+  debugWin: boolean;
 
   entityOf(id: EntityId): Entity;
   /** バトルログに1行追加。 */
