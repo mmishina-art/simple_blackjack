@@ -1118,7 +1118,6 @@ section { min-width: 0; }
 .shop__kind { font-size: 11px; color: var(--bone-dim); }
 .shop__empty { margin: 0; font-size: 12px; color: var(--bone-dim); }
 .shop__note { margin: 0; min-height: 1.2em; text-align: center; font-size: 13px; color: var(--bone-dim); }
-.map-hud__gold { color: var(--gold); margin-left: 8px; }
 .result__gold { color: var(--gold); }
 .loadout__gold { color: var(--gold); font-weight: 800; }
 .chip { font: inherit; color: inherit; text-align: left; cursor: pointer; background: #14100b; }
@@ -1129,3 +1128,14 @@ section { min-width: 0; }
 .loadout__slots .lslot--armor { margin-top: 8px; background: #0f141a; border-color: #46607a; }
 .loadout__slots .lslot--armor .lslot__key { color: #a9c6e4; }
 .loadout__slots .lslot--armor.lslot--target { border-color: #8fb4d8; box-shadow: 0 0 8px rgba(120, 170, 220, 0.35); }
+
+/* 冒険中の、体力とゴールドの常時表示（各画面の上端の余白の中に収める） */
+.run-status {
+  position: fixed; top: calc(env(safe-area-inset-top) + 3px); left: 50%; transform: translateX(-50%); z-index: 5;
+  display: flex; gap: 12px; padding: 1px 10px; font-size: 12px; line-height: 18px; letter-spacing: 0.04em;
+  color: var(--bone-dim); background: rgba(10, 8, 6, 0.8); border: 1px solid var(--gold-dim); border-radius: 10px; pointer-events: none;
+}
+.run-status b { color: var(--bone); font-family: var(--font-display); }
+.run-status__gold b { color: var(--gold); }
+.run-status__hp--low b { color: var(--blood-hi); }
+.run-status[hidden] { display: none; }
