@@ -20,8 +20,9 @@ describe('レア度', () => {
     for (const set of [skills, relics]) {
       expect(new Set(set)).toEqual(new Set(['common', 'rare', 'legend']));
     }
-    expect(rarityOfSkill(getSkill('ace_strike'))).toBe('rare');
-    expect(rarityOfSkill(getSkill('overlord_strike'))).toBe('legend');
+    expect(rarityOfSkill(getSkill('ace_strike'))).toBe('common');
+    expect(rarityOfSkill(getSkill('overlord_strike'))).toBe('rare');
+    expect(rarityOfSkill(getSkill('final_strike'))).toBe('legend');
     expect(RELIC_POOL.find((r) => r.id === 'key')!.rarity).toBe('legend');
   });
 

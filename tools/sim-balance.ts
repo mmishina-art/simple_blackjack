@@ -27,7 +27,7 @@ function slotValue(id: SkillId | undefined, key: number, run: RunState, hpRatio:
   }
   return v;
 }
-const WEIGHT: Record<number, number> = { 12: 3, 13: 4, 14: 6, 15: 8, 16: 14, 17: 18, 18: 16, 19: 14, 20: 12, 21: 7 };
+const WEIGHT: Record<number, number> = { 12: 3, 13: 4, 14: 6, 15: 8, 16: 14, 17: 18, 18: 16, 19: 14, 20: 12, 21: Number(process.env.W21 ?? 7) };
 
 function rewardScore(id: SkillId, run: RunState): number {
   const sk = getSkill(id);
