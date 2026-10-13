@@ -22,6 +22,9 @@ import type { TurnInfo } from '../core/rules/initiative';
  * 縦画面レイアウト: 上=敵 / 下=プレイヤー / 最下=ボタン。
  * 戦闘ログは常時は出さない（BattleLog: 読み上げ用の領域と、「記録」ボタンのシート）。行動順は敵の舞台に帯で出す。
  */
+/** 防御ボタンの盾のマーク。 */
+const SHIELD_ICON = '<svg class="btn__shield" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5z" fill="currentColor" stroke="#0b0f0e" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+
 export class BattleView {
   private enemyView: EnemyView;
   private enemyHp = new HpBar('enemy');
@@ -102,7 +105,7 @@ export class BattleView {
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
     this.surrenderBtn.className = 'btn btn--surrender';
-    this.surrenderBtn.innerHTML = '<span class="btn__main">防御</span><span class="btn__sub"></span>';
+    this.surrenderBtn.innerHTML = `<span class="btn__main">${SHIELD_ICON}<span>防御</span></span><span class="btn__sub"></span>`;
     this.surrenderSub = this.surrenderBtn.querySelector('.btn__sub')!;
     this.renderDefend();
     const actions = section('actions', this.hitBtn, this.standBtn, this.surrenderBtn);
@@ -287,8 +290,10 @@ export class BattleView {
   private renderDefend(): void {
     const { ctx } = this.machine;
     const cap = ctx.player.armorCap ?? ctx.rules.defendCap;
-    const text = `被ダメージ最大 ${cap}・スキルは発動しない`;
+    const text = `ダメージ最大 ${cap}`;
     if (this.surrenderSub.textContent !== text) this.surrenderSub.textContent = text;
+    // 短い表示では伝えきれない説明は、読み上げ・ホバー用に残す
+    this.surrenderBtn.title = this.surrenderBtn.ariaLabel = `防御: 被ダメージ最大 ${cap}・このラウンドはスキルが発動しない`;
   }
 
   /** Hit ボタンの下に、次に引いたときのバースト・ブラックジャックの確率を、アイコン + 数字で出す（入力待ちのときだけ）。 */

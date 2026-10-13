@@ -1,3 +1,6 @@
+/** ブロックのマーク: 身を包む半円のバリアー（光の膜と、膜の面を示す線）。 */
+const BARRIER_ICON = '<svg class="block-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19a9 9 0 0 1 18 0" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 19a5 5 0 0 1 10 0M12 10v9" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" opacity="0.8"/><path d="M4.5 21h15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+
 export class HpBar {
   readonly el = document.createElement('div');
   private fill = document.createElement('div');
@@ -42,6 +45,8 @@ export class HpBar {
     this.atkChip.hidden = level === undefined;
     if (level !== undefined) this.atkChip.textContent = `LV ${level}`;
     this.blockChip.hidden = block <= 0;
-    this.blockChip.textContent = `守 ${block}`;
+    this.blockChip.innerHTML = `${BARRIER_ICON}<span>${block}</span>`;
+    this.blockChip.setAttribute('aria-label', `ブロック ${block}`);
+    this.blockChip.title = `ブロック ${block}`;
   }
 }
