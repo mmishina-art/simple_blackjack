@@ -1,5 +1,6 @@
 import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
+import { PACE } from '../battle/pace';
 import { damageTakenMultiplier } from '../rules/bust';
 import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
@@ -26,22 +27,24 @@ export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef)
     return null;
   }
   ctx.log(`${user.name}の「${payload.skill.name}」`);
+  ctx.bus.emit('onSkillUsed', { user, skill: payload.skill });
   return payload.skill;
 }
 
 export type EffectPart = 'block' | 'heal' | 'attack' | 'rest' | 'all';
 
 /**
- * スキルの効果を適用する。
+ * スキルの効果を適用する。効果は1つずつ適用し、そのたびに画面の演出を見せる間（PACE）をあける
+ * （どの効果が起きたか分かるように、Block → 回復 → 攻撃のように続けて起きても、ひとまとめにしない）。
  * part: 'block' = Block のみ / 'heal' = 回復のみ / 'attack' = 攻撃のみ / 'rest' = Block 以外（攻撃・回復）/ 'all' = すべて（効果の記述順）
  */
-export function applyEffects(
+export async function applyEffects(
   ctx: BattleContext,
   user: Entity,
   target: Entity,
   skill: SkillDef,
   part: EffectPart = 'all',
-): void {
+): Promise<void> {
   const { bus } = ctx;
   for (const effect of skill.effects) {
     // この呼び出しで処理する効果の種類（part による絞り込み）
@@ -77,6 +80,8 @@ export function applyEffects(
         bus.emit('onHealApplied', { entity: user, amount: user.hp - before });
       }
     }
+    // 効果を1つ適用するたびに画面を更新し、演出を見せる間をあける
+    ctx.notify();
+    await ctx.wait(PACE[effect.type]);
   }
-  ctx.notify();
 }

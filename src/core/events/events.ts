@@ -46,6 +46,8 @@ export interface BattleEvents {
    * Block・回復が実際に反映された後（通知のみ）。onBlockGained / onHealed は、スロット表や予測表示が効果を計算するときにも
    * 発火するので、効果音のように「本当に起きたとき」だけ反応したいものは、こちらを使う。
    */
+  /** スキルが実際に発動した（通知のみ。予測表示では発火しない）。画面にスキル名を出すために使う。 */
+  onSkillUsed: { user: Entity; skill: SkillDef };
   onBlockApplied: { entity: Entity; amount: number };
   onHealApplied: { entity: Entity; amount: number };
   /** 敵の伏せカードがめくられた（通知のみ）。 */

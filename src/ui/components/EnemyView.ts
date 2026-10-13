@@ -24,13 +24,15 @@ export class EnemyView {
     else this.sprite.classList.add(anim === 'hurt' ? 'is-hurt' : 'is-attack');
   }
 
-  floatText(text: string, kind: 'damage' | 'heal' = 'damage', note = ''): void {
+  floatText(text: string, kind: FloatKind = 'damage', note = ''): void {
     floatText(this.el, text, kind, note);
   }
 }
 
-/** 数字が浮かび上がる演出。note は数字の下に添える内訳（例: Block 5・バースト×1.5）。 */
-export function floatText(parent: HTMLElement, text: string, kind: 'damage' | 'heal' = 'damage', note = ''): void {
+export type FloatKind = 'damage' | 'heal' | 'block' | 'skill';
+
+/** 数字が浮かび上がる演出。kind で色が変わる（damage=ダメージ / heal=回復 / block=Block・防御 / skill=スキル名）。note は数字の下に添える内訳。 */
+export function floatText(parent: HTMLElement, text: string, kind: FloatKind = 'damage', note = ''): void {
   const el = document.createElement('div');
   el.className = `float float--${kind}`;
   el.textContent = text;
@@ -43,4 +45,17 @@ export function floatText(parent: HTMLElement, text: string, kind: 'damage' | 'h
   parent.append(el);
   el.addEventListener('animationend', () => el.remove());
   window.setTimeout(() => el.remove(), 1500);
+}
+
+/**
+ * 効果の画面演出（その場が光る）。block=Block を得た（青い盾の光）/ heal=回復（緑の光とささやかな粒）/ guard=攻撃を Block が防いだ（白青の火花）。
+ * 親は position: relative であること。アニメーションが終わると自動で消える。
+ */
+export function playFx(parent: HTMLElement, kind: 'block' | 'heal' | 'guard'): void {
+  const el = document.createElement('div');
+  el.className = `fx fx--${kind}`;
+  el.setAttribute('aria-hidden', 'true');
+  parent.append(el);
+  el.addEventListener('animationend', () => el.remove());
+  window.setTimeout(() => el.remove(), 1200); // アニメーションなし（動きを減らす設定）でも消える
 }

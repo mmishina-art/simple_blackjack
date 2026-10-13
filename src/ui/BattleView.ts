@@ -2,7 +2,7 @@ import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
 import type { Entity } from '../core/entities/Entity';
 import { BattleLog } from './components/BattleLog';
-import { EnemyView, floatText } from './components/EnemyView';
+import { EnemyView, floatText, playFx } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
 import { buildEnemyInfo } from './components/EnemyInfo';
@@ -107,6 +107,10 @@ export class BattleView {
     this.unsubs.push(
       machine.onChange(() => this.render()),
       machine.onLog((text) => this.log.append(text)),
+      // 効果は1つずつ見せる（間は PACE）。スキル名 → Block → 回復 → ダメージの順に、それぞれ画面演出が出る
+      machine.bus.on('onSkillUsed', ({ user, skill }) => floatText(this.areaOf(user), `「${skill.name}」`, 'skill')),
+      machine.bus.on('onBlockApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'block', amount)),
+      machine.bus.on('onHealApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'heal', amount)),
       machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage)),
       machine.bus.on('onBattleEnd', ({ winner }) => {
         if (winner.id === 'player') window.setTimeout(() => this.enemyView.play('defeated'), 300);
@@ -154,18 +158,33 @@ export class BattleView {
     if (this.machine.submit(input)) audio.sfx('click');
   }
 
+  /** 演出を出す場所: 敵は舞台、プレイヤーはプレイヤー欄。 */
+  private areaOf(entity: Entity): HTMLElement {
+    return entity.id === 'enemy' ? this.enemyView.el : this.playerArea;
+  }
+
+  /** Block を得た・回復した、の演出（光と、+数）。0 のときは出さない。 */
+  private playSupportEffect(entity: Entity, kind: 'block' | 'heal', amount: number): void {
+    if (amount <= 0) return;
+    const area = this.areaOf(entity);
+    playFx(area, kind);
+    floatText(area, `+${amount}`, kind, kind === 'block' ? 'Block' : 'HP');
+  }
+
   private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number): void {
     const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : '';
     if (!text) return;
+    const kind = hpLoss > 0 ? 'damage' : 'block'; // 全部防いだときは、ダメージの色ではなく Block の色
+    if (absorbed > 0) playFx(this.areaOf(target), 'guard');
     // ログ欄の代わりに、数字の下へ内訳（Block が防いだ量・バーストの倍率）を添える
     const mult = damageTakenMultiplier(target, this.machine.ctx.rules);
     const notes = [absorbed > 0 ? `Block ${absorbed}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : ''].filter(Boolean).join('・');
     if (target.id === 'enemy') {
       if (hpLoss > 0) this.enemyView.play('hurt');
-      this.enemyView.floatText(text, 'damage', notes);
+      this.enemyView.floatText(text, kind, notes);
     } else {
       if (attacker === 'enemy') this.enemyView.play('attack');
-      floatText(this.playerArea, text, 'damage', notes);
+      floatText(this.playerArea, text, kind, notes);
       if (hpLoss > 0) {
         this.container.classList.remove('is-flash');
         void this.container.offsetWidth;

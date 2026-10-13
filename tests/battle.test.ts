@@ -7,6 +7,7 @@ import { DealerAI } from '../src/core/entities/enemies/ai/DealerAI';
 import { Slime } from '../src/core/entities/enemies/Slime';
 import { seededRng } from '../src/core/util/Rng';
 import { makeCard, type Rank } from '../src/core/cards/Card';
+import { PACE } from '../src/core/battle/pace';
 import { noWait, playRound } from './helpers';
 
 /** 入力待ちのたびに policy で入力を自動送信して最後まで走らせる。 */
@@ -342,6 +343,55 @@ describe('ラウンドの行動順', () => {
   it('未設定スロットでは基本攻撃が発動する', async () => {
     const m = await playRound({ player: ['6', '7'], enemyHand: ['3', '4'], enemyHp: 40 }); // 13 vs 7
     expect(m.ctx.enemy.hp).toBe(37); // 13 は ATK 3: 通常攻撃 = ATK×1 = 3
+  });
+});
+
+describe('行動の演出: 効果は1つずつ、間をあけて見せる', () => {
+  /** 指定した手札でラウンドの後半を実行し、待った時間（ms）の並びと、発火した通知を記録する。 */
+  async function run(opts: { player: Rank[]; enemy: Rank[]; slots?: Record<number, string>; playerHp?: number }) {
+    const waits: number[] = [];
+    const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: async (ms) => { waits.push(ms); }, playerSlots: opts.slots, playerHp: opts.playerHp });
+    const seen: string[] = [];
+    m.bus.on('onSkillUsed', ({ user, skill }) => { seen.push(`skill:${user.id}:${skill.id}`); });
+    m.bus.on('onBlockApplied', ({ entity }) => { seen.push(`block:${entity.id}`); });
+    m.bus.on('onHealApplied', ({ entity }) => { seen.push(`heal:${entity.id}`); });
+    m.bus.on('onDamageDealt', ({ defender }) => { seen.push(`hit:${defender.id}`); });
+    opts.player.forEach((r) => m.ctx.player.hand.add(makeCard(r, 'S')));
+    opts.enemy.forEach((r) => m.ctx.enemy.hand.add(makeCard(r, 'H')));
+    await m.runFrom('Initiative', ['Deal']);
+    return { waits, seen, m };
+  }
+
+  it('先攻・後攻の攻撃は、それぞれ間をあける（宣言 → 攻撃 → 攻撃）', async () => {
+    const { waits, seen } = await run({ player: ['K', 'K'], enemy: ['9', '9'] }); // 20 vs 18
+    expect(waits).toEqual([PACE.initiative, PACE.declare, PACE.attack, PACE.attack]);
+    expect(seen).toEqual(['skill:player:big_attack', 'skill:enemy:slime_melt', 'hit:enemy', 'hit:player']);
+  });
+
+  it('Block → 攻撃の順に、効果ごとに間をあける（盾打ち: 攻撃と Block）', async () => {
+    const { waits, seen } = await run({ player: ['9', '8'], enemy: ['K', 'K'], slots: { 17: 'shield_bash' } }); // 17 vs 20: 敵が先攻
+    expect(seen.indexOf('block:player')).toBeLessThan(seen.indexOf('hit:player')); // Block が先
+    expect(waits).toEqual([PACE.initiative, PACE.declare, PACE.block, PACE.attack, PACE.attack]);
+  });
+
+  it('攻撃と回復も、別々に間をあける（吸精: 攻撃 → 回復）', async () => {
+    const { waits, seen } = await run({ player: ['9', '8'], enemy: ['3', '4'], slots: { 17: 'drain' }, playerHp: 30 });
+    expect(seen).toEqual(['skill:player:drain', 'skill:enemy:slime_touch', 'hit:enemy', 'heal:player', 'hit:player']);
+    expect(waits).toEqual([PACE.initiative, PACE.declare, PACE.attack, PACE.heal, PACE.attack]);
+  });
+
+  it('Block のスキルは Block ごとに間をあける（両者 Block なら2回）', async () => {
+    const { waits } = await run({ player: ['7', '8'], enemy: ['K', 'Q', '5'] }); // 敵バーストで、プレイヤーだけ行動（盾）
+    expect(waits).toEqual([PACE.initiative, PACE.declare, PACE.block]);
+  });
+
+  it('スキル発動の通知は、実際に発動したときだけ（予測では出ない）', async () => {
+    const { previewAllSlots } = await import('../src/core/skills/preview');
+    const m = machine(1);
+    const seen: string[] = [];
+    m.bus.on('onSkillUsed', ({ skill }) => { seen.push(skill.id); });
+    previewAllSlots(m.ctx, m.ctx.player, m.ctx.enemy, [11, 15, 18, 20, 21]);
+    expect(seen).toEqual([]);
   });
 });
 
