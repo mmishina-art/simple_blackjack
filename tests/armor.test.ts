@@ -3,7 +3,6 @@ import { ARMOR_POOL, ALL_POOL, DEFAULT_ARMOR_ID, ITEM_POOL, SKILL_POOL } from '.
 import { describeSkill, describeSkillBonus, getSkill, isArmor, kindOfSkill, rarityOfSkill } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { CODEX_ARMOR_TOTAL } from '../src/meta/Meta';
-import { ArtisanTools } from '../src/relics/catalog';
 import { armorCap, createRun, equipArmor, equipSkill, offerSkills } from '../src/run/Run';
 import { BlackDragon } from '../src/core/entities/enemies/catalog';
 import type { Rank } from '../src/core/cards/Card';
@@ -51,13 +50,9 @@ describe('防具', () => {
     }
   });
 
-  it('戦闘: 装備の上限が防御に効く。匠の工具で上限が 1 下がる', async () => {
+  it('戦闘: 装備の上限が防御に効く', async () => {
     const dragon = { enemy: BlackDragon, enemyHand: ['9', '9'] as Rank[], from: 'Surrender' as const }; // 火炎の息は、どの上限も超える
     const base = await playRound({ player: ['K', '5'], ...dragon, playerArmorCap: 4 });
     expect(base.ctx.player.hp).toBe(60 - 4);
-    const tools = await playRound({ player: ['K', '5'], ...dragon, playerArmorCap: 4, relics: [ArtisanTools] });
-    expect(tools.ctx.player.hp).toBe(60 - 3);
-    const def = await playRound({ player: ['K', '5'], ...dragon, relics: [ArtisanTools] });
-    expect(def.ctx.player.hp).toBe(60 - 4); // 既定の上限 5 → 4
   });
 });

@@ -36,7 +36,7 @@ export class InitiativeState implements BattleState {
         break;
       case 'bustSkip': {
         const bust = turn.first === 'player' ? enemy : player;
-        ctx.log(`${bust.name}はバースト！ ${bustPenaltyText(rules)}`);
+        ctx.log(`${bust.name}はバースト！ ${bustPenaltyText(rules, bust)}`);
         ctx.log(`${ctx.entityOf(turn.first!).name}だけが行動する`);
         break;
       }

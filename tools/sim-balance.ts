@@ -145,6 +145,7 @@ const stageReached: Record<number, number> = {};
         if (m.ctx.winner !== m.ctx.player) { dead = tile.id; break; }
         pe.w++; stat.won++;
         run.hp = m.ctx.player.hp;
+        run.maxHp = m.ctx.player.maxHp; // 凱旋の杯で増えた最大 HP を引き継ぐ
         if (!process.env.NO_GOLD) run.gold += rewardGold(run, def, tile.kind === 'boss');
         if (tile.kind === 'enemy') {
           const offer = offerSkills(rng, run, def.id);

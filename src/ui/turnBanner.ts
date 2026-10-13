@@ -25,7 +25,7 @@ export function turnBanner(ctx: Pick<BattleContext, 'turn' | 'player' | 'enemy' 
       return { main: '同値！ 同時に行動', sub: `${totalOf('player')} ＝ ${totalOf('enemy')}` };
     case 'bustSkip': {
       const bust = turn.first === 'player' ? enemy : player;
-      return { main: `${bust.name}はバースト！`, sub: bustPenaltyText(rules) };
+      return { main: `${bust.name}はバースト！`, sub: bustPenaltyText(rules, bust) };
     }
     case 'defend':
       return { main: '防御に徹する', sub: `${enemy.name}だけが行動` };

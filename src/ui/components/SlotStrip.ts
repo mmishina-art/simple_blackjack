@@ -80,7 +80,7 @@ export class SlotStrip {
     };
     if (size === 0) text('');
     else if (totalHidden) text('最後の1枚が伏せられている（合計は不明）');
-    else if (bust) text(`バースト！ ${bustPenaltyText(rules)}`);
+    else if (bust) text(`バースト！ ${bustPenaltyText(rules, entity)}`);
     else if (callout) this.renderCallout(callout);
     else {
       const id = entity.slots[slotKeyOf(total)];

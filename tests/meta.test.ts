@@ -145,9 +145,17 @@ describe('セーブデータ', () => {
     meta.shards = 42;
     meta.upgrades = { vitality: 2 };
     discoverSkill(meta, 'smash');
-    discoverRelic(meta, 'orb');
+    discoverRelic(meta, 'whetstone');
     saveMeta(meta, st);
     expect(loadMeta(st)).toEqual(meta);
+  });
+
+  it('削除したレリックの図鑑の記録は、読み込み時に捨てる', () => {
+    const st = new FakeStorage();
+    const meta = emptyMeta();
+    meta.codex.relics = ['whetstone', 'fang', 'doll'];
+    saveMeta(meta, st);
+    expect(loadMeta(st).codex.relics).toEqual(['whetstone']);
   });
 
   it('保存がない・壊れている・バージョン違いなら初期状態で始める', () => {

@@ -9,8 +9,8 @@ import { STAGES, stageRowOffset, stageRows } from '../src/map/stages';
 import { RARITY_RATE, rarityRates, tierWeights } from '../src/core/rarity';
 import { nextTiles, tileOf, type TileKind } from '../src/map/StageMap';
 import {
-  Boots, Breastplate, FateRing, LifeCandle, RELIC_POOL, ScapegoatDoll, SealKey, SturdyShield,
-  VampireFang, Whetstone,
+  Boots, Breastplate, LifeCandle, RELIC_POOL, SturdyShield,
+  Whetstone,
 } from '../src/relics/catalog';
 import {
   createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
@@ -18,7 +18,7 @@ import {
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
 import { upgradeCost } from '../src/run/shop';
-import { noWait, playRound, WITH_BLOCKS } from './helpers';
+import { noWait, playRound, reshapeRelic, unlockRelic, WITH_BLOCKS } from './helpers';
 
 describe('敵', () => {
   it('全員にスプライトがあり、スロットのスキルが全て実在する', () => {
@@ -250,10 +250,10 @@ describe('スキルの付け替え', () => {
     expect(equipSkill(createRun(), 13, 'slash')).toBe(false);
   });
 
-  it('封印の鍵を持つと、スロット21だけ付け替えられ（11以下は固定のまま）、会心の一撃は持ち物に残る', () => {
+  it('21 を解錠するレリックを持つと、スロット21だけ付け替えられ（11以下は固定のまま）、会心の一撃は持ち物に残る', () => {
     const run = createRun();
     expect(isSlotLocked(run, 11)).toBe(true);
-    run.relics.push(SealKey);
+    run.relics.push(unlockRelic(21));
     run.inventory.push('smash');
     expect(equipSkill(run, 21, 'smash')).toBe(true);
     expect(run.slots[21]).toBe('smash');
@@ -373,7 +373,7 @@ describe('マスのイベント', () => {
     expect(offerRelics(run, seededRng(1))).toHaveLength(3);
     run.relics.push(Whetstone);
     expect(offerRelics(run, seededRng(1)).some((r) => r.id === 'whetstone')).toBe(false);
-    expect(RELIC_POOL).toHaveLength(21);
+    expect(RELIC_POOL).toHaveLength(15);
   });
 });
 
@@ -388,21 +388,6 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(60 - 2); // 溶解 3 - 1
   });
 
-  it('吸血の牙: 敵のHPを削るたびHP+1', async () => {
-    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40, playerHp: 50, relics: [VampireFang] });
-    expect(m.ctx.player.hp).toBe(50 + 1 - 3);
-  });
-
-  it('身代わりの人形: 最初のバーストでは敵も行動しない', async () => {
-    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [ScapegoatDoll] });
-    expect(m.ctx.player.hp).toBe(60);
-  });
-
-  it('運命の指輪: 同時攻撃になったラウンド、与える攻撃ダメージ +8', async () => {
-    const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q'], enemyHp: 40, relics: [FateRing] });
-    expect(m.ctx.enemy.hp).toBe(40 - 23); // 大攻撃15 + 8
-  });
-
   it('疾風の靴: 同値でも先攻になる', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q'], enemyHp: 10, relics: [Boots] });
     expect(m.ctx.turn?.mode).toBe('sequential');
@@ -415,10 +400,10 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.block).toBe(6 + 3 - 3); // 身構え 6 + 3、敵の酸 3
   });
 
-  it('命の蝋燭: 戦闘開始時にHP+3', () => {
+  it('命の蝋燭: 戦闘開始時にHP+2', () => {
     const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerHp: 30, relics: [LifeCandle], pace: noWait });
     m.bus.emit('onBattleStart', { player: m.ctx.player, enemy: m.ctx.enemy });
-    expect(m.ctx.player.hp).toBe(33);
+    expect(m.ctx.player.hp).toBe(32);
   });
 
   it('覇王の一撃（祠で会心の一撃をバージョンアップ）: POW×2（効果は攻撃だけ）', async () => {
@@ -445,16 +430,14 @@ describe('レリックの効果', () => {
 });
 
 describe('レリックで変わるスキル効果', () => {
-  it('剛力の腕輪: 大攻撃が POW×2+5 になる', async () => {
-    const { Bracer } = await import('../src/relics/catalog');
-    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 60, relics: [Bracer] });
+  it('スキルを書き換えるレリック: 大攻撃が POW×2+5 になる', async () => {
+    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 60, relics: [reshapeRelic('big_attack', 2, 5)] });
     expect(60 - m.ctx.enemy.hp).toBe(25); // 20 は POW 10: POW×2+5
   });
 
-  it('巨人の血: 小攻撃（11以下）が POW×0.5 から POW×2+10 になる', async () => {
-    const { TitanBlood } = await import('../src/relics/catalog');
+  it('スキルを書き換えるレリック: 小攻撃（11以下）が POW×0.5 から POW×2+10 になる', async () => {
     const base = await playRound({ player: ['3', '4'], enemyHand: ['9', '9'], enemyHp: 60 });
-    const buffed = await playRound({ player: ['3', '4'], enemyHand: ['9', '9'], enemyHp: 60, relics: [TitanBlood] });
+    const buffed = await playRound({ player: ['3', '4'], enemyHand: ['9', '9'], enemyHp: 60, relics: [reshapeRelic('small_attack', 2, 10)] });
     expect(60 - base.ctx.enemy.hp).toBe(1);   // 後攻の小攻撃 = POW(1)×0.5（最低 1）
     expect(60 - buffed.ctx.enemy.hp).toBe(12); // POW(1)×2+10
   });

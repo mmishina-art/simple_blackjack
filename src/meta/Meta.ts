@@ -57,7 +57,7 @@ export function loadMeta(storage: StorageLike | null = defaultStorage()): MetaSt
     if (kit > 0) meta.shards += REMOVED_KIT_COSTS.slice(0, kit).reduce((a, b) => a + b, 0);
     delete meta.upgrades.kit;
     if (d.codex && isStringArray(d.codex.skills)) meta.codex.skills = [...new Set(d.codex.skills)];
-    if (d.codex && isStringArray(d.codex.relics)) meta.codex.relics = [...new Set(d.codex.relics)];
+    if (d.codex && isStringArray(d.codex.relics)) meta.codex.relics = [...new Set(d.codex.relics)].filter((id) => RELIC_POOL.some((r) => r.id === id)); // 削除したレリックの記録は捨てる
     // モンスター図鑑（あとから加えた項目。古い保存データには無いので、空から始める）
     if (d.codex && isStringArray((d.codex as { enemies?: unknown }).enemies)) meta.codex.enemies = [...new Set((d.codex as { enemies: string[] }).enemies)];
     if (d.stats && isNumRecord(d.stats)) meta.stats = { ...meta.stats, ...d.stats };

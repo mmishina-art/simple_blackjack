@@ -36,3 +36,14 @@ export async function playRound(setup: RoundSetup) {
   await m.runFrom(from, stopAt);
   return m;
 }
+
+/** 固定スロットを解錠するレリック（製品にはない。解錠の仕組みのテスト用）。 */
+export const unlockRelic = (...slots: number[]): Relic => ({ id: `test_unlock_${slots.join('_')}`, name: 'テスト', icon: 'T', description: '', unlocksSlots: slots, apply() {} });
+
+/** スキルの効果を「POW×mult+add」の攻撃に書き換えるレリック（製品にはない。上書きの仕組みのテスト用）。 */
+export const reshapeRelic = (skillId: string, mult: number, add: number): Relic => ({
+  id: `test_reshape_${skillId}`, name: 'テスト', icon: 'T', description: '',
+  apply({ bus, player }) {
+    bus.on('onSkillActivated', (p) => (p.user === player && p.skill?.id === skillId ? { ...p, skill: { ...p.skill, effects: [{ type: 'attack', mult, add }] } } : undefined));
+  },
+});
