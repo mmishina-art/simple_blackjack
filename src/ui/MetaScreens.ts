@@ -3,6 +3,7 @@ import type { Rarity } from '../core/rarity';
 import { audio } from '../audio/AudioManager';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
 import { describeSkill, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
+import { sortSkillsForCodex } from '../meta/codexOrder';
 import { RARITY_ORDER } from '../run/loadout';
 import { kindTag, medalKindClass } from './kind';
 import {
@@ -86,7 +87,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
     const box = el('section', 'codex');
     box.append(el('h2', 'codex__title', `${title}　${ids.filter(skillKnown).length} / ${total}`));
     const grid = el('div', 'codex__grid');
-    for (const id of byRarityAsc(ids, (id) => rarityOfSkill(getSkill(id)))) {
+    for (const id of sortSkillsForCodex(ids)) {
       const known = skillKnown(id);
       const skill = getSkill(id);
       grid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,
