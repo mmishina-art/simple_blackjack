@@ -9,7 +9,7 @@ import { slotAttack } from '../src/core/skills/catalog';
 import { attackValue, canPlaceAt, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
-import { buyOffer, enemyGold, generateShop, sellFromInventory } from '../src/run/shop';
+import { upgradeCost, buyOffer, enemyGold, generateShop, sellFromInventory } from '../src/run/shop';
 import { advanceStage, armorCap, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, upgradeSlot, type RunState } from '../src/run/Run';
 
 const N = Number(process.argv[2] ?? 600);
@@ -159,7 +159,9 @@ const stageReached: Record<number, number> = {};
       else if (tile.kind === 'shrine') {
         // バージョンアップできるなら一番レアの低いものを強化、なければランダム
         const ups = [12, 13, 14, 15, 16, 17, 18, 19, 20].filter((k) => canUpgradeSlot(run, k));
-        if (ups.length > 0) upgradeSlot(run, ups.sort((a, b) => WEIGHT[b] - WEIGHT[a])[0]);
+        const costOf = (k: number) => upgradeCost(run.slots[k]!) ?? 0;
+        const afford = process.env.NO_GOLD ? ups : ups.filter((k) => run.gold >= costOf(k));
+        if (afford.length > 0) { const k = afford.sort((a, b) => WEIGHT[b] - WEIGHT[a])[0]; run.gold -= process.env.NO_GOLD ? 0 : costOf(k); upgradeSlot(run, k); }
         else resolveShrine(run, rng);
       }
       markCleared(run, tile.id);

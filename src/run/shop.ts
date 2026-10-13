@@ -103,3 +103,9 @@ export function sellFromInventory(run: RunState, id: SkillId): number | null {
   run.gold += gold;
   return gold;
 }
+
+/** 祠のバージョンアップの代金: 強化先と今のスキルの買値の差（コモン→レア 40 G、レア→レジェンド 80 G）。強化先がなければ null。 */
+export function upgradeCost(id: SkillId): number | null {
+  const to = getSkill(id).upgradesTo;
+  return to ? priceOfSkill(to) - priceOfSkill(id) : null;
+}
