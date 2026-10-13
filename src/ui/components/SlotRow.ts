@@ -23,6 +23,8 @@ export interface SlotRowOptions {
   target?: boolean;
   /** セット待ちのスキルを、ここには置けない（レア度の制限）。薄く出す。 */
   blocked?: boolean;
+  /** 入れ替えの画面で、いま選んでいる行（金の枠で強調）。 */
+  picked?: boolean;
   /** セット待ちのスキルを置いたあとの、効果の短い表示。あれば「いま → あと」で出す。 */
   after?: string;
   onTap?(): void;
@@ -52,7 +54,7 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
 
   const row = document.createElement(interactive ? 'button' : 'div');
   // 枠はどの行も同じデザイン。レア度は、アイコン（メダル）の色と光だけで示す。固定スロットは、少し薄く出す
-  row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${o.blocked ? ' lslot--blocked' : ''}${o.after ? ' lslot--change' : ''}${interactive ? ' lslot--tap' : ''}`;
+  row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${o.blocked ? ' lslot--blocked' : ''}${o.after ? ' lslot--change' : ''}${o.picked ? ' lslot--picked' : ''}${interactive ? ' lslot--tap' : ''}`;
   row.title = detail;
   row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}<span class="lslot__atk" aria-label="基本パワー ${o.atk}">${circledNumber(o.atk)}</span></span>
     <span class="medal medal--sm ${rarityClass(look.rarity)}${o.skill ? medalKindClass(kindOfSkill(o.skill)) : ''}">${o.skill ? o.skill.icon : BASIC_ICON}</span>

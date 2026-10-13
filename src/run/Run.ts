@@ -164,6 +164,54 @@ export function swapSlots(run: RunState, a: SlotKey, b: SlotKey): boolean {
   return true;
 }
 
+/** 入れ替えの場所: スキルのスロット / 道具袋 / 防御スロット（防具）。 */
+export type Spot = { kind: 'slot'; key: SlotKey } | { kind: 'pouch' } | { kind: 'armor' };
+
+export function spotItem(run: RunState, spot: Spot): SkillId | null {
+  if (spot.kind === 'slot') return run.slots[spot.key] ?? null;
+  if (spot.kind === 'pouch') return run.inventory[0] ?? null;
+  return run.armor;
+}
+
+function setSpot(run: RunState, spot: Spot, id: SkillId | null): void {
+  if (spot.kind === 'slot') {
+    if (id) run.slots[spot.key] = id; else delete run.slots[spot.key];
+  } else if (spot.kind === 'pouch') {
+    run.inventory = id ? [id] : [];
+  } else if (id) run.armor = id;
+}
+
+const sameSpot = (a: Spot, b: Spot): boolean => a.kind === b.kind && (a.kind !== 'slot' || a.key === (b as { key: SlotKey }).key);
+
+/** その場所に、この中身（なければ空）を置いてよいか。固定スロット・レア度の制限・防具は防具の場所だけ、防御スロットは空にできない。 */
+function fits(run: RunState, spot: Spot, id: SkillId | null): boolean {
+  if (spot.kind === 'pouch') return true;
+  if (spot.kind === 'armor') return !!id && isArmor(getSkill(id));
+  if (isSlotLocked(run, spot.key)) return false;
+  return !id || (!isArmor(getSkill(id)) && canPlaceAt(getSkill(id), spot.key));
+}
+
+/** 2 つの場所の中身を入れ替えられるか（空きとの入れ替えは移動）。 */
+export function canSwapSpots(run: RunState, a: Spot, b: Spot): boolean {
+  if (sameSpot(a, b)) return false;
+  const ia = spotItem(run, a);
+  const ib = spotItem(run, b);
+  if (!ia && !ib) return false;
+  if (a.kind === 'slot' && isSlotLocked(run, a.key)) return false;
+  if (b.kind === 'slot' && isSlotLocked(run, b.key)) return false;
+  return fits(run, a, ib) && fits(run, b, ia);
+}
+
+/** 祠の入れ替え: スロット・道具袋・防御スロットの間で、中身を入れ替える（何度でもできる。回数の制限はない）。 */
+export function swapSpots(run: RunState, a: Spot, b: Spot): boolean {
+  if (!canSwapSpots(run, a, b)) return false;
+  const ia = spotItem(run, a);
+  const ib = spotItem(run, b);
+  setSpot(run, a, ib);
+  setSpot(run, b, ia);
+  return true;
+}
+
 /** バージョンアップできるスロットか（スキルが入っていて、強化先がある。道具は強化先がない）。固定スロット（21 の会心の一撃）も、バージョンアップだけはできる。 */
 export function canUpgradeSlot(run: RunState, key: SlotKey): boolean {
   const id = run.slots[key];

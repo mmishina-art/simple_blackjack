@@ -1203,3 +1203,4 @@ section { min-width: 0; }
 /* 戻るボタンは、全画面で上の左（TopBar）。装備・ショップのように、行が決まった画面でも同じ。 */
 .topbar-body { display: flex; flex-direction: column; gap: 12px; }
 .loadout .topbar, .shop .topbar { margin-bottom: 2px; }
+.lslot--picked { border-color: var(--gold) !important; background: #2a1f0e !important; box-shadow: 0 0 10px rgba(176, 141, 62, 0.5) !important; }
