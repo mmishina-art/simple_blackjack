@@ -6,7 +6,7 @@ import { canPlaceAt, getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKe
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, type MetaState, type RunBonus } from '../meta/Meta';
 import { STAGES, stageRowOffset } from '../map/stages';
-import { nextTiles, tileOf, type StageMap, type TileDef } from '../map/StageMap';
+import { nextTiles, type StageMap, type TileDef } from '../map/StageMap';
 import { RELIC_POOL } from '../relics/catalog';
 import type { Relic } from '../relics/Relic';
 
@@ -63,10 +63,6 @@ export function createRun(map: StageMap = STAGES[0], meta?: MetaState): RunState
     favored: meta ? [...meta.codex.skills] : [],
     stats: { maxRow: 0, enemiesDefeated: 0 },
   };
-}
-
-export function currentTile(run: RunState): TileDef {
-  return tileOf(run.map, run.position);
 }
 
 export function reachableTiles(run: RunState): TileDef[] {

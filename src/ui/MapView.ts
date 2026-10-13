@@ -37,7 +37,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   // 上部: HP と所持レリック
   const hud = document.createElement('section');
   hud.className = 'map-hud';
-  hud.innerHTML = `<div class="map-hud__row"><strong>第${run.stage}階層　${run.map.name}</strong><span>HP ${run.hp} / ${run.maxHp}</span></div>
+  hud.innerHTML = `<div class="map-hud__row"><strong>第${run.stage}階層　${run.map.name}</strong></div>
     <div class="map-hud__bar"><div class="map-hud__fill" style="width:${Math.max(0, (run.hp / run.maxHp) * 100)}%"></div></div>`;
   const relics = document.createElement('div');
   relics.className = 'map-hud__relics';
@@ -104,8 +104,11 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   }
   // 駒
   const here = pos(tileOf(run.map, run.position));
-  const pawn = svg('g', { transform: `translate(${here.x} ${here.y - 34})` }, 'pawn');
-  pawn.append(svg('path', { d: 'M0 10 L9 0 L0 -12 L-9 0 Z' }, 'pawn__shape'));
+  // 位置は外側の g の transform 属性で、上下にゆれる動き（CSS の transform）は内側の g で付ける（同じ要素に両方付けると、位置が上書きされて、左上に出てしまう）
+  const pawn = svg('g', { transform: `translate(${here.x} ${here.y - 34})` });
+  const bob = svg('g', {}, 'pawn');
+  bob.append(svg('path', { d: 'M0 10 L9 0 L0 -12 L-9 0 Z' }, 'pawn__shape'));
+  pawn.append(bob);
   board.append(pawn);
 
   const boardWrap = document.createElement('section');
