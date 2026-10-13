@@ -398,7 +398,7 @@ describe('スロット表の右側の短い表示と、基本値の丸数字', (
 
   it('防具は、被ダメージの上限（と防御の回復）', () => {
     expect(describeSkillShort(getSkill('iron_shield'), 0)).toBe('被ダメージ最大 5');
-    expect(describeSkillShort(getSkill('saint_robe'), 0)).toBe('被ダメージ最大 4 + 回復 3');
+    expect(describeSkillShort(getSkill('mithril_shield'), 0)).toBe('被ダメージ最大 3');
   });
 
   it('詳細（計算式）は describeSkill のまま', () => {

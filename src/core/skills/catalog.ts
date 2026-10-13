@@ -78,15 +78,13 @@ item('ward', '守りの巻物', '巻', { type: 'block', amount: 7 });           
 item('holy_ward', '聖なる護符', '符', { type: 'block', amount: 12 });         // レア: ブロック 12
 
 // ---- 防具: 防御スロットに置く。防御したラウンドに受けるダメージ（HP の減少）の上限。数字が小さいほど硬い ----
-const armor = (id: string, name: string, icon: string, damageCap: number, defendHeal?: number): SkillDef =>
-  defineSkill({ id, name, icon, kind: 'armor', effects: [], damageCap, ...(defendHeal ? { defendHeal } : {}) });
+const armor = (id: string, name: string, icon: string, damageCap: number): SkillDef =>
+  defineSkill({ id, name, icon, kind: 'armor', effects: [], damageCap });
 armor('iron_shield', '鉄の盾', '鉄', 5);   // コモン: 上限 5（戦士の初期装備）
 armor('steel_shield', '鋼の盾', '鋼', 4);  // レア: 上限 4
-armor('saint_robe', '聖衣', '衣', 4, 3);   // レア: 上限 4 + 防御すると HP +3
-armor('guard_mail', '守りの鎧', '鎧', 3);  // レジェンド: 上限 3
-armor('mithril_mail', 'ミスリルの鎧', '銀', 2, 3); // レジェンド: 上限 2 + 防御すると HP +3
+armor('mithril_shield', 'ミスリルの盾', '銀', 3); // レジェンド: 上限 3（防具はショップでだけ買える）
 
-assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'overlord_strike', 'tonic', 'steel_shield', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'big_bomb', 'holy_ward', 'saint_robe'], 'rare');
+assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'overlord_strike', 'tonic', 'steel_shield', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'big_bomb', 'holy_ward'], 'rare');
 // レジェンドのブロック・複合スキル（祠のバージョンアップの行き先。報酬にも出る）
 defineSkill({ id: 'fortress', name: '城塞', icon: '城', effects: [{ type: 'block', mult: 1, amount: 10 }] }); // レジェンド: POW+10
 defineSkill({
@@ -97,7 +95,7 @@ defineSkill({
   id: 'siphon', name: '吸魂', icon: '魂',
   effects: [{ type: 'attack', mult: 1.5, add: 3 }, { type: 'heal', mult: 0.5, amount: 5 }],
 });
-assignRarity(['smash', 'final_strike', 'fortress', 'aegis', 'siphon', 'guard_mail', 'mithril_mail', 'impale', 'rampage', 'miracle', 'flurry', 'elixir'], 'legend');
+assignRarity(['smash', 'final_strike', 'fortress', 'aegis', 'siphon', 'mithril_shield', 'impale', 'rampage', 'miracle', 'flurry', 'elixir'], 'legend');
 
 /** 祠のバージョンアップ先。コモン→レア、レア→レジェンド。道具は強化できない。会心の一撃の系統は、固定スロット 21 のまま、2 段育つ。 */
 const UPGRADES: Record<SkillId, SkillId> = {
@@ -123,8 +121,8 @@ export const SKILL_POOL: readonly SkillId[] = [
 /** 報酬として出現する道具。効果は固定（基本パワーに関係ない）。 */
 export const ITEM_POOL: readonly SkillId[] = ['herb', 'tonic', 'elixir', 'bomb', 'big_bomb', 'ward', 'holy_ward'];
 
-/** 報酬として出現する防具（防御スロットに置く）。 */
-export const ARMOR_POOL: readonly SkillId[] = ['iron_shield', 'steel_shield', 'saint_robe', 'guard_mail', 'mithril_mail'];
+/** 防具（防御スロットに置く）。敵の報酬には出ず、ショップでだけ買える。 */
+export const ARMOR_POOL: readonly SkillId[] = ['iron_shield', 'steel_shield', 'mithril_shield'];
 /** 戦士の初期装備の防具。 */
 export const DEFAULT_ARMOR_ID: SkillId = 'iron_shield';
 

@@ -5,7 +5,7 @@ import { RARITY_ORDER } from '../run/loadout';
 /**
  * 図鑑の並び順。レア度の低い順（コモン → レア → レジェンド）。
  * 同じレア度の中は、種類順（攻撃 → ブロック → 回復 → 複合）、同じ種類の中は効果の強さの小さい順。
- * 防具は、被ダメージの上限が大きい（柔らかい）順 → 防御で回復する HP の小さい順。
+ * 防具は、被ダメージの上限が大きい（柔らかい）順。
  */
 
 /** 強さの目安に使う POW（スロット15 の値）。 */
@@ -27,7 +27,7 @@ function strengthOf(skill: SkillDef): number {
 /** 並べ替え用の鍵（小さいほど前）。 */
 export function codexKey(id: SkillId): [number, number, number] {
   const skill = getSkill(id);
-  if (skill.damageCap !== undefined) return [RARITY_ORDER_ASC(rarityOfSkill(skill)), -skill.damageCap, skill.defendHeal ?? 0];
+  if (skill.damageCap !== undefined) return [RARITY_ORDER_ASC(rarityOfSkill(skill)), -skill.damageCap, 0];
   return [RARITY_ORDER_ASC(rarityOfSkill(skill)), groupOf(skill), strengthOf(skill)];
 }
 

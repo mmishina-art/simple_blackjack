@@ -1,7 +1,8 @@
 import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
-import { discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, type MetaState, type RunSummary } from './meta/Meta';
+import { getEnemy } from './core/entities/enemies/catalog';
+import { discoverEnemy, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, type MetaState, type RunSummary } from './meta/Meta';
 import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, placementNote, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
@@ -194,7 +195,6 @@ function startBattle(tile: TileDef): void {
     playerHp: run.hp,
     playerSlots: run.slots,
     playerArmorCap: armorCap(run),
-    playerDefendHeal: getSkill(run.armor).defendHeal ?? 0,
     playerFallback: run.fallbackSkill,
     playerAttack: run.baseAttack,
     playerBlock: run.bonus.startBlock,
@@ -273,6 +273,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
 
   run.hp = machine.ctx.player.hp;
   run.stats.enemiesDefeated++;
+  if (!bareRun && !cheated && tile.enemyId && discoverEnemy(meta, tile.enemyId)) saveMeta(meta); // モンスター図鑑に載る
   markCleared(run, tile.id);
   const gold = enemyGold(enemyOfTile(tile), tile.kind === 'boss');
   addGold(run, gold);
@@ -291,7 +292,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     }));
     return box;
   }
-  box.append(button('次へ', offerSkillReward));
+  box.append(button('次へ', () => offerSkillReward(tile.enemyId)));
   return box;
 }
 
@@ -317,11 +318,12 @@ function offerStageRelic(): void {
 }
 
 /** 敵を倒した報酬: スキルを3択で獲得し、そのまま編成画面でセットする。 */
-function offerSkillReward(): void {
-  const ids = offerSkills(defaultRng, run);
+function offerSkillReward(enemyId?: string): void {
+  const ids = offerSkills(defaultRng, run, enemyId);
+  const dropFrom = enemyId ? getEnemy(enemyId).name : '';
   showChoiceScreen(root, {
     heading: 'スキル獲得',
-    sub: 'ひとつ選んで装備する（スキル: 基本パワーが基準 / 道具: 効果が固定 / 防具: 防御スロット）',
+    sub: `${dropFrom ? `${dropFrom}の落とし物。` : ''}ひとつ選んで装備する`,
     options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
     onPick(i) {
       run.inventory.push(ids[i]);

@@ -1,4 +1,4 @@
-import { ALL_POOL } from '../core/skills/catalog';
+import { SKILL_POOL } from '../core/skills/catalog';
 import { pickWeighted, tierWeights } from '../core/rarity';
 import { getSkill, rarityOfSkill } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
@@ -53,7 +53,7 @@ const SHRINE_EFFECTS: ShrineEffect[] = [
   {
     id: 'old-art', weight: 3,
     apply(run, rng) {
-      const id = pickWeighted(ALL_POOL, 1, rng, tierWeights(ALL_POOL, (sid) => rarityOfSkill(getSkill(sid)), run.stage))[0];
+      const id = pickWeighted(SKILL_POOL, 1, rng, tierWeights(SKILL_POOL, (sid) => rarityOfSkill(getSkill(sid)), run.stage))[0];
       run.inventory.push(id);
       return { id: 'old-art', title: '古き技の記憶', text: `「${getSkill(id).name}」を授かった。` };
     },

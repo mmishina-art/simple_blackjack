@@ -3,10 +3,8 @@ import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { ALL_POOL, ARMOR_POOL, ITEM_POOL, SKILL_POOL, slotAttack } from '../src/core/skills/catalog';
 import { attackValue, describeSkill, getSkill, hasAttack, rarityOfSkill, supportValue, type SkillDef } from '../src/core/skills/Skill';
-import { seededRng } from '../src/core/util/Rng';
 import { CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeShards, SHARD_CLEAR_BONUS, SHARD_STAGE_BONUS } from '../src/meta/Meta';
-import { Bloodlust, DefenderCharm, LuckyDice, RELIC_POOL, ThornMail, TriumphCup, Unyielding } from '../src/relics/catalog';
-import { createRun, equipArmor, offerSkills } from '../src/run/Run';
+import { Bloodlust, DefenderCharm, SaintRobe, LuckyDice, RELIC_POOL, ThornMail, TriumphCup, Unyielding } from '../src/relics/catalog';
 import { noWait, playRound } from './helpers';
 
 const enemy = (id: string) => ENEMY_LINEUP.find((e) => e.id === id)!;
@@ -67,22 +65,11 @@ describe('第2・第3階層の道具・防具', () => {
     for (const id of ITEM_POOL) expect(getSkill(id).upgradesTo, id).toBeUndefined();
   });
 
-  it('防具: 聖衣は上限 4 + 防御で HP +3、ミスリルの鎧は上限 2 + HP +3', () => {
-    expect(ARMOR_POOL).toEqual(['iron_shield', 'steel_shield', 'saint_robe', 'guard_mail', 'mithril_mail']);
-    expect(describeSkill(getSkill('saint_robe'))).toBe('防御: 被ダメージ最大 4・HP +3');
-    expect(getSkill('mithril_mail').damageCap).toBe(2);
-  });
-
-  it('防御すると、防具の回復が入る（上限が同じでも、回復のある防具は「硬い」扱いで報酬に出る）', async () => {
-    const m = await playRound({ player: ['K', '5'], enemy: enemy('dragon'), enemyHand: ['9', '9'], from: 'Surrender', playerArmorCap: 4, playerDefendHeal: 3, playerHp: 40 });
-    expect(m.ctx.player.hp).toBe(40 + 3 - 4);
-    const run = createRun();
-    run.armor = 'steel_shield'; // 上限 4
-    let offeredRobe = false;
-    for (let seed = 1; seed <= 200; seed++) if (offerSkills(seededRng(seed), run).includes('saint_robe')) offeredRobe = true;
-    expect(offeredRobe).toBe(true);
-    run.inventory.push('saint_robe');
-    expect(equipArmor(run, 'saint_robe')).toBe(true);
+  it('防具は 3 つ（鉄の盾・鋼の盾・ミスリルの盾）。報酬には出ず、ショップでだけ買える', () => {
+    expect(ARMOR_POOL).toEqual(['iron_shield', 'steel_shield', 'mithril_shield']);
+    expect(getSkill('mithril_shield').name).toBe('ミスリルの盾');
+    expect(getSkill('mithril_shield').damageCap).toBe(3);
+    expect(rarityOfSkill(getSkill('mithril_shield'))).toBe('legend');
   });
 
   it('図鑑の総数はスキル・道具・防具・レリックの数と合う', () => {
@@ -98,6 +85,14 @@ describe('第2・第3階層のレリック', () => {
   it('守りの護符: 防御したとき HP +6', async () => {
     const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30, relics: [DefenderCharm] });
     expect(m.ctx.player.hp).toBe(30 + 6 - 3); // スライムの溶解 3
+  });
+
+  it('聖衣（レア）: 防御したとき HP +3。守りの護符と重なる（+9）', async () => {
+    expect(SaintRobe.rarity).toBe('rare');
+    const one = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30, relics: [SaintRobe] });
+    expect(one.ctx.player.hp).toBe(30 + 3 - 3);
+    const both = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30, relics: [DefenderCharm, SaintRobe] });
+    expect(both.ctx.player.hp).toBe(30 + 9 - 3);
   });
 
   it('幸運の賽: 合計 21 で Stand したときブロック +8（21 でなければ付かない）', async () => {
@@ -141,10 +136,10 @@ describe('第2・第3階層のレリック', () => {
     expect(dead.ctx.player.hp).toBe(0);
   });
 
-  it('レリックは 20 個で、不屈の心はレジェンド', () => {
-    expect(RELIC_POOL).toHaveLength(20);
+  it('レリックは 21 個で、不屈の心はレジェンド', () => {
+    expect(RELIC_POOL).toHaveLength(21);
     expect(Unyielding.rarity).toBe('legend');
-    expect(new Set(RELIC_POOL.map((r) => r.id)).size).toBe(20);
+    expect(new Set(RELIC_POOL.map((r) => r.id)).size).toBe(21);
   });
 });
 

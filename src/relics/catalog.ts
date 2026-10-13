@@ -151,17 +151,26 @@ export const ArtisanTools: Relic = {
 
 
 // ---- 第2・第3階層から出るレリック ----
+/** 防御したとき HP を回復するレリックの共通部分（防具には回復の効果はなく、レリックで付ける）。 */
+const healOnDefend = (amount: number): Relic['apply'] => ({ bus, player }) => {
+  bus.on('onSurrender', ({ entity }) => {
+    if (entity !== player) return;
+    const before = player.hp;
+    player.hp = Math.min(player.maxHp, player.hp + amount);
+    if (player.hp > before) bus.emit('onHealApplied', { entity: player, amount: player.hp - before });
+  });
+};
+
 export const DefenderCharm: Relic = {
   id: 'defender', rarity: 'common', name: '守りの護符', icon: '護',
   description: '防御したとき、HP +6',
-  apply({ bus, player }) {
-    bus.on('onSurrender', ({ entity }) => {
-      if (entity !== player) return;
-      const before = player.hp;
-      player.hp = Math.min(player.maxHp, player.hp + 6);
-      if (player.hp > before) bus.emit('onHealApplied', { entity: player, amount: player.hp - before });
-    });
-  },
+  apply: healOnDefend(6),
+};
+
+export const SaintRobe: Relic = {
+  id: 'robe', rarity: 'rare', name: '聖衣', icon: '衣',
+  description: '防御したとき、HP +3（守りの護符と重なる）',
+  apply: healOnDefend(3),
 };
 
 export const LuckyDice: Relic = {
@@ -224,5 +233,5 @@ export const Unyielding: Relic = {
 /** 報酬として出現するレリックの一覧。 */
 export const RELIC_POOL: readonly Relic[] = [
   Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle, SealKey, Lockpick, Bracer, TitanBlood, HerbalistBag, ArtisanTools,
-  DefenderCharm, LuckyDice, ThornMail, TriumphCup, Bloodlust, Unyielding,
+  DefenderCharm, SaintRobe, LuckyDice, ThornMail, TriumphCup, Bloodlust, Unyielding,
 ];

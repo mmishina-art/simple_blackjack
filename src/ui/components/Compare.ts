@@ -58,9 +58,6 @@ export function buildArmorCompare(before: SkillDef, after: SkillDef): HTMLElemen
   const bc = before.damageCap ?? 0;
   const ac = after.damageCap ?? 0;
   lines.push(`被ダメージの上限 ${bc} → ${ac}（${ac === bc ? '変わらない' : ac < bc ? `−${bc - ac}。硬くなる` : `+${ac - bc}。柔らかくなる`}）`);
-  const bh = before.defendHeal ?? 0;
-  const ah = after.defendHeal ?? 0;
-  if (bh !== 0 || ah !== 0) lines.push(`防御したときの回復 ${bh === 0 ? 'なし' : bh} → ${ah === 0 ? 'なし' : ah}`);
   return wrap(
     side('いま', before.name, before.icon, medalKindClass('armor'), kindTag(before, true), describeSkillShort(before, 0)),
     side('装備後', after.name, after.icon, medalKindClass('armor'), kindTag(after, true), describeSkillShort(after, 0), true),

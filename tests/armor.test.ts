@@ -25,10 +25,10 @@ describe('防具', () => {
     expect(DEFAULT_ARMOR_ID).toBe('iron_shield');
     expect(run.armor).toBe('iron_shield');
     expect(armorCap(run)).toBe(5);
-    expect(['iron_shield', 'steel_shield', 'guard_mail'].map((id) => getSkill(id).damageCap)).toEqual([5, 4, 3]);
-    expect(['iron_shield', 'steel_shield', 'guard_mail'].map((id) => rarityOfSkill(getSkill(id)))).toEqual(['common', 'rare', 'legend']);
+    expect(['iron_shield', 'steel_shield', 'mithril_shield'].map((id) => getSkill(id).damageCap)).toEqual([5, 4, 3]);
+    expect(['iron_shield', 'steel_shield', 'mithril_shield'].map((id) => rarityOfSkill(getSkill(id)))).toEqual(['common', 'rare', 'legend']);
     expect(describeSkill(getSkill('steel_shield'))).toBe('防御: 被ダメージ最大 4');
-    expect(describeSkillBonus(getSkill('guard_mail'))).toBe('防御: 被ダメージ最大 3');
+    expect(describeSkillBonus(getSkill('mithril_shield'))).toBe('防御: 被ダメージ最大 3');
   });
 
   it('防具は防御スロットにだけ置け、上書きのみ（元の防具は失われ、持ち物に戻らない）', () => {
@@ -36,24 +36,19 @@ describe('防具', () => {
     run.inventory.push('steel_shield', 'herb');
     expect(equipSkill(run, 13, 'steel_shield')).toBe(false); // スキルのスロットには置けない
     expect(equipArmor(run, 'herb')).toBe(false);              // 防具以外は置けない
-    expect(equipArmor(run, 'guard_mail')).toBe(false);        // 持っていない
+    expect(equipArmor(run, 'mithril_shield')).toBe(false);     // 持っていない
     expect(equipArmor(run, 'steel_shield')).toBe(true);
     expect(run.armor).toBe('steel_shield');
     expect(armorCap(run)).toBe(4);
     expect(run.inventory).toEqual(['herb']); // 鉄の盾は戻らない
   });
 
-  it('報酬: 防具は、いま装備しているより硬いものだけが出る。道具の枠に入る（枠は1つのまま）', () => {
+  it('報酬には防具も道具も出ない（ショップでだけ買える）。スキルだけ 3 つ', () => {
     for (let seed = 1; seed <= 60; seed++) {
-      const run = createRun();
-      const o = offerSkills(seededRng(seed), run);
+      const o = offerSkills(seededRng(seed), createRun());
       expect(o).toHaveLength(3);
-      const last = o[2];
-      if (isArmor(getSkill(last))) expect(getSkill(last).damageCap!).toBeLessThan(5);
+      expect(o.some((id) => isArmor(getSkill(id)) || ITEM_POOL.includes(id))).toBe(false);
     }
-    const run = createRun();
-    run.armor = 'mithril_mail'; // これ以上硬い防具はない
-    for (let seed = 1; seed <= 60; seed++) expect(offerSkills(seededRng(seed), run).some((id) => isArmor(getSkill(id)))).toBe(false);
   });
 
   it('戦闘: 装備の上限が防御に効く。匠の工具で上限が 1 下がる', async () => {

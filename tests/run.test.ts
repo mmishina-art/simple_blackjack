@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
-import { ARMOR_POOL, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
+import { DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
 import { canPlaceAt, getSkill, hasSkill, minSlotOf, placementNote, RARITY_MIN_SLOT, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
@@ -342,22 +342,22 @@ describe('マスのイベント', () => {
   });
 
   it('報酬: スキルは3択で重複なし、宝箱のレリックは所持済みを除く', () => {
-    // 報酬は、スキルと道具に分け、道具を必ず1つ含む（並びは、スキル → 道具）
+    // 報酬は、スキルだけ（道具・防具は出ない。ショップでだけ買える）
     const skills = offerSkills(seededRng(1));
     expect(skills).toHaveLength(3);
     expect(new Set(skills).size).toBe(3);
-    skills.slice(0, 2).forEach((id) => expect(SKILL_POOL).toContain(id));
-    expect([...ITEM_POOL, ...ARMOR_POOL]).toContain(skills[2]);
+    skills.forEach((id) => expect(SKILL_POOL).toContain(id));
     for (let seed = 1; seed <= 30; seed++) {
-      const o = offerSkills(seededRng(seed));
-      expect(o.filter((id) => [...ITEM_POOL, ...ARMOR_POOL].includes(id))).toHaveLength(1);
-      expect(o.filter((id) => SKILL_POOL.includes(id))).toHaveLength(2);
+      const o = offerSkills(seededRng(seed), createRun(), 'skeleton');
+      expect(o).toHaveLength(3);
+      expect(new Set(o).size).toBe(3);
+      expect(o.every((id) => SKILL_POOL.includes(id))).toBe(true);
     }
     const run = createRun();
     expect(offerRelics(run, seededRng(1))).toHaveLength(3);
     run.relics.push(Whetstone);
     expect(offerRelics(run, seededRng(1)).some((r) => r.id === 'whetstone')).toBe(false);
-    expect(RELIC_POOL).toHaveLength(20);
+    expect(RELIC_POOL).toHaveLength(21);
   });
 });
 
