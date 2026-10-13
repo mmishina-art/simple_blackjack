@@ -58,28 +58,45 @@ export interface ShopOffer {
   sold: boolean;
 }
 
-export const SHOP_ITEMS = 4;
-export const SHOP_ARMORS = 2;
-export const SHOP_RELICS = 2;
+/** 階層ごとの品揃え。階層が進むほど品数が増え、レジェンドが並ぶのは第 2 階層から。 */
+export interface ShopTier {
+  items: number;
+  /** 防具（いま装備しているより硬いものから）の最大数。 */
+  armors: number;
+  relics: number;
+  /** この階層のショップに並ぶ最高のレア度。 */
+  maxRarity: Rarity;
+}
+export const SHOP_TIERS: readonly ShopTier[] = [
+  { items: 2, armors: 1, relics: 1, maxRarity: 'rare' },   // 第 1 階層: 少なめ。レジェンドは買えない
+  { items: 3, armors: 1, relics: 2, maxRarity: 'legend' }, // 第 2 階層
+  { items: 4, armors: 2, relics: 3, maxRarity: 'legend' }, // 第 3 階層: 品数が最も多い
+];
+export const shopTier = (stage: number): ShopTier => SHOP_TIERS[Math.max(0, Math.min(stage, SHOP_TIERS.length) - 1)];
+
+const RARITY_RANK: Record<Rarity, number> = { common: 0, rare: 1, legend: 2 };
 
 /**
- * ショップの品揃え: 道具 3 + 防具（いま装備しているより硬いものから最大 2）+ 遺物 2。**スキルは売らない**（スキルは敵を倒して手に入れる）。
- * 道具・防具は、ここでしか買えない。レア度の割合は階層ごと。持っている遺物は並ばない。
+ * ショップの品揃え（階層ごとに `SHOP_TIERS`）: 道具 + 防具（いま装備しているより硬いもの）+ 遺物。**スキルは売らない**（スキルは敵を倒して手に入れる）。
+ * 道具・防具は、ここでしか買えない。持っている遺物は並ばない。第 1 階層ではレジェンドは並ばない。
  */
 export function generateShop(run: RunState, rng: Rng): ShopOffer[] {
+  const tier = shopTier(run.stage);
+  const allowed = (rarity: Rarity): boolean => RARITY_RANK[rarity] <= RARITY_RANK[tier.maxRarity];
   const rarityOf = (id: SkillId) => rarityOfSkill(getSkill(id));
   const favored = new Set(run.favored);
   const boost = (id: SkillId): number => (favored.has(id) ? CODEX_BOOST : 1);
-  const itemW = tierWeights(ITEM_POOL, rarityOf, run.stage);
-  const items = pickWeighted(ITEM_POOL, SHOP_ITEMS, rng, (id) => itemW(id) * boost(id));
+  const itemPool = ITEM_POOL.filter((id) => allowed(rarityOf(id)));
+  const itemW = tierWeights(itemPool, rarityOf, run.stage);
+  const items = pickWeighted(itemPool, tier.items, rng, (id) => itemW(id) * boost(id));
 
   const curCap = getSkill(run.armor).damageCap ?? Infinity;
-  const armorPool = ARMOR_POOL.filter((id) => (getSkill(id).damageCap ?? Infinity) < curCap);
-  const armors = pickWeighted(armorPool, Math.min(SHOP_ARMORS, armorPool.length), rng, tierWeights(armorPool, rarityOf, run.stage));
+  const armorPool = ARMOR_POOL.filter((id) => (getSkill(id).damageCap ?? Infinity) < curCap && allowed(rarityOf(id)));
+  const armors = pickWeighted(armorPool, Math.min(tier.armors, armorPool.length), rng, tierWeights(armorPool, rarityOf, run.stage));
 
   const owned = new Set(run.relics.map((r) => r.id));
-  const relicPool = RELIC_POOL.filter((r) => !owned.has(r.id));
-  const relics = pickWeighted(relicPool, SHOP_RELICS, rng, tierWeights(relicPool, (r) => r.rarity ?? 'common', run.stage));
+  const relicPool = RELIC_POOL.filter((r) => !owned.has(r.id) && allowed(r.rarity ?? 'common'));
+  const relics = pickWeighted(relicPool, tier.relics, rng, tierWeights(relicPool, (r) => r.rarity ?? 'common', run.stage));
 
   return [
     ...items.map((id): ShopOffer => ({ type: 'skill', id, price: priceOfSkill(id), sold: false })),

@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { ARMOR_POOL, ITEM_POOL } from '../src/core/skills/catalog';
+import { getSkill, rarityOfSkill } from '../src/core/skills/Skill';
+import { RELIC_POOL } from '../src/relics/catalog';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { seededRng } from '../src/core/util/Rng';
 import { stageRows } from '../src/map/stages';
@@ -27,16 +30,43 @@ describe('ゴールドとショップ', () => {
     expect(sellFromInventory(run, 'jab')).toBeNull();
   });
 
-  it('品揃え: 道具4・防具（硬いものから最大2）・遺物2。重複なし、持っている遺物は並ばない', () => {
+  it('品揃えは階層が進むほど増える（第1: 道具2・防具1・遺物1 / 第2: 3・1・2 / 第3: 4・2・3）。重複なし', () => {
+    const expected = [[2, 1, 1], [3, 1, 2], [4, 2, 3]];
+    expected.forEach(([items, armors, relics], i) => {
+      const run = createRun();
+      run.stage = i + 1;
+      for (let seed = 1; seed <= 30; seed++) {
+        const offers = generateShop(run, seededRng(seed));
+        const inv = offers.filter((o) => o.type === 'skill');
+        expect(inv.filter((o) => ITEM_POOL.includes(o.id)), `第${i + 1}階層 道具`).toHaveLength(items);
+        expect(inv.filter((o) => ARMOR_POOL.includes(o.id)), `第${i + 1}階層 防具`).toHaveLength(armors);
+        const rel = offers.filter((o) => o.type === 'relic');
+        expect(rel, `第${i + 1}階層 遺物`).toHaveLength(relics);
+        expect(new Set(offers.map((o) => `${o.type}:${o.id}`)).size).toBe(offers.length);
+      }
+    });
+  });
+
+  it('第1階層のショップには、レジェンドが並ばない。第2階層からは並ぶことがある', () => {
+    const rarityOfOffer = (o: { type: string; id: string }): string =>
+      o.type === 'relic' ? (RELIC_POOL.find((r) => r.id === o.id)!.rarity ?? 'common') : rarityOfSkill(getSkill(o.id));
+    const legendSeen = (stage: number): boolean => {
+      const run = createRun();
+      run.stage = stage;
+      for (let seed = 1; seed <= 300; seed++) if (generateShop(run, seededRng(seed)).some((o) => rarityOfOffer(o) === 'legend')) return true;
+      return false;
+    };
+    expect(legendSeen(1)).toBe(false);
+    expect(legendSeen(2)).toBe(true);
+    expect(legendSeen(3)).toBe(true);
+  });
+
+  it('持っている遺物は並ばない', () => {
     const run = createRun();
-    const offers = generateShop(run, seededRng(1));
-    expect(offers.filter((o) => o.type === 'skill')).toHaveLength(6); // 道具 4 + 防具 2（鋼の盾・ミスリルの盾）
-    const relics = offers.filter((o) => o.type === 'relic');
-    expect(relics).toHaveLength(2);
-    expect(new Set(relics.map((o) => o.id)).size).toBe(2);
-    const owned = relics[0].id;
-    run.relics.push({ id: owned } as never);
-    expect(generateShop(run, seededRng(1)).filter((o) => o.type === 'relic').map((o) => o.id)).not.toContain(owned);
+    run.stage = 3;
+    const first = generateShop(run, seededRng(1)).filter((o) => o.type === 'relic');
+    run.relics.push(RELIC_POOL.find((r) => r.id === first[0].id)!);
+    expect(generateShop(run, seededRng(1)).filter((o) => o.type === 'relic').map((o) => o.id)).not.toContain(first[0].id);
   });
 
   it('買う: ゴールドが足りなければ買えない。買うと引かれ、持ち物に入り、売り切れになる', () => {
