@@ -98,26 +98,43 @@ export function isSlotLocked(run: RunState, key: SlotKey): boolean {
   return FIXED_SLOTS.includes(key) && !isSlotUnlockedByRelic(run, key);
 }
 
-/** 持ち物のスキルをスロットにセットする。元のスキルは持ち物に戻る。 */
+/**
+ * 持ち物のスキルをスロットにセットする。**付け替えはできず、上書きのみ**:
+ * 置き換えられた元のスキルは失われ、持ち物には戻らない（外して空きにすることもできない）。
+ */
 export function equipSkill(run: RunState, key: SlotKey, skillId: SkillId): boolean {
-  // 通常攻撃（空スロット）はスキルとしてセットも外しもできない
+  // 通常攻撃（空スロット）はスキルとしてセットできない
   if (skillId === run.fallbackSkill) return false;
   const idx = run.inventory.indexOf(skillId);
   if (idx < 0 || isSlotLocked(run, key)) return false;
-  const previous = run.slots[key];
   run.inventory.splice(idx, 1);
   run.slots[key] = skillId;
-  if (previous) run.inventory.push(previous);
   return true;
 }
 
-/** スロットのスキルを外して持ち物に戻す。 */
-export function unequipSlot(run: RunState, key: SlotKey): boolean {
-  const id = run.slots[key];
-  if (!id || isSlotLocked(run, key)) return false;
-  delete run.slots[key];
-  run.inventory.push(id);
+/** 祠の入れ替え: 2つのスロットの中身を交換する（空きとの交換は移動）。固定スロットは動かせない。 */
+export function swapSlots(run: RunState, a: SlotKey, b: SlotKey): boolean {
+  if (a === b || isSlotLocked(run, a) || isSlotLocked(run, b)) return false;
+  const ia = run.slots[a];
+  const ib = run.slots[b];
+  if (!ia && !ib) return false;
+  if (ib) run.slots[a] = ib; else delete run.slots[a];
+  if (ia) run.slots[b] = ia; else delete run.slots[b];
   return true;
+}
+
+/** バージョンアップできるスロットか（スキルが入っていて、強化先があり、固定でない。道具は強化先がない）。 */
+export function canUpgradeSlot(run: RunState, key: SlotKey): boolean {
+  const id = run.slots[key];
+  return !!id && !isSlotLocked(run, key) && !!getSkill(id).upgradesTo;
+}
+
+/** 祠のバージョンアップ: スロットのスキルを1つ上のレア度のスキルに変える。 */
+export function upgradeSlot(run: RunState, key: SlotKey): SkillId | null {
+  if (!canUpgradeSlot(run, key)) return null;
+  const to = getSkill(run.slots[key]!).upgradesTo!;
+  run.slots[key] = to;
+  return to;
 }
 
 /** 図鑑に載っているスキルは出やすい（重み ×2）。 */

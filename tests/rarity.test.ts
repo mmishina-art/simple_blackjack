@@ -7,7 +7,7 @@ import { skillForTotal } from '../src/core/skills/execute';
 import { fallbackLabel, getSkill, rarityOfSkill } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { Lockpick, RELIC_POOL, SealKey } from '../src/relics/catalog';
-import { createRun, equipSkill, isSlotLocked, offerRelics, offerSkills, unequipSlot } from '../src/run/Run';
+import { createRun, equipSkill, isSlotLocked, offerRelics, offerSkills } from '../src/run/Run';
 
 describe('レア度', () => {
   it('ラベルはコモン / レア / レジェンド', () => {
@@ -59,17 +59,14 @@ describe('空スロット = 通常攻撃', () => {
     const run = createRun();
     run.inventory.push('basic_attack');
     expect(equipSkill(run, 13, 'basic_attack')).toBe(false);
-    expect(unequipSlot(run, 13)).toBe(false); // 空スロット
     expect(run.slots[13]).toBeUndefined();
     expect(Object.values(run.slots)).not.toContain('basic_attack');
   });
 
-  it('スキルを外した空スロットは通常攻撃が発動する', () => {
+  it('スキルを置いていないスロットは通常攻撃が発動する', () => {
     const run = createRun();
-    expect(unequipSlot(run, 15)).toBe(true); // シールドを外す
     const e = new Entity('player', 'p', 60, run.slots, run.fallbackSkill, run.baseAttack);
-    expect(skillForTotal(e, 15).id).toBe('basic_attack');
-    expect(run.inventory).toEqual(['guard']); // 通常攻撃は持ち物に入らない
+    expect(skillForTotal(e, 13).id).toBe('basic_attack');
   });
 
   it('表記: プレイヤーは「通常攻撃」、敵は「通常攻撃（技名）」', () => {
@@ -88,9 +85,7 @@ describe('固定スロットの解錠（11以下はレリックで変更でき�
     expect(isSlotLocked(run, 21)).toBe(true);
     expect(equipSkill(run, 11, 'slash')).toBe(true);
     expect(run.slots[11]).toBe('slash');
-    expect(run.inventory).toEqual(['small_attack']);
-    expect(unequipSlot(run, 11)).toBe(true); // 外すと空 = 通常攻撃
-    expect(run.slots[11]).toBeUndefined();
+    expect(run.inventory).toEqual([]); // 上書きされた小攻撃は失われる
   });
 
   it('封印の鍵は 21 だけを解錠する', () => {

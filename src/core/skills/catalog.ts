@@ -1,4 +1,4 @@
-import { assignRarity, defineSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
+import { assignRarity, defineSkill, getSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
 
 /**
  * 基本攻撃力（ATK）基準のスキル。攻撃: floor(ATK × mult) + add / Block・回復: floor(ATK × mult) + amount。
@@ -53,12 +53,31 @@ item('iron_shield', '鉄の盾', '鉄', { type: 'block', amount: 12 });         
 item('bomb', '爆弾', '爆', { type: 'attack', mult: 0, add: 10 });           // コモン: 10 ダメージ（固定）
 
 assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike', 'tonic', 'iron_shield'], 'rare');
-assignRarity(['smash', 'overlord_strike'], 'legend');
+// レジェンドの Block・複合スキル（祠のバージョンアップの行き先。報酬にも出る）
+defineSkill({ id: 'fortress', name: '城塞', icon: '城', effects: [{ type: 'block', mult: 1, amount: 10 }] }); // レジェンド: ATK+10
+defineSkill({
+  id: 'aegis', name: '守護の一撃', icon: '護',
+  effects: [{ type: 'attack', mult: 1.5, add: 3 }, { type: 'block', mult: 1, amount: 5 }],
+});
+defineSkill({
+  id: 'siphon', name: '吸魂', icon: '魂',
+  effects: [{ type: 'attack', mult: 1.5, add: 3 }, { type: 'heal', mult: 0.5, amount: 5 }],
+});
+assignRarity(['smash', 'overlord_strike', 'fortress', 'aegis', 'siphon'], 'legend');
+
+/** 祠のバージョンアップ先。コモン→レア、レア→レジェンド。道具・固定スキルは強化できない。 */
+const UPGRADES: Record<SkillId, SkillId> = {
+  jab: 'big_attack', slash: 'heavy', big_attack: 'smash', heavy: 'smash',
+  guard: 'bulwark', shield: 'bulwark', bulwark: 'fortress',
+  rally: 'shield_bash', shield_bash: 'aegis', drain: 'siphon',
+};
+for (const [from, to] of Object.entries(UPGRADES)) getSkill(from).upgradesTo = to;
 
 /** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。基本攻撃力が基準で、スロットが高いほど強い。 */
 export const SKILL_POOL: readonly SkillId[] = [
   'big_attack', 'jab', 'slash', 'heavy', 'smash',
   'guard', 'shield', 'bulwark', 'shield_bash', 'drain', 'rally',
+  'fortress', 'aegis', 'siphon',
 ];
 
 /** 報酬として出現する道具。効果は固定（基本攻撃力に関係ない）。 */

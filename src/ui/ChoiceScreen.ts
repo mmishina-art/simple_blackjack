@@ -39,7 +39,7 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
     btn.disabled = true;
     btn.innerHTML = `<span class="medal">${opt.icon}</span>
       <span class="choice__text"><strong>${opt.name}${opt.tag ? ` <em class="kind-tag">${opt.tag}</em>` : ''}</strong><span>${opt.description}</span></span>
-      ${rarityBadge(opt.rarity)}`;
+      ${opt.rarity ? rarityBadge(opt.rarity) : ''}`;
     btn.addEventListener('click', () => {
       audio.sfx('pick');
       cfg.onPick(i);

@@ -4,7 +4,7 @@ import { BattleMachine } from './core/battle/BattleMachine';
 import { customCount, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
 import { describeSkillBonus, getSkill, isItem, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
-import { resolveShrine, useInn } from './map/events';
+import { useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
 import {
   createRun, enemyOfTile, isCleared, markCleared, moveTo, offerRelics, offerSkills, type RunState,
@@ -15,6 +15,7 @@ import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
 import { createInstallEntry } from './ui/InstallGuide';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
+import { showShrine } from './ui/ShrineScreen';
 import { setupUpdateBanner } from './ui/UpdateBanner';
 import { hasUnusedKitOpportunity } from './meta/prep';
 import { showAltar, showCodex, showPrep } from './ui/MetaScreens';
@@ -91,9 +92,11 @@ function resolveTile(tile: TileDef): void {
       });
     }
     case 'shrine': {
-      const result = resolveShrine(run, defaultRng);
-      markCleared(run, tile.id);
-      return showNotice(root, { heading: `祠 — ${result.title}`, text: result.text, button: '進む', onClose: () => showMapScreen() });
+      return showShrine(root, run, {
+        rng: defaultRng,
+        onDone: (message) => { markCleared(run, tile.id); showMapScreen(message); },
+        onLeave: () => showMapScreen(),
+      });
     }
     default:
       return showMapScreen(tile.kind === 'empty' ? '何もなかった。' : '');

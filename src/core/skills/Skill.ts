@@ -26,6 +26,8 @@ export interface SkillDef {
   effects: SkillEffect[];
   /** レア度。省略時はコモン。 */
   rarity?: Rarity;
+  /** 祠のバージョンアップで変わる先（コモン→レア、レア→レジェンド）。ないスキル・道具は強化できない。 */
+  upgradesTo?: SkillId;
 }
 
 /** 合計値スロット。キー 11 は「11以下」を表す。 */
