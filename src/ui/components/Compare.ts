@@ -12,6 +12,13 @@ function side(label: string, name: string, icon: string, kindClass: string, tag:
   return el;
 }
 
+/** 差分の行が、良くなる(up)・悪くなる(down)・変わらない(same)のどれか。防具は、上限が下がる（硬くなる）のが良い方向。 */
+function tone(line: string): 'up' | 'down' | 'same' {
+  if (line.includes('硬くなる') || line.includes('（+') && !line.includes('柔らかく')) return 'up';
+  if (line.includes('柔らかくなる') || line.includes('（−')) return 'down';
+  return 'same';
+}
+
 function wrap(before: HTMLElement, after: HTMLElement, lines: string[], note?: string): HTMLElement {
   const box = document.createElement('div');
   box.className = 'compare';
@@ -28,6 +35,7 @@ function wrap(before: HTMLElement, after: HTMLElement, lines: string[], note?: s
   for (const line of lines) {
     const li = document.createElement('li');
     li.textContent = line;
+    li.className = `compare__line compare__line--${tone(line)}`; // 良くなる=緑 / 悪くなる=赤 / 変わらない=灰（色だけでなく、+/−の文字もある）
     list.append(li);
   }
   box.append(row, list);
@@ -43,7 +51,7 @@ function wrap(before: HTMLElement, after: HTMLElement, lines: string[], note?: s
 /** スロットにセットするときの、ビフォー（いま）とアフター（セット後）の比較。数値はレリックの補正後。 */
 export function buildSlotCompare(before: SlotPreview, after: SlotPreview): HTMLElement {
   const tagOf = (p: SlotPreview): string => (p.id ? kindTag(getSkill(p.id)) : '');
-  const note = before.id ? `「${before.name}」は失われる（上書き。持ち物には戻らない）` : undefined;
+  const note = before.id ? `「${before.name}」は失われる（上書き。道具袋には戻らない）` : undefined;
   return wrap(
     side('いま', before.name, before.icon, before.id ? medalKindClass(before.kind) : '', tagOf(before), before.short),
     side('セット後', after.name, after.icon, after.id ? medalKindClass(after.kind) : '', tagOf(after), after.short, true),
@@ -62,7 +70,7 @@ export function buildArmorCompare(before: SkillDef, after: SkillDef): HTMLElemen
     side('いま', before.name, before.icon, medalKindClass('armor'), kindTag(before, true), describeSkillShort(before, 0)),
     side('装備後', after.name, after.icon, medalKindClass('armor'), kindTag(after, true), describeSkillShort(after, 0), true),
     lines,
-    `「${before.name}」は失われる（上書き。持ち物には戻らない）`,
+    `「${before.name}」は失われる（上書き。道具袋には戻らない）`,
   );
 }
 

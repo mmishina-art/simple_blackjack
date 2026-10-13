@@ -1204,3 +1204,35 @@ section { min-width: 0; }
 .topbar-body { display: flex; flex-direction: column; gap: 12px; }
 .loadout .topbar, .shop .topbar { margin-bottom: 2px; }
 .lslot--picked { border-color: var(--gold) !important; background: #2a1f0e !important; box-shadow: 0 0 10px rgba(176, 141, 62, 0.5) !important; }
+
+/* ---- ポップアップ（中央に出る小窓）。下から出るシートをやめ、色も役割ごとに分ける ---- */
+.sheet-layer { align-items: center; padding: 16px; }
+.sheet {
+  width: 100%; max-width: 420px; max-height: 86dvh; padding: 14px 14px 14px;
+  background: linear-gradient(180deg, #1c1822, #100d14); border: 1px solid #5a4a6a; border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px #07050a, inset 0 1px 0 #3a3046;
+  animation: popIn 0.18s ease-out;
+}
+@keyframes popIn { from { transform: scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet__grip { display: none; }
+.sheet__head h2 { color: #e8d6a0; }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } }
+
+/* 比べる（いま → セット後）: いま=青みの灰 / セット後=金 / 良くなる=緑 / 悪くなる=赤 */
+.compare { background: #0b0a0e; border-color: #2c2634; }
+.compare__side { background: #151a22; border: 1px solid #2c3a4a; }
+.compare__side .compare__label { color: #8aa4c0; }
+.compare__side--after { background: rgba(190, 150, 60, 0.16); border-color: #b08d3e; }
+.compare__side--after .compare__label { color: #e6c878; }
+.compare__side--after .compare__short { color: #ffd98a; }
+.compare__arrow { color: #e6c878; }
+.compare__line--up { color: #8ee0a0; }
+.compare__line--down { color: #ff9b8a; }
+.compare__line--same { color: var(--bone-dim); }
+.compare__line { font-weight: 700; }
+
+/* ボタン: 決定=緑 / 売る・やめる=ふつう / やめる=控えめ */
+.pick--confirm { border-color: #5fa070; background: linear-gradient(180deg, rgba(79, 122, 92, 0.34), rgba(40, 70, 52, 0.28)); }
+.pick--confirm .pick__text strong { color: #c8f0d2; }
+.pick--confirm .medal { border-color: #7fc08e; color: #bfe8c8; }
+.sheet__close { border-color: #4a3f58; color: #a89cb8; }
