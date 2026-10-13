@@ -6,8 +6,8 @@ import { Hand } from './Hand';
 export interface DrawOdds {
   /** 次に引いたカードでバースト（合計が上限超え）になる確率（0〜1）。 */
   bust: number;
-  /** 次に引いたカードで合計がちょうど 21（ブラックジャックの得点）になる確率（0〜1）。 */
-  twentyOne: number;
+  /** 次に引いたカードで合計がちょうど 21（ブラックジャック）になる確率（0〜1）。 */
+  blackjack: number;
 }
 
 /**
@@ -20,13 +20,13 @@ export function drawOdds(deck: Deck, mine: Hand, enemy: Hand, rules: RuleSet): D
   const unseen: Card[] = [...deck.contents, ...enemy.cards.filter((c) => enemy.isFaceDown(c))];
   if (unseen.length === 0) return null;
   let bust = 0;
-  let twentyOne = 0;
+  let blackjack = 0;
   for (const card of unseen) {
     const total = Hand.totalOf([...mine.cards, card], rules);
     if (total > rules.bustLimit) bust++;
-    else if (total === rules.blackjackScore) twentyOne++;
+    else if (total === rules.blackjackScore) blackjack++;
   }
-  return { bust: bust / unseen.length, twentyOne: twentyOne / unseen.length };
+  return { bust: bust / unseen.length, blackjack: blackjack / unseen.length };
 }
 
 /** 「31%」のような表示。0 でも 100 でもないのに丸めて 0 / 100 になるときは、「<1%」「>99%」にする。 */

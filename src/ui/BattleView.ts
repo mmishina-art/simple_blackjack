@@ -244,21 +244,28 @@ export class BattleView {
     if (ctx.winner) this.showResult(ctx.winner === ctx.player);
   }
 
-  /** Hit ボタンの下に、次に引いたときのバースト・21 の確率を出す（入力待ちのときだけ）。 */
+  /** Hit ボタンの下に、次に引いたときのバースト・ブラックジャックの確率を、アイコン + 数字で出す（入力待ちのときだけ）。 */
   private renderOdds(active: boolean): void {
     const { ctx } = this.machine;
     const odds = active ? drawOdds(ctx.deck, ctx.player.hand, ctx.enemy.hand, ctx.rules) : null;
-    const text = odds ? `バースト ${formatPercent(odds.bust)} 21 ${formatPercent(odds.twentyOne)}` : '引く';
-    if (this.hitSub.dataset.text === text) return;
-    this.hitSub.dataset.text = text;
+    const bust = odds ? formatPercent(odds.bust) : '';
+    const bj = odds ? formatPercent(odds.blackjack) : '';
+    const key = `${bust}|${bj}`;
+    if (this.hitSub.dataset.key === key) return;
+    this.hitSub.dataset.key = key;
     this.hitSub.classList.toggle('btn__sub--odds', !!odds);
+    // 読み上げ・長押しの説明は文字で（アイコンだけに頼らない）
+    this.hitBtn.setAttribute('aria-label', odds ? `Hit 引く。次に引くとバースト ${bust}、ブラックジャック ${bj}` : 'Hit 引く');
+    this.hitBtn.title = odds ? `バースト ${bust} / ブラックジャック ${bj}` : '';
     if (!odds) return void (this.hitSub.textContent = '引く');
-    const chip = (label: string, p: number): HTMLElement => {
+    const chip = (icon: string, cls: string, text: string): HTMLElement => {
       const el = document.createElement('span');
-      el.textContent = `${label} ${formatPercent(p)}`;
+      el.className = `odds odds--${cls}`;
+      el.innerHTML = icon;
+      el.append(text);
       return el;
     };
-    this.hitSub.replaceChildren(chip('バースト', odds.bust), chip('21', odds.twentyOne));
+    this.hitSub.replaceChildren(chip(ICON_BURST, 'bust', bust), chip(ICON_SPADE, 'bj', bj));
   }
 
   private showResult(won: boolean): void {
@@ -267,6 +274,10 @@ export class BattleView {
     this.overlay.replaceChildren(this.buildResult(won));
   }
 }
+
+/** バースト（とげとげの爆発）とブラックジャック（スペード）のアイコン。色は CSS（currentColor）。 */
+const ICON_BURST = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1l2.4 6.1L20 4l-2.1 6.2L23 12l-5.1 1.8L20 20l-5.6-3.1L12 23l-2.4-6.1L4 20l2.1-6.2L1 12l5.1-1.8L4 4l5.6 3.1z"/></svg>';
+const ICON_SPADE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5C12 1.5 3 8.8 3 14.2a4.6 4.6 0 0 0 8 3.1L10 22.5h4l-1-5.2a4.6 4.6 0 0 0 8-3.1C21 8.8 12 1.5 12 1.5z"/></svg>';
 
 function section(cls: string, ...children: HTMLElement[]): HTMLElement {
   const el = document.createElement('section');

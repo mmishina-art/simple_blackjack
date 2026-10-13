@@ -19,13 +19,13 @@ describe('次のカードのバースト・21 の確率', () => {
     const odds = drawOdds(deck, hand('10', '6'), new Hand(), rules)!;
     // 6〜10・J・Q・K（10 は 4 枚ずつ 4 種 = 16 枚）… 6,7,8,9 が各4 + 10値16 = 32 枚でバースト、5 が4枚で 21
     expect(odds.bust).toBeCloseTo(32 / 52);
-    expect(odds.twentyOne).toBeCloseTo(4 / 52);
+    expect(odds.blackjack).toBeCloseTo(4 / 52);
   });
 
   it('A は 11 として数えるので、手札 A+9 に 2 を引くと 12、バーストは10・J・Q・K ではなく起きない', () => {
     const odds = drawOdds(new Deck(seededRng(1)), hand('A', '9'), new Hand(), rules)!;
     expect(odds.bust).toBe(0);
-    expect(odds.twentyOne).toBeCloseTo(4 / 52); // A+9+A = 21（A を 1 として数える: 1+9+11=21）
+    expect(odds.blackjack).toBeCloseTo(4 / 52); // A+9+A = 21（A を 1 として数える: 1+9+11=21）
   });
 
   it('山札と敵の伏せカードを合わせた集合から数える（伏せカードが何でも、確率は変わらない）', () => {
