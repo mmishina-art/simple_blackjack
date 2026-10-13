@@ -1,6 +1,6 @@
 import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
-import { describeSkill, describeSkillBonus, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
+import { describeSkill, describeSkillBonus, describeSkillShort, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
 import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
@@ -127,11 +127,12 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const cur = getSkill(run.armor);
     const target = !!armed && isArmor(getSkill(armed));
     const row = document.createElement('button');
+    row.title = `${cur.name}\n${describeSkill(cur)}\n防御したラウンドに受けるダメージ（HP の減少）の上限`;
     row.className = `lslot lslot--set lslot--armor lslot--tap ${rarityClass(rarityOfSkill(cur))}${target ? ' lslot--target' : ''}`;
     row.innerHTML = `<span class="lslot__key">防御</span>
       <span class="medal medal--sm medal--armor">${cur.icon}</span>
       <span class="lslot__name">${cur.name} ${kindTag(cur, true)}</span>
-      <span class="lslot__desc">${describeSkill(cur)}</span>
+      <span class="lslot__desc">${describeSkillShort(cur, 0)}</span>
       <span class="lslot__go" aria-hidden="true">›</span>`;
     row.addEventListener('click', () => {
       if (armed && isArmor(getSkill(armed))) {

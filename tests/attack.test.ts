@@ -6,7 +6,7 @@ import { Slime } from '../src/core/entities/enemies/Slime';
 import { badgeText, formatPreview, previewAllSlots, previewSkill } from '../src/core/skills/preview';
 import { fxChips } from '../src/ui/callout';
 import { slotAttack } from '../src/core/skills/catalog';
-import { attackFormula, attackValue, describeSkill, describeSkillBonus, getSkill } from '../src/core/skills/Skill';
+import { attackFormula, attackValue, describeSkill, describeSkillBonus, describeSkillShort, circledNumber, getSkill } from '../src/core/skills/Skill';
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
@@ -374,5 +374,39 @@ describe('敵のスキル一覧（実数値つき）', () => {
       expect(m.ctx.enemy.attack).toBeGreaterThan(0);
       expect(describeSlotTable(m.ctx.enemy)).toHaveLength(11);
     }
+  });
+});
+
+describe('スロット表の右側の短い表示と、基本値の丸数字', () => {
+  const at = (id: string, key: number): string => describeSkillShort(getSkill(id), slotAttack(5, key));
+
+  it('種類と値だけ（計算式は出さない）: 攻撃 / Block / 回復、複数は「 + 」でつなぐ', () => {
+    expect(at('big_attack', 20)).toBe('攻撃 15');
+    expect(at('guard', 15)).toBe('Block 6');
+    expect(at('herb', 12)).toBe('回復 8');
+    expect(at('shield_bash', 17)).toBe('攻撃 7 + Block 7');
+    expect(at('drain', 17)).toBe('攻撃 8 + 回復 5');
+    expect(at('ace_strike', 21)).toBe('攻撃 16');
+  });
+
+  it('同じ値の連続した攻撃は「×回数」にまとめる（二連斬・乱舞）', () => {
+    expect(at('twin_strike', 17)).toBe('攻撃 6×2');
+    expect(at('flurry', 17)).toBe('攻撃 6×3');
+  });
+
+  it('防具は、被ダメージの上限（と防御の回復）', () => {
+    expect(describeSkillShort(getSkill('iron_shield'), 0)).toBe('被ダメージ最大 5');
+    expect(describeSkillShort(getSkill('saint_robe'), 0)).toBe('被ダメージ最大 4 + 回復 3');
+  });
+
+  it('詳細（計算式）は describeSkill のまま', () => {
+    expect(describeSkill(getSkill('big_attack'), slotAttack(5, 20))).toBe('攻撃 ATK+5＝15');
+  });
+
+  it('丸数字: ①〜⑳、㉑〜㉟。範囲外は (n)', () => {
+    expect([1, 5, 10, 11, 20].map(circledNumber)).toEqual(['①', '⑤', '⑩', '⑪', '⑳']);
+    expect([21, 35].map(circledNumber)).toEqual(['㉑', '㉟']);
+    expect(circledNumber(36)).toBe('(36)');
+    expect(circledNumber(0)).toBe('(0)');
   });
 });

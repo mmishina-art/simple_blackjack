@@ -183,3 +183,28 @@ export function describeSkillBonus(skill: SkillDef): string {
 export function describeSkill(skill: SkillDef, atk?: number): string {
   return describeEffects(skill, atk);
 }
+
+/**
+ * スロット表の右側に出す、短い効果表示（種類と値だけ）。例: `攻撃 15` / `Block 6` / `攻撃 6×2`（2回攻撃）/ `攻撃 8 + 回復 5`。
+ * 計算式は describeSkill（マウスを乗せたときの詳細）にある。atk は、そのスロットの基本攻撃力。
+ */
+export function describeSkillShort(skill: SkillDef, atk: number): string {
+  if (skill.damageCap !== undefined) return `被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? ` + 回復 ${skill.defendHeal}` : ''}`;
+  const parts: { label: string; value: number; count: number }[] = [];
+  for (const e of skill.effects) {
+    const label = e.type === 'attack' ? '攻撃' : e.type === 'block' ? 'Block' : '回復';
+    const value = e.type === 'attack' ? attackValue(e, atk) : supportValue(e, atk);
+    const last = parts[parts.length - 1];
+    if (last && last.label === label && last.value === value) last.count++;
+    else parts.push({ label, value, count: 1 });
+  }
+  return parts.map((p) => `${p.label} ${p.value}${p.count > 1 ? `×${p.count}` : ''}`).join(' + ');
+}
+
+/** ①〜⑳、㉑〜㉟ の丸数字（スロットの基本値の表示）。範囲外は「(n)」。 */
+export function circledNumber(n: number): string {
+  if (!Number.isInteger(n) || n < 1) return `(${n})`;
+  if (n <= 20) return String.fromCharCode(0x2460 + n - 1);
+  if (n <= 35) return String.fromCharCode(0x3251 + n - 21);
+  return `(${n})`;
+}

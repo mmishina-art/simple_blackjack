@@ -1,4 +1,4 @@
-import { BASIC_ICON, describeSkill, fallbackLabel, kindOfSkill, slotLabel, type SkillDef, type SlotKey } from '../../core/skills/Skill';
+import { BASIC_ICON, circledNumber, describeSkill, describeSkillShort, fallbackLabel, kindOfSkill, slotLabel, type SkillDef, type SlotKey } from '../../core/skills/Skill';
 import { slotLook } from '../../core/skills/look';
 import type { EffectiveSkill } from '../../run/effective';
 import { kindTag, medalKindClass } from '../kind';
@@ -38,16 +38,20 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
   const name = o.skill
     ? eff?.changed && eff.skill.id !== o.skill.id ? `<span class="over">${eff.skill.name}</span>` : o.skill.name
     : `${fallbackLabel(o.fallback)}・空き`;
-  const desc = eff?.changed
-    ? `<span class="over" title="本来: ${eff.baseText}">${eff.text}</span>`
-    : describeSkill(shown, o.atk);
+  // 右側は「種類と値」だけ（攻撃 15 / Block 6 / 回復 8）。計算式は、行にマウスを乗せたとき（title）に出る
+  const short = describeSkillShort(eff?.changed ? eff.skill : shown, eff?.changed ? eff.atk : o.atk);
+  const formula = eff?.changed ? eff.text : describeSkill(shown, o.atk);
+  const baseNote = eff?.changed ? `\n本来: ${eff.baseText}` : '';
+  const desc = eff?.changed ? `<span class="over">${short}</span>` : short;
+  const detail = `${o.skill ? o.skill.name : fallbackLabel(o.fallback)}\n${formula}${baseNote}\n基本値（ATK）${o.atk}（合計 ${slotLabel(o.key)} のスロット）`;
   const interactive = !o.locked && !!o.onTap;
 
   const row = document.createElement(interactive ? 'button' : 'div');
   row.className = o.locked
     ? `lslot lslot--fixed${tone}`
     : `lslot lslot--set ${rarityClass(look.rarity)}${tone}${o.target ? ' lslot--target' : ''}${interactive ? ' lslot--tap' : ''}`;
-  row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}</span>
+  row.title = detail;
+  row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}<span class="lslot__atk" aria-label="基本値 ${o.atk}">${circledNumber(o.atk)}</span></span>
     <span class="medal medal--sm${o.skill ? medalKindClass(kindOfSkill(o.skill)) : ''}">${o.skill ? o.skill.icon : BASIC_ICON}</span>
     <span class="lslot__name">${name}${o.skill ? ` ${kindTag(o.skill)}` : ''}${o.tag ? ` <em class="lslot__tag${o.tagTone === 'custom' ? ' lslot__tag--custom' : ''}">${o.tag}</em>` : ''}</span>
     <span class="lslot__desc">${desc}</span>
