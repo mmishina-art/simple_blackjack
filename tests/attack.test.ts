@@ -10,7 +10,7 @@ import { attackFormula, attackValue, describeSkill, describeSkillBonus, describe
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
-import { Bracer, OverlordOrb, Whetstone } from '../src/relics/catalog';
+import { Bracer, Whetstone } from '../src/relics/catalog';
 import { previewSlot } from '../src/run/effective';
 import { createRun } from '../src/run/Run';
 import { noWait, playRound, WITH_BLOCKS } from './helpers';
@@ -163,9 +163,10 @@ describe('防御・回復もスロットの基本パワーが基準（上位の�
     expect(guard.parts).toEqual([{ type: 'block', value: 6 }]);
   });
 
-  it('会心の一撃は POW×1.5（スロット21 は POW 11 で 16）。覇王の宝珠で POW×2（22）+ ブロック 8 になる', () => {
+  it('会心の一撃は POW×1.5（スロット21 は POW 11 で 16）。祠でバージョンアップした覇王の一撃は POW×2（22）、終焉の一撃は ×3（33）', () => {
     expect(at('ace_strike', 21)).toEqual([16]);
-    expect(at('ace_strike', 21, [OverlordOrb])).toEqual([22, 8]);
+    expect(at('overlord_strike', 21)).toEqual([22]);
+    expect(at('final_strike', 21)).toEqual([33]);
   });
 
   it('実際の戦闘でも、薬草（道具）の回復量は固定（どのスロットでも 8）', async () => {
@@ -222,7 +223,7 @@ describe('会心の一撃はブロックを無視して破壊する（ほかの�
     expect(formatPreview({ skill: getSkill('ace_strike'), parts }, 7)).toContain('ブロック無視');
   });
 
-  it('覇王の宝珠の覇王の一撃も、ブロックを無視する', () => {
+  it('覇王の一撃も、ブロックを無視する', () => {
     expect(getSkill('overlord_strike').effects[0]).toMatchObject({ type: 'attack', pierce: true });
   });
 

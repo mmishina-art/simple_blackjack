@@ -1,8 +1,9 @@
 import { isDebug } from '../debug';
 import type { Rarity } from '../core/rarity';
 import { audio } from '../audio/AudioManager';
-import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
+import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
 import { describeSkill, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
+import { sortSkillsForCodex } from '../meta/codexOrder';
 import { RARITY_ORDER } from '../run/loadout';
 import { kindTag, medalKindClass } from './kind';
 import {
@@ -78,7 +79,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   // デバッグモードでは、すべて入手済みとして見せる（表示だけ。記録（meta）は変えない）
   const skillKnown = (id: string): boolean => isDebug() || isSkillDiscovered(meta, id);
   const relicKnown = (id: string): boolean => isDebug() || isRelicDiscovered(meta, id);
-  const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...ITEM_POOL])];
+  const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...UPGRADE_ONLY_SKILLS, ...ITEM_POOL])];
   const kindOf = (kind: SkillKind): string[] => (kind === 'armor' ? [...ARMOR_POOL] : all.filter((id) => kindOfSkill(getSkill(id)) === kind));
   screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">${isDebug() ? 'デバッグモード: すべて開放して表示中（記録は変わらない）' : '入手したものは、次回から報酬に出やすくなる（レア度の低い順）'}</p>`));
 
@@ -86,7 +87,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
     const box = el('section', 'codex');
     box.append(el('h2', 'codex__title', `${title}　${ids.filter(skillKnown).length} / ${total}`));
     const grid = el('div', 'codex__grid');
-    for (const id of byRarityAsc(ids, (id) => rarityOfSkill(getSkill(id)))) {
+    for (const id of sortSkillsForCodex(ids)) {
       const known = skillKnown(id);
       const skill = getSkill(id);
       grid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,

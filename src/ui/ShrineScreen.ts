@@ -23,7 +23,7 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
   const movable = SLOT_KEYS.filter((k) => !isSlotLocked(run, k));
   const canSwap = movable.some((k) => run.slots[k]) && movable.length >= 2;
   /** バージョンアップの候補（強化先がある）。強化先のレア度の制限で置けないものは、理由つきで選べなくして出す。 */
-  const upgradeCandidates = movable.filter((k) => { const id = run.slots[k]; return !!id && !!getSkill(id).upgradesTo; });
+  const upgradeCandidates = SLOT_KEYS.filter((k) => { const id = run.slots[k]; return !!id && !!getSkill(id).upgradesTo; });
 
   const choices: { icon: string; name: string; description: string; run(): void }[] = [];
   if (canSwap) choices.push({ icon: '替', name: '入れ替え', description: '2つのスロットのスキル・道具を入れ替える（空きスロットへの移動もできる）', run: pickSwapFirst });

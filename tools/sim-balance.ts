@@ -27,7 +27,7 @@ function slotValue(id: SkillId | undefined, key: number, run: RunState, hpRatio:
   }
   return v;
 }
-const WEIGHT: Record<number, number> = { 12: 3, 13: 4, 14: 6, 15: 8, 16: 14, 17: 18, 18: 16, 19: 14, 20: 12 };
+const WEIGHT: Record<number, number> = { 12: 3, 13: 4, 14: 6, 15: 8, 16: 14, 17: 18, 18: 16, 19: 14, 20: 12, 21: Number(process.env.W21 ?? 7) };
 
 function rewardScore(id: SkillId, run: RunState): number {
   const sk = getSkill(id);
@@ -158,7 +158,7 @@ const stageReached: Record<number, number> = {};
       } else if (tile.kind === 'inn') useInn(run);
       else if (tile.kind === 'shrine') {
         // バージョンアップできるなら一番レアの低いものを強化、なければランダム
-        const ups = [12, 13, 14, 15, 16, 17, 18, 19, 20].filter((k) => canUpgradeSlot(run, k));
+        const ups = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21].filter((k) => canUpgradeSlot(run, k));
         const costOf = (k: number) => upgradeCost(run.slots[k]!) ?? 0;
         const afford = process.env.NO_GOLD ? ups : ups.filter((k) => run.gold >= costOf(k));
         if (afford.length > 0) { const k = afford.sort((a, b) => WEIGHT[b] - WEIGHT[a])[0]; run.gold -= process.env.NO_GOLD ? 0 : costOf(k); upgradeSlot(run, k); }

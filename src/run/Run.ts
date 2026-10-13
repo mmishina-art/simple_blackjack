@@ -163,10 +163,10 @@ export function swapSlots(run: RunState, a: SlotKey, b: SlotKey): boolean {
   return true;
 }
 
-/** バージョンアップできるスロットか（スキルが入っていて、強化先があり、固定でない。道具は強化先がない）。 */
+/** バージョンアップできるスロットか（スキルが入っていて、強化先がある。道具は強化先がない）。固定スロット（21 の会心の一撃）も、バージョンアップだけはできる。 */
 export function canUpgradeSlot(run: RunState, key: SlotKey): boolean {
   const id = run.slots[key];
-  if (!id || isSlotLocked(run, key)) return false;
+  if (!id) return false;
   const to = getSkill(id).upgradesTo;
   return !!to && canPlaceAt(getSkill(to), key); // 強化先のレア度が、そのスロットに置けること
 }

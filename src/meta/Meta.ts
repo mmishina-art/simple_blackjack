@@ -1,4 +1,4 @@
-import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
+import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
 import type { SkillId } from '../core/skills/Skill';
 import { RELIC_POOL } from '../relics/catalog';
 
@@ -196,7 +196,7 @@ export function discoverRelic(meta: MetaState, id: string): boolean {
 }
 
 /** 図鑑のスキルの総数（道具は別に数える）。 */
-export const CODEX_SKILL_TOTAL = new Set<SkillId>([...STARTER_SKILLS, ...SKILL_POOL].filter((id) => !ITEM_POOL.includes(id))).size;
+export const CODEX_SKILL_TOTAL = new Set<SkillId>([...STARTER_SKILLS, ...SKILL_POOL, ...UPGRADE_ONLY_SKILLS].filter((id) => !ITEM_POOL.includes(id))).size;
 /** 図鑑の道具の総数。 */
 export const CODEX_ITEM_TOTAL = ITEM_POOL.length;
 /** 図鑑の防具の総数。 */
