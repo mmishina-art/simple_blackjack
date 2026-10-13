@@ -241,6 +241,11 @@ export function canCustomize(meta: MetaState, key: SlotKey): boolean {
   return STARTING_SLOT_KEYS.includes(key) && (key in validStartingSkills(meta) || customCount(meta) < startingCapacity(meta));
 }
 
+/** 記録をすべて消して、最初の状態に戻す（魂片・祭壇の強化・図鑑・初期装備・戦績）。meta オブジェクトはそのまま使い続けられる。 */
+export function resetAllMeta(meta: MetaState): void {
+  Object.assign(meta, emptyMeta());
+}
+
 /**
  * 出撃準備で変えた初期装備を、すべて初期装備（素の状態）に戻す。魂片・祭壇の強化・図鑑は変えない。
  * 戻した数（有効だった変更の数）を返す。

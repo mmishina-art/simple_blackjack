@@ -5,7 +5,7 @@ import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, useInn } from '../src/map/events';
 import {
   buyUpgrade, canBuy, canCustomize, CODEX_SKILL_TOTAL, computeBonus, computeShards, customCount, discoverRelic, discoverSkill,
-  emptyMeta, finishRun, resetStartingSkills, isSkillDiscovered, loadMeta, META_KEY, nextCost, saveMeta, selectableStartingSkills, setStartingSkill,
+  emptyMeta, finishRun, resetAllMeta, resetStartingSkills, isSkillDiscovered, loadMeta, META_KEY, nextCost, saveMeta, selectableStartingSkills, setStartingSkill,
   startingCapacity, STARTING_SLOT_KEYS, UPGRADES, validStartingSkills, type MetaState,
 } from '../src/meta/Meta';
 import { getSkill, rarityOfSkill } from '../src/core/skills/Skill';
@@ -320,5 +320,32 @@ describe('スキルの初期化（出撃準備の初期装備を、素の状態�
     expect(meta.upgrades).toEqual({ hp: 2, slots: 1 });
     expect(meta.codex.skills).toEqual(expect.arrayContaining(['slash', 'heavy']));
     expect(resetStartingSkills(meta)).toBe(0); // 何もなければ 0
+  });
+});
+
+describe('記録のすべての初期化（設定）', () => {
+  it('魂片・祭壇・図鑑・初期装備・戦績がすべて最初の状態に戻る（同じ meta オブジェクトのまま）', () => {
+    const meta = emptyMeta();
+    meta.shards = 80;
+    meta.upgrades = { hp: 3 };
+    meta.codex.skills.push('slash');
+    meta.codex.relics.push('fang');
+    meta.startingSkills = { 13: 'slash' };
+    meta.stats = { runs: 5, clears: 1, bestRow: 7 };
+    const same = meta;
+    resetAllMeta(meta);
+    expect(meta).toBe(same);
+    expect(meta).toEqual(emptyMeta());
+  });
+
+  it('保存しても、読み込み直すと最初の状態（保存先が使えなくても落ちない）', () => {
+    const store: Record<string, string> = {};
+    const storage = { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; } };
+    const meta = emptyMeta();
+    meta.shards = 10;
+    saveMeta(meta, storage);
+    resetAllMeta(meta);
+    saveMeta(meta, storage);
+    expect(loadMeta(storage)).toEqual(emptyMeta());
   });
 });

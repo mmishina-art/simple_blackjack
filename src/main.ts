@@ -17,6 +17,7 @@ import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
 import { showShrine } from './ui/ShrineScreen';
+import { showSettings } from './ui/SettingsScreen';
 import { setupUpdateBanner } from './ui/UpdateBanner';
 import { hasUnusedKitOpportunity } from './meta/prep';
 import { showAltar, showCodex, showPrep } from './ui/MetaScreens';
@@ -25,6 +26,8 @@ import './ui/styles/main.css';
 const root = document.getElementById('app')!;
 const meta: MetaState = loadMeta();
 let run: RunState = createRun(undefined, meta);
+/** 素の状態で挑んでいる冒険か（祭壇の強化・図鑑・初期装備の変更を使わず、魂片・図鑑も記録しない）。 */
+let bareRun = false;
 let view: BattleView | null = null;
 let unbindSounds: (() => void) | null = null;
 
@@ -125,6 +128,7 @@ function startBattle(tile: TileDef): void {
 
 /** 持っているスキル・レリックを図鑑に登録する（負けても残る）。 */
 function syncCodex(): void {
+  if (bareRun) return; // 素の状態の冒険は、図鑑に記録しない
   let changed = false;
   for (const id of [...Object.values(run.slots), run.armor, ...run.inventory]) if (id) changed = discoverSkill(meta, id) || changed;
   for (const r of run.relics) changed = discoverRelic(meta, r.id) || changed;
@@ -133,6 +137,7 @@ function syncCodex(): void {
 
 /** 冒険の終了処理: 魂片を獲得して保存する。獲得量を返す。 */
 function endRun(cleared: boolean): number {
+  if (bareRun) return 0; // 魂片・戦績も記録しない
   syncCodex();
   const summary: RunSummary = { maxRow: run.stats.maxRow, enemiesDefeated: run.stats.enemiesDefeated, cleared };
   const gained = finishRun(meta, summary);
@@ -142,12 +147,21 @@ function endRun(cleared: boolean): number {
 
 /** 冒険を始める。装備は出撃準備で決めた保存済みの設定が使われる。 */
 function startAdventure(): void {
+  bareRun = false;
   run = createRun(undefined, meta);
   showMapScreen();
 }
 
+/** 素の状態で冒険を始める: 祭壇の強化・図鑑・出撃準備の変更を使わず、記録も残さない（バランスを試すため）。 */
+function startBareAdventure(): void {
+  bareRun = true;
+  run = createRun();
+  showMapScreen('素の状態で出発した（祭壇の強化・初期装備の変更は使わず、記録も残らない）');
+}
+
 function restartRun(): void {
-  startAdventure();
+  if (bareRun) startBareAdventure();
+  else startAdventure();
 }
 
 /** 戦闘終了時のオーバーレイ。敗北でやり直し、勝利で報酬スキルの選択へ進む。 */
@@ -157,7 +171,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     won ? '勝　利<small>VICTORY</small>' : '敗　北<small>DEFEAT</small>'));
 
   const shardsLine = (gained: number) =>
-    el('p', 'result__line result__shards', `魂片 +${gained}（所持 ${meta.shards}）`);
+    el('p', 'result__line result__shards', bareRun ? '素の状態の冒険（魂片・図鑑は記録されない）' : `魂片 +${gained}（所持 ${meta.shards}）`);
   const endButtons = (retry: string) => {
     const altar = button('魂の祭壇', () => showAltar(root, meta, showTitle));
     altar.classList.replace('btn--retry', 'btn--stand');
@@ -265,7 +279,26 @@ function showTitle(): void {
       }],
     });
   });
-  screen.append(mute, art, h1, sub, start, sub2, reset);
+  const bare = el('button', 'title__reset', '素の状態で挑む');
+  bare.addEventListener('click', () => {
+    unlock();
+    openSheet({
+      title: '素の状態で挑む？',
+      subtitle: '祭壇の強化・図鑑・出撃準備の変更を使わずに始める。この冒険では魂片も図鑑も記録されない（いまの記録は消えない）',
+      options: [{
+        kind: 'reset', icon: '素', name: '素の状態で始める', detail: 'HP 30・初期装備・鉄の盾で出発',
+        onPick: startBareAdventure,
+      }],
+    });
+  });
+  const settings = el('button', 'title__reset', '設定');
+  settings.addEventListener('click', () => {
+    unlock();
+    showSettings(root, meta, showTitle);
+  });
+  const links = el('div', 'title__links');
+  links.append(bare, reset, settings);
+  screen.append(mute, art, h1, sub, start, sub2, links);
   // 最初の画面に「インストールする方法」の入口を置く（インストール済みのアプリでは出ない）
   const install = createInstallEntry();
   if (install) screen.append(install);
