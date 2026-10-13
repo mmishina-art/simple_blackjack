@@ -311,8 +311,18 @@ section { min-width: 0; }
 }
 .title h1 small { display: block; margin-top: 6px; font-size: 15px; letter-spacing: 0.7em; color: var(--bone-dim); }
 .title p { margin: 0; color: var(--bone-dim); font-size: 14px; letter-spacing: 0.1em; text-wrap: balance; }
+.title__links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 6px; margin-top: -2px; }
+.settings .loadout__btn { flex: none; }
+.settings__box { padding: 14px; border: 1px solid var(--gold-dim); border-radius: 8px; background: var(--panel); text-align: left; }
+.settings__box h2 { margin: 0 0 6px; font-size: 16px; color: var(--bone); }
+.settings__box p { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: var(--bone-dim); }
+.settings__box .settings__now { color: var(--bone); }
+.settings__danger {
+  width: 100%; min-height: 48px; margin-top: 4px; border-radius: 8px; cursor: pointer;
+  background: rgba(126, 27, 27, 0.35); border: 1px solid var(--blood-hi); color: #ffb3a8; font-family: var(--font-body); font-size: 15px; font-weight: 700;
+}
 .title__reset {
-  margin-top: -2px; min-height: 44px; padding: 0 14px; background: none; border: 0; cursor: pointer;
+  min-height: 44px; padding: 0 10px; background: none; border: 0; cursor: pointer;
   font-family: var(--font-body); font-size: 13px; letter-spacing: 0.08em; color: var(--bone-dim); text-decoration: underline; text-underline-offset: 4px;
 }
 .title__start { width: 100%; max-width: 320px; margin-top: 8px; }
