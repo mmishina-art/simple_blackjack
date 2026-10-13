@@ -108,7 +108,10 @@ export class AudioManager {
     if (this.ctx) this.master.gain.setTargetAtTime(muted ? 0 : 1, this.ctx.currentTime, 0.02);
   }
 
-  /** ユーザー操作の中で呼ぶ。AudioContext を作成し BGM を開始する。 */
+  /**
+   * AudioContext を作成し BGM を開始する。起動時にも呼ぶ（タイトルの BGM を最初から鳴らすため）。
+   * 自動再生が許されない環境では、止まった状態（suspended）で待ち、最初のタップで resume されて鳴り始める。
+   */
   unlock(): void {
     if (!this.ctx) {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;

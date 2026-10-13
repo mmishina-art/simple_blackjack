@@ -249,6 +249,10 @@ function showTitle(): void {
   root.replaceChildren(screen);
 }
 
+// タイトルの BGM を最初から鳴らす準備。ブラウザが許す環境（インストール済みのアプリ、以前に操作したサイトなど）ではすぐ鳴る。
+// 許されない環境（iPhone など）では、止まった状態で待ち、最初のタップで鳴り始める（AudioManager の onGesture）。
+audio.unlock();
+
 showTitle();
 setupUpdateBanner();
 

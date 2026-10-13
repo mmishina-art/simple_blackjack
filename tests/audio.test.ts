@@ -60,7 +60,25 @@ afterEach(() => {
 const ctxOf = () => FakeContext.instances.at(-1)!;
 
 describe('タイトル画面の BGM', () => {
-  it('最初のタップ（どこでも）で AudioContext を作り、BGM を始める。タップ前は何もしない', () => {
+  it('起動時に unlock() しておけば、自動再生が許される環境ではタップなしで鳴り、許されない環境では最初のタップで鳴る', () => {
+    // 許される環境（resume() がそのまま running になる）
+    const a = new AudioManager();
+    a.unlock();
+    expect(ctxOf().state).toBe('running');
+    // 許されない環境（resume() しても suspended のまま）→ 最初のタップで鳴り始める
+    FakeContext.instances = [];
+    for (const k of Object.keys(listeners)) delete listeners[k];
+    FakeContext.resumeTo = 'suspended';
+    const b = new AudioManager();
+    b.unlock();
+    expect(ctxOf().state).toBe('suspended');
+    FakeContext.resumeTo = 'running';
+    fire('click');
+    expect(ctxOf().state).toBe('running');
+    expect(FakeContext.instances).toHaveLength(1); // 作り直さず、そのまま鳴らす
+  });
+
+  it('起動時に unlock() しなくても、最初のタップ（どこでも）で AudioContext を作り、BGM を始める', () => {
     new AudioManager();
     expect(FakeContext.instances).toHaveLength(0);
     fire('click');

@@ -9,8 +9,9 @@ import { buildEnemyInfo } from './components/EnemyInfo';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
 import { rarityClass } from './rarity';
-import { formatPreview, previewAllSlots, previewSkill } from '../core/skills/preview';
-import { fallbackLabel, slotKeyOf, SLOT_KEYS } from '../core/skills/Skill';
+import { previewAllSlots } from '../core/skills/preview';
+import { SLOT_KEYS } from '../core/skills/Skill';
+import { calloutOf } from './callout';
 import { damageTakenMultiplier } from '../core/rules/bust';
 import { turnBanner } from './turnBanner';
 import type { TurnInfo } from '../core/rules/initiative';
@@ -187,17 +188,6 @@ export class BattleView {
     return relics;
   }
 
-  /** 現在の合計値で発動するスキルの予測テキスト。空スロットは「通常攻撃」と明記する。 */
-  private previewText(user: Entity, target: Entity): string | undefined {
-    const { ctx } = this.machine;
-    const total = user.hand.total(ctx.rules);
-    if (user.hand.size === 0 || total > ctx.rules.bustLimit) return undefined;
-    const p = previewSkill(ctx, user, target, total);
-    const empty = !user.slots[slotKeyOf(total)];
-    const label = empty && p.skill?.id === user.fallbackSkill ? fallbackLabel(p.skill) : undefined;
-    return formatPreview(p, target.block, label);
-  }
-
   private renderMute(): void {
     this.muteBtn.classList.toggle('mute--off', audio.muted);
     this.muteBtn.setAttribute('aria-pressed', String(audio.muted));
@@ -209,9 +199,9 @@ export class BattleView {
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block, ctx.player.attack);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
-    this.slotStrip.update(ctx.player, ctx.rules, this.previewText(ctx.player, ctx.enemy), false, previewAllSlots(ctx, ctx.player, ctx.enemy, SLOT_KEYS));
+    this.slotStrip.update(ctx.player, ctx.rules, calloutOf(ctx, ctx.player, ctx.enemy), false, previewAllSlots(ctx, ctx.player, ctx.enemy, SLOT_KEYS));
     const hidden = ctx.enemy.hand.hasHidden;
-    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : this.previewText(ctx.enemy, ctx.player), hidden, previewAllSlots(ctx, ctx.enemy, ctx.player, SLOT_KEYS));
+    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : calloutOf(ctx, ctx.enemy, ctx.player), hidden, previewAllSlots(ctx, ctx.enemy, ctx.player, SLOT_KEYS));
     this.roundEl.textContent =
       ctx.round > 0 ? `ROUND ${ctx.round}` : '';
     // 行動順が決まったら（伏せカードがめくられたあと）、帯で知らせる
