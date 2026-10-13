@@ -3,7 +3,7 @@ import { getEnemy } from '../core/entities/enemies/catalog';
 import { dropsOf } from './drops';
 import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import { pickWeighted, tierWeights } from '../core/rarity';
-import { canPlaceAt, getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
+import { canPlaceAt, getSkill, isArmor, rarityOfSkill, SLOT_KEYS, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, type MetaState, type RunBonus } from '../meta/Meta';
 import { STAGES, stageRowOffset } from '../map/stages';
@@ -184,27 +184,32 @@ function setSpot(run: RunState, spot: Spot, id: SkillId | null): void {
 const sameSpot = (a: Spot, b: Spot): boolean => a.kind === b.kind && (a.kind !== 'slot' || a.key === (b as { key: SlotKey }).key);
 
 /** その場所に、この中身（なければ空）を置いてよいか。固定スロット・レア度の制限・防具は防具の場所だけ、防御スロットは空にできない。 */
-function fits(run: RunState, spot: Spot, id: SkillId | null): boolean {
+function fits(run: RunState, spot: Spot, id: SkillId | null, loose = false): boolean {
   if (spot.kind === 'pouch') return true;
   if (spot.kind === 'armor') return !!id && isArmor(getSkill(id));
   if (isSlotLocked(run, spot.key)) return false;
-  return !id || (!isArmor(getSkill(id)) && canPlaceAt(getSkill(id), spot.key));
+  return !id || (!isArmor(getSkill(id)) && (loose || canPlaceAt(getSkill(id), spot.key)));
+}
+
+/** レア度の制限に合っていないスロット（祠の入れ替えの「仮置き」が残っている場所）。空なら、そのまま進める。 */
+export function placementViolations(run: RunState): SlotKey[] {
+  return SLOT_KEYS.filter((k) => { const id = run.slots[k]; return !!id && !canPlaceAt(getSkill(id), k); });
 }
 
 /** 2 つの場所の中身を入れ替えられるか（空きとの入れ替えは移動）。 */
-export function canSwapSpots(run: RunState, a: Spot, b: Spot): boolean {
+export function canSwapSpots(run: RunState, a: Spot, b: Spot, opts: { tentative?: boolean } = {}): boolean {
   if (sameSpot(a, b)) return false;
   const ia = spotItem(run, a);
   const ib = spotItem(run, b);
   if (!ia && !ib) return false;
   if (a.kind === 'slot' && isSlotLocked(run, a.key)) return false;
   if (b.kind === 'slot' && isSlotLocked(run, b.key)) return false;
-  return fits(run, a, ib) && fits(run, b, ia);
+  return fits(run, a, ib, opts.tentative) && fits(run, b, ia, opts.tentative);
 }
 
-/** 祠の入れ替え: スロット・道具袋・防御スロットの間で、中身を入れ替える（何度でもできる。回数の制限はない）。 */
-export function swapSpots(run: RunState, a: Spot, b: Spot): boolean {
-  if (!canSwapSpots(run, a, b)) return false;
+/** 祠の入れ替え: スロット・道具袋・防御スロットの間で、中身を入れ替える（何度でもできる。回数の制限はない）。tentative なら、レア度の制限に合わない場所にも仮置きできる（placementViolations が空になるまで画面を閉じられない）。 */
+export function swapSpots(run: RunState, a: Spot, b: Spot, opts: { tentative?: boolean } = {}): boolean {
+  if (!canSwapSpots(run, a, b, opts)) return false;
   const ia = spotItem(run, a);
   const ib = spotItem(run, b);
   setSpot(run, a, ib);
