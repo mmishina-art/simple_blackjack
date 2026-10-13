@@ -1,6 +1,6 @@
 // 全体バランスのシミュレーション: 1回の冒険（地図・戦闘・報酬・宿屋・祠・宝箱）を、そこそこ賢いボットで通しで遊ぶ。
 // 使い方: npx vite-node tools/sim-balance.ts [回数=600] [バースト許容率=0.45]
-// 環境変数: PATH_MODE=random（道をランダムに。省略時は宝箱・祠・宿屋を優先）/ PLAYER_HP / ENEMY_SCALE / START_ARMOR / HERB / HERB_SLOT / RELIC / DEF_MODE=boss
+// 環境変数: PATH_MODE=random（道をランダムに。省略時は宝箱・祠・宿屋を優先）/ PLAYER_HP / ENEMY_SCALE / START_ARMOR / HERB / HERB_SLOT / RELIC / RELIC_STAGE（N 階層の頭からそのレリックを持つ。省略時は最初から） / DEF_MODE=boss
 // ボットは「次のカードのバースト確率が許容率未満なら Hit」「HP が敵の LV 以下なら防御」「回復スキルのスロットで HP が半分以下なら Stand」。実際の人間は、敵の札を見て判断できるので、これより上がる想定。
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { drawOdds } from '../src/core/cards/odds';
@@ -87,7 +87,7 @@ const stageReached: Record<number, number> = {};
     if (process.env.HERB) (getSkill('herb').effects[0] as { amount: number }).amount = Number(process.env.HERB);
     if (process.env.NO_HERB) delete run.slots[12];
     if (process.env.HERB_SLOT) { delete run.slots[12]; run.slots[Number(process.env.HERB_SLOT)] = 'herb'; }
-    if (process.env.RELIC) { const { RELIC_POOL } = await import('../src/relics/catalog'); const r = RELIC_POOL.find((x) => x.id === process.env.RELIC); if (r) run.relics.push(r); }
+    if (process.env.RELIC) { const { RELIC_POOL } = await import('../src/relics/catalog'); const r = RELIC_POOL.find((x) => x.id === process.env.RELIC); if (r && !process.env.RELIC_STAGE) run.relics.push(r); }
     stat.runs++;
     let dead = '';
     while (!dead) {
@@ -99,6 +99,7 @@ const stageReached: Record<number, number> = {};
         if (rs.length) run.relics.push([...rs].sort((a, b) => (b.rarity === 'legend' ? 2 : b.rarity === 'rare' ? 1 : 0) - (a.rarity === 'legend' ? 2 : a.rarity === 'rare' ? 1 : 0))[0]);
         stageReached[run.stage + 1] = (stageReached[run.stage + 1] ?? 0) + 1;
         advanceStage(run);
+        if (process.env.RELIC && Number(process.env.RELIC_STAGE) === run.stage) { const { RELIC_POOL } = await import('../src/relics/catalog'); const r = RELIC_POOL.find((x) => x.id === process.env.RELIC); if (r && !run.relics.includes(r)) run.relics.push(r); } // RELIC_STAGE=N: N 階層の頭から持つ
         if (process.env.STAGE_HEAL_FULL) run.hp = run.maxHp;
         continue;
       }
