@@ -8,6 +8,8 @@ export interface EnemyDef {
   maxHp: number;
   /** 基本攻撃力（ATK）。 */
   attack: number;
+  /** 特性による攻撃ダメージの上乗せ（LV の計算用。黒竜の息吹の +3 など）。 */
+  attackBonus?: number;
   ai: EnemyAI;
   /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;

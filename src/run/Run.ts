@@ -1,8 +1,8 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
-import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
+import { ARMOR_POOL, DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import { pickWeighted, RARITY_WEIGHT } from '../core/rarity';
-import { getSkill, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
+import { getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, validStartingSkills, type MetaState, type RunBonus } from '../meta/Meta';
 import { STAGE_1 } from '../map/stage1';
@@ -26,6 +26,8 @@ export interface RunState {
   baseAttack: number;
   /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;
+  /** 防御スロットに装備している防具（防御したラウンドの被ダメージ上限を決める）。上書きのみ。 */
+  armor: SkillId;
   /** スロット未設定の合計値で発動するスキル（キャラクターごとの初期能力）。 */
   fallbackSkill: SkillId;
   /** スロットにセットしていない所持スキル。 */
@@ -52,7 +54,7 @@ export function createRun(map: StageMap = STAGE_1, meta?: MetaState): RunState {
   return {
     map, position: map.start, cleared: [],
     maxHp, hp: maxHp, baseAttack: START_ATTACK + bonus.attack,
-    slots, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
+    slots, armor: DEFAULT_ARMOR_ID, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
     inventory: [], relics: [], bonus,
     favored: meta ? [...meta.codex.skills] : [],
     stats: { maxRow: 0, enemiesDefeated: 0 },
@@ -104,12 +106,26 @@ export function isSlotLocked(run: RunState, key: SlotKey): boolean {
  */
 export function equipSkill(run: RunState, key: SlotKey, skillId: SkillId): boolean {
   // 通常攻撃（空スロット）はスキルとしてセットできない
-  if (skillId === run.fallbackSkill) return false;
+  if (skillId === run.fallbackSkill || isArmor(getSkill(skillId))) return false;
   const idx = run.inventory.indexOf(skillId);
   if (idx < 0 || isSlotLocked(run, key)) return false;
   run.inventory.splice(idx, 1);
   run.slots[key] = skillId;
   return true;
+}
+
+/** 持ち物の防具を防御スロットに装備する。**上書きのみ**: 元の防具は失われ、持ち物には戻らない。 */
+export function equipArmor(run: RunState, armorId: SkillId): boolean {
+  const idx = run.inventory.indexOf(armorId);
+  if (idx < 0 || !isArmor(getSkill(armorId))) return false;
+  run.inventory.splice(idx, 1);
+  run.armor = armorId;
+  return true;
+}
+
+/** 装備中の防具の被ダメージ上限。 */
+export function armorCap(run: RunState): number {
+  return getSkill(run.armor).damageCap ?? 5;
 }
 
 /** 祠の入れ替え: 2つのスロットの中身を交換する（空きとの交換は移動）。固定スロットは動かせない。 */
@@ -149,7 +165,9 @@ export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
   const weight = (id: SkillId): number => RARITY_WEIGHT[rarityOfSkill(getSkill(id))] * (favored.has(id) ? CODEX_BOOST : 1);
   const count = 3 + (run?.bonus.extraChoices ?? 0);
   const skills = pickWeighted(SKILL_POOL, count - 1, rng, weight);
-  const items = pickWeighted(ITEM_POOL, 1, rng, weight);
+  // 道具の枠: 道具と、いま装備しているより硬い防具（同じか柔らかい防具は出さない）から1つ
+  const harder = ARMOR_POOL.filter((id) => !run || (getSkill(id).damageCap ?? Infinity) < armorCap(run));
+  const items = pickWeighted([...ITEM_POOL, ...harder], 1, rng, weight);
   return [...skills, ...items];
 }
 

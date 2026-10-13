@@ -1,11 +1,12 @@
 import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
-import { describeSkill, describeSkillBonus, getSkill, isItem, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { describeSkill, describeSkillBonus, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
-import { equipSkill, isSlotLocked, type RunState } from '../run/Run';
+import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
 import { buildSlotRow } from './components/SlotRow';
 import { openSheet, type SheetOption } from './components/SkillSheet';
+import { kindTag, medalKindClass } from './kind';
 import { rarityBadge, rarityClass } from './rarity';
 
 export interface LoadoutOptions {
@@ -21,6 +22,8 @@ export interface LoadoutOptions {
  *  - スキル獲得直後は、上に「置くスキル」が表示され、置きたいスロットをタップするだけ
  *  - 11以下（小攻撃）と 21（会心の一撃）は固定で、選べない平らな行。レリックで解錠されると選べる
  */
+const KINDS: readonly SkillKind[] = ['skill', 'item', 'armor'];
+
 export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptions): void {
   let armed: SkillId | null = opts.armed && run.inventory.includes(opts.armed) ? opts.armed : null;
 
@@ -31,15 +34,15 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const head = document.createElement('header');
     head.className = 'loadout__head';
     head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__hint">${armed ? '置きたいスロットをタップ' : 'スロットをタップして、持ち物を置く（上書きのみ。置き換えた元のものは失われる）'}</p>`;
+      <p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : '置きたいスロットをタップ') : 'スロットをタップして、持ち物を置く（上書きのみ。置き換えた元のものは失われる）'}</p>`;
     screen.append(head);
 
     if (armed) {
       const skill = getSkill(armed);
       const banner = document.createElement('div');
       banner.className = `armed ${rarityClass(rarityOfSkill(skill))}`;
-      banner.innerHTML = `<span class="medal">${skill.icon}</span>
-        <span class="armed__text"><strong>${skill.name} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}</span></span>`;
+      banner.innerHTML = `<span class="medal${medalKindClass(kindOfSkill(skill))}">${skill.icon}</span>
+        <span class="armed__text"><strong>${skill.name} ${kindTag(skill, true)} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}</span></span>`;
       screen.append(banner);
     }
 
@@ -58,8 +61,9 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         atk: slotAttack(run.baseAttack, key),
         locked,
         effective: effective.get(key),
-        target: !!armed && !locked,
+        target: !!armed && !isArmor(getSkill(armed)) && !locked,
         onTap: () => {
+          if (armed && isArmor(getSkill(armed))) return; // 防具は、下の防具の欄に装備する
           if (armed) {
             const skill = getSkill(armed);
             confirmOverwrite(key, armed, () => {
@@ -74,6 +78,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         },
       }));
     }
+    slotList.append(buildArmorRow());
     screen.append(slotList);
 
     // 持ち物（表示のみ。置くときはスロットをタップする）。セット待ちのときは上のバナーに集中させるため隠す
@@ -84,8 +89,9 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     chips.className = 'loadout__chips';
     if (entries.length === 0) chips.textContent = 'なし（敵を倒すとスキル・道具が手に入る）';
     // スキルと道具に分けて並べる
-    for (const [label, wantItem] of [['スキル', false], ['道具', true]] as const) {
-      const group = entries.filter((e) => isItem(getSkill(e.id)) === wantItem);
+    for (const kind of KINDS) {
+      const label = KIND_LABEL[kind];
+      const group = entries.filter((e) => kindOfSkill(getSkill(e.id)) === kind);
       if (group.length === 0) continue;
       const h = document.createElement('div');
       h.className = 'loadout__kind';
@@ -95,7 +101,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         const skill = getSkill(e.id);
         const chip = document.createElement('div');
         chip.className = `chip chip--static ${rarityClass(rarityOfSkill(skill))}`;
-        chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
+        chip.innerHTML = `<span class="medal medal--sm${medalKindClass(kind)}">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
         chips.append(chip);
       }
     }
@@ -114,6 +120,66 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     actions.append(close);
     screen.append(actions);
     root.replaceChildren(screen);
+  };
+
+  /** 防御スロット（防具）の行。防御したラウンドの被ダメージ上限は、装備している防具で決まる。 */
+  function buildArmorRow(): HTMLElement {
+    const cur = getSkill(run.armor);
+    const target = !!armed && isArmor(getSkill(armed));
+    const row = document.createElement('button');
+    row.className = `lslot lslot--set lslot--armor lslot--tap ${rarityClass(rarityOfSkill(cur))}${target ? ' lslot--target' : ''}`;
+    row.innerHTML = `<span class="lslot__key">防御</span>
+      <span class="medal medal--sm medal--armor">${cur.icon}</span>
+      <span class="lslot__name">${cur.name} ${kindTag(cur, true)}</span>
+      <span class="lslot__desc">${describeSkill(cur)}</span>
+      <span class="lslot__go" aria-hidden="true">›</span>`;
+    row.addEventListener('click', () => {
+      if (armed && isArmor(getSkill(armed))) {
+        const id = armed;
+        return confirmArmor(id, () => {
+          if (equipArmor(run, id)) {
+            audio.sfx('pick');
+            opts.onClose(`「${getSkill(id).name}」を装備した。`);
+          }
+        });
+      }
+      openArmorPicker();
+    });
+    return row;
+  }
+
+  /** 防具を上書きする確認。いまの防具は失われる。 */
+  const confirmArmor = (id: SkillId, done: () => void): void => {
+    const cur = getSkill(run.armor);
+    const next = getSkill(id);
+    openSheet({
+      title: '防具を上書きする？',
+      subtitle: `「${cur.name}」は失われ、持ち物にも戻らない`,
+      options: [{
+        kind: 'reset', icon: '上', name: `「${next.name}」で上書きする`,
+        detail: `${describeSkill(cur)} → ${describeSkill(next)}`, onPick: done,
+      }],
+    });
+  };
+
+  const openArmorPicker = (): void => {
+    const cur = getSkill(run.armor);
+    const options: SheetOption[] = inventoryEntries(run)
+      .filter((e) => isArmor(getSkill(e.id)))
+      .map((e) => {
+        const a = getSkill(e.id);
+        return {
+          icon: a.icon, name: a.name, rarity: rarityOfSkill(a), skillKind: 'armor' as const, detail: describeSkill(a),
+          note: `いまの「${cur.name}」は失われる（上書き）`,
+          onPick() { confirmArmor(e.id, () => { if (equipArmor(run, e.id)) render(); }); },
+        };
+      });
+    openSheet({
+      title: '防御スロット（防具）',
+      subtitle: `いま: ${cur.name}（${describeSkill(cur)}）`,
+      options,
+      empty: '持ち物に防具がない。敵を倒すと手に入ることがある。',
+    });
   };
 
   /** 上書きの確認。空きスロットならそのまま、スキルが入っていれば「失われる」ことを確認する。 */
@@ -138,11 +204,11 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const current = currentId ? getSkill(currentId) : null;
     const options: SheetOption[] = [];
     const entries = inventoryEntries(run);
-    for (const [label, wantItem] of [['スキル', false], ['道具', true]] as const) {
-      for (const e of entries.filter((x) => isItem(getSkill(x.id)) === wantItem)) {
+    for (const kind of ['skill', 'item'] as const) {
+      for (const e of entries.filter((x) => kindOfSkill(getSkill(x.id)) === kind)) {
         const skill = getSkill(e.id);
         options.push({
-          icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: label,
+          icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: KIND_LABEL[kind], skillKind: kind,
           detail: describeSkill(skill, slotAttack(run.baseAttack, key)),
           badge: e.count > 1 ? `×${e.count}` : undefined,
           note: current ? `いまの「${current.name}」は失われる（上書き）` : undefined,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
-import { ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
+import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
 import { getSkill, hasSkill, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
@@ -252,10 +252,10 @@ describe('マスのイベント', () => {
     expect(skills).toHaveLength(3);
     expect(new Set(skills).size).toBe(3);
     skills.slice(0, 2).forEach((id) => expect(SKILL_POOL).toContain(id));
-    expect(ITEM_POOL).toContain(skills[2]);
+    expect([...ITEM_POOL, ...ARMOR_POOL]).toContain(skills[2]);
     for (let seed = 1; seed <= 30; seed++) {
       const o = offerSkills(seededRng(seed));
-      expect(o.filter((id) => ITEM_POOL.includes(id))).toHaveLength(1);
+      expect(o.filter((id) => [...ITEM_POOL, ...ARMOR_POOL].includes(id))).toHaveLength(1);
       expect(o.filter((id) => SKILL_POOL.includes(id))).toHaveLength(2);
     }
     const run = createRun();

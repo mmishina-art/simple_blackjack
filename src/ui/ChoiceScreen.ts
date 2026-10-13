@@ -1,5 +1,7 @@
 import { audio } from '../audio/AudioManager';
 import type { Rarity } from '../core/rarity';
+import type { SkillKind } from '../core/skills/Skill';
+import { medalKindClass } from './kind';
 import { rarityBadge, rarityClass } from './rarity';
 
 export interface ChoiceOption {
@@ -9,6 +11,8 @@ export interface ChoiceOption {
   description: string;
   /** 名前の横の小さなタグ（例: 「道具」）。 */
   tag?: string;
+  /** スキル・道具・防具の区分（メダルの形と札の色が変わる）。 */
+  kind?: SkillKind;
 }
 
 export interface ChoiceScreenConfig {
@@ -37,8 +41,8 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
     const btn = document.createElement('button');
     btn.className = `choice__card ${rarityClass(opt.rarity)}`;
     btn.disabled = true;
-    btn.innerHTML = `<span class="medal">${opt.icon}</span>
-      <span class="choice__text"><strong>${opt.name}${opt.tag ? ` <em class="kind-tag">${opt.tag}</em>` : ''}</strong><span>${opt.description}</span></span>
+    btn.innerHTML = `<span class="medal${opt.kind ? medalKindClass(opt.kind) : ''}">${opt.icon}</span>
+      <span class="choice__text"><strong>${opt.name}${opt.tag ? ` <em class="kind-tag kind-tag--${opt.kind ?? 'skill'}">${opt.tag}</em>` : ''}</strong><span>${opt.description}</span></span>
       ${opt.rarity ? rarityBadge(opt.rarity) : ''}`;
     btn.addEventListener('click', () => {
       audio.sfx('pick');

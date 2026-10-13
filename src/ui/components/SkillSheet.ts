@@ -1,5 +1,7 @@
 import { audio } from '../../audio/AudioManager';
 import type { Rarity } from '../../core/rarity';
+import type { SkillKind } from '../../core/skills/Skill';
+import { kindTagOf, medalKindClass } from '../kind';
 import { rarityBadge, rarityClass } from '../rarity';
 
 export interface SheetOption {
@@ -17,6 +19,8 @@ export interface SheetOption {
   kind?: 'skill' | 'reset';
   /** この選択肢が属する区分（「スキル」「道具」）。区分が変わるところに見出しが出る。 */
   section?: string;
+  /** スキル・道具・防具の区分（メダルの形と札）。 */
+  skillKind?: SkillKind;
   onPick(): void;
 }
 
@@ -80,9 +84,9 @@ export function openSheet(cfg: SheetConfig): () => void {
     const btn = document.createElement('button');
     btn.className = `pick ${opt.kind === 'reset' ? 'pick--reset' : rarityClass(opt.rarity)}`;
     btn.disabled = !!opt.disabled;
-    btn.innerHTML = `<span class="medal">${opt.icon}</span>
+    btn.innerHTML = `<span class="medal${opt.skillKind ? medalKindClass(opt.skillKind) : ''}">${opt.icon}</span>
       <span class="pick__text">
-        <strong>${opt.name}${opt.badge ? ` <em class="pick__badge">${opt.badge}</em>` : ''}</strong>
+        <strong>${opt.name}${opt.skillKind && opt.skillKind !== 'skill' ? ` ${kindTagOf(opt.skillKind)}` : ''}${opt.badge ? ` <em class="pick__badge">${opt.badge}</em>` : ''}</strong>
         <span class="pick__detail">${opt.detail}</span>
         ${opt.note ? `<span class="pick__note">${opt.note}</span>` : ''}
       </span>

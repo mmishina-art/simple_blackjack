@@ -11,6 +11,8 @@ export class DealState implements BattleState {
     ctx.round++;
     ctx.turn = null;
     ctx.playerSurrendered = false;
+    player.damageCap = null;
+    player.capTaken = 0;
     ctx.plan = {};
     player.hand.clear();
     enemy.hand.clear();

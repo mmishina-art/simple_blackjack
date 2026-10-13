@@ -1,5 +1,6 @@
 import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
+import { enemyLevel } from '../core/entities/enemies/level';
 import { drawOdds, formatPercent } from '../core/cards/odds';
 import type { Entity } from '../core/entities/Entity';
 import { BattleLog } from './components/BattleLog';
@@ -37,6 +38,8 @@ export class BattleView {
   private hitBtn = document.createElement('button');
   private hitSub!: HTMLElement;
   private surrenderSub!: HTMLElement;
+  /** 敵のレベル（攻撃するときの平均ダメージ）。 */
+  private enemyLv = 1;
   private standBtn = document.createElement('button');
   private surrenderBtn = document.createElement('button');
   private muteBtn = document.createElement('button');
@@ -53,6 +56,7 @@ export class BattleView {
     /** 戦闘終了時のオーバーレイ内容を作る（次の画面への遷移はここで行う）。 */
     private readonly buildResult: (won: boolean) => HTMLElement,
   ) {
+    this.enemyLv = enemyLevel(machine.ctx.enemyDef);
     this.container = document.createElement('main');
     this.container.className = 'battle';
     this.enemyView = new EnemyView(machine.ctx.enemyDef.id);
@@ -71,7 +75,7 @@ export class BattleView {
     const infoBtn = document.createElement('button');
     infoBtn.className = 'info-btn';
     infoBtn.textContent = '敵の技';
-    infoBtn.addEventListener('click', () => this.showSheet((close) => buildEnemyInfo(machine.ctx.enemy, machine.ctx.enemyDef, close)));
+    infoBtn.addEventListener('click', () => this.showSheet((close) => buildEnemyInfo(machine.ctx.enemy, machine.ctx.enemyDef, machine.ctx.player.hp, close)));
     const historyBtn = document.createElement('button');
     historyBtn.className = 'info-btn';
     historyBtn.textContent = '記録';
@@ -117,7 +121,7 @@ export class BattleView {
       machine.bus.on('onSkillUsed', ({ user, skill }) => floatText(this.areaOf(user), `「${skill.name}」`, 'skill')),
       machine.bus.on('onBlockApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'block', amount)),
       machine.bus.on('onHealApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'heal', amount)),
-      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage, p.broken ?? 0)),
+      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage, p.broken ?? 0, p.reduced ?? 0)),
       machine.bus.on('onBattleEnd', ({ winner }) => {
         if (winner.id === 'player') window.setTimeout(() => this.enemyView.play('defeated'), 300);
       }),
@@ -177,15 +181,15 @@ export class BattleView {
     floatText(area, `+${amount}`, kind, kind === 'block' ? 'Block' : 'HP');
   }
 
-  private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number, broken = 0): void {
-    const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : '';
+  private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number, broken = 0, reduced = 0): void {
+    const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : reduced > 0 ? 'GUARD' : '';
     if (!text) return;
     const kind = hpLoss > 0 ? 'damage' : 'block'; // 全部防いだときは、ダメージの色ではなく Block の色
     if (absorbed > 0) playFx(this.areaOf(target), 'guard');
     if (broken > 0) playFx(this.areaOf(target), 'break'); // Block を破壊（会心の一撃）
     // ログ欄の代わりに、数字の下へ内訳（Block が防いだ量・バーストの倍率）を添える
     const mult = damageTakenMultiplier(target, this.machine.ctx.rules);
-    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', broken > 0 ? `Block破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : ''].filter(Boolean).join('・');
+    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', broken > 0 ? `Block破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : '', reduced > 0 ? `防具 −${reduced}` : ''].filter(Boolean).join('・');
     if (target.id === 'enemy') {
       if (hpLoss > 0) this.enemyView.play('hurt');
       this.enemyView.floatText(text, kind, notes);
@@ -221,8 +225,8 @@ export class BattleView {
 
   private render(): void {
     const { ctx } = this.machine;
-    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, ctx.enemy.attack);
-    // 自分の ATK は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の ATK は出す
+    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, this.enemyLv);
+    // 自分の ATK は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の LV（攻撃するときの平均ダメージ）は出す
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
@@ -248,11 +252,11 @@ export class BattleView {
     if (ctx.winner) this.showResult(ctx.winner === ctx.player);
   }
 
-  /** 防御ボタンの説明。実際に得る Block（レリックの補正後）を出す。 */
+  /** 防御ボタンの説明。装備している防具と、このラウンドに受けるダメージの上限（レリックの補正後）を出す。 */
   private renderDefend(): void {
     const { ctx } = this.machine;
-    const block = Math.max(0, Math.floor(ctx.bus.emit('onBlockGained', { entity: ctx.player, amount: ctx.rules.surrenderBlock }).amount));
-    const text = `Block +${block}・スキルは発動しない`;
+    const cap = ctx.player.armorCap ?? ctx.rules.defendCap;
+    const text = `被ダメージ最大 ${cap}・スキルは発動しない`;
     if (this.surrenderSub.textContent !== text) this.surrenderSub.textContent = text;
   }
 

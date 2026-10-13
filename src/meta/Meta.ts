@@ -1,4 +1,4 @@
-import { ALL_POOL, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
+import { ALL_POOL, ARMOR_POOL, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
 import type { SkillId, SlotKey } from '../core/skills/Skill';
 import { RELIC_POOL } from '../relics/catalog';
 
@@ -193,6 +193,8 @@ export function discoverRelic(meta: MetaState, id: string): boolean {
 export const CODEX_SKILL_TOTAL = new Set<SkillId>([...STARTER_SKILLS, ...SKILL_POOL].filter((id) => !ITEM_POOL.includes(id))).size;
 /** 図鑑の道具の総数。 */
 export const CODEX_ITEM_TOTAL = ITEM_POOL.length;
+/** 図鑑の防具の総数。 */
+export const CODEX_ARMOR_TOTAL = ARMOR_POOL.length;
 export const CODEX_RELIC_TOTAL = RELIC_POOL.length;
 
 // ---- 出撃時の初期装備（出撃準備） ----

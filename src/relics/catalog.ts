@@ -150,11 +150,9 @@ export const HerbalistBag: Relic = {
 
 export const ArtisanTools: Relic = {
   id: 'artisan', rarity: 'rare', name: '匠の工具', icon: '工',
-  description: '道具の Block・ダメージ +4（木の盾 7 → 11、爆弾 10 → 14 など）',
-  apply({ bus, player }) {
-    bus.on('onBlockGained', (p) => {
-      if (p.entity === player && p.skill?.kind === 'item') return { ...p, amount: p.amount + 4 };
-    });
+  description: '道具のダメージ +4（爆弾 10 → 14）。防具の被ダメージ上限 −1（鉄の盾 5 → 4）',
+  apply({ bus, rules, player }) {
+    player.armorCap = Math.max(1, (player.armorCap ?? rules.defendCap) - 1);
     bus.on('onDamageCalculated', (p) => {
       if (p.attacker === player && p.skill?.kind === 'item' && p.damage > 0) return { ...p, damage: p.damage + 4 };
     });

@@ -1,9 +1,10 @@
 import { audio } from '../audio/AudioManager';
 import { DEFAULT_PLAYER_FALLBACK, slotAttack, START_ATTACK } from '../core/skills/catalog';
-import { ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
-import { describeSkill, getSkill, isItem, rarityOfSkill, slotLabel } from '../core/skills/Skill';
+import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
+import { describeSkill, getSkill, isItem, kindOfSkill, rarityOfSkill, slotLabel, type SkillKind } from '../core/skills/Skill';
+import { kindTag, medalKindClass } from './kind';
 import {
-  buyUpgrade, canBuy, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeBonus, customCount, isRelicDiscovered, isSkillDiscovered,
+  buyUpgrade, canBuy, CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeBonus, customCount, isRelicDiscovered, isSkillDiscovered,
   nextCost, saveMeta, setStartingSkill, STARTER_SKILLS, startingCapacity, UPGRADES, upgradeLevel, type MetaState,
 } from '../meta/Meta';
 import { placedElsewhere, prepCandidates, prepSlots, type PrepSlot } from '../meta/prep';
@@ -68,8 +69,8 @@ export function showAltar(root: HTMLElement, meta: MetaState, onClose: () => voi
 export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => void): void {
   const screen = el('main', 'meta-screen');
   const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...ITEM_POOL])];
-  const kindOf = (wantItem: boolean): string[] => all.filter((id) => isItem(getSkill(id)) === wantItem);
-  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">入手したものは次回から報酬に出やすくなる。スキル・道具は出撃時に最初から置ける</p>`));
+  const kindOf = (kind: SkillKind): string[] => (kind === 'armor' ? [...ARMOR_POOL] : all.filter((id) => kindOfSkill(getSkill(id)) === kind));
+  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">入手したものは次回から報酬に出やすくなる。スキル・道具は出撃時に最初から置ける（防具は置けない）</p>`));
 
   const section = (title: string, ids: string[], total: number): HTMLElement => {
     const box = el('section', 'codex');
@@ -80,14 +81,15 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
       const skill = getSkill(id);
       grid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,
         known
-          ? `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name} ${rarityBadge(rarityOfSkill(skill))}<small>${describeSkill(skill)}</small></span>`
+          ? `<span class="medal medal--sm${medalKindClass(kindOfSkill(skill))}">${skill.icon}</span><span>${skill.name} ${kindTag(skill)} ${rarityBadge(rarityOfSkill(skill))}<small>${describeSkill(skill)}</small></span>`
           : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
     }
     box.append(grid);
     return box;
   };
-  const skills = section('スキル', kindOf(false), CODEX_SKILL_TOTAL);
-  const items = section('道具', kindOf(true), CODEX_ITEM_TOTAL);
+  const skills = section('スキル', kindOf('skill'), CODEX_SKILL_TOTAL);
+  const items = section('道具', kindOf('item'), CODEX_ITEM_TOTAL);
+  const armors = section('防具', kindOf('armor'), CODEX_ARMOR_TOTAL);
 
   const relics = el('section', 'codex');
   const rFound = RELIC_POOL.filter((r) => isRelicDiscovered(meta, r.id)).length;
@@ -103,7 +105,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   relics.append(rGrid);
 
   const body = el('div', 'meta-body');
-  body.append(skills, items, relics);
+  body.append(skills, items, armors, relics);
   screen.append(body, backButton('戻る', onClose));
   root.replaceChildren(screen);
 }
@@ -188,7 +190,7 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
         const elsewhere = placedElsewhere(meta, id, slot.key);
         const isCurrent = slot.effectiveId === id;
         options.push({
-          icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: label,
+          icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: label, skillKind: wantItem ? 'item' : 'skill',
           detail: describeSkill(skill, atkAt(slot.key)),
           badge: isCurrent ? '現在' : elsewhere.length ? `${elsewhere.map(slotLabel).join('・')} に配置中` : undefined,
           disabled: !slot.canChange || isCurrent,

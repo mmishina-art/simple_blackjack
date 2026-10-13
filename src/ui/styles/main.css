@@ -1025,11 +1025,16 @@ section { min-width: 0; }
 @keyframes fxBurst { 0% { opacity: 0; transform: scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: scale(1.25); } }
 @media (prefers-reduced-motion: reduce) { .fx, .fx::before { animation: none; opacity: 0.55; } }
 
-/* ---- スキルと道具の区分 ---- */
+/* ---- スキル・道具・防具の区分（形 + 札の色 + 文字） ---- */
+.medal--item { border-radius: 28%; }
+.medal--armor { border-radius: 12% 12% 50% 50% / 10% 10% 64% 64%; }
+.lslot--armor .lslot__key { color: #a9c6e4; }
 .kind-tag {
   font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; vertical-align: middle;
   padding: 1px 5px; border: 1px solid #5d8f6b; border-radius: 8px; color: #9ed7ae; background: rgba(40, 80, 55, 0.35);
 }
+.kind-tag--skill { border-color: var(--gold); color: var(--gold); background: rgba(176, 141, 62, 0.15); }
+.kind-tag--armor { border-color: #6f8fb0; color: #a9c6e4; background: rgba(60, 85, 115, 0.4); }
 .sheet__section {
   margin: 8px 0 2px; padding: 0 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.25em; color: var(--gold);
 }

@@ -34,11 +34,13 @@ const CorpseThirst: Relic = {
   },
 };
 
+const BREATH_BONUS = 3;
+
 const DragonBreath: Relic = {
-  id: 'breath', name: '竜の息吹', icon: '炎', description: '攻撃ダメージ +3',
+  id: 'breath', name: '竜の息吹', icon: '炎', description: `攻撃ダメージ +${BREATH_BONUS}`,
   apply({ bus, enemy }) {
     bus.on('onDamageCalculated', (p) => {
-      if (p.attacker === enemy && p.damage > 0) return { ...p, damage: p.damage + 3 };
+      if (p.attacker === enemy && p.damage > 0) return { ...p, damage: p.damage + BREATH_BONUS };
     });
   },
 };
@@ -59,7 +61,7 @@ export const Ghoul: EnemyDef = {
 };
 
 export const BlackDragon: EnemyDef = {
-  id: 'dragon', name: '黒竜', maxHp: 40, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.dragon, fallbackSkill: 'dragon_swipe',
+  id: 'dragon', name: '黒竜', maxHp: 40, attack: 5, attackBonus: BREATH_BONUS, ai: new DealerAI(18), slots: ENEMY_SLOTS.dragon, fallbackSkill: 'dragon_swipe',
   trait: '竜の息吹（攻撃ダメージ +3）', relics: [DragonBreath],
 };
 

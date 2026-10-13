@@ -96,14 +96,14 @@ export class SlotStrip {
     const changed = key !== this.calloutKey;
     this.calloutKey = key;
     const medal = document.createElement('span');
-    medal.className = `medal medal--sm callout__icon ${rarityClass(c.rarity)}`;
+    medal.className = `medal medal--sm callout__icon ${rarityClass(c.rarity)}${c.item ? ' medal--item' : ''}`;
     medal.textContent = c.icon;
     const name = document.createElement('span');
     name.className = 'callout__name';
     name.textContent = c.name;
     if (c.item) {
       const tag = document.createElement('em');
-      tag.className = 'kind-tag';
+      tag.className = 'kind-tag kind-tag--item';
       tag.textContent = '道具';
       name.append(' ', tag);
     }
