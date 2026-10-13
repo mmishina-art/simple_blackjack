@@ -414,7 +414,7 @@ section { min-width: 0; }
   padding: 1px 8px 1px 5px; color: #cfe3ef; background: linear-gradient(180deg, #34505f, #1b2d37);
   border: 1px solid #6f8d9d; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;
 }
-.block-chip__icon { width: 17px; height: 17px; flex: none; color: #8cc4f5; filter: drop-shadow(0 0 3px rgba(140, 196, 245, 0.7)); }
+.block-chip__icon { width: 18px; height: 18px; flex: none; color: #8cc4f5; filter: drop-shadow(0 0 3px rgba(140, 196, 245, 0.7)); }
 .block-chip[hidden] { display: none; }
 
 .slots { display: flex; flex-direction: column; gap: 4px; }

@@ -1,5 +1,5 @@
-/** ブロックのマーク: 多角形（六角形）のバリア。外枠と内側の六角形を、線でつないだ結晶のような形。 */
-const BARRIER_ICON = '<svg class="block-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,1.5 21.1,6.75 21.1,17.25 12,22.5 2.9,17.25 2.9,6.75" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><polygon points="12,7 16.4,9.5 16.4,14.5 12,17 7.6,14.5 7.6,9.5" fill="currentColor" fill-opacity="0.35" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="M12 1.5V7M21.1 6.75 16.4 9.5M21.1 17.25 16.4 14.5M12 22.5V17M2.9 17.25 7.6 14.5M2.9 6.75 7.6 9.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.8"/></svg>';
+/** ブロックのマーク: 六角形が 3 つ寄り合った、蜂の巣のようなバリアーの板（結晶・蜘蛛の巣に見えないよう、放射状の線は使わない）。 */
+const BARRIER_ICON = '<svg class="block-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12.0,2.2 16.5,4.8 16.5,10.0 12.0,12.6 7.5,10.0 7.5,4.8" fill="currentColor" fill-opacity="0.55" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><polygon points="7.5,10.0 12.0,12.6 12.0,17.8 7.5,20.4 3.0,17.8 3.0,12.6" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><polygon points="16.5,10.0 21.0,12.6 21.0,17.8 16.5,20.4 12.0,17.8 12.0,12.6" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
 
 export class HpBar {
   readonly el = document.createElement('div');
