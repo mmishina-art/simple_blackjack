@@ -272,6 +272,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   }
 
   run.hp = machine.ctx.player.hp;
+  run.maxHp = machine.ctx.player.maxHp; // 凱旋の杯で増えた最大 HP を引き継ぐ
   run.stats.enemiesDefeated++;
   if (!bareRun && !cheated && tile.enemyId && discoverEnemy(meta, tile.enemyId)) saveMeta(meta); // モンスター図鑑に載る
   markCleared(run, tile.id);

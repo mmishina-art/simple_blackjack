@@ -423,11 +423,6 @@ describe('行動の演出: 効果は1つずつ、間をあけて見せる', () =
 });
 
 describe('バーストのペナルティ（受けるダメージ 1.5倍）', () => {
-  const give = (m: BattleMachine, who: 'player' | 'enemy', ranks: Rank[]) => {
-    m.ctx[who].hand.clear();
-    ranks.forEach((r) => m.ctx[who].hand.add(makeCard(r, who === 'player' ? 'S' : 'H')));
-  };
-
   it('倍率は RuleSet の bustDamageMultiplier で変えられる（1 なら等倍に戻る）', async () => {
     const plain = { bustDamageMultiplier: 1 };
     const p = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], rules: plain });
@@ -463,16 +458,6 @@ describe('バーストのペナルティ（受けるダメージ 1.5倍）', () 
     const { Breastplate } = await import('../src/relics/catalog');
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [Breastplate] });
     expect(m.ctx.player.hp).toBe(60 - Math.floor((MELT - 1) * 1.5));
-  });
-
-  it('身代わりの人形で防いだあとの2回目のバーストは、1.5倍のダメージを受ける', async () => {
-    const { ScapegoatDoll } = await import('../src/relics/catalog');
-    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [ScapegoatDoll] });
-    expect(m.ctx.player.hp).toBe(60); // 最初のバーストは、敵も行動しない
-    give(m, 'player', ['K', 'Q', '5']);
-    give(m, 'enemy', ['9', '9']);
-    await m.runFrom('Initiative', ['Deal']);
-    expect(m.ctx.player.hp).toBe(60 - BUST);
   });
 
   it('両者バーストなら誰も行動しないので、倍率の出番はない', async () => {

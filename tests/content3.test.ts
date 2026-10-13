@@ -4,7 +4,8 @@ import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { ALL_POOL, ARMOR_POOL, ITEM_POOL, SKILL_POOL, slotAttack } from '../src/core/skills/catalog';
 import { attackValue, describeSkill, getSkill, hasAttack, rarityOfSkill, supportValue, type SkillDef } from '../src/core/skills/Skill';
 import { CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeShards, SHARD_CLEAR_BONUS, SHARD_STAGE_BONUS } from '../src/meta/Meta';
-import { Bloodlust, DefenderCharm, SaintRobe, LuckyDice, RELIC_POOL, ThornMail, TriumphCup, Unyielding } from '../src/relics/catalog';
+import { DEFAULT_PLAYER_SLOTS } from '../src/core/skills/catalog';
+import { ArtisanTools, CounterStance, DefenderCharm, FullRing, LuckyDice, NoBustPenalty, RELIC_POOL, ThornMail, TriumphCup, Unyielding } from '../src/relics/catalog';
 import { noWait, playRound } from './helpers';
 
 const enemy = (id: string) => ENEMY_LINEUP.find((e) => e.id === id)!;
@@ -81,21 +82,51 @@ describe('第2・第3階層の道具・防具', () => {
   });
 });
 
-describe('第2・第3階層のレリック', () => {
-  it('守りの護符: 防御したとき HP +6', async () => {
+describe('レリック（効果）', () => {
+  /** 防御 → ダメージ計算 → ラウンド終了、を直接流して、レリックのフックだけを試す。 */
+  const calc = (m: BattleMachine, damage: number, attacker: 'player' | 'enemy' = 'enemy') =>
+    m.bus.emit('onDamageCalculated', { attacker: m.ctx.entityOf(attacker), defender: m.ctx.entityOf(attacker === 'enemy' ? 'player' : 'enemy'), damage, skill: null, defending: false } as never).damage;
+
+  it('守りの護符: 防御したとき、受けるダメージを 0 にする（スライムの溶解 3 が通らない）', async () => {
     const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30, relics: [DefenderCharm] });
-    expect(m.ctx.player.hp).toBe(30 + 6 - 3); // スライムの溶解 3
+    expect(m.ctx.player.hp).toBe(30);
+    const without = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30 });
+    expect(without.ctx.player.hp).toBe(27);
   });
 
-  it('聖衣（レア）: 防御したとき HP +3。守りの護符と重なる（+9）', async () => {
-    expect(SaintRobe.rarity).toBe('rare');
-    const one = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30, relics: [SaintRobe] });
-    expect(one.ctx.player.hp).toBe(30 + 3 - 3);
-    const both = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30, relics: [DefenderCharm, SaintRobe] });
-    expect(both.ctx.player.hp).toBe(30 + 9 - 3);
+  it('守りの護符: 各バトル 2 回まで。防御していないラウンドには効かない', () => {
+    const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], relics: [DefenderCharm], pace: noWait });
+    expect(calc(m, 5)).toBe(5); // 防御していない
+    for (const expected of [0, 0, 5]) {
+      m.bus.emit('onSurrender', { entity: m.ctx.player });
+      expect(calc(m, 5)).toBe(expected); // 3 回目の防御は効かない
+      m.bus.emit('onRoundEnd', { round: 1 });
+    }
+    expect(calc(m, 5)).toBe(5);
   });
 
-  it('幸運の賽: 合計 21 で Stand したときブロック +8（21 でなければ付かない）', async () => {
+  it('反撃の構え: 防御した次のラウンドだけ、与える攻撃ダメージ +30%', () => {
+    const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], relics: [CounterStance], pace: noWait });
+    expect(calc(m, 10, 'player')).toBe(10);
+    m.bus.emit('onSurrender', { entity: m.ctx.player });
+    expect(calc(m, 10, 'player')).toBe(10); // 防御したラウンド自体は変わらない
+    m.bus.emit('onRoundEnd', { round: 1 });
+    expect(calc(m, 10, 'player')).toBe(13); // 次のラウンド
+    m.bus.emit('onRoundEnd', { round: 2 });
+    expect(calc(m, 10, 'player')).toBe(10); // その次は元に戻る
+  });
+
+  it('満杯の指輪: 12〜20 がすべて埋まっていると POW +3（1 つでも欠けていると効かない）', () => {
+    const full = { ...DEFAULT_PLAYER_SLOTS, 12: 'jab', 13: 'jab', 14: 'jab', 15: 'herb', 16: 'jab', 17: 'jab', 18: 'jab', 19: 'jab', 20: 'big_attack' };
+    const base = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerSlots: full, pace: noWait }).ctx.player.attack;
+    const ring = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerSlots: full, relics: [FullRing], pace: noWait }).ctx.player.attack;
+    expect(ring).toBe(base + 3);
+    const { 19: _removed, ...gap } = full;
+    const partial = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerSlots: gap, relics: [FullRing], pace: noWait }).ctx.player.attack;
+    expect(partial).toBe(base);
+  });
+
+  it('二十一の盾: 合計 21 で Stand したときブロック +8（21 でなければ付かない）', async () => {
     const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], relics: [LuckyDice], pace: noWait });
     m.ctx.player.hand.add({ rank: 'K', suit: 'S', value: 10 });
     m.ctx.player.hand.add({ rank: 'A', suit: 'S', value: 1 });
@@ -108,24 +139,34 @@ describe('第2・第3階層のレリック', () => {
     expect(n.ctx.player.block).toBe(0);
   });
 
-  it('棘の鎧: HP を削られたとき、その 1/3（切り上げ）を敵にも与える', async () => {
+  it('棘の鎧: HP を削られたとき、その 20%（最低 1）を敵にも与える', async () => {
     const m = await playRound({ player: ['K', '7'], enemyHand: ['K', 'K'], enemy: enemy('knight'), relics: [ThornMail], enemyHp: 30 });
-    // 騎士 20: 断罪の一閃 POW4×2 = 8 → HP -8（17 は未設定でブロック なし）→ 棘 3、そのあと後攻の通常攻撃 7
+    // 騎士 20: 断罪の一閃 POW4×2 = 8 → HP -8 → 棘 floor(1.6)=1（最低 1）、そのあと後攻の通常攻撃 7
     expect(m.ctx.player.hp).toBe(60 - 8);
-    expect(m.ctx.enemy.hp).toBe(30 - 3 - 7);
+    expect(m.ctx.enemy.hp).toBe(30 - 1 - 7);
   });
 
-  it('凱旋の杯: 敵に勝つたび HP +5', async () => {
+  it('凱旋の杯（レジェンド）: 敵に勝つたび、最大 HP +1（現在の HP も +1）', async () => {
+    expect(TriumphCup.rarity).toBe('legend');
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 5, playerHp: 40, relics: [TriumphCup] });
     expect(m.ctx.winner).toBe(m.ctx.player);
-    expect(m.ctx.player.hp).toBe(45);
+    expect(m.ctx.player.hp).toBe(41);
+    expect(m.ctx.player.maxHp).toBe(61);
   });
 
-  it('血の渇き: 敵がバーストしたラウンド、与える攻撃ダメージ +6', async () => {
-    const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q', '5'], enemyHp: 60, relics: [Bloodlust] });
-    expect(60 - m.ctx.enemy.hp).toBe(Math.floor((15 + 6) * 1.5)); // 大攻撃 15 + 6、バーストの ×1.5
-    const plain = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 60, relics: [Bloodlust] });
-    expect(60 - plain.ctx.enemy.hp).toBe(15); // バーストしていなければ変わらない
+  it('破滅の加護（レジェンド）: バーストしても、受けるダメージが 1.5 倍にならない', async () => {
+    expect(NoBustPenalty.rarity).toBe('legend');
+    const plain = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] });
+    const blessed = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'], relics: [NoBustPenalty] });
+    expect(plain.ctx.player.hp).toBe(60 - Math.floor(3 * 1.5));
+    expect(blessed.ctx.player.hp).toBe(60 - 3);
+  });
+
+  it('爆弾師の工具: 爆弾系（攻撃の道具）のダメージ 1.5 倍。スキルの攻撃には効かない', async () => {
+    const bomb = await playRound({ player: ['7', '8'], enemyHand: ['K', 'Q'], enemyHp: 60, playerSlots: { 15: 'bomb' }, relics: [ArtisanTools] });
+    expect(60 - bomb.ctx.enemy.hp).toBe(15); // 爆弾 10 → 15
+    const skill = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 60, relics: [ArtisanTools] });
+    expect(60 - skill.ctx.enemy.hp).toBe(15); // 大攻撃は変わらない
   });
 
   it('不屈の心: 各バトルで一度だけ、致命傷を HP 1 で耐える', async () => {
@@ -136,11 +177,12 @@ describe('第2・第3階層のレリック', () => {
     expect(dead.ctx.player.hp).toBe(0);
   });
 
-  it('レリックは 21 個で、不屈の心はレジェンド', () => {
-    expect(RELIC_POOL).toHaveLength(21);
-    expect(Unyielding.rarity).toBe('legend');
+  it('レリックは 15 個（コモン 7・レア 4・レジェンド 4）で、名前と ID が重ならない', () => {
+    expect(RELIC_POOL).toHaveLength(15);
+    for (const [rarity, n] of [['common', 7], ['rare', 4], ['legend', 4]] as const) expect(RELIC_POOL.filter((r) => r.rarity === rarity), rarity).toHaveLength(n);
     expect(RELIC_POOL.find((r) => r.id === 'breastplate')).toMatchObject({ rarity: 'legend', name: '金剛の鎧' });
-    expect(new Set(RELIC_POOL.map((r) => r.id)).size).toBe(21);
+    expect(new Set(RELIC_POOL.map((r) => r.id)).size).toBe(15);
+    expect(new Set(RELIC_POOL.map((r) => r.name)).size).toBe(15);
   });
 });
 

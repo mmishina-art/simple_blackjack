@@ -10,10 +10,10 @@ import { attackFormula, attackValue, describeSkill, describeSkillBonus, describe
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
-import { Bracer, Whetstone } from '../src/relics/catalog';
+import { Whetstone } from '../src/relics/catalog';
 import { previewSlot } from '../src/run/effective';
 import { createRun } from '../src/run/Run';
-import { noWait, playRound, WITH_BLOCKS } from './helpers';
+import { noWait, playRound, reshapeRelic, WITH_BLOCKS } from './helpers';
 
 const machine = (opts: Partial<ConstructorParameters<typeof BattleMachine>[0]> = {}) =>
   new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, ...opts });
@@ -437,7 +437,7 @@ describe('ビフォーアフター（セット前の比較）', () => {
     expect(placed.short).toBe('攻撃 10');
     expect(diffLines(empty.totals, placed.totals)).toEqual(['攻撃 5 → 10（+5）']);
     expect(JSON.stringify(run.slots)).toBe(slotsBefore);
-    run.relics.push(Bracer); // 大攻撃が POW×2+5 に
+    run.relics.push(reshapeRelic('big_attack', 2, 5)); // 大攻撃が POW×2+5 に
     expect(previewSlot(run, 15, 'big_attack').short).toBe('攻撃 15');
   });
 });

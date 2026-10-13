@@ -6,8 +6,9 @@ import { SKILL_POOL } from '../src/core/skills/catalog';
 import { skillForTotal } from '../src/core/skills/execute';
 import { fallbackLabel, getSkill, rarityOfSkill } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
-import { Lockpick, RELIC_POOL, SealKey } from '../src/relics/catalog';
+import { RELIC_POOL } from '../src/relics/catalog';
 import { createRun, equipSkill, isSlotLocked, offerRelics, offerSkills } from '../src/run/Run';
+import { reshapeRelic, unlockRelic } from './helpers';
 
 describe('レア度', () => {
   it('ラベルはコモン / レア / レジェンド', () => {
@@ -23,7 +24,7 @@ describe('レア度', () => {
     expect(rarityOfSkill(getSkill('ace_strike'))).toBe('common');
     expect(rarityOfSkill(getSkill('overlord_strike'))).toBe('rare');
     expect(rarityOfSkill(getSkill('final_strike'))).toBe('legend');
-    expect(RELIC_POOL.find((r) => r.id === 'key')!.rarity).toBe('legend');
+    expect(RELIC_POOL.find((r) => r.id === 'breastplate')!.rarity).toBe('legend');
   });
 
   it('重み付き抽選: 重複なし。レア度が高いほど出にくい', () => {
@@ -77,11 +78,11 @@ describe('空スロット = 通常攻撃', () => {
 });
 
 describe('固定スロットの解錠（11以下はレリックで変更できる）', () => {
-  it('解錠の鍵で 11以下 が付け替え可能になる（21 は固定のまま）', () => {
+  it('11以下を解錠するレリックで 11以下 が付け替え可能になる（21 は固定のまま）', () => {
     const run = createRun();
     run.inventory.push('slash');
     expect(equipSkill(run, 11, 'slash')).toBe(false);
-    run.relics.push(Lockpick);
+    run.relics.push(unlockRelic(11));
     expect(isSlotLocked(run, 11)).toBe(false);
     expect(isSlotLocked(run, 21)).toBe(true);
     expect(equipSkill(run, 11, 'slash')).toBe(true);
@@ -89,9 +90,9 @@ describe('固定スロットの解錠（11以下はレリックで変更でき�
     expect(run.inventory).toEqual([]); // 上書きされた小攻撃は失われる
   });
 
-  it('封印の鍵は 21 だけを解錠する', () => {
+  it('21 を解錠するレリックは 21 だけを解錠する', () => {
     const run = createRun();
-    run.relics.push(SealKey);
+    run.relics.push(unlockRelic(21));
     expect(isSlotLocked(run, 21)).toBe(false);
     expect(isSlotLocked(run, 11)).toBe(true);
   });
@@ -99,15 +100,15 @@ describe('固定スロットの解錠（11以下はレリックで変更でき�
 
 describe('レリックによる上書きの検出（装備画面の赤字表示）', async () => {
   const { effectiveSlotSkills } = await import('../src/run/effective');
-  const { TitanBlood, Whetstone } = await import('../src/relics/catalog');
+  const { Whetstone } = await import('../src/relics/catalog');
 
   it('レリックなしなら、どのスロットも上書きなし', () => {
     for (const eff of effectiveSlotSkills(createRun()).values()) expect(eff.changed).toBe(false);
   });
 
-  it('巨人の血: 11以下の小攻撃が POW×0.5＝1 から POW×2+10＝12 に上書きされる', () => {
+  it('スキルを書き換えるレリック: 11以下の小攻撃が POW×0.5＝1 から POW×2+10＝12 に上書きされる', () => {
     const run = createRun();
-    run.relics.push(TitanBlood);
+    run.relics.push(reshapeRelic('small_attack', 2, 10));
     const eff = effectiveSlotSkills(run).get(11)!;
     expect(eff.changed).toBe(true);
     expect(eff.baseText).toBe('攻撃 POW×0.5＝1'); // 11以下の POW は 1（攻撃は最低 1）

@@ -15,6 +15,8 @@ export class Entity {
   damageCap: number | null = null;
   /** このラウンドに、上限の対象として受けたダメージ（HP の減少）の合計。 */
   capTaken = 0;
+  /** バーストしても、受けるダメージが増えない（レリック「破滅の加護」）。 */
+  bustPenaltyFree = false;
 
   constructor(
     readonly id: EntityId,

@@ -80,8 +80,9 @@ describe('道具を強化するレリック', () => {
     expect(effectAt('drain', 17, [HerbalistBag])).toEqual(effectAt('drain', 17)); // スキルは変わらない
   });
 
-  it('匠の工具: 道具のダメージ +4。スキルのブロック・攻撃には効かない', () => {
-    expect(effectAt('bomb', 15, [ArtisanTools])).toEqual([14]);
+  it('爆弾師の工具: 爆弾系の道具のダメージ 1.5 倍。スキルのブロック・攻撃には効かない', () => {
+    expect(effectAt('bomb', 15, [ArtisanTools])).toEqual([15]);
+    expect(effectAt('big_bomb', 15, [ArtisanTools])).toEqual([24]);
     expect(effectAt('shield', 15, [ArtisanTools])).toEqual(effectAt('shield', 15));
     expect(effectAt('big_attack', 15, [ArtisanTools])).toEqual(effectAt('big_attack', 15));
   });
