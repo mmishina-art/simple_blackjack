@@ -18,6 +18,7 @@ import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
 import { showShrine } from './ui/ShrineScreen';
 import { showSettings } from './ui/SettingsScreen';
+import { showEnding } from './ui/EndingScreen';
 import { setupUpdateBanner } from './ui/UpdateBanner';
 import { hasUnusedKitOpportunity } from './meta/prep';
 import { showAltar, showCodex, showPrep } from './ui/MetaScreens';
@@ -193,7 +194,11 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     return box;
   }
   if (tile.kind === 'boss') {
-    box.append(el('p', 'result__line', `${run.map.name}を踏破した！`), shardsLine(endRun(true)), ...endButtons('もう一度挑む'));
+    // 最後の階層のボスを倒した: 魂片を記録して、エンディングへ。エンディングが終わると、タイトルに戻る
+    const gained = endRun(true);
+    box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('エンディングへ', () => {
+      showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun }, showTitle);
+    }));
     return box;
   }
   box.append(button('次へ', offerSkillReward));
