@@ -80,15 +80,20 @@ function byRarityAsc<T>(items: readonly T[], rarityOf: (item: T) => Rarity): T[]
 
 /** 図鑑。「スキル」（スキル・道具・防具・レリック）と「モンスター」の 2 つの見開き。未入手・未討伐は「？」。 */
 export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => void, initialTab: 'skills' | 'monsters' = 'skills'): void {
-  const screen = el('main', 'meta-screen');
+  const screen = el('main', 'meta-screen codex-screen');
   // デバッグモードでは、すべて入手済みとして見せる（表示だけ。記録（meta）は変えない）
   const skillKnown = (id: string): boolean => isDebug() || isSkillDiscovered(meta, id);
   const relicKnown = (id: string): boolean => isDebug() || isRelicDiscovered(meta, id);
   const enemyKnown = (id: string): boolean => isDebug() || isEnemyDiscovered(meta, id);
   const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...UPGRADE_ONLY_SKILLS, ...ITEM_POOL])];
   const kindOf = (kind: SkillKind): string[] => (kind === 'armor' ? [...ARMOR_POOL] : all.filter((id) => kindOfSkill(getSkill(id)) === kind));
-  const head = el('header', 'meta-head');
-  const body = el('div', 'meta-body');
+  // 上の「戻る」・見出し・タブは固定。その下（ヒントと一覧）だけがスクロールする
+  const top = el('header', 'codex-top');
+  const back = el('button', 'codex-top__back', '‹ 戻る');
+  back.setAttribute('aria-label', '図鑑を閉じる');
+  back.addEventListener('click', () => { audio.sfx('click'); onClose(); });
+  top.append(back, el('h1', 'codex-top__title', '図鑑'), el('span', 'codex-top__gap'));
+  const body = el('div', 'meta-body codex-body');
   const tabs = el('div', 'codex-tabs');
   const sub = (tab: 'skills' | 'monsters'): string => isDebug()
     ? 'デバッグモード: すべて開放して表示中（記録は変わらない）'
@@ -130,7 +135,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
 
   const monsters = buildMonsterSection();
   const render = (tab: 'skills' | 'monsters'): void => {
-    head.innerHTML = `<h1>図鑑</h1><p class="meta-head__sub">${sub(tab)}</p>`;
+    const hint = el('p', 'meta-head__sub', sub(tab));
     tabs.replaceChildren(
       ...(['skills', 'monsters'] as const).map((t) => {
         const b = el('button', `codex-tabs__btn${t === tab ? ' is-on' : ''}`, t === 'skills' ? 'スキル' : 'モンスター');
@@ -139,10 +144,10 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
         return b;
       }),
     );
-    body.replaceChildren(...(tab === 'skills' ? [skills, items, armors, relics] : monsters));
+    body.replaceChildren(hint, ...(tab === 'skills' ? [skills, items, armors, relics] : monsters));
     body.scrollTop = 0;
   };
-  screen.append(head, tabs, body, backButton('戻る', onClose));
+  screen.append(top, tabs, body);
   root.replaceChildren(screen);
   render(initialTab);
 

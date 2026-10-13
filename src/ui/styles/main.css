@@ -1188,3 +1188,14 @@ section { min-width: 0; }
 .drop { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px 1px 2px; font-size: 11px; color: var(--bone); background: #120e09; border: 1px solid #2a2118; border-radius: 10px; white-space: nowrap; }
 .drop .medal { width: 20px; height: 20px; font-size: 11px; }
 .drop--unknown { color: #5c5240; border-style: dashed; }
+
+/* ---- 図鑑: 「戻る」・見出し・タブは固定で、その下だけスクロール ---- */
+.codex-screen { height: 100dvh; min-height: 0; overflow: hidden; }
+.codex-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.codex-top__title { margin: 0; font-family: var(--font-display); font-size: 22px; letter-spacing: 0.3em; color: var(--gold); text-shadow: 0 3px 0 #000; }
+.codex-top__back, .codex-top__gap { flex: 0 0 84px; }
+.codex-top__back {
+  min-height: 44px; font: 800 14px var(--font-body); letter-spacing: 0.1em; color: var(--bone);
+  background: linear-gradient(180deg, #2a3138, #1b2025); border: 1px solid var(--gold-dim); border-radius: 3px; cursor: pointer;
+}
+.codex-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
