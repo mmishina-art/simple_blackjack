@@ -114,13 +114,13 @@ describe('レリックによる上書きの検出（編成画面の赤字表示�
     expect(effectiveSlotSkills(run).get(20)!.changed).toBe(false);
   });
 
-  it('砥石（ATK+2）は、基本攻撃力が基準の効果（攻撃・Block）の実数値を上書きする', () => {
+  it('砥石（ATK+1）は、基本攻撃力が基準の効果（攻撃・Block）の実数値を上書きする', () => {
     const run = createRun();
     run.relics.push(Whetstone);
     const all = effectiveSlotSkills(run);
-    expect(all.get(20)!.text).toBe('攻撃 ATK+5＝17'); // 20 は ATK 10 + 砥石 2
+    expect(all.get(20)!.text).toBe('攻撃 ATK+5＝16'); // 20 は ATK 10 + 砥石 1
     expect(all.get(20)!.changed).toBe(true);
-    expect(all.get(15)!.text).toBe('Block ATK+1＝8'); // Block も ATK 基準: 15 は ATK 5 + 砥石 2
+    expect(all.get(15)!.text).toBe('Block ATK+1＝7'); // Block も ATK 基準: 15 は ATK 5 + 砥石 1
     expect(all.get(15)!.changed).toBe(true);
   });
 

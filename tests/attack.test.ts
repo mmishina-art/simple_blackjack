@@ -66,8 +66,8 @@ describe('基本攻撃力（ATK）', () => {
     expect(60 - plain.ctx.enemy.hp).toBe(5);   // 13 は ATK 3 + 強化 2。未設定は通常攻撃 = ATK×1
   });
 
-  it('砥石は ATK +2。祠（力）でも ATK が上がる', () => {
-    expect(machine({ relics: [Whetstone] }).ctx.player.attack).toBe(7);
+  it('砥石は ATK +1。祠（力）でも ATK が上がる', () => {
+    expect(machine({ relics: [Whetstone] }).ctx.player.attack).toBe(6);
     const seen: number[] = [];
     for (let seed = 1; seed <= 200; seed++) {
       const run = createRun();
@@ -150,8 +150,8 @@ describe('防御・回復もスロットの基本攻撃力が基準（上位の�
     expect(at('drain', 17)).toEqual([8, 5]);
   });
 
-  it('ATK の強化（砥石 +2）は、Block・回復にも効く', () => {
-    expect(at('shield', 15, [Whetstone])[0]).toBe(10);
+  it('ATK の強化（砥石 +1）は、Block・回復にも効く', () => {
+    expect(at('shield', 15, [Whetstone])[0]).toBe(9); // ATK 5+1 → Block ATK+3
     expect(at('herb', 15, [Whetstone])[0]).toBe(8); // 道具は ATK の強化の影響を受けない
   });
 
@@ -256,8 +256,8 @@ describe('予測ダメージ', () => {
   it('レリックと敵の特性による補正を反映する', () => {
     const m = machine({ enemy: ENEMY_LINEUP.find((e) => e.id === 'skeleton')!, relics: [Whetstone] });
     give(m, 'player', ['K', 'K']);
-    // 20 は ATK 10 + 砥石 2 = 12 → 大攻撃 ATK+5 = 17、骨の鎧 -2 → 15
-    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(15);
+    // 20 は ATK 10 + 砥石 1 = 11 → 大攻撃 ATK+5 = 16、骨の鎧 -2 → 14
+    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20).parts[0].value).toBe(14);
   });
 
   it('予測は戦闘の状態を変えない（副作用なし）', () => {
@@ -292,8 +292,8 @@ describe('予測ダメージ', () => {
   it('敵の予測も、バーストしたプレイヤーへの1.5倍を反映する', () => {
     const m = machine();
     give(m, 'player', ['K', 'Q', '5']); // 25: バースト
-    give(m, 'enemy', ['9', '9']);       // 18: 溶解 8
-    expect(previewSkill(m.ctx, m.ctx.enemy, m.ctx.player, 18).parts[0].value).toBe(12);
+    give(m, 'enemy', ['9', '9']);       // 18: 溶解 4
+    expect(previewSkill(m.ctx, m.ctx.enemy, m.ctx.player, 18).parts[0].value).toBe(6); // 4 × 1.5
   });
 
   it('伏せカードがあるうちは、敵のバーストを予測に漏らさない（めくられたら1.5倍）', () => {
@@ -336,15 +336,15 @@ describe('スロット表の各マスの効果', () => {
     expect(badges(m, 'player')).toMatchObject({ 17: '8 +5', 16: '6 B6' }); // 17 は ATK 7: 攻撃 +1 / 回復 ATK×0.5+2。16 は ATK 6: 攻撃 ATK / Block ATK
   });
 
-  it('レリックで変わった効果が出る（砥石 ATK+2: 大攻撃 12）。敵のスロットも同じ', () => {
-    expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('17'); // ATK 10 + 2 = 12、ATK+5
-    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '8', 20: '12' }); // スライム ATK3: 溶解 ATK×2+2 / 飲み込み ATK×4
+  it('レリックで変わった効果が出る（砥石 ATK+1: 大攻撃 11）。敵のスロットも同じ', () => {
+    expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('16'); // ATK 10 + 1 = 11、ATK+5
+    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '4', 20: '7' }); // スライム ATK3: 溶解 ATK+1 / 飲み込み ATK×2+1
   });
 
   it('相手がバーストしているときは 1.5倍、伏せカードがあるうちは等倍', () => {
     const m = machine();
     give(m, 'player', ['K', 'Q', '5']); // バースト
-    expect(badges(m, 'enemy')[17]).toBe('12'); // 8 × 1.5
+    expect(badges(m, 'enemy')[17]).toBe('6'); // 4 × 1.5
     const n = machine();
     give(n, 'enemy', ['K', 'Q']);
     n.ctx.enemy.hand.add(makeCard('5', 'S'), { faceDown: true });
@@ -362,9 +362,9 @@ describe('敵のスキル一覧（実数値つき）', () => {
     const r15 = rows.find((r) => r.key === 15)!;
     expect(r15).toMatchObject({ isFallback: false });
     expect(r15.skill.id).toBe('skel_guard');
-    // 骸骨兵 ATK4: 斬り下ろし ATK×2 = 8 / 兜割り ATK×3 = 12
-    expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 ATK×2＝8');
-    expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 ATK×3＝12');
+    // 骸骨兵 ATK4: 斬り下ろし ATK+2 = 6 / 兜割り ATK×2 = 8
+    expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 ATK+2＝6');
+    expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 ATK×2＝8');
   });
 
   it('敵は全員 ATK を持ち、一覧が作れる', () => {

@@ -39,10 +39,10 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     expect(fxChips(c.parts, c.targetBlock)[0]).toMatchObject({ main: '3', note: 'Block吸収後 1' }); // 13 は ATK 3
   });
 
-  it('レリックの補正が出る（砥石: 大攻撃 ATK 12 + 5 = 17）', () => {
+  it('レリックの補正が出る（砥石: 大攻撃 ATK 11 + 5 = 16）', () => {
     const m = machine({ relics: [Whetstone] });
     give(m, 'player', ['K', 'K']);
-    expect(fxChips(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!.parts, 0)[0].main).toBe('17');
+    expect(fxChips(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!.parts, 0)[0].main).toBe('16');
   });
 
   it('手札が空・バーストのときは出さない（別の文言になる）', () => {
@@ -52,11 +52,11 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     expect(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)).toBeNull();
   });
 
-  it('敵のスキルも同じ形で出る（スライム 18 = 溶解 8ダメージ）', () => {
+  it('敵のスキルも同じ形で出る（スライム 18 = 溶解 4ダメージ）', () => {
     const m = machine();
     give(m, 'enemy', ['9', '9']);
     const c = calloutOf(m.ctx, m.ctx.enemy, m.ctx.player)!;
     expect(c.name).toBe('溶解');
-    expect(fxChips(c.parts, 0)[0].main).toBe('8');
+    expect(fxChips(c.parts, 0)[0].main).toBe('4');
   });
 });

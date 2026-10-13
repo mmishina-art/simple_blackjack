@@ -120,34 +120,34 @@ export const DEFAULT_PLAYER_FALLBACK: SkillId = BASIC_ATTACK_ID;
 
 // ---- 敵 ----
 atk('slime_touch', 'ぬめる体当たり', 1, 0, '攻');
-atk('slime_acid', '酸の飛沫', 1, 2, '酸');
-atk('slime_melt', '溶解', 2, 2, '剛');
-atk('slime_engulf', '飲み込み', 4, 0, '絶');
+atk('slime_acid', '酸の飛沫', 1, 0, '酸');
+atk('slime_melt', '溶解', 1, 1, '剛');
+atk('slime_engulf', '飲み込み', 2, 1, '絶');
 
 atk('skel_stab', '錆びた突き', 1, 0, '攻');
 defineSkill({ id: 'skel_guard', name: '盾を構える', icon: '守', effects: [{ type: 'block', amount: 6 }] });
-atk('skel_slash', '斬り下ろし', 2, 0, '剛');
-atk('skel_cleave', '兜割り', 3, 0, '絶');
+atk('skel_slash', '斬り下ろし', 1, 2, '剛');
+atk('skel_cleave', '兜割り', 2, 0, '絶');
 
 atk('bat_nip', '噛みつき', 1, 0, '攻');
-atk('bat_bite', '鋭い牙', 2, 0, '牙');
+atk('bat_bite', '鋭い牙', 1, 1, '牙');
 defineSkill({
   id: 'bat_drain', name: '吸血', icon: '吸',
-  effects: [{ type: 'attack', mult: 2, add: 1 }, { type: 'heal', amount: 3 }],
+  effects: [{ type: 'attack', mult: 1, add: 3 }, { type: 'heal', amount: 3 }],
 });
-atk('bat_dive', '急降下', 4, 0, '剛');
-atk('bat_screech', '血の饗宴', 5, 1, '絶');
+atk('bat_dive', '急降下', 2, 1, '剛');
+atk('bat_screech', '血の饗宴', 3, 0, '絶');
 
 atk('ghoul_scratch', '引っ掻き', 1, 0, '攻');
-atk('ghoul_claw', '腐爪', 1, 3, '爪');
-atk('ghoul_rend', '引き裂き', 2, 0, '剛');
-atk('ghoul_devour', '貪り喰う', 3, 0, '絶');
+atk('ghoul_claw', '腐爪', 1, 0, '爪');
+atk('ghoul_rend', '引き裂き', 1, 2, '剛');
+atk('ghoul_devour', '貪り喰う', 2, 1, '絶');
 
 atk('dragon_swipe', '尾の一撃', 1, 0, '攻');
-atk('dragon_claw', '竜爪', 1, 4, '爪');
-atk('dragon_breath', '火炎の息', 2, 3, '剛');
-atk('dragon_inferno', '業火', 3, 2, '絶');
-atk('dragon_apocalypse', '終焉の炎', 4, 2, '滅');
+atk('dragon_claw', '竜爪', 1, 0, '爪');
+atk('dragon_breath', '火炎の息', 1, 2, '剛');
+atk('dragon_inferno', '業火', 2, 0, '絶');
+atk('dragon_apocalypse', '終焉の炎', 2, 2, '滅');
 
 // 敵のスキルのレア度: 強い技ほど高い（スロット表の色で技の格が分かる）
 assignRarity(['slime_melt', 'skel_slash', 'bat_drain', 'bat_dive', 'ghoul_rend', 'dragon_breath'], 'rare');
