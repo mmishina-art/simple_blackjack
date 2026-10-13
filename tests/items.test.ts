@@ -108,14 +108,14 @@ describe('図鑑・祠と道具', () => {
     expect(CODEX_SKILL_TOTAL).toBeGreaterThan(SKILL_POOL.length - 1);
   });
 
-  it('祠の「古き技の記憶」は、道具も授かる', () => {
+  it('祠の「古き技の記憶」は、スキルだけを授かる（道具はショップでだけ買える）', () => {
     const got = new Set<string>();
     for (let seed = 1; seed <= 400; seed++) {
       const run = createRun();
       const r = resolveShrine(run, seededRng(seed));
       if (r.id === 'old-art') got.add(run.inventory[0]);
     }
-    expect([...got].some((id) => ITEM_POOL.includes(id))).toBe(true);
-    expect([...got].some((id) => SKILL_POOL.includes(id))).toBe(true);
+    expect(got.size).toBeGreaterThan(0);
+    expect([...got].every((id) => SKILL_POOL.includes(id))).toBe(true);
   });
 });

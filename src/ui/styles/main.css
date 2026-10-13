@@ -1163,3 +1163,28 @@ section { min-width: 0; }
   color: #6a6558; border-color: #4a4639; background: radial-gradient(circle at 35% 30%, #25231f, #0e0d0b);
   box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #3a372f;
 }
+
+/* マップの敵のマス: 出てくるモンスターの絵 */
+.tile__monster { pointer-events: none; }
+.tile--enemy .tile__bg, .tile--boss .tile__bg { fill: #1a0d0a; }
+
+/* ---- 図鑑のタブ・モンスター図鑑 ---- */
+.codex-tabs { display: flex; gap: 8px; }
+.codex-tabs__btn {
+  flex: 1; min-height: 44px; font: 800 15px var(--font-body); letter-spacing: 0.2em; color: var(--bone-dim);
+  background: #120e09; border: 1px solid #2a2118; border-radius: 3px; cursor: pointer;
+}
+.codex-tabs__btn.is-on { color: var(--gold); border-color: var(--gold); background: #1c150c; }
+.codex__item--monster { display: flex; align-items: center; gap: 10px; }
+.codex__sprite { flex: none; width: 84px; height: 66px; display: flex; align-items: center; justify-content: center; background: #0d0a07; border: 1px solid #2a2118; border-radius: 3px; overflow: hidden; }
+.codex__sprite svg { width: 100%; height: 100%; }
+.codex__item--unknown .codex__sprite svg { filter: brightness(0) opacity(0.35); }
+.codex__mon { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.codex__mon strong { font-size: 15px; }
+.codex__mon small { font-size: 11px; color: var(--bone-dim); }
+.drops { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 2px; }
+.drops__label { font-size: 10px; letter-spacing: 0.15em; color: var(--gold); }
+.drops__note { font-size: 11px; color: var(--bone-dim); }
+.drop { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px 1px 2px; font-size: 11px; color: var(--bone); background: #120e09; border: 1px solid #2a2118; border-radius: 10px; white-space: nowrap; }
+.drop .medal { width: 20px; height: 20px; font-size: 11px; }
+.drop--unknown { color: #5c5240; border-style: dashed; }

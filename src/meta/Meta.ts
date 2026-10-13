@@ -1,3 +1,4 @@
+import { ENEMY_LINEUP } from '../core/entities/enemies/catalog';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
 import type { SkillId } from '../core/skills/Skill';
 import { RELIC_POOL } from '../relics/catalog';
@@ -12,7 +13,8 @@ export interface MetaState {
   shards: number;
   /** 祭壇の強化レベル（強化ID → レベル）。 */
   upgrades: Record<string, number>;
-  codex: { skills: SkillId[]; relics: string[] };
+  /** 図鑑。enemies = 倒したことのある敵（モンスター図鑑）。 */
+  codex: { skills: SkillId[]; relics: string[]; enemies: string[] };
   /** 出撃時に最初から置くスキル（空きスロットのキー → スキルID）。 */
   stats: { runs: number; clears: number; bestRow: number };
 }
@@ -23,7 +25,7 @@ export const META_KEY = 'bj-meta-v1';
 const REMOVED_KIT_COSTS = [50, 100];
 
 export function emptyMeta(): MetaState {
-  return { version: 1, shards: 0, upgrades: {}, codex: { skills: [], relics: [] }, stats: { runs: 0, clears: 0, bestRow: 0 } };
+  return { version: 1, shards: 0, upgrades: {}, codex: { skills: [], relics: [], enemies: [] }, stats: { runs: 0, clears: 0, bestRow: 0 } };
 }
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
@@ -56,6 +58,8 @@ export function loadMeta(storage: StorageLike | null = defaultStorage()): MetaSt
     delete meta.upgrades.kit;
     if (d.codex && isStringArray(d.codex.skills)) meta.codex.skills = [...new Set(d.codex.skills)];
     if (d.codex && isStringArray(d.codex.relics)) meta.codex.relics = [...new Set(d.codex.relics)];
+    // モンスター図鑑（あとから加えた項目。古い保存データには無いので、空から始める）
+    if (d.codex && isStringArray((d.codex as { enemies?: unknown }).enemies)) meta.codex.enemies = [...new Set((d.codex as { enemies: string[] }).enemies)];
     if (d.stats && isNumRecord(d.stats)) meta.stats = { ...meta.stats, ...d.stats };
   } catch {
     /* 壊れたデータは無視して初期状態から */
@@ -182,6 +186,17 @@ export function isRelicDiscovered(meta: MetaState, id: string): boolean {
   return meta.codex.relics.includes(id);
 }
 
+export function isEnemyDiscovered(meta: MetaState, id: string): boolean {
+  return meta.codex.enemies.includes(id);
+}
+
+/** 倒した敵をモンスター図鑑に登録する。新規登録なら true。 */
+export function discoverEnemy(meta: MetaState, id: string): boolean {
+  if (isEnemyDiscovered(meta, id)) return false;
+  meta.codex.enemies.push(id);
+  return true;
+}
+
 /** 図鑑に登録する。新規登録なら true。 */
 export function discoverSkill(meta: MetaState, id: SkillId): boolean {
   if (isSkillDiscovered(meta, id)) return false;
@@ -202,6 +217,8 @@ export const CODEX_ITEM_TOTAL = ITEM_POOL.length;
 /** 図鑑の防具の総数。 */
 export const CODEX_ARMOR_TOTAL = ARMOR_POOL.length;
 export const CODEX_RELIC_TOTAL = RELIC_POOL.length;
+/** モンスター図鑑の敵の数。 */
+export const CODEX_ENEMY_TOTAL = ENEMY_LINEUP.length;
 
 /** 記録をすべて消して、最初の状態に戻す（魂片・祭壇の強化・図鑑・初期装備・戦績）。meta オブジェクトはそのまま使い続けられる。 */
 export function resetAllMeta(meta: MetaState): void {

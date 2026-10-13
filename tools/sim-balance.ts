@@ -137,7 +137,7 @@ const stageReached: Record<number, number> = {};
         run.hp = m.ctx.player.hp;
         if (!process.env.NO_GOLD) run.gold += enemyGold(def, tile.kind === 'boss');
         if (tile.kind === 'enemy') {
-          const offer = offerSkills(rng, run);
+          const offer = offerSkills(rng, run, def.id);
           const best = [...offer].sort((a, b) => rewardScore(b, run) - rewardScore(a, run))[0];
           run.inventory.push(best);
           place(run, best);
@@ -146,12 +146,16 @@ const stageReached: Record<number, number> = {};
         // 持ち物の余りを売り、遺物 → 効果の大きい順に買う
         for (const id of [...run.inventory]) sellFromInventory(run, id);
         const offers = generateShop(run, rng);
-        for (const o of offers.filter((x) => x.type === 'relic')) buyOffer(run, o);
-        const skills = offers.filter((x) => x.type === 'skill').sort((a, b) => rewardScore(b.id, run) - rewardScore(a.id, run));
-        for (const o of skills) {
-          if (rewardScore(o.id, run) <= 0 || run.gold < o.price) continue;
-          if (buyOffer(run, o)) { place(run, o.id); }
-        }
+        const buyRelics = (): void => { for (const o of offers.filter((x) => x.type === 'relic')) buyOffer(run, o); };
+        const buyItems = (): void => {
+          const items = offers.filter((x) => x.type === 'skill').sort((a, b) => rewardScore(b.id, run) - rewardScore(a.id, run));
+          for (const o of items) {
+            if (rewardScore(o.id, run) <= 0 || run.gold < o.price) continue;
+            if (buyOffer(run, o)) { place(run, o.id); }
+          }
+        };
+        // SHOP_FIRST=items: 道具・防具を先に買う（既定は、遺物が先）
+        if (process.env.SHOP_FIRST === 'items') { buyItems(); buyRelics(); } else { buyRelics(); buyItems(); }
       } else if (tile.kind === 'chest') {
         const r = offerRelics(run, rng);
         if (r.length) run.relics.push(r[Math.floor(rng.next() * r.length)]);

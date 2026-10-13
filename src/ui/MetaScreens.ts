@@ -1,5 +1,10 @@
 import { isDebug } from '../debug';
 import type { Rarity } from '../core/rarity';
+import { getEnemy, ENEMY_LINEUP } from '../core/entities/enemies/catalog';
+import { enemyLevel } from '../core/entities/enemies/level';
+import { STAGES } from '../map/stages';
+import { dropsOf } from '../run/drops';
+import { ENEMY_SPRITES } from './components/enemySprites';
 import { audio } from '../audio/AudioManager';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
 import { describeSkill, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
@@ -7,7 +12,7 @@ import { sortSkillsForCodex } from '../meta/codexOrder';
 import { RARITY_ORDER } from '../run/loadout';
 import { kindTag, medalKindClass } from './kind';
 import {
-  buyUpgrade, canBuy, CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, isRelicDiscovered, isSkillDiscovered,
+  buyUpgrade, canBuy, CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, isEnemyDiscovered, isRelicDiscovered, isSkillDiscovered,
   nextCost, saveMeta, STARTER_SKILLS, UPGRADES, upgradeLevel, type MetaState,
 } from '../meta/Meta';
 import { RELIC_POOL } from '../relics/catalog';
@@ -73,15 +78,21 @@ function byRarityAsc<T>(items: readonly T[], rarityOf: (item: T) => Rarity): T[]
     .map((x) => x.item);
 }
 
-/** 図鑑: 入手したスキル・レリックの一覧。未入手は「？」。 */
-export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => void): void {
+/** 図鑑。「スキル」（スキル・道具・防具・レリック）と「モンスター」の 2 つの見開き。未入手・未討伐は「？」。 */
+export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => void, initialTab: 'skills' | 'monsters' = 'skills'): void {
   const screen = el('main', 'meta-screen');
   // デバッグモードでは、すべて入手済みとして見せる（表示だけ。記録（meta）は変えない）
   const skillKnown = (id: string): boolean => isDebug() || isSkillDiscovered(meta, id);
   const relicKnown = (id: string): boolean => isDebug() || isRelicDiscovered(meta, id);
+  const enemyKnown = (id: string): boolean => isDebug() || isEnemyDiscovered(meta, id);
   const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...UPGRADE_ONLY_SKILLS, ...ITEM_POOL])];
   const kindOf = (kind: SkillKind): string[] => (kind === 'armor' ? [...ARMOR_POOL] : all.filter((id) => kindOfSkill(getSkill(id)) === kind));
-  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">${isDebug() ? 'デバッグモード: すべて開放して表示中（記録は変わらない）' : '入手したものは、次回から報酬に出やすくなる（レア度の低い順）'}</p>`));
+  const head = el('header', 'meta-head');
+  const body = el('div', 'meta-body');
+  const tabs = el('div', 'codex-tabs');
+  const sub = (tab: 'skills' | 'monsters'): string => isDebug()
+    ? 'デバッグモード: すべて開放して表示中（記録は変わらない）'
+    : tab === 'skills' ? '入手したものは、次回から報酬に出やすくなる（レア度の低い順）' : '倒した敵が載る。落とし物のスキルは、スキル図鑑に載ると見える';
 
   const section = (title: string, ids: string[], total: number): HTMLElement => {
     const box = el('section', 'codex');
@@ -117,8 +128,64 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   }
   relics.append(rGrid);
 
-  const body = el('div', 'meta-body');
-  body.append(skills, items, armors, relics);
-  screen.append(body, backButton('戻る', onClose));
+  const monsters = buildMonsterSection();
+  const render = (tab: 'skills' | 'monsters'): void => {
+    head.innerHTML = `<h1>図鑑</h1><p class="meta-head__sub">${sub(tab)}</p>`;
+    tabs.replaceChildren(
+      ...(['skills', 'monsters'] as const).map((t) => {
+        const b = el('button', `codex-tabs__btn${t === tab ? ' is-on' : ''}`, t === 'skills' ? 'スキル' : 'モンスター');
+        b.setAttribute('aria-pressed', String(t === tab));
+        b.addEventListener('click', () => { audio.sfx('click'); render(t); });
+        return b;
+      }),
+    );
+    body.replaceChildren(...(tab === 'skills' ? [skills, items, armors, relics] : monsters));
+    body.scrollTop = 0;
+  };
+  screen.append(head, tabs, body, backButton('戻る', onClose));
   root.replaceChildren(screen);
+  render(initialTab);
+
+  /** モンスター図鑑: 階層ごとの敵。倒したものは絵・名前・特性・落とし物が見える。落とし物のスキルは、スキル図鑑と同じ条件（入手済み）で見える。 */
+  function buildMonsterSection(): HTMLElement[] {
+    const out: HTMLElement[] = [];
+    const placed = new Set<string>();
+    const total = ENEMY_LINEUP.length;
+    const found = ENEMY_LINEUP.filter((e) => enemyKnown(e.id)).length;
+    out.push(el('h2', 'codex__title', `モンスター　${found} / ${total}`));
+    STAGES.forEach((stage, i) => {
+      const tiles = Object.values(stage.tiles).filter((t) => t.enemyId);
+      const ids = [...new Set(tiles.map((t) => t.enemyId!))].filter((id) => !placed.has(id));
+      const bossId = tiles.find((t) => t.kind === 'boss')?.enemyId;
+      ids.forEach((id) => placed.add(id));
+      const box = el('section', 'codex');
+      box.append(el('h2', 'codex__title', `第${i + 1}階層　${stage.name}`));
+      const grid = el('div', 'codex__grid');
+      for (const id of ids.sort((x, y) => Number(x === bossId) - Number(y === bossId))) {
+        const def = getEnemy(id);
+        const known = enemyKnown(id);
+        const drops = dropsOf(id);
+        const dropHtml = id === bossId
+          ? '<span class="drops__note">階層を踏破すると、遺物をひとつ選べる</span>'
+          : drops.length === 0 ? '<span class="drops__note">なし</span>'
+            : drops.map((sid) => {
+              const sk = getSkill(sid);
+              return skillKnown(sid)
+                ? `<span class="drop ${rarityClass(rarityOfSkill(sk))}" title="${sk.name}（${describeSkill(sk)}）"><span class="medal medal--sm${medalKindClass(kindOfSkill(sk))}">${sk.icon}</span>${sk.name}</span>`
+                : '<span class="drop drop--unknown" title="スキル図鑑に載ると見える"><span class="medal medal--sm">？</span></span>';
+            }).join('');
+        const item = el('div', `codex__item codex__item--monster${known ? '' : ' codex__item--unknown'}`,
+          `<div class="codex__sprite" aria-hidden="true">${ENEMY_SPRITES[id] ?? ''}</div>
+           <div class="codex__mon">
+             <strong>${known ? def.name : '？？？'}${id === bossId ? ' <em class="kind-tag">ボス</em>' : ''}${known ? ` <small>LV${enemyLevel(def)}・HP ${def.maxHp}</small>` : ''}</strong>
+             ${known ? `<small>${def.trait ?? ''}</small>` : '<small>未討伐</small>'}
+             ${known ? `<div class="drops"><span class="drops__label">落とし物</span>${dropHtml}</div>` : ''}
+           </div>`);
+        grid.append(item);
+      }
+      box.append(grid);
+      out.push(box);
+    });
+    return out;
+  }
 }

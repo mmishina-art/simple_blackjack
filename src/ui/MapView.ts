@@ -3,6 +3,9 @@ import { rarityClass } from './rarity';
 import { isCleared, reachableTiles, type RunState } from '../run/Run';
 import { tileOf, TILE_LABEL, type TileDef, type TileKind } from '../map/StageMap';
 import { stageRows } from '../map/stages';
+import { getEnemy } from '../core/entities/enemies/catalog';
+import { enemyLevel } from '../core/entities/enemies/level';
+import { ENEMY_SPRITES } from './components/enemySprites';
 
 const NS = 'http://www.w3.org/2000/svg';
 const W = 360;
@@ -76,21 +79,34 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
     const g = svg('g', { transform: `translate(${x} ${y})` },
       `tile tile--${t.kind}${cleared ? ' tile--cleared' : ''}${here ? ' tile--here' : ''}${canMove ? ' tile--reach' : ''}`);
     g.append(svg('circle', { r }, 'tile__bg'));
-    const icon = svg('text', { y: 1 }, 'tile__icon');
-    icon.textContent = ICON[t.kind];
-    g.append(icon);
+    const monster = t.enemyId ? ENEMY_SPRITES[t.enemyId] : undefined;
+    if (monster) {
+      // 敵のマスには、出てくるモンスターの絵を出す（円の中に切り抜く）
+      const clip = svg('clipPath', { id: `clip-${t.id}` });
+      clip.append(svg('circle', { r: r - 2 }));
+      g.append(clip);
+      const w = r * 2.5;
+      const img = svg('image', { href: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(monster.trim())}`, x: -w / 2, y: (-w * 0.8) / 2, width: w, height: w * 0.8, 'clip-path': `url(#clip-${t.id})` }, 'tile__monster');
+      img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      g.append(img);
+    } else {
+      const icon = svg('text', { y: 1 }, 'tile__icon');
+      icon.textContent = ICON[t.kind];
+      g.append(icon);
+    }
     if (cleared && t.kind !== 'empty' && t.kind !== 'start') {
       const mark = svg('text', { x: r - 4, y: -r + 10 }, 'tile__check');
       mark.textContent = '✓';
       g.append(mark);
     }
     const title = svg('title');
-    title.textContent = TILE_LABEL[t.kind] + (cleared ? '（済）' : '');
+    const who = t.enemyId ? `${getEnemy(t.enemyId).name} LV${enemyLevel(getEnemy(t.enemyId))}・` : '';
+    title.textContent = who + TILE_LABEL[t.kind] + (cleared ? '（済）' : '');
     g.append(title);
     if (canMove) {
       g.setAttribute('role', 'button');
       g.setAttribute('tabindex', '0');
-      g.setAttribute('aria-label', `${TILE_LABEL[t.kind]}へ進む`);
+      g.setAttribute('aria-label', `${t.enemyId ? `${getEnemy(t.enemyId).name}（${TILE_LABEL[t.kind]}）` : TILE_LABEL[t.kind]}へ進む`);
       const go = () => {
         audio.sfx('click');
         handlers.onMove(t.id);

@@ -1,6 +1,7 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
-import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
+import { dropsOf } from './drops';
+import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import { pickWeighted, tierWeights } from '../core/rarity';
 import { canPlaceAt, getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
@@ -183,22 +184,22 @@ export function upgradeSlot(run: RunState, key: SlotKey): SkillId | null {
 export const CODEX_BOOST = 2;
 
 /**
- * 敵撃破の報酬（3択 + 祭壇の「見る目」）。スキルと道具に分け、**道具を必ず1つ**含める（残りはスキル）。防具は出ない。
- * 並びは、スキル → 道具。レア度が高いほど出にくい。
+ * 敵撃破の報酬（3択 + 祭壇の「見る目」）。**スキルだけ**（道具・防具は出ない。ショップでだけ買える）。
+ * 倒した敵に合わせて、その敵の落とし物（`ENEMY_DROPS`）から count - 1 個 + 全体から 1 個。敵が分からなければ、全体から。
+ * レア度が高いほど出にくい（割合は階層ごと）。図鑑に載っているスキルは出やすい。
  */
-export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
+export function offerSkills(rng: Rng, run?: RunState, enemyId?: string): SkillId[] {
   const favored = new Set(run?.favored ?? []);
   const stage = run?.stage ?? 1;
   const rarityOf = (id: SkillId) => rarityOfSkill(getSkill(id));
   const boost = (id: SkillId): number => (favored.has(id) ? CODEX_BOOST : 1);
-  const skillWeight = tierWeights(SKILL_POOL, rarityOf, stage);
+  const weight = tierWeights(SKILL_POOL, rarityOf, stage);
+  const w = (id: SkillId): number => weight(id) * boost(id);
   const count = 3 + (run?.bonus.extraChoices ?? 0);
-  const skills = pickWeighted(SKILL_POOL, count - 1, rng, (id) => skillWeight(id) * boost(id));
-  // 道具の枠: 道具から 1 つ（防具は報酬に出ない。ショップでだけ買える）
-  const itemPool = ITEM_POOL;
-  const itemWeight = tierWeights(itemPool, rarityOf, stage);
-  const items = pickWeighted(itemPool, 1, rng, (id) => itemWeight(id) * boost(id));
-  return [...skills, ...items];
+  const themed = dropsOf(enemyId).filter((id) => SKILL_POOL.includes(id));
+  const fromTheme = themed.length > 0 ? pickWeighted(themed, Math.min(count - 1, themed.length), rng, w) : [];
+  const rest = SKILL_POOL.filter((id) => !fromTheme.includes(id));
+  return [...fromTheme, ...pickWeighted(rest, count - fromTheme.length, rng, w)];
 }
 
 /** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */

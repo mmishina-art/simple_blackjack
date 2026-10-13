@@ -4,6 +4,7 @@ import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, useInn } from '../src/map/events';
 import {
+  discoverEnemy, isEnemyDiscovered, CODEX_ENEMY_TOTAL,
   buyUpgrade, canBuy, CODEX_SKILL_TOTAL, computeBonus, computeShards, discoverRelic, discoverSkill,
   emptyMeta, finishRun, resetAllMeta, isSkillDiscovered, loadMeta, META_KEY, nextCost, saveMeta,
   UPGRADES,
@@ -219,5 +220,32 @@ describe('廃止した強化「初期装備枠」（出撃準備の廃止）の�
 
   it('祭壇の強化に「初期装備枠」はない', () => {
     expect(UPGRADES.map((u) => u.id)).not.toContain('kit');
+  });
+});
+
+describe('モンスター図鑑（倒した敵の記録）', () => {
+  it('倒した敵が載る。重複して載らない。総数は敵の数', () => {
+    const meta = emptyMeta();
+    expect(isEnemyDiscovered(meta, 'slime')).toBe(false);
+    expect(discoverEnemy(meta, 'slime')).toBe(true);
+    expect(discoverEnemy(meta, 'slime')).toBe(false);
+    expect(meta.codex.enemies).toEqual(['slime']);
+    expect(CODEX_ENEMY_TOTAL).toBe(ENEMY_LINEUP.length);
+  });
+
+  it('保存して読み込める。古い保存データ（enemies がない）は、空から始める。初期化で消える', () => {
+    const st = new FakeStorage();
+    const meta = emptyMeta();
+    discoverEnemy(meta, 'bat');
+    saveMeta(meta, st);
+    expect(loadMeta(st).codex.enemies).toEqual(['bat']);
+    st.setItem(META_KEY, JSON.stringify({ version: 1, shards: 3, upgrades: {}, codex: { skills: ['slash'], relics: [] }, stats: {} }));
+    const old = loadMeta(st);
+    expect(old.codex.enemies).toEqual([]);
+    expect(old.codex.skills).toEqual(['slash']);
+    expect(old.shards).toBe(3);
+    discoverEnemy(old, 'ghoul');
+    resetAllMeta(old);
+    expect(old.codex.enemies).toEqual([]);
   });
 });

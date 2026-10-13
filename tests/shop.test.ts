@@ -27,10 +27,10 @@ describe('ゴールドとショップ', () => {
     expect(sellFromInventory(run, 'jab')).toBeNull();
   });
 
-  it('品揃え: スキル3・道具/防具2・遺物2。重複なし、持っている遺物は並ばない', () => {
+  it('品揃え: 道具4・防具（硬いものから最大2）・遺物2。重複なし、持っている遺物は並ばない', () => {
     const run = createRun();
     const offers = generateShop(run, seededRng(1));
-    expect(offers.filter((o) => o.type === 'skill')).toHaveLength(5);
+    expect(offers.filter((o) => o.type === 'skill')).toHaveLength(6); // 道具 4 + 防具 2（鋼の盾・ミスリルの盾）
     const relics = offers.filter((o) => o.type === 'relic');
     expect(relics).toHaveLength(2);
     expect(new Set(relics.map((o) => o.id)).size).toBe(2);

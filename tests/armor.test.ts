@@ -43,12 +43,11 @@ describe('防具', () => {
     expect(run.inventory).toEqual(['herb']); // 鉄の盾は戻らない
   });
 
-  it('報酬には防具が出ない（ショップでだけ買える）。道具の枠は、道具から 1 つ', () => {
+  it('報酬には防具も道具も出ない（ショップでだけ買える）。スキルだけ 3 つ', () => {
     for (let seed = 1; seed <= 60; seed++) {
       const o = offerSkills(seededRng(seed), createRun());
       expect(o).toHaveLength(3);
-      expect(o.some((id) => isArmor(getSkill(id)))).toBe(false);
-      expect(ITEM_POOL).toContain(o[2]);
+      expect(o.some((id) => isArmor(getSkill(id)) || ITEM_POOL.includes(id))).toBe(false);
     }
   });
 

@@ -1,7 +1,7 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { enemyLevel } from '../core/entities/enemies/level';
 import { pickWeighted, tierWeights, type Rarity } from '../core/rarity';
-import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
+import { ARMOR_POOL, ITEM_POOL } from '../core/skills/catalog';
 import { getSkill, isArmor, isItem, rarityOfSkill, type SkillId } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { RELIC_POOL } from '../relics/catalog';
@@ -20,7 +20,7 @@ export function addGold(run: RunState, amount: number): void {
 export const SELL_RATIO = 0.5;
 
 const SKILL_PRICE: Record<Rarity, number> = { common: 30, rare: 70, legend: 150 };
-const ITEM_PRICE: Record<Rarity, number> = { common: 20, rare: 50, legend: 110 };
+const ITEM_PRICE: Record<Rarity, number> = { common: 15, rare: 35, legend: 80 };
 const ARMOR_PRICE: Record<Rarity, number> = { common: 30, rare: 80, legend: 160 };
 const RELIC_PRICE: Record<Rarity, number> = { common: 60, rare: 110, legend: 200 };
 
@@ -42,7 +42,7 @@ export function sellPrice(id: SkillId): number {
 
 /** 敵を倒したときにもらえるゴールド: 強い敵ほど多い（LV×2 + 6）。ボスは 2.5 倍。 */
 export function enemyGold(def: EnemyDef, boss = false): number {
-  return Math.round((enemyLevel(def) * 2 + 6) * (boss ? 2.5 : 1));
+  return Math.round((enemyLevel(def) * 4 + 14) * (boss ? 2.5 : 1));
 }
 
 export interface ShopOffer {
@@ -53,36 +53,32 @@ export interface ShopOffer {
   sold: boolean;
 }
 
-export const SHOP_SKILLS = 3;
-export const SHOP_ITEMS = 2;
+export const SHOP_ITEMS = 4;
+export const SHOP_ARMORS = 2;
 export const SHOP_RELICS = 2;
 
-/** ショップの品揃え: スキル 3 + 道具・防具 2 + レリック 2。レア度の割合は階層ごと。持っているレリック・いまより柔らかい防具は並ばない。 */
+/**
+ * ショップの品揃え: 道具 3 + 防具（いま装備しているより硬いものから最大 2）+ 遺物 2。**スキルは売らない**（スキルは敵を倒して手に入れる）。
+ * 道具・防具は、ここでしか買えない。レア度の割合は階層ごと。持っている遺物は並ばない。
+ */
 export function generateShop(run: RunState, rng: Rng): ShopOffer[] {
   const rarityOf = (id: SkillId) => rarityOfSkill(getSkill(id));
   const favored = new Set(run.favored);
   const boost = (id: SkillId): number => (favored.has(id) ? CODEX_BOOST : 1);
-  const skillW = tierWeights(SKILL_POOL, rarityOf, run.stage);
-  const skills = pickWeighted(SKILL_POOL, SHOP_SKILLS, rng, (id) => skillW(id) * boost(id));
+  const itemW = tierWeights(ITEM_POOL, rarityOf, run.stage);
+  const items = pickWeighted(ITEM_POOL, SHOP_ITEMS, rng, (id) => itemW(id) * boost(id));
 
-  const cur = getSkill(run.armor);
-  const better = (id: SkillId): boolean => {
-    const c = getSkill(id);
-    const cap = c.damageCap ?? Infinity;
-    const curCap = cur.damageCap ?? Infinity;
-    return cap < curCap;
-  };
-  const itemPool = [...ITEM_POOL, ...ARMOR_POOL.filter(better)];
-  const itemW = tierWeights(itemPool, rarityOf, run.stage);
-  const items = pickWeighted(itemPool, SHOP_ITEMS, rng, itemW);
+  const curCap = getSkill(run.armor).damageCap ?? Infinity;
+  const armorPool = ARMOR_POOL.filter((id) => (getSkill(id).damageCap ?? Infinity) < curCap);
+  const armors = pickWeighted(armorPool, Math.min(SHOP_ARMORS, armorPool.length), rng, tierWeights(armorPool, rarityOf, run.stage));
 
   const owned = new Set(run.relics.map((r) => r.id));
   const relicPool = RELIC_POOL.filter((r) => !owned.has(r.id));
   const relics = pickWeighted(relicPool, SHOP_RELICS, rng, tierWeights(relicPool, (r) => r.rarity ?? 'common', run.stage));
 
   return [
-    ...skills.map((id): ShopOffer => ({ type: 'skill', id, price: priceOfSkill(id), sold: false })),
     ...items.map((id): ShopOffer => ({ type: 'skill', id, price: priceOfSkill(id), sold: false })),
+    ...armors.map((id): ShopOffer => ({ type: 'skill', id, price: priceOfSkill(id), sold: false })),
     ...relics.map((r): ShopOffer => ({ type: 'relic', id: r.id, price: priceOfRelic(r), sold: false })),
   ];
 }
