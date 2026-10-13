@@ -1,4 +1,4 @@
-import { DEFAULT_PLAYER_SLOTS, SKILL_POOL } from '../core/skills/catalog';
+import { ALL_POOL, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
 import type { SkillId, SlotKey } from '../core/skills/Skill';
 import { RELIC_POOL } from '../relics/catalog';
 
@@ -166,7 +166,7 @@ export function finishRun(meta: MetaState, s: RunSummary): number {
 
 // ---- 図鑑 ----
 /** 最初から図鑑に載っているスキル（初期スロットのスキル）。 */
-export const STARTER_SKILLS: readonly SkillId[] = ['small_attack', 'guard', 'shield', 'big_attack', 'ace_strike'];
+export const STARTER_SKILLS: readonly SkillId[] = ['small_attack', 'herb', 'guard', 'shield', 'big_attack', 'ace_strike'];
 
 export function isSkillDiscovered(meta: MetaState, id: SkillId): boolean {
   return STARTER_SKILLS.includes(id) || meta.codex.skills.includes(id);
@@ -189,7 +189,10 @@ export function discoverRelic(meta: MetaState, id: string): boolean {
   return true;
 }
 
-export const CODEX_SKILL_TOTAL = new Set<SkillId>([...STARTER_SKILLS, ...SKILL_POOL]).size;
+/** 図鑑のスキルの総数（道具は別に数える）。 */
+export const CODEX_SKILL_TOTAL = new Set<SkillId>([...STARTER_SKILLS, ...SKILL_POOL].filter((id) => !ITEM_POOL.includes(id))).size;
+/** 図鑑の道具の総数。 */
+export const CODEX_ITEM_TOTAL = ITEM_POOL.length;
 export const CODEX_RELIC_TOTAL = RELIC_POOL.length;
 
 // ---- 出撃時の初期装備（出撃準備） ----
@@ -204,9 +207,9 @@ export function startingCapacity(meta: MetaState): number {
   return 1 + upgradeLevel(meta, 'kit');
 }
 
-/** 図鑑に載っていて、初期装備に選べるスキル（報酬プールのスキル）。 */
+/** 図鑑に載っていて、初期装備に選べるスキル・道具（報酬プールのもの）。 */
 export function selectableStartingSkills(meta: MetaState): SkillId[] {
-  return SKILL_POOL.filter((id) => isSkillDiscovered(meta, id));
+  return ALL_POOL.filter((id) => isSkillDiscovered(meta, id));
 }
 
 /**

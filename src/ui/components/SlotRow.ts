@@ -1,4 +1,4 @@
-import { BASIC_ICON, describeSkill, fallbackLabel, slotLabel, type SkillDef, type SlotKey } from '../../core/skills/Skill';
+import { BASIC_ICON, describeSkill, fallbackLabel, isItem, slotLabel, type SkillDef, type SlotKey } from '../../core/skills/Skill';
 import { slotLook } from '../../core/skills/look';
 import type { EffectiveSkill } from '../../run/effective';
 import { rarityClass } from '../rarity';
@@ -48,7 +48,7 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
     : `lslot lslot--set ${rarityClass(look.rarity)}${tone}${o.target ? ' lslot--target' : ''}${interactive ? ' lslot--tap' : ''}`;
   row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}</span>
     <span class="medal medal--sm">${o.skill ? o.skill.icon : BASIC_ICON}</span>
-    <span class="lslot__name">${name}${o.tag ? ` <em class="lslot__tag${o.tagTone === 'custom' ? ' lslot__tag--custom' : ''}">${o.tag}</em>` : ''}</span>
+    <span class="lslot__name">${name}${o.skill && isItem(o.skill) ? ' <em class="kind-tag">道具</em>' : ''}${o.tag ? ` <em class="lslot__tag${o.tagTone === 'custom' ? ' lslot__tag--custom' : ''}">${o.tag}</em>` : ''}</span>
     <span class="lslot__desc">${desc}</span>
     <span class="lslot__go" aria-hidden="true">${interactive ? '›' : ''}</span>`;
   if (interactive) row.addEventListener('click', o.onTap!);

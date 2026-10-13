@@ -1,6 +1,6 @@
 import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
-import { describeSkill, describeSkillBonus, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { describeSkill, describeSkillBonus, getSkill, isItem, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
 import { equipSkill, isSlotLocked, unequipSlot, type RunState } from '../run/Run';
@@ -31,7 +31,6 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const head = document.createElement('header');
     head.className = 'loadout__head';
     head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__atk">基本攻撃力 ATK ${slotAttack(run.baseAttack, 11)}〜${slotAttack(run.baseAttack, 21)}（スロットが高いほど強い）</p>
       <p class="loadout__hint">${armed ? '置きたいスロットをタップ' : '変えたいスロットをタップして、持ち物のスキルを置く'}</p>`;
     screen.append(head);
 
@@ -81,13 +80,22 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     inv.innerHTML = `<div class="loadout__inv-title">持ち物（${run.inventory.length}）</div>`;
     const chips = document.createElement('div');
     chips.className = 'loadout__chips';
-    if (entries.length === 0) chips.textContent = 'なし（敵を倒すとスキルが手に入る）';
-    for (const e of entries) {
-      const skill = getSkill(e.id);
-      const chip = document.createElement('div');
-      chip.className = `chip chip--static ${rarityClass(rarityOfSkill(skill))}`;
-      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
-      chips.append(chip);
+    if (entries.length === 0) chips.textContent = 'なし（敵を倒すとスキル・道具が手に入る）';
+    // スキルと道具に分けて並べる
+    for (const [label, wantItem] of [['スキル', false], ['道具', true]] as const) {
+      const group = entries.filter((e) => isItem(getSkill(e.id)) === wantItem);
+      if (group.length === 0) continue;
+      const h = document.createElement('div');
+      h.className = 'loadout__kind';
+      h.textContent = label;
+      chips.append(h);
+      for (const e of group) {
+        const skill = getSkill(e.id);
+        const chip = document.createElement('div');
+        chip.className = `chip chip--static ${rarityClass(rarityOfSkill(skill))}`;
+        chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
+        chips.append(chip);
+      }
     }
     inv.append(chips);
     if (!armed) screen.append(inv);
@@ -118,15 +126,18 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         onPick() { if (unequipSlot(run, key)) render(); },
       });
     }
-    for (const e of inventoryEntries(run)) {
-      const skill = getSkill(e.id);
-      options.push({
-        icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill),
-        detail: describeSkill(skill, slotAttack(run.baseAttack, key)),
-        badge: e.count > 1 ? `×${e.count}` : undefined,
-        note: current ? `いまの「${current.name}」と入れ替える` : undefined,
-        onPick() { if (equipSkill(run, key, e.id)) render(); },
-      });
+    const entries = inventoryEntries(run);
+    for (const [label, wantItem] of [['スキル', false], ['道具', true]] as const) {
+      for (const e of entries.filter((x) => isItem(getSkill(x.id)) === wantItem)) {
+        const skill = getSkill(e.id);
+        options.push({
+          icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: label,
+          detail: describeSkill(skill, slotAttack(run.baseAttack, key)),
+          badge: e.count > 1 ? `×${e.count}` : undefined,
+          note: current ? `いまの「${current.name}」と入れ替える` : undefined,
+          onPick() { if (equipSkill(run, key, e.id)) render(); },
+        });
+      }
     }
     openSheet({
       title: `${slotLabel(key)} のスロット`,

@@ -266,7 +266,7 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
     });
 
     it('回復のスキルが発動したときは、heal が1回だけ鳴る', async () => {
-      const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, playerSlots: { 15: 'recover' }, playerHp: 30 });
+      const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, playerSlots: { 15: 'herb' }, playerHp: 20 });
       const heard = bind(m);
       ['7', '8'].forEach((r) => m.ctx.player.hand.add(makeCard(r as Rank, 'S')));
       ['K', 'Q', '5'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as Rank, 'H')));

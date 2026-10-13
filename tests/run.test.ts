@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
-import { SKILL_POOL } from '../src/core/skills/catalog';
+import { ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
 import { hasSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
@@ -104,13 +104,13 @@ describe('冒険の状態（レベル・経験値は廃止）', () => {
 
   it('持ち越したスロットとHPがバトルに反映される', () => {
     const run = createRun();
-    run.hp = 33;
+    run.hp = 23;
     run.slots = { 13: 'guard' };
     const m = new BattleMachine({
       enemy: ENEMY_LINEUP[0], playerMaxHp: run.maxHp, playerHp: run.hp,
       playerSlots: run.slots, playerFallback: run.fallbackSkill, pace: noWait,
     });
-    expect(m.ctx.player.hp).toBe(33);
+    expect(m.ctx.player.hp).toBe(23);
     expect(m.ctx.player.slots[13]).toBe('guard');
   });
 });
@@ -177,12 +177,12 @@ describe('スキルの付け替え', () => {
 describe('マスのイベント', () => {
   it('宿屋: 最大HPの50%回復し、最大HPを超えない', () => {
     const run = createRun();
-    run.hp = 20;
-    expect(useInn(run)).toBe(Math.ceil(60 * INN_HEAL_RATIO));
-    expect(run.hp).toBe(50);
-    run.hp = 55;
+    run.hp = 10;
+    expect(useInn(run)).toBe(Math.ceil(30 * INN_HEAL_RATIO));
+    expect(run.hp).toBe(25);
+    run.hp = 28;
     useInn(run);
-    expect(run.hp).toBe(60);
+    expect(run.hp).toBe(30);
   });
 
   it('祠: どの乱数でも何かが起き、HPは1未満にならず、不変条件を保つ', () => {
@@ -211,15 +211,22 @@ describe('マスのイベント', () => {
   });
 
   it('報酬: スキルは3択で重複なし、宝箱のレリックは所持済みを除く', () => {
+    // 報酬は、スキルと道具に分け、道具を必ず1つ含む（並びは、スキル → 道具）
     const skills = offerSkills(seededRng(1));
     expect(skills).toHaveLength(3);
     expect(new Set(skills).size).toBe(3);
-    skills.forEach((id) => expect(SKILL_POOL).toContain(id));
+    skills.slice(0, 2).forEach((id) => expect(SKILL_POOL).toContain(id));
+    expect(ITEM_POOL).toContain(skills[2]);
+    for (let seed = 1; seed <= 30; seed++) {
+      const o = offerSkills(seededRng(seed));
+      expect(o.filter((id) => ITEM_POOL.includes(id))).toHaveLength(1);
+      expect(o.filter((id) => SKILL_POOL.includes(id))).toHaveLength(2);
+    }
     const run = createRun();
     expect(offerRelics(run, seededRng(1))).toHaveLength(3);
     run.relics.push(Whetstone);
     expect(offerRelics(run, seededRng(1)).some((r) => r.id === 'whetstone')).toBe(false);
-    expect(RELIC_POOL).toHaveLength(13);
+    expect(RELIC_POOL).toHaveLength(15);
   });
 });
 

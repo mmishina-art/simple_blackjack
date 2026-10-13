@@ -137,7 +137,31 @@ export const Lockpick: Relic = {
   apply() {},
 };
 
+/** 道具（効果が固定のもの）だけを強化するレリック。スキルには効かない。 */
+export const HerbalistBag: Relic = {
+  id: 'herbalist', rarity: 'rare', name: '薬師の鞄', icon: '鞄',
+  description: '道具の回復量 +5（薬草 8 → 13 など）',
+  apply({ bus, player }) {
+    bus.on('onHealed', (p) => {
+      if (p.entity === player && p.skill?.kind === 'item') return { ...p, amount: p.amount + 5 };
+    });
+  },
+};
+
+export const ArtisanTools: Relic = {
+  id: 'artisan', rarity: 'rare', name: '匠の工具', icon: '工',
+  description: '道具の Block・ダメージ +4（木の盾 7 → 11、爆弾 10 → 14 など）',
+  apply({ bus, player }) {
+    bus.on('onBlockGained', (p) => {
+      if (p.entity === player && p.skill?.kind === 'item') return { ...p, amount: p.amount + 4 };
+    });
+    bus.on('onDamageCalculated', (p) => {
+      if (p.attacker === player && p.skill?.kind === 'item' && p.damage > 0) return { ...p, damage: p.damage + 4 };
+    });
+  },
+};
+
 /** 報酬として出現するレリックの一覧。 */
 export const RELIC_POOL: readonly Relic[] = [
-  Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle, OverlordOrb, SealKey, Lockpick, Bracer, TitanBlood,
+  Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle, OverlordOrb, SealKey, Lockpick, Bracer, TitanBlood, HerbalistBag, ArtisanTools,
 ];

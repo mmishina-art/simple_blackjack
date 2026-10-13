@@ -71,13 +71,13 @@ export async function applyEffects(
       }
     } else {
       if (effect.type === 'block') {
-        const { amount } = bus.emit('onBlockGained', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))) });
+        const { amount } = bus.emit('onBlockGained', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))), skill });
         const gained = Math.max(0, Math.floor(amount));
         user.block += gained;
         ctx.log(`${user.name}は Block を ${gained} 得た`);
         bus.emit('onBlockApplied', { entity: user, amount: gained });
       } else {
-        const { amount } = bus.emit('onHealed', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))) });
+        const { amount } = bus.emit('onHealed', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))), skill });
         const before = user.hp;
         user.hp = Math.min(user.maxHp, user.hp + Math.max(0, Math.floor(amount)));
         ctx.log(`${user.name}は HP を ${user.hp - before} 回復した`);

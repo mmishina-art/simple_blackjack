@@ -1,6 +1,6 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
-import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
+import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import { pickWeighted, RARITY_WEIGHT } from '../core/rarity';
 import { getSkill, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
@@ -39,7 +39,8 @@ export interface RunState {
   stats: { maxRow: number; enemiesDefeated: number };
 }
 
-export const START_MAX_HP = 60;
+/** 冒険の初期の最大 HP（祭壇の強化が上乗せされる）。道具の回復（薬草など）で保つ。 */
+export const START_MAX_HP = 30;
 /** 固定スロット。11以下は小攻撃、21 は会心の一撃で固定。レリック（解錠の鍵・封印の鍵）で解除できる。 */
 export const FIXED_SLOTS: readonly SlotKey[] = [11, 21];
 
@@ -122,11 +123,17 @@ export function unequipSlot(run: RunState, key: SlotKey): boolean {
 /** 図鑑に載っているスキルは出やすい（重み ×2）。 */
 export const CODEX_BOOST = 2;
 
-/** 敵撃破の報酬スキル（3択 + 祭壇の「見る目」）。レア度が高いほど出にくい。 */
+/**
+ * 敵撃破の報酬（3択 + 祭壇の「見る目」）。スキルと道具に分け、**道具を必ず1つ**含める（残りはスキル）。
+ * 並びは、スキル → 道具。レア度が高いほど出にくい。
+ */
 export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
   const favored = new Set(run?.favored ?? []);
+  const weight = (id: SkillId): number => RARITY_WEIGHT[rarityOfSkill(getSkill(id))] * (favored.has(id) ? CODEX_BOOST : 1);
   const count = 3 + (run?.bonus.extraChoices ?? 0);
-  return pickWeighted(SKILL_POOL, count, rng, (id) => RARITY_WEIGHT[rarityOfSkill(getSkill(id))] * (favored.has(id) ? CODEX_BOOST : 1));
+  const skills = pickWeighted(SKILL_POOL, count - 1, rng, weight);
+  const items = pickWeighted(ITEM_POOL, 1, rng, weight);
+  return [...skills, ...items];
 }
 
 /** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */
