@@ -125,6 +125,10 @@ Initiative → FirstAction → SurvivalCheck → SecondAction → CheckDeath →
 演出のウェイトは `src/core/battle/pace.ts` の `PACE` にまとめてあり、バトル全体のテンポはここだけで調整できる（テストでは `BattleOptions.pace` で即時解決）。
 敵のバースト音は、伏せカードがめくられる行動順の発表まで鳴らさない（バーストの有無を先に漏らさないため）。
 
+### 音（`src/audio/AudioManager.ts`）
+BGM・SE は Web Audio で合成する（外部ファイルなし）。ブラウザの自動再生制限のため、**最初のタップ（どこでも）で鳴り始める**ので、タイトル画面でも BGM が流れる（タップする前は無音）。タイトルと戦闘画面の ♪ ボタンで、オン/オフを切り替えられる（保存される）。
+スリープ・画面ロック・別アプリから戻ったときは、戻った時に再開を試み、それでも止まったままなら次のタップで再開する。iOS で `interrupted` のまま戻らない場合は、タップの中で `AudioContext` を作り直す（`tests/audio.test.ts`）。
+
 ## イベントフック（レリック拡張）
 
 `machine.bus.on(name, handler, priority?)` で購読。ハンドラはペイロードを書き換えるか、新しいペイロードを return すると値を改変できる。
