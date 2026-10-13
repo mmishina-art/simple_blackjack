@@ -192,6 +192,35 @@ function offerSkillReward(): void {
   });
 }
 
+/**
+ * 「タップして始める」の幕。音が鳴らせない環境（自動再生の制限）で、起動の少しあとにタイトルの上に出る。
+ * タップすると音楽が始まり、幕は消える（タップは幕が受けるので、下のボタンは押されない）。
+ * 音が自動で鳴り始めた環境や、音をオフにしている場合は、出さない。
+ */
+function armTapGate(): void {
+  if (audio.muted) return;
+  let gate: HTMLButtonElement | null = null;
+  let off: (() => void) | null = null;
+  const close = (): void => {
+    gate?.remove();
+    gate = null;
+    off?.();
+  };
+  off = audio.onStateChange(() => {
+    if (audio.running) close();
+  });
+  window.setTimeout(() => {
+    if (audio.running || gate) return;
+    gate = el('button', 'tap-gate', '<span class="tap-gate__main">タップして始める</span><span class="tap-gate__sub">♪ 音楽が流れます</span>');
+    gate.setAttribute('aria-label', 'タップして始める（音楽が流れます）');
+    gate.addEventListener('click', () => {
+      audio.unlock();
+      close();
+    });
+    document.body.append(gate);
+  }, 350);
+}
+
 /** タイトル画面。音声はユーザー操作後でないと鳴らせないため、ここでタップさせる。 */
 function showTitle(): void {
   const screen = el('main', 'title');
@@ -253,6 +282,10 @@ function showTitle(): void {
 // タイトルの BGM を最初から鳴らす準備。ブラウザが許す環境（インストール済みのアプリ、以前に操作したサイトなど）ではすぐ鳴る。
 // 許されない環境（iPhone など）では、止まった状態で待ち、最初のタップで鳴り始める（AudioManager の onGesture）。
 audio.unlock();
+
+// 自動再生が許されない環境（iPhone など）では、起動直後は無音のまま。「タップして始める」の幕を出して、
+// そのタップで音楽を始める（タイトルの BGM を、タイトルが見え始めるところから流すため）。
+armTapGate();
 
 showTitle();
 setupUpdateBanner();
