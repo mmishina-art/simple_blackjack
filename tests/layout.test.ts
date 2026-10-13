@@ -108,7 +108,7 @@ describe('短い画面の装備画面', () => {
 
   it(`高さ ${LOADOUT_HEIGHT}px 以下で、装備画面を詰める指定がある（スキル獲得直後の「セットしない（売る）」が画面の外に出ない）`, () => {
     const block = mediaBlocks(LOADOUT_HEIGHT);
-    for (const selector of ['.loadout .loadout__head h1', '.loadout .loadout__slots', '.loadout .armed', '.loadout .loadout__btn']) {
+    for (const selector of ['.loadout .topbar__title', '.loadout .loadout__slots', '.loadout .armed', '.loadout .loadout__btn']) {
       expect(block, selector).toContain(selector);
     }
   });

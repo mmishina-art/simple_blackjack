@@ -5,6 +5,7 @@ import { enemyLevel } from '../core/entities/enemies/level';
 import { STAGES } from '../map/stages';
 import { dropsOf } from '../run/drops';
 import { ENEMY_SPRITES } from './components/enemySprites';
+import { buildTopBar } from './components/TopBar';
 import { audio } from '../audio/AudioManager';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
 import { describeSkill, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
@@ -26,21 +27,12 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, html = '
   return e;
 }
 
-function backButton(label: string, onClick: () => void): HTMLButtonElement {
-  const b = el('button', 'btn btn--retry loadout__btn', `<span class="btn__main">${label}</span>`);
-  b.addEventListener('click', () => {
-    audio.sfx('click');
-    onClick();
-  });
-  return b;
-}
-
 /** 魂の祭壇: 魂片で恒久強化を買う。 */
 export function showAltar(root: HTMLElement, meta: MetaState, onClose: () => void): void {
   const render = (): void => {
-    const screen = el('main', 'meta-screen');
-    screen.append(el('header', 'meta-head', `<h1>魂の祭壇</h1><p class="shards">魂片 <strong>${meta.shards}</strong></p>
-      <p class="meta-head__sub">冒険の途中で倒れても魂片は持ち帰れる</p>`));
+    const screen = el('main', 'meta-screen topbar-screen');
+    const info = el('header', 'meta-head', `<p class="shards">魂片 <strong>${meta.shards}</strong></p>
+      <p class="meta-head__sub">冒険の途中で倒れても魂片は持ち帰れる</p>`);
     const list = el('div', 'meta-list');
     for (const def of UPGRADES) {
       const level = upgradeLevel(meta, def.id);
@@ -64,7 +56,9 @@ export function showAltar(root: HTMLElement, meta: MetaState, onClose: () => voi
       });
       list.append(card);
     }
-    screen.append(list, createBackupSection(), backButton('戻る', onClose));
+    const body = el('div', 'meta-body topbar-body');
+    body.append(info, list, createBackupSection());
+    screen.append(buildTopBar('魂の祭壇', onClose), body);
     root.replaceChildren(screen);
   };
   render();
@@ -88,11 +82,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...UPGRADE_ONLY_SKILLS, ...ITEM_POOL])];
   const kindOf = (kind: SkillKind): string[] => (kind === 'armor' ? [...ARMOR_POOL] : all.filter((id) => kindOfSkill(getSkill(id)) === kind));
   // 上の「戻る」・見出し・タブは固定。その下（ヒントと一覧）だけがスクロールする
-  const top = el('header', 'codex-top');
-  const back = el('button', 'codex-top__back', '‹ 戻る');
-  back.setAttribute('aria-label', '図鑑を閉じる');
-  back.addEventListener('click', () => { audio.sfx('click'); onClose(); });
-  top.append(back, el('h1', 'codex-top__title', '図鑑'), el('span', 'codex-top__gap'));
+  const top = buildTopBar('図鑑', onClose);
   const body = el('div', 'meta-body codex-body');
   const tabs = el('div', 'codex-tabs');
   const sub = (tab: 'skills' | 'monsters'): string => isDebug()
