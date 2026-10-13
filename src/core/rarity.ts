@@ -7,6 +7,13 @@ export const RARITY_LABEL: Record<Rarity, string> = { common: 'コモン', rare:
 /** 報酬の抽選での出やすさ。 */
 export const RARITY_WEIGHT: Record<Rarity, number> = { common: 6, rare: 3, legend: 1 };
 
+/** 階層が進むほど、レアが出やすくなる（1階層: 6:3:1、2階層: 4:4:2、3階層: 3:4:3）。 */
+export function rarityWeights(stage: number): Record<Rarity, number> {
+  if (stage >= 3) return { common: 3, rare: 4, legend: 3 };
+  if (stage === 2) return { common: 4, rare: 4, legend: 2 };
+  return RARITY_WEIGHT;
+}
+
 /** 重み付きで重複なしに count 個選ぶ。 */
 export function pickWeighted<T>(pool: readonly T[], count: number, rng: Rng, weightOf: (item: T) => number): T[] {
   const rest = [...pool];

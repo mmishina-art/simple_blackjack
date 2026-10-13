@@ -9,7 +9,7 @@ import { slotAttack } from '../src/core/skills/catalog';
 import { attackValue, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
-import { armorCap, canUpgradeSlot, createRun, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, upgradeSlot, type RunState } from '../src/run/Run';
+import { advanceStage, armorCap, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, upgradeSlot, type RunState } from '../src/run/Run';
 
 const N = Number(process.argv[2] ?? 600);
 const RISK = Number(process.argv[3] ?? 0.45);
@@ -48,14 +48,16 @@ function place(run: RunState, id: SkillId): void {
 }
 
 // 調整用の上書き（試算専用）: ENEMY_SCALE=敵の攻撃倍率 / PLAYER_HP=初期最大HP / ENEMY_HP_SCALE=敵HP倍率
-const ES = Number(process.env.ENEMY_SCALE ?? 1);
-if (ES !== 1) {
+const STAGE_OF: Record<string, number> = { slime: 1, skeleton: 1, bat: 1, ghoul: 1, knight: 1, merman: 2, gargoyle: 2, wraith: 2, serpent: 2, flame: 3, golem: 3, imp: 3, dragon: 3 };
+const ESS = [1, 2, 3].map((n) => Number(process.env[`ES${n}`] ?? process.env.ENEMY_SCALE ?? 1));
+if (ESS.some((x) => x !== 1)) {
   const { ENEMY_LINEUP } = await import('../src/core/entities/enemies/catalog');
   const done = new Set<string>();
   for (const e of ENEMY_LINEUP) {
+    const k = ESS[(STAGE_OF[e.id] ?? 1) - 1];
     for (const id of new Set([...Object.values(e.slots), e.fallbackSkill])) {
       if (!id || done.has(id)) continue; done.add(id);
-      for (const ef of getSkill(id).effects) if (ef.type === 'attack') { ef.add = Math.round((ef.add ?? 0) * ES); ef.mult = ef.mult * ES; }
+      for (const ef of getSkill(id).effects) if (ef.type === 'attack') { ef.add = Math.round((ef.add ?? 0) * k); ef.mult = ef.mult * k; }
     }
   }
 }
@@ -63,6 +65,7 @@ const stat = { runs: 0, clears: 0, battles: 0, won: 0, rounds: 0, hpLost: 0, def
 const perEnemy: Record<string, { n: number; w: number; hp: number; rounds: number }> = {};
 const deaths: Record<string, number> = {};
 const reach: Record<string, number> = {};
+const stageReached: Record<number, number> = {};
 
 (async () => {
   for (let i = 0; i < N; i++) {
@@ -78,7 +81,16 @@ const reach: Record<string, number> = {};
     let dead = '';
     while (!dead) {
       const opts = reachableTiles(run);
-      if (opts.length === 0) { stat.clears++; break; }
+      if (opts.length === 0) {
+        if (isFinalStage(run)) { stat.clears++; break; }
+        // 階層を踏破: 遺物を1つ選んで（レアの高いもの）、次の階層へ
+        const rs = offerRelics(run, rng);
+        if (rs.length) run.relics.push([...rs].sort((a, b) => (b.rarity === 'legend' ? 2 : b.rarity === 'rare' ? 1 : 0) - (a.rarity === 'legend' ? 2 : a.rarity === 'rare' ? 1 : 0))[0]);
+        stageReached[run.stage + 1] = (stageReached[run.stage + 1] ?? 0) + 1;
+        advanceStage(run);
+        if (process.env.STAGE_HEAL_FULL) run.hp = run.maxHp;
+        continue;
+      }
       let pick = opts[Math.floor(rng.next() * opts.length)];
       if (SMART_PATH) {
         const hpRatio = run.hp / run.maxHp;
@@ -139,10 +151,11 @@ const reach: Record<string, number> = {};
       }
       markCleared(run, tile.id);
     }
-    if (dead) deaths[dead] = (deaths[dead] ?? 0) + 1;
+    if (dead) deaths[`${run.stage}-${dead}`] = (deaths[`${run.stage}-${dead}`] ?? 0) + 1;
   }
   const f = (x: number, d = 1) => x.toFixed(d);
   console.log(`risk ${RISK} N ${N} | クリア ${f(100 * stat.clears / N, 0)}% | 1戦の勝率 ${f(100 * stat.won / stat.battles, 0)}% | 1戦 ${f(stat.rounds / stat.battles)}R・自HP減 ${f(stat.hpLost / stat.battles)} | 防御 ${f(100 * stat.defends / stat.decisions, 1)}%`);
   for (const [id, p] of Object.entries(perEnemy)) console.log(`  ${id.padEnd(9)} 戦${String(p.n).padStart(5)} 勝率 ${f(100 * p.w / p.n, 0).padStart(3)}%  1戦 ${f(p.rounds / p.n)}R  自HP減 ${f(p.hp / p.n)}`);
+  console.log('  階層に到達:', [2, 3].map((n) => `第${n}階層 ${f(100 * (stageReached[n] ?? 0) / N, 0)}%`).join(' '));
   console.log('  死亡位置:', Object.entries(deaths).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}:${f(100 * v / N, 0)}%`).join(' '));
 })();

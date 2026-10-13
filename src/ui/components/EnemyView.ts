@@ -7,8 +7,9 @@ export class EnemyView {
   readonly el = document.createElement('div');
   private sprite = document.createElement('div');
 
-  constructor(enemyId: string) {
+  constructor(enemyId: string, stage = 1) {
     this.el.className = 'enemy-stage';
+    this.el.dataset.stage = String(stage); // 階層ごとに背景の色合いが変わる（CSS）
     this.sprite.className = 'enemy-sprite';
     this.sprite.innerHTML = ENEMY_SPRITES[enemyId] ?? ENEMY_SPRITES.slime;
     const backdrop = document.createElement('div');

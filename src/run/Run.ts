@@ -1,11 +1,11 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { ARMOR_POOL, DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
-import { pickWeighted, RARITY_WEIGHT } from '../core/rarity';
+import { pickWeighted, rarityWeights } from '../core/rarity';
 import { getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, validStartingSkills, type MetaState, type RunBonus } from '../meta/Meta';
-import { STAGE_1 } from '../map/stage1';
+import { STAGE_ROWS, STAGES } from '../map/stages';
 import { nextTiles, tileOf, type StageMap, type TileDef } from '../map/StageMap';
 import { RELIC_POOL } from '../relics/catalog';
 import type { Relic } from '../relics/Relic';
@@ -16,6 +16,8 @@ import type { Relic } from '../relics/Relic';
  */
 export interface RunState {
   map: StageMap;
+  /** いま何階層目か（1 始まり）。最後の階層のボスを倒すとクリア。 */
+  stage: number;
   /** 駒のいるマス。 */
   position: string;
   /** 効果を使い切ったマス（戦闘に勝った敵・開けた宝箱・使った宿屋/祠）。 */
@@ -47,12 +49,12 @@ export const START_MAX_HP = 30;
 export const FIXED_SLOTS: readonly SlotKey[] = [11, 21];
 
 /** 新しい冒険を始める。meta を渡すと、祭壇の強化・初期スキル・図鑑が反映される。 */
-export function createRun(map: StageMap = STAGE_1, meta?: MetaState): RunState {
+export function createRun(map: StageMap = STAGES[0], meta?: MetaState): RunState {
   const bonus = meta ? computeBonus(meta) : { ...NO_BONUS };
   const maxHp = START_MAX_HP + bonus.maxHp;
   const slots = { ...DEFAULT_PLAYER_SLOTS, ...(meta ? validStartingSkills(meta) : {}) };
   return {
-    map, position: map.start, cleared: [],
+    map, stage: Math.max(1, STAGES.findIndex((m) => m.id === map.id) + 1), position: map.start, cleared: [],
     maxHp, hp: maxHp, baseAttack: START_ATTACK + bonus.attack,
     slots, armor: DEFAULT_ARMOR_ID, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
     inventory: [], relics: [], bonus,
@@ -83,7 +85,7 @@ export function moveTo(run: RunState, id: string): TileDef {
   const target = reachableTiles(run).find((t) => t.id === id);
   if (!target) throw new Error(`Cannot move ${run.position} -> ${id}`);
   run.position = id;
-  run.stats.maxRow = Math.max(run.stats.maxRow, target.row);
+  run.stats.maxRow = Math.max(run.stats.maxRow, (run.stage - 1) * STAGE_ROWS + target.row); // 階層をまたいで通算
   return target;
 }
 
@@ -98,6 +100,28 @@ export function isSlotUnlockedByRelic(run: RunState, key: SlotKey): boolean {
 
 export function isSlotLocked(run: RunState, key: SlotKey): boolean {
   return FIXED_SLOTS.includes(key) && !isSlotUnlockedByRelic(run, key);
+}
+
+/** 最後の階層か（ここのボスを倒すとクリア）。 */
+export function isFinalStage(run: RunState): boolean {
+  return run.stage >= STAGES.length;
+}
+
+/** 階層の合間に回復する割合（最大 HP に対して）。 */
+export const STAGE_CLEAR_HEAL = 0.5;
+/** 階層を踏破するたびに増える最大 HP（その分、HP も増える）。 */
+export const STAGE_CLEAR_MAX_HP = 10;
+
+/** 次の階層へ進む。最大 HP が増え、HP が回復し、位置が新しい階層のスタートになる。最後の階層なら何もせず false。 */
+export function advanceStage(run: RunState): boolean {
+  if (isFinalStage(run)) return false;
+  run.stage++;
+  run.map = STAGES[run.stage - 1];
+  run.position = run.map.start;
+  run.cleared = [];
+  run.maxHp += STAGE_CLEAR_MAX_HP;
+  run.hp = Math.min(run.maxHp, run.hp + STAGE_CLEAR_MAX_HP + Math.ceil(run.maxHp * STAGE_CLEAR_HEAL));
+  return true;
 }
 
 /**
@@ -162,11 +186,20 @@ export const CODEX_BOOST = 2;
  */
 export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
   const favored = new Set(run?.favored ?? []);
-  const weight = (id: SkillId): number => RARITY_WEIGHT[rarityOfSkill(getSkill(id))] * (favored.has(id) ? CODEX_BOOST : 1);
+  const w = rarityWeights(run?.stage ?? 1);
+  const weight = (id: SkillId): number => w[rarityOfSkill(getSkill(id))] * (favored.has(id) ? CODEX_BOOST : 1);
   const count = 3 + (run?.bonus.extraChoices ?? 0);
   const skills = pickWeighted(SKILL_POOL, count - 1, rng, weight);
   // 道具の枠: 道具と、いま装備しているより硬い防具（同じか柔らかい防具は出さない）から1つ
-  const harder = ARMOR_POOL.filter((id) => !run || (getSkill(id).damageCap ?? Infinity) < armorCap(run));
+  // いま装備しているより硬い防具（上限が小さい、または上限が同じで回復がある）だけを出す
+  const better = (id: SkillId): boolean => {
+    if (!run) return true;
+    const cur = getSkill(run.armor);
+    const cand = getSkill(id);
+    return (cand.damageCap ?? Infinity) < (cur.damageCap ?? Infinity)
+      || ((cand.damageCap ?? Infinity) === (cur.damageCap ?? Infinity) && (cand.defendHeal ?? 0) > (cur.defendHeal ?? 0));
+  };
+  const harder = ARMOR_POOL.filter(better);
   const items = pickWeighted([...ITEM_POOL, ...harder], 1, rng, weight);
   return [...skills, ...items];
 }
@@ -174,5 +207,5 @@ export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
 /** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */
 export function offerRelics(run: RunState, rng: Rng): Relic[] {
   const owned = new Set(run.relics.map((r) => r.id));
-  return pickWeighted(RELIC_POOL.filter((r) => !owned.has(r.id)), 3, rng, (r) => RARITY_WEIGHT[r.rarity ?? 'common']);
+  return pickWeighted(RELIC_POOL.filter((r) => !owned.has(r.id)), 3, rng, (r) => rarityWeights(run.stage)[r.rarity ?? 'common']);
 }

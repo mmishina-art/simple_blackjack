@@ -59,7 +59,7 @@ export class BattleView {
     this.enemyLv = enemyLevel(machine.ctx.enemyDef);
     this.container = document.createElement('main');
     this.container.className = 'battle';
-    this.enemyView = new EnemyView(machine.ctx.enemyDef.id);
+    this.enemyView = new EnemyView(machine.ctx.enemyDef.id, run.stage);
     // 敵が「N以上になるまで引く」なら、N未満のスロットは出さない
     this.enemySlotStrip = new SlotStrip(machine.ctx.enemyDef.ai.standOn);
 

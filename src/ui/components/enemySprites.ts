@@ -289,7 +289,9 @@ export const STAGE_BACKDROP = `
   <g class="stage-fog"><rect x="-20" y="118" width="360" height="52" fill="url(#bgFog)"/></g>
 </svg>`;
 
-export const ENEMY_SPRITES: Record<string, string> = { slime, skeleton, bat, ghoul, dragon };
+import { NEW_ENEMY_SPRITES } from './enemySprites2';
+
+export const ENEMY_SPRITES: Record<string, string> = { slime, skeleton, bat, ghoul, dragon, ...NEW_ENEMY_SPRITES };
 
 /** タイトル画面のイラスト: 21 を作る A と K のカードと、その背後で笑う骸骨。 */
 export const TITLE_ART = `

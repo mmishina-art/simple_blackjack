@@ -144,14 +144,18 @@ export interface RunSummary {
   maxRow: number;
   enemiesDefeated: number;
   cleared: boolean;
+  /** 倒したボスの数のうち、最後の階層より前のもの（階層を踏破した数）。 */
+  stagesCleared?: number;
 }
 
 export const SHARD_PER_ROW = 2;
 export const SHARD_PER_ENEMY = 4;
 export const SHARD_CLEAR_BONUS = 40;
+/** 最後の階層より前の階層を踏破するたびの魂片。 */
+export const SHARD_STAGE_BONUS = 12;
 
 export function computeShards(s: RunSummary): number {
-  return s.maxRow * SHARD_PER_ROW + s.enemiesDefeated * SHARD_PER_ENEMY + (s.cleared ? SHARD_CLEAR_BONUS : 0);
+  return s.maxRow * SHARD_PER_ROW + s.enemiesDefeated * SHARD_PER_ENEMY + (s.stagesCleared ?? 0) * SHARD_STAGE_BONUS + (s.cleared ? SHARD_CLEAR_BONUS : 0);
 }
 
 /** 冒険の終了処理（負けても魂片が入る）。獲得量を返す。 */

@@ -5,7 +5,8 @@ import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
 import { getSkill, hasSkill, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
-import { STAGE_1 } from '../src/map/stage1';
+import { STAGE_ROWS, STAGES } from '../src/map/stages';
+import { rarityWeights } from '../src/core/rarity';
 import { nextTiles, tileOf, type TileKind } from '../src/map/StageMap';
 import {
   Boots, Breastplate, FateRing, LifeCandle, OverlordOrb, RELIC_POOL, ScapegoatDoll, SealKey, SturdyShield,
@@ -13,14 +14,15 @@ import {
 } from '../src/relics/catalog';
 import {
   createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
-  canUpgradeSlot, swapSlots, upgradeSlot,
+  advanceStage, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
 import { noWait, playRound } from './helpers';
 
 describe('敵', () => {
   it('全員にスプライトがあり、スロットのスキルが全て実在する', () => {
-    expect(new Set(ENEMY_LINEUP.map((e) => e.id)).size).toBe(5);
+    expect(new Set(ENEMY_LINEUP.map((e) => e.id)).size).toBe(ENEMY_LINEUP.length);
+    expect(ENEMY_LINEUP).toHaveLength(13); // 第1階層 5 / 第2階層 4 / 第3階層 4
     for (const e of ENEMY_LINEUP) {
       expect(ENEMY_SPRITES[e.id], e.id).toBeTruthy();
       expect(hasSkill(e.fallbackSkill), `${e.id} fallback`).toBe(true);
@@ -32,7 +34,7 @@ describe('敵', () => {
   });
 });
 
-describe('ステージ1のマップ', () => {
+describe.each(STAGES.map((m, i) => [i + 1, m] as const))('第%i階層のマップ', (_n, STAGE_1) => {
   const tiles = Object.values(STAGE_1.tiles);
   const boss = tiles.find((t) => t.kind === 'boss')!;
 
@@ -62,14 +64,67 @@ describe('ステージ1のマップ', () => {
   it('途中に分岐があり、全種類のマスが存在する', () => {
     expect(tiles.some((t) => t.next.length >= 2)).toBe(true);
     const kinds = new Set<TileKind>(tiles.map((t) => t.kind));
-    for (const k of ['start', 'empty', 'enemy', 'chest', 'inn', 'shrine', 'boss'] as TileKind[]) expect(kinds.has(k)).toBe(true);
+    for (const k of ['start', 'enemy', 'chest', 'inn', 'shrine', 'boss'] as TileKind[]) expect(kinds.has(k)).toBe(true);
   });
 
-  it('敵・ボスのマスは実在する敵を指す。ボスは黒竜', () => {
+  it('敵・ボスのマスは実在する敵を指す', () => {
     for (const t of tiles.filter((x) => x.kind === 'enemy' || x.kind === 'boss')) {
       expect(enemyOfTile(t).id).toBe(t.enemyId);
     }
-    expect(enemyOfTile(boss).id).toBe('dragon');
+  });
+});
+
+describe('階層の構成', () => {
+  it('3つの階層があり、ボスは 墓守の騎士 → 深淵の海蛇 → 黒竜。段数は同じ', () => {
+    expect(STAGES).toHaveLength(3);
+    expect(STAGES.map((m) => Object.values(m.tiles).find((t) => t.kind === 'boss')!.enemyId)).toEqual(['knight', 'serpent', 'dragon']);
+    for (const m of STAGES) expect(Math.max(...Object.values(m.tiles).map((t) => t.row)) + 1).toBe(STAGE_ROWS);
+  });
+
+  it('階層ごとの敵: 第1階層は 5 種、第2階層は魚人・ガーゴイル・亡霊・海蛇、第3階層は精霊・ゴーレム・悪魔・黒竜', () => {
+    const ids = (m: (typeof STAGES)[number]) => new Set(Object.values(m.tiles).flatMap((t) => (t.enemyId ? [t.enemyId] : [])));
+    expect(ids(STAGES[0])).toEqual(new Set(['slime', 'skeleton', 'bat', 'ghoul', 'knight']));
+    expect(ids(STAGES[1])).toEqual(new Set(['merman', 'gargoyle', 'wraith', 'serpent']));
+    expect(ids(STAGES[2])).toEqual(new Set(['flame', 'golem', 'imp', 'dragon']));
+  });
+
+  it('次の階層へ: 最大 HP が +10、HP が最大の半分（+10 の分も）回復し、位置・済みのマスが新しい階層になる。最後の階層では進めない', () => {
+    const run = createRun();
+    expect(run.stage).toBe(1);
+    run.hp = 5;
+    run.cleared = ['A'];
+    moveTo(run, 'A');
+    expect(isFinalStage(run)).toBe(false);
+    expect(advanceStage(run)).toBe(true);
+    expect(run.stage).toBe(2);
+    expect(run.map.id).toBe('stage2');
+    expect(run.position).toBe('S');
+    expect(run.cleared).toEqual([]);
+    expect(run.maxHp).toBe(30 + STAGE_CLEAR_MAX_HP); // 最大 HP が増える
+    expect(run.hp).toBe(5 + STAGE_CLEAR_MAX_HP + Math.ceil(run.maxHp * STAGE_CLEAR_HEAL));
+    run.hp = run.maxHp - 1;
+    advanceStage(run);
+    expect(run.stage).toBe(3);
+    expect(run.hp).toBe(run.maxHp); // 最大 HP を超えない
+    expect(isFinalStage(run)).toBe(true);
+    expect(advanceStage(run)).toBe(false);
+    expect(run.stage).toBe(3);
+  });
+
+  it('深さ（魂片の計算）は階層をまたいで通算する', () => {
+    const run = createRun();
+    moveTo(run, 'A');
+    expect(run.stats.maxRow).toBe(1);
+    advanceStage(run);
+    moveTo(run, 'A');
+    expect(run.stats.maxRow).toBe(STAGE_ROWS + 1);
+  });
+
+  it('階層が進むほど、レアが出やすい', () => {
+    expect(rarityWeights(1)).toEqual({ common: 6, rare: 3, legend: 1 });
+    expect(rarityWeights(2).legend).toBeGreaterThan(rarityWeights(1).legend);
+    expect(rarityWeights(3).legend).toBeGreaterThan(rarityWeights(2).legend);
+    expect(rarityWeights(3).common).toBeLessThan(rarityWeights(1).common);
   });
 });
 
@@ -99,7 +154,7 @@ describe('冒険の状態（レベル・経験値は廃止）', () => {
     const run = createRun() as unknown as Record<string, unknown>;
     expect(run).not.toHaveProperty('exp');
     expect(run).not.toHaveProperty('level');
-    expect(run).not.toHaveProperty('stage');
+    expect(run.stage).toBe(1); // 階層（ステージ）は、第1階層から始まる
   });
 
   it('持ち越したスロットとHPがバトルに反映される', () => {
@@ -262,7 +317,7 @@ describe('マスのイベント', () => {
     expect(offerRelics(run, seededRng(1))).toHaveLength(3);
     run.relics.push(Whetstone);
     expect(offerRelics(run, seededRng(1)).some((r) => r.id === 'whetstone')).toBe(false);
-    expect(RELIC_POOL).toHaveLength(15);
+    expect(RELIC_POOL).toHaveLength(21);
   });
 });
 
@@ -287,9 +342,9 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(60);
   });
 
-  it('運命の指輪: 同時攻撃になったラウンド、与える攻撃ダメージ +5', async () => {
+  it('運命の指輪: 同時攻撃になったラウンド、与える攻撃ダメージ +8', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', 'Q'], enemyHp: 40, relics: [FateRing] });
-    expect(m.ctx.enemy.hp).toBe(40 - 20); // 大攻撃15 + 5
+    expect(m.ctx.enemy.hp).toBe(40 - 23); // 大攻撃15 + 8
   });
 
   it('疾風の靴: 同値でも先攻になる', async () => {
@@ -304,10 +359,10 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.block).toBe(6 + 3 - 3); // 盾 6 + 3、敵の酸 3
   });
 
-  it('命の蝋燭: 戦闘開始時にHP+5', () => {
+  it('命の蝋燭: 戦闘開始時にHP+3', () => {
     const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerHp: 30, relics: [LifeCandle], pace: noWait });
     m.bus.emit('onBattleStart', { player: m.ctx.player, enemy: m.ctx.enemy });
-    expect(m.ctx.player.hp).toBe(35);
+    expect(m.ctx.player.hp).toBe(33);
   });
 
   it('覇王の宝珠: 会心の一撃（ATK×1.5）が覇王の一撃（ATK×2 + Block 8）に変わる', async () => {
@@ -324,12 +379,12 @@ describe('レリックで変わるスキル効果', () => {
     expect(60 - m.ctx.enemy.hp).toBe(25); // 20 は ATK 10: ATK×2+5
   });
 
-  it('巨人の血: 小攻撃（11以下）が ATK×0.5 から ATK×3 になる', async () => {
+  it('巨人の血: 小攻撃（11以下）が ATK×0.5 から ATK×2+10 になる', async () => {
     const { TitanBlood } = await import('../src/relics/catalog');
     const base = await playRound({ player: ['3', '4'], enemyHand: ['9', '9'], enemyHp: 60 });
     const buffed = await playRound({ player: ['3', '4'], enemyHand: ['9', '9'], enemyHp: 60, relics: [TitanBlood] });
     expect(60 - base.ctx.enemy.hp).toBe(1);   // 後攻の小攻撃 = ATK(1)×0.5（最低 1）
-    expect(60 - buffed.ctx.enemy.hp).toBe(3); // ATK(1)×3
+    expect(60 - buffed.ctx.enemy.hp).toBe(12); // ATK(1)×2+10
   });
 });
 
@@ -338,7 +393,7 @@ describe('敵の特性', () => {
 
   it('骸骨兵: 骨の鎧（受けるダメージ -2）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemy: enemy('skeleton') });
-    expect(m.ctx.enemy.hp).toBe(24 - 13); // 大攻撃15 - 骨の鎧2
+    expect(m.ctx.enemy.hp).toBe(22 - 13); // 大攻撃15 - 骨の鎧2
   });
 
   it('大蝙蝠: 同値なら必ず敵が先攻', async () => {
@@ -346,14 +401,14 @@ describe('敵の特性', () => {
     expect(m.ctx.turn).toMatchObject({ mode: 'sequential', first: 'enemy', second: 'player' });
   });
 
-  it('屍食鬼: HPを削るたびHP+3', async () => {
-    const m = await playRound({ player: ['9', '8'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 20 });
-    expect(m.ctx.player.hp).toBe(60 - 9); // 貪り喰う ATK4×2+1 = 9（17 は未設定で Block なし）
-    expect(m.ctx.enemy.hp).toBe(20 + 3 - 7); // HP を削って +3 回復、そのあと後攻の通常攻撃（17 は ATK 7）
+  it('屍食鬼: HPを削るたびHP+2', async () => {
+    const m = await playRound({ player: ['9', '8'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 15 });
+    expect(m.ctx.player.hp).toBe(60 - 8); // 貪り喰う ATK4×2 = 8（17 は未設定で Block なし）
+    expect(m.ctx.enemy.hp).toBe(15 + 2 - 7); // HP を削って +2 回復、そのあと後攻の通常攻撃（17 は ATK 7）
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon') });
-    expect(m.ctx.player.hp).toBe(60 - (13 - 11)); // 業火 ATK5×2 + 息吹3 = 13。後攻の盾 Block 11 が先に付与される
+    expect(m.ctx.player.hp).toBe(60 - (18 - 11)); // 業火 ATK6×2+3 + 息吹3 = 18。後攻の盾 Block 11 が先に付与される
   });
 });

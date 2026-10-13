@@ -50,7 +50,7 @@ describe('防具', () => {
       if (isArmor(getSkill(last))) expect(getSkill(last).damageCap!).toBeLessThan(5);
     }
     const run = createRun();
-    run.armor = 'guard_mail'; // これ以上硬い防具はない
+    run.armor = 'mithril_mail'; // これ以上硬い防具はない
     for (let seed = 1; seed <= 60; seed++) expect(offerSkills(seededRng(seed), run).some((id) => isArmor(getSkill(id)))).toBe(false);
   });
 

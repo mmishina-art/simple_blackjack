@@ -31,7 +31,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   // 上部: HP と所持レリック
   const hud = document.createElement('section');
   hud.className = 'map-hud';
-  hud.innerHTML = `<div class="map-hud__row"><strong>${run.map.name}</strong><span>HP ${run.hp} / ${run.maxHp}</span></div>
+  hud.innerHTML = `<div class="map-hud__row"><strong>第${run.stage}階層　${run.map.name}</strong><span>HP ${run.hp} / ${run.maxHp}</span></div>
     <div class="map-hud__bar"><div class="map-hud__fill" style="width:${Math.max(0, (run.hp / run.maxHp) * 100)}%"></div></div>`;
   const relics = document.createElement('div');
   relics.className = 'map-hud__relics';
@@ -112,7 +112,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   msg.textContent = message || (reachable.size > 1 ? '分かれ道だ。進む先を選べ。' : '光っているマスへ進め。');
   const loadout = document.createElement('button');
   loadout.className = 'btn btn--stand map-foot__btn';
-  loadout.innerHTML = '<span class="btn__main">編成</span><span class="btn__sub">付け替え</span>';
+  loadout.innerHTML = '<span class="btn__main">編成</span><span class="btn__sub">置く</span>';
   loadout.addEventListener('click', () => {
     audio.sfx('click');
     handlers.onLoadout();

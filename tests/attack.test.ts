@@ -43,11 +43,10 @@ describe('基本攻撃力（ATK）', () => {
     expect(describeSkill(getSkill('skel_guard'))).toBe('Block 6'); // 敵の防御は固定量のまま
   });
 
-  it('癒（回復）スキルは廃止され、18 は盾（Block 8）になった', () => {
+  it('初期スロットの 18 は盾（Block 8）で、回復スキルは入っていない（回復は薬草）', () => {
     const m = machine();
     expect(m.ctx.player.slots[18]).toBe('shield');
     expect(Object.values(m.ctx.player.slots)).not.toContain('mend');
-    expect(() => getSkill('mend')).toThrow();
   });
 
   it('プレイヤーと敵は ATK を持ち、プレイヤーは初期値5。冒険から引き継げる', () => {
@@ -338,7 +337,7 @@ describe('スロット表の各マスの効果', () => {
 
   it('レリックで変わった効果が出る（砥石 ATK+1: 大攻撃 11）。敵のスロットも同じ', () => {
     expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('16'); // ATK 10 + 1 = 11、ATK+5
-    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '4', 20: '7' }); // スライム ATK3: 溶解 ATK+1 / 飲み込み ATK×2+1
+    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '4', 20: '6' }); // スライム ATK3: 溶解 ATK+1 / 飲み込み ATK×2
   });
 
   it('相手がバーストしているときは 1.5倍、伏せカードがあるうちは等倍', () => {
@@ -362,8 +361,8 @@ describe('敵のスキル一覧（実数値つき）', () => {
     const r15 = rows.find((r) => r.key === 15)!;
     expect(r15).toMatchObject({ isFallback: false });
     expect(r15.skill.id).toBe('skel_guard');
-    // 骸骨兵 ATK4: 斬り下ろし ATK+2 = 6 / 兜割り ATK×2 = 8
-    expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 ATK+2＝6');
+    // 骸骨兵 ATK4: 斬り下ろし ATK+1 = 5 / 兜割り ATK×2 = 8
+    expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 ATK+1＝5');
     expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 ATK×2＝8');
   });
 
