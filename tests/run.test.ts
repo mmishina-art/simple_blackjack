@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
-import { hasSkill, SLOT_KEYS } from '../src/core/skills/Skill';
+import { getSkill, hasSkill, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
 import { STAGE_1 } from '../src/map/stage1';
@@ -13,7 +13,7 @@ import {
 } from '../src/relics/catalog';
 import {
   createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
-  unequipSlot,
+  canUpgradeSlot, swapSlots, upgradeSlot,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
 import { noWait, playRound } from './helpers';
@@ -124,7 +124,6 @@ describe('スキルの付け替え', () => {
     for (const key of [11, 21]) {
       expect(isSlotLocked(run, key)).toBe(true);
       expect(equipSkill(run, key, 'smash')).toBe(false);
-      expect(unequipSlot(run, key)).toBe(false);
     }
     expect(run.slots[11]).toBe('small_attack');
     expect(run.slots[21]).toBe('ace_strike');
@@ -140,22 +139,20 @@ describe('スキルの付け替え', () => {
     expect(SKILL_POOL).not.toContain('small_attack');
   });
 
-  it('持ち物のスキルをセットすると、元のスキルが持ち物に戻る', () => {
+  it('付け替えはできず上書きのみ: 元のスキルは失われ、持ち物には戻らない', () => {
     const run = createRun();
     run.inventory.push('smash');
     expect(equipSkill(run, 20, 'smash')).toBe(true);
     expect(run.slots[20]).toBe('smash');
-    expect(run.inventory).toEqual(['big_attack']);
+    expect(run.inventory).toEqual([]);
   });
 
-  it('空きスロットにセットでき、外すと持ち物に戻る', () => {
+  it('空きスロットにセットできる（外して空きに戻す操作はない）', () => {
     const run = createRun();
     run.inventory.push('slash');
     expect(equipSkill(run, 13, 'slash')).toBe(true);
     expect(run.inventory).toEqual([]);
-    expect(unequipSlot(run, 13)).toBe(true);
-    expect(run.slots[13]).toBeUndefined();
-    expect(run.inventory).toEqual(['slash']);
+    expect(run.slots[13]).toBe('slash');
   });
 
   it('持っていないスキルはセットできない', () => {
@@ -169,8 +166,47 @@ describe('スキルの付け替え', () => {
     run.inventory.push('smash');
     expect(equipSkill(run, 21, 'smash')).toBe(true);
     expect(run.slots[21]).toBe('smash');
-    expect(run.inventory).toEqual(['ace_strike']);
+    expect(run.inventory).toEqual([]); // 上書きされた会心の一撃は失われる
     expect(isSlotLocked(run, 11)).toBe(true);
+  });
+});
+
+describe('祠: 入れ替えとバージョンアップ', () => {
+  it('入れ替え: 2つのスロットの中身を交換し、空きへは移動になる。固定スロットは動かせない', () => {
+    const run = createRun();
+    expect(swapSlots(run, 15, 18)).toBe(true);
+    expect([run.slots[15], run.slots[18]]).toEqual(['shield', 'guard']);
+    expect(swapSlots(run, 15, 13)).toBe(true); // 空きへ移動
+    expect(run.slots[15]).toBeUndefined();
+    expect(run.slots[13]).toBe('shield');
+    expect(swapSlots(run, 11, 15)).toBe(false);
+    expect(swapSlots(run, 21, 15)).toBe(false);
+    expect(swapSlots(run, 14, 16)).toBe(false); // 両方空き
+    expect(run.inventory).toEqual([]);
+  });
+
+  it('バージョンアップ: コモン→レア、レア→レジェンド。道具・固定スキルは不可', () => {
+    const run = createRun();
+    expect(canUpgradeSlot(run, 15)).toBe(true); // シールド(コモン)
+    expect(upgradeSlot(run, 15)).toBe('bulwark');
+    expect(rarityOfSkill(getSkill('bulwark'))).toBe('rare');
+    expect(upgradeSlot(run, 15)).toBe('fortress');
+    expect(rarityOfSkill(getSkill('fortress'))).toBe('legend');
+    expect(upgradeSlot(run, 15)).toBeNull(); // レジェンドはこれ以上不可
+    expect(canUpgradeSlot(run, 12)).toBe(false); // 薬草（道具）
+    expect(canUpgradeSlot(run, 11)).toBe(false); // 固定
+    expect(canUpgradeSlot(run, 21)).toBe(false);
+    expect(run.slots[12]).toBe('herb');
+  });
+
+  it('強化先は必ず1つ上のレア度で、道具には強化先がない', () => {
+    const order = ['common', 'rare', 'legend'];
+    for (const id of SKILL_POOL) {
+      const to = getSkill(id).upgradesTo;
+      if (to) expect(order.indexOf(rarityOfSkill(getSkill(to)))).toBe(order.indexOf(rarityOfSkill(getSkill(id))) + 1);
+      else expect(rarityOfSkill(getSkill(id))).toBe('legend');
+    }
+    for (const id of ITEM_POOL) expect(getSkill(id).upgradesTo).toBeUndefined();
   });
 });
 

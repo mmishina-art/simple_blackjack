@@ -3,7 +3,7 @@ import { slotAttack } from '../core/skills/catalog';
 import { describeSkill, describeSkillBonus, getSkill, isItem, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
-import { equipSkill, isSlotLocked, unequipSlot, type RunState } from '../run/Run';
+import { equipSkill, isSlotLocked, type RunState } from '../run/Run';
 import { buildSlotRow } from './components/SlotRow';
 import { openSheet, type SheetOption } from './components/SkillSheet';
 import { rarityBadge, rarityClass } from './rarity';
@@ -31,7 +31,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const head = document.createElement('header');
     head.className = 'loadout__head';
     head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__hint">${armed ? '置きたいスロットをタップ' : '変えたいスロットをタップして、持ち物のスキルを置く'}</p>`;
+      <p class="loadout__hint">${armed ? '置きたいスロットをタップ' : 'スロットをタップして、持ち物を置く（上書きのみ。置き換えた元のものは失われる）'}</p>`;
     screen.append(head);
 
     if (armed) {
@@ -62,10 +62,12 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         onTap: () => {
           if (armed) {
             const skill = getSkill(armed);
-            if (equipSkill(run, key, armed)) {
-              audio.sfx('pick');
-              opts.onClose(`「${skill.name}」を ${slotLabel(key)} にセットした。`);
-            }
+            confirmOverwrite(key, armed, () => {
+              if (equipSkill(run, key, skill.id)) {
+                audio.sfx('pick');
+                opts.onClose(`「${skill.name}」を ${slotLabel(key)} にセットした。`);
+              }
+            });
             return;
           }
           openPicker(key);
@@ -114,18 +116,27 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     root.replaceChildren(screen);
   };
 
+  /** 上書きの確認。空きスロットならそのまま、スキルが入っていれば「失われる」ことを確認する。 */
+  const confirmOverwrite = (key: number, id: SkillId, done: () => void): void => {
+    const currentId = run.slots[key];
+    if (!currentId) return done();
+    const cur = getSkill(currentId);
+    const next = getSkill(id);
+    openSheet({
+      title: `${slotLabel(key)} を上書きする？`,
+      subtitle: `「${cur.name}」は失われ、持ち物にも戻らない`,
+      options: [{
+        kind: 'reset', icon: '上', name: `「${next.name}」で上書きする`,
+        detail: describeSkill(next, slotAttack(run.baseAttack, key)), onPick: done,
+      }],
+    });
+  };
+
   /** スロットをタップしたときに開く、置くスキルの選択シート。 */
   const openPicker = (key: number): void => {
     const currentId = run.slots[key];
     const current = currentId ? getSkill(currentId) : null;
     const options: SheetOption[] = [];
-    if (current) {
-      options.push({
-        kind: 'reset', icon: '外', name: '外す（通常攻撃に戻す）',
-        detail: `いまの「${current.name}」は持ち物に戻る`,
-        onPick() { if (unequipSlot(run, key)) render(); },
-      });
-    }
     const entries = inventoryEntries(run);
     for (const [label, wantItem] of [['スキル', false], ['道具', true]] as const) {
       for (const e of entries.filter((x) => isItem(getSkill(x.id)) === wantItem)) {
@@ -134,8 +145,8 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
           icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: label,
           detail: describeSkill(skill, slotAttack(run.baseAttack, key)),
           badge: e.count > 1 ? `×${e.count}` : undefined,
-          note: current ? `いまの「${current.name}」と入れ替える` : undefined,
-          onPick() { if (equipSkill(run, key, e.id)) render(); },
+          note: current ? `いまの「${current.name}」は失われる（上書き）` : undefined,
+          onPick() { confirmOverwrite(key, e.id, () => { if (equipSkill(run, key, e.id)) render(); }); },
         });
       }
     }
@@ -143,7 +154,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       title: `${slotLabel(key)} のスロット`,
       subtitle: current ? `いま: ${current.name}（${describeSkill(current, slotAttack(run.baseAttack, key))}）` : 'いま: 通常攻撃（空き）',
       options,
-      empty: '置けるスキルがない。敵を倒すとスキルが手に入る。',
+      empty: '置けるものがない。敵を倒すとスキルや道具が手に入る。',
     });
   };
 
