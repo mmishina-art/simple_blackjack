@@ -11,7 +11,7 @@ import type { SlotTable } from '../src/core/skills/Skill';
 export const noWait = async () => {};
 
 /** 守りのスキルを置いた編成（初期装備にはシールド・盾はないので、Block を試すテストで使う）。15 = シールド（Block 6）/ 18 = 盾（Block 11）。 */
-export const WITH_BLOCKS: SlotTable = { ...DEFAULT_PLAYER_SLOTS, 15: 'guard', 18: 'shield' };
+export const WITH_BLOCKS: SlotTable = { ...DEFAULT_PLAYER_SLOTS, 12: 'herb', 15: 'guard', 18: 'shield' }; // 薬草は 12 に置き直す（初期装備の薬草は 15 なので、シールドで上書きされないように）
 
 export interface RoundSetup extends Partial<BattleOptions> {
   player: Rank[];

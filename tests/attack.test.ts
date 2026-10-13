@@ -46,7 +46,7 @@ describe('基本攻撃力（ATK）', () => {
 
   it('初期スロットにはシールド・盾はない（守りは防具が受け持つ）。回復スキルも入っていない（回復は薬草）', () => {
     const m = machine();
-    expect(m.ctx.player.slots[15]).toBeUndefined();
+    expect(m.ctx.player.slots[15]).toBe('herb'); // 15 は薬草（止まるか迷う合計値）
     expect(m.ctx.player.slots[18]).toBeUndefined();
     expect(Object.values(m.ctx.player.slots).sort()).toEqual(['ace_strike', 'big_attack', 'herb', 'small_attack']);
     expect(Object.values(m.ctx.player.slots)).not.toContain('mend');

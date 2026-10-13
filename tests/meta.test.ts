@@ -186,8 +186,8 @@ describe('初期装備（出撃準備: 図鑑のスキルを出撃時に装備�
     const run = createRun(undefined, meta);
     expect(run.slots[13]).toBe('slash');
     expect(run.slots[20]).toBe('smash');
-    expect(run.slots[12]).toBe('herb');
-    expect(run.slots[15]).toBeUndefined(); // シールド・盾は初期装備ではない
+    expect(run.slots[15]).toBe('herb');
+    expect(run.slots[18]).toBeUndefined(); // シールド・盾は初期装備ではない
     expect(run.slots[11]).toBe('small_attack');
     expect(run.slots[21]).toBe('ace_strike');
     setStartingSkill(meta, 20, null);
@@ -247,7 +247,7 @@ describe('出撃準備の表示用ロジック', () => {
     const meta = withCodex();
     expect(placedElsewhere(meta, 'big_attack', 13)).toEqual([20]);
     expect(placedElsewhere(meta, 'big_attack', 20)).toEqual([]);
-    expect(placedElsewhere(meta, 'herb', 13)).toEqual([12]);
+    expect(placedElsewhere(meta, 'herb', 13)).toEqual([15]);
   });
 
   it('hasUnusedKitOpportunity: 初期スキル以外が図鑑にあり、枠が余っているときだけ true', () => {

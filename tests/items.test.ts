@@ -27,11 +27,11 @@ describe('初期の体力と初期の回復', () => {
     expect([run.maxHp, run.hp]).toEqual([30, 30]);
   });
 
-  it('初期スロットに薬草（回復の道具）がある（12）', () => {
-    expect(DEFAULT_PLAYER_SLOTS[12]).toBe('herb');
-    expect(createRun().slots[12]).toBe('herb');
+  it('初期スロットに薬草（回復の道具）がある（15）', () => {
+    expect(DEFAULT_PLAYER_SLOTS[15]).toBe('herb');
+    expect(createRun().slots[15]).toBe('herb');
     const m = machine({ playerSlots: createRun().slots });
-    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 12).parts).toEqual([{ type: 'heal', value: 8 }]);
+    expect(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 15).parts).toEqual([{ type: 'heal', value: 8 }]);
   });
 });
 
