@@ -58,13 +58,13 @@ export const ACE_STRIKE_ID: SkillId = defineSkill({
 }).id;
 /**
  * 祠のバージョンアップで、会心の一撃が育つ系統（報酬には出ない。固定スロット 21 のまま）。一撃必殺のイメージで、効果は攻撃だけ（ブロックを無視して破壊する）。
- * 会心の一撃（コモン POW×1.5）→ 覇王の一撃（レア ×2）→ 終焉の一撃（レジェンド ×4）。
+ * 会心の一撃（コモン POW×1.5）→ 覇王の一撃（レア ×2）→ 終焉の一撃（レジェンド ×3）。
  */
 const overlord = (id: string, name: string, icon: string, mult: number): void => {
   defineSkill({ id, name, icon, effects: [{ type: 'attack', mult, pierce: true }] });
 };
 overlord('overlord_strike', '覇王の一撃', '覇', 2);
-overlord('final_strike', '終焉の一撃', '終', 4);
+overlord('final_strike', '終焉の一撃', '終', 3);
 
 // ---- 道具: 効果は基本パワー（POW）に関係なく固定（低いスロットでも、同じだけ効く）。レリックで強化できるものもある ----
 const item = (id: string, name: string, icon: string, effect: SkillDef['effects'][number]): SkillDef =>

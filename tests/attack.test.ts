@@ -163,10 +163,10 @@ describe('防御・回復もスロットの基本パワーが基準（上位の�
     expect(guard.parts).toEqual([{ type: 'block', value: 6 }]);
   });
 
-  it('会心の一撃は POW×1.5（スロット21 は POW 11 で 16）。祠でバージョンアップした覇王の一撃は POW×2（22）、終焉の一撃は ×4（44）', () => {
+  it('会心の一撃は POW×1.5（スロット21 は POW 11 で 16）。祠でバージョンアップした覇王の一撃は POW×2（22）、終焉の一撃は ×3（33）', () => {
     expect(at('ace_strike', 21)).toEqual([16]);
     expect(at('overlord_strike', 21)).toEqual([22]);
-    expect(at('final_strike', 21)).toEqual([44]);
+    expect(at('final_strike', 21)).toEqual([33]);
   });
 
   it('実際の戦闘でも、薬草（道具）の回復量は固定（どのスロットでも 8）', async () => {
