@@ -2,6 +2,7 @@ import { isDebug } from '../debug';
 import { audio } from '../audio/AudioManager';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
 import { describeSkill, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
+import { RARITY_ORDER, sortByRarity } from '../run/loadout';
 import { kindTag, medalKindClass } from './kind';
 import {
   buyUpgrade, canBuy, CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, isRelicDiscovered, isSkillDiscovered,
@@ -70,13 +71,13 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   const relicKnown = (id: string): boolean => isDebug() || isRelicDiscovered(meta, id);
   const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...ITEM_POOL])];
   const kindOf = (kind: SkillKind): string[] => (kind === 'armor' ? [...ARMOR_POOL] : all.filter((id) => kindOfSkill(getSkill(id)) === kind));
-  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">${isDebug() ? 'デバッグモード: すべて開放して表示中（記録は変わらない）' : '入手したものは、次回から報酬に出やすくなる'}</p>`));
+  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">${isDebug() ? 'デバッグモード: すべて開放して表示中（記録は変わらない）' : '入手したものは、次回から報酬に出やすくなる（レア度の高い順）'}</p>`));
 
   const section = (title: string, ids: string[], total: number): HTMLElement => {
     const box = el('section', 'codex');
     box.append(el('h2', 'codex__title', `${title}　${ids.filter(skillKnown).length} / ${total}`));
     const grid = el('div', 'codex__grid');
-    for (const id of ids) {
+    for (const id of sortByRarity(ids)) {
       const known = skillKnown(id);
       const skill = getSkill(id);
       grid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,
@@ -95,7 +96,9 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   const rFound = RELIC_POOL.filter((r) => relicKnown(r.id)).length;
   relics.append(el('h2', 'codex__title', `レリック　${rFound} / ${CODEX_RELIC_TOTAL}`));
   const rGrid = el('div', 'codex__grid');
-  for (const r of RELIC_POOL) {
+  // レア度の高い順（同じレア度は、もとの並び）
+  const relicsByRarity = RELIC_POOL.map((r, i) => ({ r, i })).sort((a, b) => RARITY_ORDER[a.r.rarity ?? 'common'] - RARITY_ORDER[b.r.rarity ?? 'common'] || a.i - b.i).map((x) => x.r);
+  for (const r of relicsByRarity) {
     const known = relicKnown(r.id);
     rGrid.append(el('div', `codex__item ${known ? rarityClass(r.rarity) : 'codex__item--unknown'}`,
       known
