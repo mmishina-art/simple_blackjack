@@ -1,3 +1,4 @@
+import { isDebug } from '../debug';
 import { audio } from '../audio/AudioManager';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
 import { describeSkill, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
@@ -64,16 +65,19 @@ export function showAltar(root: HTMLElement, meta: MetaState, onClose: () => voi
 /** 図鑑: 入手したスキル・レリックの一覧。未入手は「？」。 */
 export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => void): void {
   const screen = el('main', 'meta-screen');
+  // デバッグモードでは、すべて入手済みとして見せる（表示だけ。記録（meta）は変えない）
+  const skillKnown = (id: string): boolean => isDebug() || isSkillDiscovered(meta, id);
+  const relicKnown = (id: string): boolean => isDebug() || isRelicDiscovered(meta, id);
   const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...ITEM_POOL])];
   const kindOf = (kind: SkillKind): string[] => (kind === 'armor' ? [...ARMOR_POOL] : all.filter((id) => kindOfSkill(getSkill(id)) === kind));
-  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">入手したものは、次回から報酬に出やすくなる</p>`));
+  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">${isDebug() ? 'デバッグモード: すべて開放して表示中（記録は変わらない）' : '入手したものは、次回から報酬に出やすくなる'}</p>`));
 
   const section = (title: string, ids: string[], total: number): HTMLElement => {
     const box = el('section', 'codex');
-    box.append(el('h2', 'codex__title', `${title}　${ids.filter((id) => isSkillDiscovered(meta, id)).length} / ${total}`));
+    box.append(el('h2', 'codex__title', `${title}　${ids.filter(skillKnown).length} / ${total}`));
     const grid = el('div', 'codex__grid');
     for (const id of ids) {
-      const known = isSkillDiscovered(meta, id);
+      const known = skillKnown(id);
       const skill = getSkill(id);
       grid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,
         known
@@ -88,11 +92,11 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   const armors = section('防具', kindOf('armor'), CODEX_ARMOR_TOTAL);
 
   const relics = el('section', 'codex');
-  const rFound = RELIC_POOL.filter((r) => isRelicDiscovered(meta, r.id)).length;
+  const rFound = RELIC_POOL.filter((r) => relicKnown(r.id)).length;
   relics.append(el('h2', 'codex__title', `レリック　${rFound} / ${CODEX_RELIC_TOTAL}`));
   const rGrid = el('div', 'codex__grid');
   for (const r of RELIC_POOL) {
-    const known = isRelicDiscovered(meta, r.id);
+    const known = relicKnown(r.id);
     rGrid.append(el('div', `codex__item ${known ? rarityClass(r.rarity) : 'codex__item--unknown'}`,
       known
         ? `<span class="medal medal--sm">${r.icon}</span><span>${r.name} ${rarityBadge(r.rarity)}<small>${r.description}</small></span>`

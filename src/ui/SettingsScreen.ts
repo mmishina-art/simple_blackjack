@@ -53,7 +53,7 @@ export function showSettings(root: HTMLElement, meta: MetaState, onClose: () => 
   const dbg = document.createElement('section');
   dbg.className = 'settings__box';
   dbg.innerHTML = `<h2>デバッグモード</h2>
-    <p>冒険中の画面の左上に、「G」（ゴールドを最大にする）と「勝」（いまの戦闘にすぐ勝つ）のボタンが出る。<strong>使った冒険は、魂片・図鑑・戦績を記録しない</strong>。</p>`;
+    <p>冒険中の画面の左上に、「G」（ゴールドを最大にする）と「勝」（いまの戦闘にすぐ勝つ）のボタンが出る。図鑑は、すべて開放して見せる（表示だけで、記録は変わらない）。<strong>使った冒険は、魂片・図鑑・戦績を記録しない</strong>。</p>`;
   const toggle = document.createElement('button');
   toggle.className = 'btn btn--stand loadout__btn';
   const renderToggle = (): void => {
