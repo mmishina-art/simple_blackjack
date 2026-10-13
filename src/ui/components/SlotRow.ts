@@ -57,7 +57,7 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
   row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${o.blocked ? ' lslot--blocked' : ''}${o.after ? ' lslot--change' : ''}${o.picked ? ' lslot--picked' : ''}${interactive ? ' lslot--tap' : ''}`;
   row.title = detail;
   row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}<span class="lslot__atk" aria-label="基本パワー ${o.atk}">${circledNumber(o.atk)}</span></span>
-    <span class="medal medal--sm ${rarityClass(look.rarity)}${o.skill ? medalKindClass(kindOfSkill(o.skill)) : ''}">${o.skill ? o.skill.icon : BASIC_ICON}</span>
+    <span class="medal medal--sm ${o.skill ? `${rarityClass(look.rarity)}${medalKindClass(kindOfSkill(o.skill))}` : 'medal--basic'}">${o.skill ? o.skill.icon : BASIC_ICON}</span>
     <span class="lslot__name">${name}${o.skill ? ` ${kindTag(o.skill)}` : ''}${o.tag ? ` <em class="lslot__tag${o.tagTone === 'custom' ? ' lslot__tag--custom' : ''}">${o.tag}</em>` : ''}</span>
     <span class="lslot__desc">${desc}</span>
     <span class="lslot__go" aria-hidden="true">${interactive ? '›' : ''}</span>`;

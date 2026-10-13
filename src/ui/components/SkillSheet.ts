@@ -88,7 +88,8 @@ export function openSheet(cfg: SheetConfig): () => void {
     const btn = document.createElement('button');
     btn.className = `pick ${opt.kind === 'reset' ? 'pick--reset' : opt.kind === 'confirm' ? 'pick--confirm' : rarityClass(opt.rarity)}`;
     btn.disabled = !!opt.disabled;
-    btn.innerHTML = `<span class="medal${opt.skillKind ? medalKindClass(opt.skillKind) : ''}">${opt.icon}</span>
+    // 決定・リセットのボタンには、アイコン（メダル）を付けない（意味がないため）。スキル・道具の選択肢だけ付ける
+    btn.innerHTML = `${opt.kind === 'confirm' || opt.kind === 'reset' ? '' : `<span class="medal${opt.skillKind ? medalKindClass(opt.skillKind) : ''}">${opt.icon}</span>`}
       <span class="pick__text">
         <strong>${opt.name}${opt.skillKind && opt.skillKind !== 'skill' ? ` ${kindTagOf(opt.skillKind)}` : ''}${opt.badge ? ` <em class="pick__badge">${opt.badge}</em>` : ''}</strong>
         <span class="pick__detail">${opt.detail}</span>
