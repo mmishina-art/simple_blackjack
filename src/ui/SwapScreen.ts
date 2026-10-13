@@ -9,9 +9,9 @@ import { kindTag, medalKindClass } from './kind';
 import { rarityClass } from './rarity';
 
 /**
- * 祠の入れ替え画面: スキルのスロット・道具袋・防御スロットの中身を、好きなだけ入れ替える（回数の制限なし）。
+ * 祠の入れ替え画面: スキルのスロット・道具袋の中身を、好きなだけ入れ替える（回数の制限なし）。防御スロットは出さない。
  * 動かしたいものをタップ → 入れ替え先をタップ、を何度でも繰り返し、終わったら左上の「戻る」。
- * 選ぶと、入れ替えられる行が光り、できない行は薄くなる（固定スロット・レア度の制限・防具は防具の場所だけ）。
+ * 選ぶと、入れ替えられる行が光り、できない行は薄くなる（固定スロット・レア度の制限）。
  */
 export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose(): void }): void {
   let picked: Spot | null = null;
@@ -43,7 +43,7 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
     const ib = spotItem(run, b);
     if (!ia && !ib) return 'どちらも空き';
     for (const [spot, id] of [[a, ib], [b, ia]] as const) {
-      if (id && spot.kind === 'slot' && isArmor(getSkill(id))) return '防具は防御スロットだけ';
+      if (id && spot.kind === 'slot' && isArmor(getSkill(id))) return '防具はスロットに置けない（装備画面で装備する）';
       if (id && spot.kind === 'slot') { const n = placementNote(getSkill(id)); if (n) return `「${getSkill(id).name}」は ${n}`; }
       if (spot.kind === 'armor') return '防御スロットには防具だけ置ける。空きにもできない';
     }
@@ -81,7 +81,7 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
         onTap: () => tap(spot),
       }));
     }
-    list.append(armorRow(), pouchRow());
+    list.append(pouchRow()); // 道具袋は 21 のすぐ下。防御（防具）は基本入れ替えないので、この画面には出さない
     body.append(list);
 
     const msg = document.createElement('p');
@@ -109,7 +109,6 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
     row.addEventListener('click', () => tap(spot));
     return row;
   };
-  const armorRow = (): HTMLElement => extraRow({ kind: 'armor' }, 'lslot--armor', '防御', '');
   const pouchRow = (): HTMLElement => extraRow({ kind: 'pouch' }, 'lslot--pouch', '道具袋', '空き');
 
   render();

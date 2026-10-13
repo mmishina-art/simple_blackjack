@@ -89,7 +89,9 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         },
       }));
     }
-    slotList.append(buildArmorRow(), buildPouchRow());
+    // 道具袋は 21 のすぐ下。防御（防具）の行は、確認のとき（セット待ちでない）か、防具を装備するとき（ショップで買った防具など）だけ出す。敵の報酬には防具が出ないので、スキルのセット待ちでは出さない
+    slotList.append(buildPouchRow());
+    if (!armed || isArmor(getSkill(armed))) slotList.append(buildArmorRow());
     screen.append(slotList);
 
     const actions = document.createElement('div');
