@@ -31,8 +31,8 @@ export function standDistribution(standOn: number): Map<number, number> {
 /**
  * 敵のレベル（LV）= 攻撃するときの平均ダメージ。LV 5 なら、1回の攻撃で約 5 ダメージ（HP 30 なら約 6 回で倒れる）。
  * 敵が止まりうる合計値（「N以上になるまで引く」の N 〜 21）ごとの攻撃スキルのダメージ
- * （floor(ATK × 倍率) + 加算 + 特性の上乗せ）を、その合計値で止まる確率（standDistribution）の重みで平均して、四捨五入する（最低 1）。
- * Block や回復だけのスロットは数えない。プレイヤーの Block・防具・レリックは考えない（敵そのものの強さ）。
+ * （floor(POW × 倍率) + 加算 + 特性の上乗せ）を、その合計値で止まる確率（standDistribution）の重みで平均して、四捨五入する（最低 1）。
+ * ブロックや回復だけのスロットは数えない。プレイヤーのブロック・防具・レリックは考えない（敵そのものの強さ）。
  */
 export function enemyLevel(def: EnemyDef): number {
   const standOn = (def.ai as { standOn?: number }).standOn ?? SLOT_MIN;

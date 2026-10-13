@@ -69,7 +69,7 @@ describe('祭壇の強化（魂片で恒久強化）', () => {
     for (const u of UPGRADES) for (let i = 1; i < u.costs.length; i++) expect(u.costs[i]).toBeGreaterThan(u.costs[i - 1]);
   });
 
-  it('強化が冒険の初期状態に反映される（HP・ATK・戦闘開始 Block・宿屋・報酬の選択肢）', () => {
+  it('強化が冒険の初期状態に反映される（HP・POW・戦闘開始ブロック・宿屋・報酬の選択肢）', () => {
     const meta = emptyMeta();
     meta.upgrades = { vitality: 2, might: 1, ward: 3, rest: 2, insight: 1 };
     expect(computeBonus(meta)).toEqual({ maxHp: 10, attack: 1, startBlock: 6, innHeal: 0.2, extraChoices: 1 });

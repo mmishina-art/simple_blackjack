@@ -6,7 +6,7 @@ export const reduceDamage = (damage: number, by: number): number => (damage > 0 
 
 export const Whetstone: Relic = {
   id: 'whetstone', rarity: 'rare', name: '血塗れの砥石', icon: '砥',
-  description: '基本攻撃力（ATK）+1（すべての攻撃スキルに効く）',
+  description: '基本パワー（POW）+1（すべての攻撃スキルに効く）',
   apply({ player }) {
     player.attack += 1;
   },
@@ -74,7 +74,7 @@ export const Boots: Relic = {
 
 export const SturdyShield: Relic = {
   id: 'shield', rarity: 'common', name: '堅牢の盾', icon: '盾',
-  description: '獲得する Block +3',
+  description: '獲得するブロック +3',
   apply({ bus, player }) {
     bus.on('onBlockGained', (p) => {
       if (p.entity === player) return { ...p, amount: p.amount + 3 };
@@ -94,7 +94,7 @@ export const LifeCandle: Relic = {
 
 export const OverlordOrb: Relic = {
   id: 'orb', rarity: 'legend', name: '覇王の宝珠', icon: '珠',
-  description: '会心の一撃（21）が ATK×1.5 から「覇王の一撃」（ATK×2 + Block 8）に変わる',
+  description: '会心の一撃（21）が POW×1.5 から「覇王の一撃」（POW×2 + ブロック 8）に変わる',
   apply({ bus, player }) {
     bus.on('onSkillActivated', (p) => {
       if (p.user === player && p.skill?.id === 'ace_strike') return { ...p, skill: getSkill('overlord_strike') };
@@ -117,7 +117,7 @@ function reshapeSkill(bus: Parameters<Relic['apply']>[0]['bus'], player: Paramet
 
 export const Bracer: Relic = {
   id: 'bracer', rarity: 'rare', name: '剛力の腕輪', icon: '腕',
-  description: '大攻撃（剛）が「ATK+5」から「ATK×2+5」に変わる',
+  description: '大攻撃（剛）が「POW+5」から「POW×2+5」に変わる',
   apply({ bus, player }) {
     reshapeSkill(bus, player, 'big_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 2, add: 5 }] }));
   },
@@ -125,7 +125,7 @@ export const Bracer: Relic = {
 
 export const TitanBlood: Relic = {
   id: 'titan', rarity: 'rare', name: '巨人の血', icon: '巨',
-  description: '小攻撃（11以下）が「ATK×0.5」から「ATK×2+10」に変わる',
+  description: '小攻撃（11以下）が「POW×0.5」から「POW×2+10」に変わる',
   apply({ bus, player }) {
     reshapeSkill(bus, player, 'small_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 2, add: 10 }] }));
   },
@@ -176,7 +176,7 @@ export const DefenderCharm: Relic = {
 
 export const LuckyDice: Relic = {
   id: 'dice', rarity: 'common', name: '幸運の賽', icon: '賽',
-  description: '合計がちょうど 21 で Stand したとき、Block +8',
+  description: '合計がちょうど 21 で Stand したとき、ブロック +8',
   apply({ bus, player, rules }) {
     bus.on('onStand', ({ entity }) => {
       if (entity === player && player.hand.total(rules) === rules.blackjackScore) {

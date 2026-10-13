@@ -24,7 +24,7 @@ export interface RunState {
   cleared: string[];
   maxHp: number;
   hp: number;
-  /** 基本攻撃力（ATK）。攻撃スキルのダメージの基準。 */
+  /** 基本パワー（POW）。攻撃スキルのダメージの基準。 */
   baseAttack: number;
   /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;

@@ -222,7 +222,7 @@ describe('カードの効果音（軽く落ち着いた音。ほかの効果音�
   });
 });
 
-describe('Block・回復の効果音', () => {
+describe('ブロック・回復の効果音', () => {
   const play = (name: Parameters<AudioManager['sfx']>[0]) => {
     const a = new AudioManager();
     a.unlock();
@@ -250,7 +250,7 @@ describe('Block・回復の効果音', () => {
     expect(new Set(rising).size).toBe(4);
   });
 
-  it('Block を得る: 低い響きと、高い金属の余韻（鋭い矩形波・鋸波は使わない）', () => {
+  it('ブロックを得る: 低い響きと、高い金属の余韻（鋭い矩形波・鋸波は使わない）', () => {
     const { oscs, swept } = play('block');
     for (const o of oscs) expect(['sine']).toContain(o.type);
     expect(oscs.some((o) => o.freq < 250)).toBe(true);
@@ -258,7 +258,7 @@ describe('Block・回復の効果音', () => {
     expect(swept).toBe(true); // 立ち上がる空気
   });
 
-  it('防いだ音（guard）は、Block を得る音（block）と別の音: 帯域は動かず、短く硬い', () => {
+  it('防いだ音（guard）は、ブロックを得る音（block）と別の音: 帯域は動かず、短く硬い', () => {
     const guard = play('guard');
     const block = play('block');
     expect(guard.swept).toBe(false);

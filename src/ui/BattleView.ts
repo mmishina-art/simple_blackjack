@@ -121,7 +121,7 @@ export class BattleView {
     this.unsubs.push(
       machine.onChange(() => this.render()),
       machine.onLog((text) => this.log.append(text)),
-      // 効果は1つずつ見せる（間は PACE）。スキル名 → Block → 回復 → ダメージの順に、それぞれ画面演出が出る
+      // 効果は1つずつ見せる（間は PACE）。スキル名 → ブロック → 回復 → ダメージの順に、それぞれ画面演出が出る
       machine.bus.on('onSkillUsed', ({ user, skill }) => floatText(this.areaOf(user), `「${skill.name}」`, 'skill')),
       machine.bus.on('onBlockApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'block', amount)),
       machine.bus.on('onHealApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'heal', amount)),
@@ -177,23 +177,23 @@ export class BattleView {
     return entity.id === 'enemy' ? this.enemyView.el : this.playerArea;
   }
 
-  /** Block を得た・回復した、の演出（光と、+数）。0 のときは出さない。 */
+  /** ブロックを得た・回復した、の演出（光と、+数）。0 のときは出さない。 */
   private playSupportEffect(entity: Entity, kind: 'block' | 'heal', amount: number): void {
     if (amount <= 0) return;
     const area = this.areaOf(entity);
     playFx(area, kind);
-    floatText(area, `+${amount}`, kind, kind === 'block' ? 'Block' : 'HP');
+    floatText(area, `+${amount}`, kind, kind === 'block' ? 'ブロック' : 'HP');
   }
 
   private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number, broken = 0, reduced = 0): void {
     const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : reduced > 0 ? 'GUARD' : '';
     if (!text) return;
-    const kind = hpLoss > 0 ? 'damage' : 'block'; // 全部防いだときは、ダメージの色ではなく Block の色
+    const kind = hpLoss > 0 ? 'damage' : 'block'; // 全部防いだときは、ダメージの色ではなくブロックの色
     if (absorbed > 0) playFx(this.areaOf(target), 'guard');
-    if (broken > 0) playFx(this.areaOf(target), 'break'); // Block を破壊（会心の一撃）
-    // ログ欄の代わりに、数字の下へ内訳（Block が防いだ量・バーストの倍率）を添える
+    if (broken > 0) playFx(this.areaOf(target), 'break'); // ブロックを破壊（会心の一撃）
+    // ログ欄の代わりに、数字の下へ内訳（ブロックが防いだ量・バーストの倍率）を添える
     const mult = damageTakenMultiplier(target, this.machine.ctx.rules);
-    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', broken > 0 ? `Block破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : '', reduced > 0 ? `防具 −${reduced}` : ''].filter(Boolean).join('・');
+    const notes = [absorbed > 0 ? `ブロック ${absorbed}` : '', broken > 0 ? `ブロック破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : '', reduced > 0 ? `防具 −${reduced}` : ''].filter(Boolean).join('・');
     if (target.id === 'enemy') {
       if (hpLoss > 0) this.enemyView.play('hurt');
       this.enemyView.floatText(text, kind, notes);
@@ -257,7 +257,7 @@ export class BattleView {
   private render(): void {
     const { ctx } = this.machine;
     this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, this.enemyLv);
-    // 自分の ATK は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の LV（攻撃するときの平均ダメージ）は出す
+    // 自分の POW は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の LV（攻撃するときの平均ダメージ）は出す
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);

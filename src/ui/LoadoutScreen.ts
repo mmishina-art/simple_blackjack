@@ -217,7 +217,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const after = previewSlot(run, key, id);
     openSheet({
       title: `${slotLabel(key)} に「${after.name}」を置く？`,
-      subtitle: `このスロットの基本値（ATK）は ${after.atk}`,
+      subtitle: `このスロットの基本パワー（POW）は ${after.atk}`,
       content: buildSlotCompare(before, after),
       options: [{ kind: 'confirm', icon: '置', name: 'セットする', detail: `${before.short} → ${after.short}`, onPick: done }],
     });

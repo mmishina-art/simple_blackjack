@@ -9,12 +9,12 @@ export interface EffectiveSkill {
   base: SkillDef;
   /** レリックを考慮した、実際に発動するスキル。 */
   skill: SkillDef;
-  /** レリックを考慮した基本攻撃力。 */
+  /** レリックを考慮した基本パワー。 */
   atk: number;
   /** 本来の説明と、レリック適用後の説明。 */
   baseText: string;
   text: string;
-  /** レリックで効果（スキルの中身や基本攻撃力）が上書きされている。 */
+  /** レリックで効果（スキルの中身や基本パワー）が上書きされている。 */
   changed: boolean;
 }
 
@@ -50,7 +50,7 @@ export interface SlotPreview {
   kind: SkillKind;
   /** 種類と値だけの短い表示（例: 攻撃 15）。 */
   short: string;
-  /** 計算式つきの表示（例: 攻撃 ATK+5＝15）。 */
+  /** 計算式つきの表示（例: 攻撃 POW+5＝15）。 */
   formula: string;
   totals: EffectTotals;
   atk: number;

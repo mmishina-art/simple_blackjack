@@ -7,7 +7,7 @@ export interface SlotRow {
   skill: SkillDef;
   /** スロット未設定で、fallbackSkill（通常攻撃）が発動する行。 */
   isFallback: boolean;
-  /** 効果の説明（現在の ATK での実数値つき）。 */
+  /** 効果の説明（現在の POW での実数値つき）。 */
   text: string;
 }
 

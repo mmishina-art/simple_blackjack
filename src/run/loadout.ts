@@ -11,7 +11,7 @@ export interface InventoryEntry {
   count: number;
 }
 
-const RARITY_ORDER = { legend: 0, rare: 1, common: 2 } as const;
+export const RARITY_ORDER = { legend: 0, rare: 1, common: 2 } as const;
 
 /** スキルをレア度の高い順に並べる（同じレア度は元の順）。 */
 export function sortByRarity(ids: readonly SkillId[]): SkillId[] {

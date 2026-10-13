@@ -71,7 +71,7 @@ describe('スロット', () => {
   it('未設定の合計値は fallbackSkill（基本攻撃）が発動する', () => {
     const e = new Entity('player', 'p', 60, { ...DEFAULT_PLAYER_SLOTS });
     expect(skillForTotal(e, 8).id).toBe('small_attack');
-    expect(skillForTotal(e, 15).id).toBe('herb'); // 15 は薬草（シールドは初期装備ではない）
+    expect(skillForTotal(e, 15).id).toBe('herb'); // 15 は薬草（受け流しは初期装備ではない）
     expect(skillForTotal(e, 16).id).toBe('basic_attack');
     expect(skillForTotal(e, 13).id).toBe('basic_attack');
     expect(skillForTotal(e, 20).id).toBe('big_attack');
@@ -83,8 +83,8 @@ describe('スロット', () => {
   });
 });
 
-describe('applyDamage / Block', () => {
-  it('Block が HP より先に減る', () => {
+describe('applyDamage / ブロック', () => {
+  it('ブロックが HP より先に減る', () => {
     const e = new Entity('player', 'p', 60);
     e.block = 6;
     expect(applyDamage(e, 4)).toEqual({ absorbed: 4, hpLoss: 0 });
@@ -94,7 +94,7 @@ describe('applyDamage / Block', () => {
     expect(e.block).toBe(0);
     expect(e.hp).toBe(57);
   });
-  it('piercing は Block を無視する', () => {
+  it('piercing はブロックを無視する', () => {
     const e = new Entity('player', 'p', 60);
     e.block = 10;
     expect(applyDamage(e, 5, true)).toEqual({ absorbed: 0, hpLoss: 5 });

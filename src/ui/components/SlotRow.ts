@@ -41,20 +41,20 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
   const name = o.skill
     ? eff?.changed && eff.skill.id !== o.skill.id ? `<span class="over">${eff.skill.name}</span>` : o.skill.name
     : `${fallbackLabel(o.fallback)}・空き`;
-  // 右側は「種類と値」だけ（攻撃 15 / Block 6 / 回復 8）。計算式は、行にマウスを乗せたとき（title）に出る
+  // 右側は「種類と値」だけ（攻撃 15 / ブロック 6 / 回復 8）。計算式は、行にマウスを乗せたとき（title）に出る
   const short = describeSkillShort(eff?.changed ? eff.skill : shown, eff?.changed ? eff.atk : o.atk);
   const formula = eff?.changed ? eff.text : describeSkill(shown, o.atk);
   const baseNote = eff?.changed ? `\n本来: ${eff.baseText}` : '';
   const now = eff?.changed ? `<span class="over">${short}</span>` : short;
   const desc = o.after ? `${now} <span class="lslot__arrow" aria-hidden="true">→</span> <strong class="lslot__after">${o.after}</strong>` : now;
-  const detail = `${o.skill ? o.skill.name : fallbackLabel(o.fallback)}\n${formula}${baseNote}\n基本値（ATK）${o.atk}（合計 ${slotLabel(o.key)} のスロット）`;
+  const detail = `${o.skill ? o.skill.name : fallbackLabel(o.fallback)}\n${formula}${baseNote}\n基本パワー（POW）${o.atk}（合計 ${slotLabel(o.key)} のスロット）`;
   const interactive = !o.locked && !!o.onTap;
 
   const row = document.createElement(interactive ? 'button' : 'div');
   // 枠はどの行も同じデザイン。レア度は、アイコン（メダル）の色と光だけで示す。固定スロットは、少し薄く出す
-  row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${o.blocked ? ' lslot--blocked' : ''}${interactive ? ' lslot--tap' : ''}`;
+  row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${o.blocked ? ' lslot--blocked' : ''}${o.after ? ' lslot--change' : ''}${interactive ? ' lslot--tap' : ''}`;
   row.title = detail;
-  row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}<span class="lslot__atk" aria-label="基本値 ${o.atk}">${circledNumber(o.atk)}</span></span>
+  row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}<span class="lslot__atk" aria-label="基本パワー ${o.atk}">${circledNumber(o.atk)}</span></span>
     <span class="medal medal--sm ${rarityClass(look.rarity)}${o.skill ? medalKindClass(kindOfSkill(o.skill)) : ''}">${o.skill ? o.skill.icon : BASIC_ICON}</span>
     <span class="lslot__name">${name}${o.skill ? ` ${kindTag(o.skill)}` : ''}${o.tag ? ` <em class="lslot__tag${o.tagTone === 'custom' ? ' lslot__tag--custom' : ''}">${o.tag}</em>` : ''}</span>
     <span class="lslot__desc">${desc}</span>

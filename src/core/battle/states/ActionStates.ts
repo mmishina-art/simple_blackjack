@@ -5,9 +5,9 @@ import type { BattleState, StateId } from '../types';
 
 /**
  * 先攻の行動。ラウンドの処理順:
- *   1. 両者のスキルを宣言し、**Block を先に付与**する（後攻の Block も先攻の攻撃より前に入る）
+ *   1. 両者のスキルを宣言し、**ブロックを先に付与**する（後攻のブロックも先攻の攻撃より前に入る）
  *   2. 先攻の残りの効果（攻撃・回復）→ 生存確認 → 後攻の残りの効果
- * 同値（simultaneous）は、Block → 回復 → 攻撃の順に両者分をまとめて処理し、死亡判定は CheckDeath で行う。
+ * 同値（simultaneous）は、ブロック → 回復 → 攻撃の順に両者分をまとめて処理し、死亡判定は CheckDeath で行う。
  */
 export class FirstActionState implements BattleState {
   readonly id = 'FirstAction' as const;
@@ -41,7 +41,7 @@ export class FirstActionState implements BattleState {
       return 'CheckDeath';
     }
 
-    // 通常: 後攻のスキルも宣言し、両者の Block を先に付与する（効果は1つずつ、間をあけて見せる）
+    // 通常: 後攻のスキルも宣言し、両者のブロックを先に付与する（効果は1つずつ、間をあけて見せる）
     const secondSkill = declare(other);
     await ctx.wait(PACE.declare);
     if (firstSkill) await applyEffects(ctx, first, other, firstSkill, 'block');
@@ -68,7 +68,7 @@ export class SecondActionState implements BattleState {
     const second = ctx.entityOf(turn.second!);
     const other = second === ctx.player ? ctx.enemy : ctx.player;
     if (second.id in ctx.plan) {
-      // Block は先攻の行動前に付与済み。残り（攻撃・回復）をここで処理する
+      // ブロックは先攻の行動前に付与済み。残り（攻撃・回復）をここで処理する
       const skill = ctx.plan[second.id];
       if (skill) await applyEffects(ctx, second, other, skill, 'rest');
     } else {

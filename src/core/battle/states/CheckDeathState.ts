@@ -2,7 +2,7 @@ import type { BattleContext } from '../BattleContext';
 import type { BattleState, StateId } from '../types';
 
 /**
- * ラウンド終了処理と死亡判定。Block は戦闘中は持ち越される（戦闘終了で消える）。
+ * ラウンド終了処理と死亡判定。ブロックは戦闘中は持ち越される（戦闘終了で消える）。
  * HP が 0 以下ならバトル終了。相打ち（両者 0）はプレイヤー敗北。
  */
 export class CheckDeathState implements BattleState {

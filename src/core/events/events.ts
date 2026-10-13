@@ -22,7 +22,7 @@ export interface BattleEvents {
   onInitiativeDecided: { turn: TurnInfo; playerTotal: number; enemyTotal: number; playerBust: boolean; enemyBust: boolean };
   /** スキル発動直前。skill を別のものに差し替える、null にして不発にする、が可能。 */
   onSkillActivated: { user: Entity; skill: SkillDef | null };
-  /** 攻撃のダメージ計算直後（Block・HP への反映前）。damage の書き換えが可能。 */
+  /** 攻撃のダメージ計算直後（ブロック・HP への反映前）。damage の書き換えが可能。 */
   onDamageCalculated: {
     attacker: Entity | null;
     defender: Entity;
@@ -36,18 +36,18 @@ export interface BattleEvents {
     damage: number;
     absorbed: number;
     hpLoss: number;
-    /** Block を無視する攻撃（会心の一撃）が、相手の Block を破壊した量。 */
+    /** ブロックを無視する攻撃（会心の一撃）が、相手のブロックを破壊した量。 */
     broken?: number;
     /** 防御の上限（防具）で軽減された量。 */
     reduced?: number;
     skill: SkillDef | null;
   };
-  /** Block 獲得直前。amount の書き換えが可能。 */
-  onBlockGained: { entity: Entity; amount: number; /** 発動したスキル・道具（降伏の Block などは null）。道具だけを強化するレリックが見分けるために使う。 */ skill?: SkillDef | null };
+  /** ブロック 獲得直前。amount の書き換えが可能。 */
+  onBlockGained: { entity: Entity; amount: number; /** 発動したスキル・道具（降伏のブロック などは null）。道具だけを強化するレリックが見分けるために使う。 */ skill?: SkillDef | null };
   /** 回復直前。amount の書き換えが可能。 */
   onHealed: { entity: Entity; amount: number; skill?: SkillDef | null };
   /**
-   * Block・回復が実際に反映された後（通知のみ）。onBlockGained / onHealed は、スロット表や予測表示が効果を計算するときにも
+   * ブロック・回復が実際に反映された後（通知のみ）。onBlockGained / onHealed は、スロット表や予測表示が効果を計算するときにも
    * 発火するので、効果音のように「本当に起きたとき」だけ反応したいものは、こちらを使う。
    */
   /** スキルが実際に発動した（通知のみ。予測表示では発火しない）。画面にスキル名を出すために使う。 */

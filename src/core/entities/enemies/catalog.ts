@@ -48,7 +48,7 @@ const DragonBreath: Relic = {
 
 // ---- 第1階層のボス・第2階層・第3階層の敵の特性 ----
 const IronClad: Relic = {
-  id: 'ironclad', name: '重装', icon: '甲', description: '戦闘開始時に Block 6',
+  id: 'ironclad', name: '重装', icon: '甲', description: '戦闘開始時にブロック 6',
   apply({ bus, enemy }) {
     bus.on('onBattleStart', () => { enemy.block += 6; });
   },
@@ -70,10 +70,10 @@ const StoneSkin = (by: number): Relic => ({
   },
 });
 
-/** 鋼鉄のゴーレム: Block を重ねる。ラウンドの初めに Block +2、上限 14（積み上がりすぎて倒せなくならないように）。 */
+/** 鋼鉄のゴーレム: ブロックを重ねる。ラウンドの初めにブロック +2、上限 14（積み上がりすぎて倒せなくならないように）。 */
 const STEEL_BLOCK_CAP = 14;
 const SteelGuard: Relic = {
-  id: 'steelguard', name: '鋼の守り', icon: '鋼', description: `ラウンドの初めに Block +2（上限 ${STEEL_BLOCK_CAP}）`,
+  id: 'steelguard', name: '鋼の守り', icon: '鋼', description: `ラウンドの初めにブロック +2（上限 ${STEEL_BLOCK_CAP}）`,
   apply({ bus, enemy }) {
     bus.on('onRoundStart', () => { enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block + 2); });
     bus.on('onBlockApplied', ({ entity }) => { if (entity === enemy) enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block); });
@@ -81,7 +81,7 @@ const SteelGuard: Relic = {
 };
 
 const Chill: Relic = {
-  id: 'chill', name: '冷気', icon: '冷', description: 'ラウンドの初めに、あなたの Block が 2 減る',
+  id: 'chill', name: '冷気', icon: '冷', description: 'ラウンドの初めに、あなたのブロックが 2 減る',
   apply({ bus, player }) {
     bus.on('onRoundStart', () => { player.block = Math.max(0, player.block - 2); });
   },
@@ -131,7 +131,7 @@ export const BlackDragon: EnemyDef = {
 // ---- 第1階層のボス ----
 export const GraveKnight: EnemyDef = {
   id: 'knight', name: '墓守の騎士', maxHp: 30, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.knight, fallbackSkill: 'knight_slash',
-  trait: '重装（戦闘開始時に Block 6）', relics: [IronClad],
+  trait: '重装（戦闘開始時にブロック 6）', relics: [IronClad],
 };
 
 // ---- 第2階層: 沈んだ大聖堂 ----
@@ -147,12 +147,12 @@ export const Gargoyle: EnemyDef = {
 
 export const Wraith: EnemyDef = {
   id: 'wraith', name: '亡霊', maxHp: 22, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.wraith, fallbackSkill: 'wraith_touch',
-  trait: '冷気（ラウンドの初めに、あなたの Block が 2 減る）', relics: [Chill],
+  trait: '冷気（ラウンドの初めに、あなたのブロックが 2 減る）', relics: [Chill],
 };
 
 export const IronGolem: EnemyDef = {
   id: 'iron_golem', name: '鋼鉄のゴーレム', maxHp: 34, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.iron_golem, fallbackSkill: 'ig_punch',
-  trait: '鋼の守り（ラウンドの初めに Block +2、上限 14）。Block を無視する攻撃や、一撃の重いスキルが効く', relics: [SteelGuard],
+  trait: '鋼の守り（ラウンドの初めにブロック +2、上限 14）。ブロックを無視する攻撃や、一撃の重いスキルが効く', relics: [SteelGuard],
 };
 
 export const Serpent: EnemyDef = {

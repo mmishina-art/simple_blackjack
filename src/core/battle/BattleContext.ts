@@ -18,7 +18,7 @@ export interface BattleContext {
   round: number;
   /** 現ラウンドの行動順。Initiative で決まる。 */
   turn: TurnInfo | null;
-  /** 行動順の決定後に発動が確定したスキル（後攻の Block を先に付与するため、先攻の行動時にまとめて宣言する）。 */
+  /** 行動順の決定後に発動が確定したスキル（後攻のブロックを先に付与するため、先攻の行動時にまとめて宣言する）。 */
   plan: Partial<Record<EntityId, SkillDef | null>>;
   /** このラウンドでプレイヤーがサレンダー（防御）を選んだ。 */
   playerSurrendered: boolean;

@@ -15,12 +15,12 @@ export function bindBattleSounds(machine: BattleMachine, audio: AudioManager): (
       if (enemyBust) audio.sfx('bust');
     }),
     bus.on('onDamageDealt', ({ defender, hpLoss, absorbed, broken }) => {
-      if (broken) audio.sfx('break', 0.06); // 会心の一撃が Block を破壊した（攻撃・ダメージの音に重ねる）
+      if (broken) audio.sfx('break', 0.06); // 会心の一撃がブロックを破壊した（攻撃・ダメージの音に重ねる）
       if (hpLoss === 0 && absorbed > 0) audio.sfx('guard');
       else if (defender.id === 'enemy') audio.sfx('attack');
       else audio.sfx('damage');
     }),
-    // Block・回復の音は「実際に起きたとき」の通知で鳴らす（onBlockGained / onHealed は予測表示のたびにも発火する）
+    // ブロック・回復の音は「実際に起きたとき」の通知で鳴らす（onBlockGained / onHealed は予測表示のたびにも発火する）
     bus.on('onBlockApplied', () => audio.sfx('block')),
     bus.on('onHealApplied', () => audio.sfx('heal')),
     bus.on('onCardsRevealed', () => audio.sfx('flip')),

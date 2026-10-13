@@ -321,7 +321,7 @@ function offerSkillReward(): void {
   const ids = offerSkills(defaultRng, run);
   showChoiceScreen(root, {
     heading: 'スキル獲得',
-    sub: 'ひとつ選んで装備する（スキル: 基本攻撃力が基準 / 道具: 効果が固定 / 防具: 防御スロット）',
+    sub: 'ひとつ選んで装備する（スキル: 基本パワーが基準 / 道具: 効果が固定 / 防具: 防御スロット）',
     options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
     onPick(i) {
       run.inventory.push(ids[i]);
