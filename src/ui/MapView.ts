@@ -139,7 +139,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   msg.textContent = message || (reachable.size > 1 ? '分かれ道だ。進む先を選べ。' : '光っているマスへ進め。');
   const loadout = document.createElement('button');
   loadout.className = 'btn btn--stand map-foot__btn';
-  loadout.innerHTML = '<span class="btn__main">編成</span><span class="btn__sub">置く</span>';
+  loadout.innerHTML = '<span class="btn__main">装備</span><span class="btn__sub">確認</span>';
   loadout.addEventListener('click', () => {
     audio.sfx('click');
     handlers.onLoadout();

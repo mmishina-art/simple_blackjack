@@ -1,6 +1,7 @@
 import { audio } from '../audio/AudioManager';
 import { CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, resetAllMeta, saveMeta, type MetaState } from '../meta/Meta';
 import { isDebug, setDebug } from '../debug';
+import { buildTopBar } from './components/TopBar';
 import { openSheet } from './components/SkillSheet';
 
 /**
@@ -9,10 +10,10 @@ import { openSheet } from './components/SkillSheet';
  */
 export function showSettings(root: HTMLElement, meta: MetaState, onClose: () => void): void {
   const screen = document.createElement('main');
-  screen.className = 'meta-screen settings';
+  screen.className = 'meta-screen settings topbar-screen';
   const head = document.createElement('header');
   head.className = 'meta-head';
-  head.innerHTML = '<h1>設定</h1><p class="meta-head__sub">記録は、このブラウザの中に保存されている</p>';
+  head.innerHTML = '<p class="meta-head__sub">記録は、このブラウザの中に保存されている</p>';
 
   const box = document.createElement('section');
   box.className = 'settings__box';
@@ -64,16 +65,9 @@ export function showSettings(root: HTMLElement, meta: MetaState, onClose: () => 
   toggle.addEventListener('click', () => { audio.sfx('click'); setDebug(!isDebug()); renderToggle(); });
   dbg.append(toggle);
 
-  const back = document.createElement('button');
-  back.className = 'btn btn--retry loadout__btn';
-  back.innerHTML = '<span class="btn__main">戻る</span>';
-  back.addEventListener('click', () => {
-    audio.sfx('click');
-    onClose();
-  });
   const body = document.createElement('div');
-  body.className = 'meta-body';
-  body.append(box, dbg);
-  screen.append(head, body, back);
+  body.className = 'meta-body topbar-body';
+  body.append(head, box, dbg);
+  screen.append(buildTopBar('設定', onClose), body);
   root.replaceChildren(screen);
 }

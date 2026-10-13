@@ -8,6 +8,7 @@ import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { sellFromInventory, sellPrice } from '../run/shop';
 import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
 import { buildSlotRow } from './components/SlotRow';
+import { buildTopBar } from './components/TopBar';
 import { openSheet } from './components/SkillSheet';
 import { kindTag, medalKindClass } from './kind';
 import { rarityBadge, rarityClass } from './rarity';
@@ -27,7 +28,7 @@ export interface LoadoutOptions {
 }
 
 /**
- * スキルの編成画面。
+ * 装備画面（マップの「装備」）。いまのスキル・防具の確認が中心で、スロットの編集はできない。道具袋の中身だけ、置く・売るができる。
  *  - スロットをタップ → 持ち物から置くスキルを選ぶシートが開く（1ステップ）。外すのもそのシートから
  *  - スキル獲得直後は、上に「置くスキル」が表示され、置きたいスロットをタップするだけ
  *  - 11以下（小攻撃）と 21（会心の一撃）は固定で、選べない平らな行。レリックで解錠されると選べる
@@ -43,9 +44,9 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
     const head = document.createElement('header');
     head.className = 'loadout__head';
-    head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : 'いまの編成（置くのは、スキルを得たときと、道具袋から）'}</p>`;
-    screen.append(head);
+    head.innerHTML = `<p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : 'いまの装備の確認（道具袋の中身は、タップで置く・売る）'}</p>`;
+    // 上の左の「戻る」は全画面で同じ位置。置き先を決めるまで閉じられないセット待ちのときだけ、戻るボタンは出さない
+    screen.append(buildTopBar('装備', armed ? undefined : () => opts.onClose()), head);
 
     if (armed) {
       const skill = getSkill(armed);
@@ -100,9 +101,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       b.addEventListener('click', () => { audio.sfx('click'); onClick(); });
       return b;
     };
-    if (!armed) {
-      actions.append(mk('btn--retry', '閉じる', '', () => opts.onClose()));
-    } else {
+    if (armed) {
       const id = armed;
       const sk = getSkill(id);
       const mode = armedMode;
@@ -121,7 +120,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         actions.append(mk('btn--retry', '売る', `+${sellPrice(id)} G`, sellIt));
       }
     }
-    screen.append(actions);
+    if (armed) screen.append(actions);
     root.replaceChildren(screen);
   };
 

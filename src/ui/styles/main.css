@@ -953,7 +953,7 @@ section { min-width: 0; }
    それより低い画面（iPhone SE の 667px など）は対象外で、スクロールすればボタンに届く。 */
 @media (max-height: 750px) {
   .loadout { gap: 6px; padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
-  .loadout .loadout__head h1 { font-size: 20px; line-height: 1.2; }
+  .loadout .topbar__title { font-size: 20px; line-height: 1.2; }
   .loadout .loadout__head p { margin-top: 2px; line-height: 1.3; }
   .loadout .loadout__slots { gap: 2px; }
   .loadout .armed { padding: 4px 12px; }
@@ -1079,7 +1079,7 @@ section { min-width: 0; }
 /* ---- ショップ・ゴールド ---- */
 .tile--shop .tile__bg { stroke: #e0a040; }
 .tile--shop .tile__icon { fill: #e0a040; }
-.shop { grid-template-rows: auto minmax(0, 1fr) auto auto; }
+.shop { grid-template-rows: auto auto minmax(0, 1fr) auto; }
 .shop__gold { color: var(--bone); }
 .shop__gold strong { color: var(--gold); font-family: var(--font-display); font-size: 18px; }
 .shop__list { display: flex; flex-direction: column; gap: 6px; }
@@ -1188,3 +1188,19 @@ section { min-width: 0; }
 .drop { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px 1px 2px; font-size: 11px; color: var(--bone); background: #120e09; border: 1px solid #2a2118; border-radius: 10px; white-space: nowrap; }
 .drop .medal { width: 20px; height: 20px; font-size: 11px; }
 .drop--unknown { color: #5c5240; border-style: dashed; }
+
+/* ---- 図鑑: 「戻る」・見出し・タブは固定で、その下だけスクロール ---- */
+.codex-screen, .topbar-screen { height: 100dvh; min-height: 0; overflow: hidden; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.topbar__title { margin: 0; font-family: var(--font-display); font-size: 22px; letter-spacing: 0.3em; color: var(--gold); text-shadow: 0 3px 0 #000; }
+.topbar__back, .topbar__gap { flex: 0 0 84px; }
+.topbar__back {
+  min-height: 44px; font: 800 14px var(--font-body); letter-spacing: 0.1em; color: var(--bone);
+  background: linear-gradient(180deg, #2a3138, #1b2025); border: 1px solid var(--gold-dim); border-radius: 3px; cursor: pointer;
+}
+.codex-body, .topbar-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+
+/* 戻るボタンは、全画面で上の左（TopBar）。装備・ショップのように、行が決まった画面でも同じ。 */
+.topbar-body { display: flex; flex-direction: column; gap: 12px; }
+.loadout .topbar, .shop .topbar { margin-bottom: 2px; }
+.lslot--picked { border-color: var(--gold) !important; background: #2a1f0e !important; box-shadow: 0 0 10px rgba(176, 141, 62, 0.5) !important; }

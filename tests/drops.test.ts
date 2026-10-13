@@ -39,8 +39,8 @@ describe('ショップはスキルを売らない', () => {
     for (let seed = 1; seed <= 40; seed++) {
       const offers = generateShop(createRun(), seededRng(seed));
       expect(offers.filter((o) => o.type === 'skill').some((o) => SKILL_POOL.includes(o.id))).toBe(false);
-      expect(offers.filter((o) => o.type === 'relic')).toHaveLength(2);
-      expect(offers.filter((o) => o.type === 'skill').length).toBeGreaterThanOrEqual(3);
+      expect(offers.filter((o) => o.type === 'relic')).toHaveLength(1); // 第 1 階層は遺物 1
+      expect(offers.filter((o) => o.type === 'skill').length).toBeGreaterThanOrEqual(3); // 道具 2 + 防具 1
     }
   });
 });

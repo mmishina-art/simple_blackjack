@@ -88,9 +88,10 @@ export interface UpgradeDef {
 
 export const UPGRADES: readonly UpgradeDef[] = [
   { id: 'vitality', name: '強き肉体', icon: '体', costs: [12, 20, 30, 45, 60], describe: (l) => `初期 HP +${l * 5}` },
-  { id: 'might', name: '研ぎ澄まされた刃', icon: '刃', costs: [40, 80, 140], describe: (l) => `初期 POW +${l}` },
+  { id: 'might', name: '闘気の目覚め', icon: '気', costs: [40, 80, 140], describe: (l) => `初期 POW +${l}` },
   { id: 'ward', name: '守りの心得', icon: '護', costs: [25, 45, 70], describe: (l) => `戦闘開始時のブロック +${l * 2}` },
   { id: 'rest', name: '安らぎの心得', icon: '休', costs: [20, 40, 70], describe: (l) => `宿屋の回復量 +${l * 10}%` },
+  { id: 'greed', name: '商人の心得', icon: '金', costs: [25, 45, 70], describe: (l) => `取得ゴールド +${l * 20}%` },
   { id: 'insight', name: '見る目', icon: '眼', costs: [90], describe: (l) => `敵撃破の報酬スキルの選択肢 +${l}` },
 ];
 
@@ -127,11 +128,13 @@ export interface RunBonus {
   maxHp: number;
   attack: number;
   startBlock: number;
+  /** 敵を倒して得るゴールドの増える割合（0.2 = +20%）。 */
+  goldRate: number;
   innHeal: number;
   extraChoices: number;
 }
 
-export const NO_BONUS: RunBonus = { maxHp: 0, attack: 0, startBlock: 0, innHeal: 0, extraChoices: 0 };
+export const NO_BONUS: RunBonus = { maxHp: 0, attack: 0, startBlock: 0, goldRate: 0, innHeal: 0, extraChoices: 0 };
 
 export function computeBonus(meta: MetaState): RunBonus {
   const l = (id: string) => upgradeLevel(meta, id);
@@ -139,6 +142,7 @@ export function computeBonus(meta: MetaState): RunBonus {
     maxHp: l('vitality') * 5,
     attack: l('might'),
     startBlock: l('ward') * 2,
+    goldRate: l('greed') * 0.2,
     innHeal: l('rest') * 0.1,
     extraChoices: l('insight'),
   };

@@ -18,7 +18,7 @@ import { POUCH_SIZE } from './run/loadout';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
-import { addGold, enemyGold, generateShop, MAX_GOLD, type ShopOffer } from './run/shop';
+import { addGold, generateShop, rewardGold, MAX_GOLD, type ShopOffer } from './run/shop';
 import { isDebug } from './debug';
 import { showShop } from './ui/ShopScreen';
 import { showShrine } from './ui/ShrineScreen';
@@ -115,7 +115,7 @@ function showMapScreen(message = ''): void {
 /** ショップの品揃え（マスごと。出入りしても変わらない）。 */
 const shopOffers = new Map<string, ShopOffer[]>();
 
-/** ショップ。スキル・道具・防具を買うと、編成画面で置き先（スロット / 道具袋）を決める。 */
+/** ショップ。スキル・道具・防具を買うと、装備画面で置き先（スロット / 道具袋）を決める。 */
 function openShop(tile: TileDef, offers: ShopOffer[], note = ''): void {
   showShop(root, run, {
     offers, note,
@@ -196,8 +196,8 @@ function startBattle(tile: TileDef): void {
     playerSlots: run.slots,
     playerArmorCap: armorCap(run),
     playerFallback: run.fallbackSkill,
-    playerAttack: run.baseAttack,
     playerBlock: run.bonus.startBlock,
+    playerAttack: run.baseAttack,
     relics: run.relics,
   });
   machineNow = machine;
@@ -275,7 +275,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   run.stats.enemiesDefeated++;
   if (!bareRun && !cheated && tile.enemyId && discoverEnemy(meta, tile.enemyId)) saveMeta(meta); // モンスター図鑑に載る
   markCleared(run, tile.id);
-  const gold = enemyGold(enemyOfTile(tile), tile.kind === 'boss');
+  const gold = rewardGold(run, enemyOfTile(tile), tile.kind === 'boss');
   addGold(run, gold);
   box.append(el('p', 'result__line result__gold', `ゴールド +${gold}（所持 ${run.gold} G）`));
 
@@ -317,7 +317,7 @@ function offerStageRelic(): void {
   });
 }
 
-/** 敵を倒した報酬: スキルを3択で獲得し、そのまま編成画面でセットする。 */
+/** 敵を倒した報酬: スキルを3択で獲得し、そのまま装備画面でセットする。 */
 function offerSkillReward(enemyId?: string): void {
   const ids = offerSkills(defaultRng, run, enemyId);
   const dropFrom = enemyId ? getEnemy(enemyId).name : '';

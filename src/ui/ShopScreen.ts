@@ -3,13 +3,14 @@ import { describeSkillBonus, getSkill, kindOfSkill, placementNote, rarityOfSkill
 import { inventoryEntries } from '../run/loadout';
 import { buyOffer, sellFromInventory, sellPrice, type ShopOffer } from '../run/shop';
 import { RELIC_POOL } from '../relics/catalog';
+import { buildTopBar } from './components/TopBar';
 import { kindTag, medalKindClass } from './kind';
 import { rarityBadge, rarityClass } from './rarity';
 import type { RunState } from '../run/Run';
 
 export interface ShopOptions {
   offers: ShopOffer[];
-  /** スキル・道具・防具を買った（編成画面で置き先を決める）。 */
+  /** スキル・道具・防具を買った（装備画面で置き先を決める）。 */
   onBought(offer: ShopOffer): void;
   /** 最初に出す一言。 */
   note?: string;
@@ -26,8 +27,8 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
 
     const head = document.createElement('header');
     head.className = 'loadout__head';
-    head.innerHTML = `<h1>ショップ</h1><p class="shop__gold">所持金 <strong>${run.gold}</strong> G</p>`;
-    screen.append(head);
+    head.innerHTML = `<p class="shop__gold">所持金 <strong>${run.gold}</strong> G</p>`;
+    screen.append(buildTopBar('ショップ', opts.onLeave, '出る'), head);
 
     const list = document.createElement('div');
     list.className = 'loadout__inv shop__list';
@@ -95,14 +96,6 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
     msg.textContent = note;
     screen.append(msg);
 
-    const leave = document.createElement('button');
-    leave.className = 'btn btn--retry loadout__btn';
-    leave.innerHTML = '<span class="btn__main">店を出る</span>';
-    leave.addEventListener('click', () => { audio.sfx('click'); opts.onLeave(); });
-    const actions = document.createElement('div');
-    actions.className = 'loadout__actions';
-    actions.append(leave);
-    screen.append(actions);
     root.replaceChildren(screen);
   };
   render();
