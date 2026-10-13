@@ -14,10 +14,11 @@ import { rarityClass } from './rarity';
  * 動かしたいものを**ドラッグして、入れ替え先にドロップ**（指では左のアイコンをつかむ。タップ → タップでもできる）。
  * レア度の制限に合わない場所にも**仮置き**できるが、その行は赤くなり、直すまで「戻る」は押せない。
  */
-export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose(): void }): void {
+export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose(swapped: boolean): void }): void {
   let picked: Spot | null = null; // タップで選んでいるもの
   let dragFrom: Spot | null = null; // ドラッグ中のもの
   let note = '';
+  let swapped = false; // 1 つでも入れ替えたか（入れ替えたら、祠は済みになって出る）
 
   const nameAt = (spot: Spot): string => (spot.kind === 'slot' ? slotLabel(spot.key) : spot.kind === 'pouch' ? '道具袋' : '防御');
   const itemName = (spot: Spot): string => { const id = spotItem(run, spot); return id ? getSkill(id).name : '空き'; };
@@ -37,6 +38,7 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
     const b = `${nameAt(to)}の「${itemName(to)}」`;
     if (swapSpots(run, from, to, { tentative: true })) {
       audio.sfx('pick');
+      swapped = true;
       note = `${a} と ${b} を入れ替えた。`;
     } else {
       note = `${nameAt(from)} と ${nameAt(to)} は入れ替えられない（${reason(from, to)}）`;
@@ -136,7 +138,7 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
     return row;
   };
 
-  const close = (): void => { root.onpointerdown = null; root.removeEventListener('click', blockClick, true); opts.onClose(); };
+  const close = (): void => { root.onpointerdown = null; root.removeEventListener('click', blockClick, true); opts.onClose(swapped); };
 
   // ---- ドラッグ&ドロップ（Pointer Events: マウスも指も同じ。画面を作り直しても続くよう、root に付ける） ----
   let down: { spot: Spot; x: number; y: number; id: number } | null = null;

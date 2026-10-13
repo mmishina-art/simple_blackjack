@@ -217,6 +217,21 @@ export function swapSpots(run: RunState, a: Spot, b: Spot, opts: { tentative?: b
   return true;
 }
 
+/** 祠のバージョンアップで一度に出す候補の数。 */
+export const SHRINE_UPGRADE_CHOICES = 3;
+
+/**
+ * 祠のバージョンアップで選べるスロット（最大 3 つ）。21 の会心の一撃系は、レジェンドになるまで必ず入れる。
+ * 残りは、強化先があるスロットからランダムに選ぶ。21 がレジェンドに達したら、ほかのスキルだけが出る。
+ */
+export function shrineUpgradeChoices(run: RunState, rng: Rng, max = SHRINE_UPGRADE_CHOICES): SlotKey[] {
+  const upgradable = SLOT_KEYS.filter((k) => { const id = run.slots[k]; return !!id && !!getSkill(id).upgradesTo; });
+  const must = upgradable.filter((k) => k === 21);
+  const others = upgradable.filter((k) => k !== 21);
+  for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(rng.next() * (i + 1)); [others[i], others[j]] = [others[j], others[i]]; }
+  return [...must, ...others.slice(0, max - must.length)].sort((a, b) => a - b);
+}
+
 /** バージョンアップできるスロットか（スキルが入っていて、強化先がある。道具は強化先がない）。固定スロット（21 の会心の一撃）も、バージョンアップだけはできる。 */
 export function canUpgradeSlot(run: RunState, key: SlotKey): boolean {
   const id = run.slots[key];
