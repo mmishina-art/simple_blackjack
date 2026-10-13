@@ -83,6 +83,7 @@ export class BattleMachine {
       playerSurrendered: false,
       plan: {},
       winner: null,
+      debugWin: false,
       entityOf: (id) => (id === 'player' ? player : enemy),
       log: (text) => {
         this._logs.push(text);
@@ -136,6 +137,12 @@ export class BattleMachine {
   /** プレイヤーが入力可能か（Hit / Stand ボタンの活性条件）。 */
   get canAct(): boolean {
     return this._state === 'PlayerAction' && this.pendingInput !== null;
+  }
+
+  /** デバッグ用: すぐに勝つ。入力待ちなら Stand を送り、そのラウンドの終わりの死亡判定で、敵を倒したことにする。 */
+  debugWin(): void {
+    this.ctx.debugWin = true;
+    if (this.canAct) this.submit('stand');
   }
 
   get isFinished(): boolean {

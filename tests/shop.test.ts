@@ -3,9 +3,11 @@ import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { seededRng } from '../src/core/util/Rng';
 import { stageRows } from '../src/map/stages';
 import { STAGES } from '../src/map/stages';
+import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { createRun } from '../src/run/Run';
+import { noWait } from './helpers';
 import { POUCH_SIZE, stashInPouch } from '../src/run/loadout';
-import { upgradeCost, buyOffer, enemyGold, generateShop, priceOfSkill, sellFromInventory, sellPrice } from '../src/run/shop';
+import { addGold, MAX_GOLD, upgradeCost, buyOffer, enemyGold, generateShop, priceOfSkill, sellFromInventory, sellPrice } from '../src/run/shop';
 
 describe('ゴールドとショップ', () => {
   it('冒険は 0 G で始まり、敵を倒すほど多くもらえる（ボスは 2.5 倍）', () => {
@@ -92,5 +94,27 @@ describe('ゴールドとショップ', () => {
     run.inventory.push('jab', 'jab');
     stashInPouch(run, 'jab');
     expect(run.inventory).toEqual(['jab']);
+  });
+
+  it('ゴールドは 9999 が上限（増えても超えない）', () => {
+    const run = createRun();
+    run.gold = MAX_GOLD - 5;
+    addGold(run, 100);
+    expect(run.gold).toBe(MAX_GOLD);
+  });
+});
+
+describe('デバッグ: すぐに勝つ', () => {
+  it('入力待ちで debugWin() すると、そのラウンドの終わりに、敵を倒したことになる（プレイヤーが倒れても勝ち）', async () => {
+    const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], rng: seededRng(3), pace: noWait });
+    const done = m.run();
+    for (let i = 0; i < 200 && !m.canAct; i++) await new Promise((r) => setTimeout(r, 0));
+    expect(m.canAct).toBe(true);
+    m.ctx.player.hp = 1;
+    m.debugWin();
+    await done;
+    expect(m.ctx.winner).toBe(m.ctx.player);
+    expect(m.ctx.enemy.isDead).toBe(true);
+    expect(m.ctx.player.hp).toBeGreaterThan(0);
   });
 });

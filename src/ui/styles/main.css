@@ -1140,3 +1140,12 @@ section { min-width: 0; }
 /* 一覧の行（ショップ・図鑑）も、編成と同じ静かな枠。レア度は、アイコンの色と札で示す */
 .shop__row, .codex__item { border-color: #2a2118; box-shadow: none; background: #120e09; }
 .shop__row.rar-legend, .codex__item.rar-legend { background: #120e09; }
+
+/* デバッグモードのボタン（冒険中の左上。上端の余白の中に収める） */
+.debug-panel { position: fixed; top: calc(env(safe-area-inset-top) + 2px); left: 6px; z-index: 6; display: flex; gap: 4px; }
+.debug-panel[hidden] { display: none; }
+.debug-panel__btn {
+  min-width: 28px; height: 22px; padding: 0 6px; font: 800 12px var(--font-body); color: #1a1206;
+  background: #d39a3a; border: 1px solid #ffd27a; border-radius: 4px; cursor: pointer; opacity: 0.85;
+}
+.settings__box .loadout__btn { width: 100%; }
