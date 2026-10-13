@@ -94,7 +94,7 @@ export const LifeCandle: Relic = {
 
 export const OverlordOrb: Relic = {
   id: 'orb', rarity: 'legend', name: '覇王の宝珠', icon: '珠',
-  description: '会心の一撃（21）が「覇王の一撃」（ATK×4 + Block 8）に変わる',
+  description: '会心の一撃（21）が ATK×1.5 から「覇王の一撃」（ATK×2 + Block 8）に変わる',
   apply({ bus, player }) {
     bus.on('onSkillActivated', (p) => {
       if (p.user === player && p.skill?.id === 'ace_strike') return { ...p, skill: getSkill('overlord_strike') };

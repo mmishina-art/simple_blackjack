@@ -24,7 +24,7 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     const m = machine({ playerSlots: { 17: 'drain', 16: 'shield_bash', 15: 'guard' } });
     give(m, 'player', ['9', '8']); // 17: 吸精（攻撃+回復）
     const c = calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!;
-    expect(fxChips(c.parts, 0).map((x) => `${x.main}${x.unit}`)).toEqual(['8ダメージ', '+4HP']) // 17 は ATK 7 + 1;
+    expect(fxChips(c.parts, 0).map((x) => `${x.main}${x.unit}`)).toEqual(['8ダメージ', '+5HP']) // 17 は ATK 7 + 1;
     const n = machine({ playerSlots: { 15: 'guard' } });
     give(n, 'player', ['7', '8']);
     expect(fxChips(calloutOf(n.ctx, n.ctx.player, n.ctx.enemy)!.parts, 0)).toEqual([{ type: 'block', main: '+6', unit: 'Block' }]);

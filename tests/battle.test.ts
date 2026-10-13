@@ -332,11 +332,11 @@ describe('ラウンドの行動順', () => {
     expect(m.ctx.enemy.hp).toBe(16);
   });
 
-  it('スロット21は会心の一撃（ATK×3）。ブラックジャック（初手21）でも特別な効果はない', async () => {
+  it('スロット21は会心の一撃（ATK×1.5）。ブラックジャック（初手21）でも特別な効果はない', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(m.ctx.enemy.hp).toBe(40 - 33); // 21 は ATK 11: ATK×3
+    expect(m.ctx.enemy.hp).toBe(40 - 16); // 21 は ATK 11: ATK×1.5
     const bj = await playRound({ player: ['A', 'K'], enemyHand: ['9', '9'], enemyHp: 40 });
-    expect(bj.ctx.enemy.hp).toBe(40 - 33);
+    expect(bj.ctx.enemy.hp).toBe(40 - 16);
   });
 
   it('未設定スロットでは基本攻撃が発動する', async () => {
@@ -432,8 +432,8 @@ describe('同時攻撃（同値）', () => {
   it('防御 → 攻撃の順で処理される（同時の Block が同時の攻撃を防ぐ）', async () => {
     const m = await playRound({ player: ['A', '7'], enemyHand: ['9', '9'], playerHp: 50 }); // 18 vs 18
     expect(m.ctx.turn?.mode).toBe('simultaneous');
-    expect(m.ctx.player.hp).toBe(50); // 盾 Block 8 で溶解8を完全に防ぐ
-    expect(m.ctx.player.block).toBe(0);
+    expect(m.ctx.player.hp).toBe(50); // 18 は ATK 8: 盾 ATK+3 = Block 11 で溶解8を完全に防ぐ
+    expect(m.ctx.player.block).toBe(3);
   });
 
   it('同時のシールドは同時の攻撃を防ぎ、余った Block は持ち越される', async () => {

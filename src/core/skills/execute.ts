@@ -1,7 +1,7 @@
 import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
 import { damageTakenMultiplier } from '../rules/bust';
-import { attackValue, getSkill, slotKeyOf, type SkillDef } from './Skill';
+import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
 /** ダメージ適用。HP より先に Block を減らす。piercing なら Block を無視する。 */
 export function applyDamage(target: Entity, amount: number, piercing = false): { absorbed: number; hpLoss: number } {
@@ -64,13 +64,13 @@ export function applyEffects(
       }
     } else {
       if (effect.type === 'block') {
-        const { amount } = bus.emit('onBlockGained', { entity: user, amount: effect.amount });
+        const { amount } = bus.emit('onBlockGained', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))) });
         const gained = Math.max(0, Math.floor(amount));
         user.block += gained;
         ctx.log(`${user.name}は Block を ${gained} 得た`);
         bus.emit('onBlockApplied', { entity: user, amount: gained });
       } else {
-        const { amount } = bus.emit('onHealed', { entity: user, amount: effect.amount });
+        const { amount } = bus.emit('onHealed', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))) });
         const before = user.hp;
         user.hp = Math.min(user.maxHp, user.hp + Math.max(0, Math.floor(amount)));
         ctx.log(`${user.name}は HP を ${user.hp - before} 回復した`);

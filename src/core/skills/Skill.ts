@@ -4,8 +4,12 @@ import type { Rarity } from '../rarity';
 export type SkillEffect =
   /** 基本攻撃力（ATK）を基準にしたダメージ: floor(ATK × mult) + add。 */
   | { type: 'attack'; mult: number; add?: number }
-  | { type: 'heal'; amount: number }
-  | { type: 'block'; amount: number };
+  /**
+   * 回復・Block も基本攻撃力が基準: floor(ATK × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
+   * mult を省略すると固定量（敵のスキルなど）で、amount のまま。
+   */
+  | { type: 'heal'; amount: number; mult?: number }
+  | { type: 'block'; amount: number; mult?: number };
 
 export type SkillId = string;
 
@@ -96,22 +100,42 @@ export function attackFormula(effect: { mult: number; add?: number }): string {
   return effect.add ? `${mult}+${effect.add}` : mult;
 }
 
-/** 範囲つきの要約。攻撃は「攻撃 ATK×3＝6〜30」のように、基本攻撃力が atkMin〜atkMax のときの実数値を示す（スロットが決まっていないとき用）。 */
-export function describeSkillRange(skill: SkillDef, atkMin: number, atkMax: number): string {
+/** Block・回復の量: floor(ATK × mult) + amount（mult を省略した固定量は amount のまま）。 */
+export function supportValue(effect: { amount: number; mult?: number }, atk: number): number {
+  return Math.max(0, Math.floor(atk * (effect.mult ?? 0)) + effect.amount);
+}
+
+/** 「ATK+3」「ATK×0.5+2」のような表記。固定量は数字だけ。 */
+export function supportFormula(effect: { amount: number; mult?: number }): string {
+  if (!effect.mult) return String(effect.amount);
+  const mult = effect.mult === 1 ? 'ATK' : `ATK×${effect.mult}`;
+  return effect.amount ? `${mult}+${effect.amount}` : mult;
+}
+
+/** 効果の要約。atkMin を渡すと実数値も併記し、atkMax が違えば「6〜30」のように範囲で示す（スロットが決まっていないとき用）。 */
+function describeEffects(skill: SkillDef, atkMin?: number, atkMax = atkMin): string {
+  const range = (value: (atk: number) => number): string => {
+    if (atkMin === undefined) return '';
+    const lo = value(atkMin);
+    const hi = value(atkMax ?? atkMin);
+    return lo === hi ? `＝${lo}` : `＝${lo}〜${hi}`;
+  };
   return skill.effects
     .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}＝${attackValue(e, atkMin)}〜${attackValue(e, atkMax)}`;
-      return e.type === 'block' ? `Block ${e.amount}` : `回復 ${e.amount}`;
+      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${range((a) => attackValue(e, a))}`;
+      const label = e.type === 'block' ? 'Block' : '回復';
+      // 固定量（mult なし）は、基本攻撃力に関係ないので、数字だけ
+      return e.mult ? `${label} ${supportFormula(e)}${range((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
     })
     .join(' + ');
 }
 
-/** 「攻撃 ATK×3+2＝14」「Block 6」のような効果の要約。atk を渡すと実数値も併記する。 */
+/** 範囲つきの要約（「攻撃 ATK+5＝7〜15」「Block ATK+3＝5〜13」）。スロットが決まっていない一覧（報酬・持ち物）用。 */
+export function describeSkillRange(skill: SkillDef, atkMin: number, atkMax: number): string {
+  return describeEffects(skill, atkMin, atkMax);
+}
+
+/** 「攻撃 ATK×3+2＝14」「Block ATK+3＝8」のような効果の要約。atk を渡すと実数値も併記する。 */
 export function describeSkill(skill: SkillDef, atk?: number): string {
-  return skill.effects
-    .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${atk !== undefined ? `＝${attackValue(e, atk)}` : ''}`;
-      return e.type === 'block' ? `Block ${e.amount}` : `回復 ${e.amount}`;
-    })
-    .join(' + ');
+  return describeEffects(skill, atk);
 }

@@ -9,7 +9,7 @@ import { attackFormula, attackValue, describeSkill, describeSkillRange, getSkill
 import { describeSlotTable } from '../src/core/skills/table';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
-import { Whetstone } from '../src/relics/catalog';
+import { OverlordOrb, Whetstone } from '../src/relics/catalog';
 import { createRun } from '../src/run/Run';
 import { noWait, playRound } from './helpers';
 
@@ -29,12 +29,15 @@ describe('基本攻撃力（ATK）', () => {
     expect(attackFormula({ mult: 3 })).toBe('ATK×3');
   });
 
-  it('初期スキルの式: 11以下=ATK×0.5 / 剛=ATK+5 / 会=ATK×3（クリティカルの概念はない）', () => {
+  it('初期スキルの式: 11以下=ATK×0.5 / 剛=ATK+5 / 会=ATK×1.5（クリティカルの概念はない）', () => {
     expect(describeSkill(getSkill('small_attack'), 5)).toBe('攻撃 ATK×0.5＝2');
     expect(describeSkill(getSkill('big_attack'), 5)).toBe('攻撃 ATK+5＝10');
-    expect(describeSkill(getSkill('ace_strike'), 5)).toBe('攻撃 ATK×3＝15');
+    expect(describeSkill(getSkill('ace_strike'), 5)).toBe('攻撃 ATK×1.5＝7');
     expect(describeSkill(getSkill('big_attack'))).toBe('攻撃 ATK+5');
-    expect(describeSkill(getSkill('shield'))).toBe('Block 8');
+    expect(describeSkill(getSkill('shield'))).toBe('Block ATK+3'); // Block・回復も基本攻撃力が基準
+    expect(describeSkill(getSkill('shield'), 8)).toBe('Block ATK+3＝11');
+    expect(describeSkill(getSkill('recover'), 5)).toBe('回復 ATK+3＝8');
+    expect(describeSkill(getSkill('skel_guard'))).toBe('Block 6'); // 敵の防御は固定量のまま
   });
 
   it('癒（回復）スキルは廃止され、18 は盾（Block 8）になった', () => {
@@ -98,7 +101,8 @@ describe('スロットごとの基本攻撃力（プレイヤー）', () => {
   it('スロットが決まっていない一覧（報酬・持ち物）では、置ける範囲（12〜20）の実数値を範囲で示す', () => {
     const big = getSkill('big_attack');
     expect(describeSkillRange(big, slotAttack(5, 12), slotAttack(5, 20))).toBe('攻撃 ATK+5＝7〜15');
-    expect(describeSkillRange(getSkill('shield'), 2, 10)).toBe('Block 8');
+    expect(describeSkillRange(getSkill('shield'), 2, 10)).toBe('Block ATK+3＝5〜13');
+    expect(describeSkillRange(getSkill('skel_guard'), 2, 10)).toBe('Block 6'); // 固定量は範囲にならない
   });
 
   it('実際の戦闘で、同じスキルでも合計値が高いスロットほど強い', async () => {
@@ -106,6 +110,54 @@ describe('スロットごとの基本攻撃力（プレイヤー）', () => {
     expect(99 - low.ctx.enemy.hp).toBe(3);
     const custom = await playRound({ player: ['9', '9'], enemyHand: ['2', '3'], enemyHp: 99, playerSlots: {} }); // 18 が空き: 通常攻撃 ATK 8
     expect(99 - custom.ctx.enemy.hp).toBe(8);
+  });
+});
+
+describe('防御・回復もスロットの基本攻撃力が基準（上位のスキルほど上乗せが大きい）', () => {
+  const at = (id: string, key: number, relics: ConstructorParameters<typeof BattleMachine>[0]['relics'] = []) => {
+    const m = machine({ playerSlots: { [key]: id }, relics });
+    return previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, key).parts.map((p) => p.value);
+  };
+
+  it('Block・回復は、スロットが高いほど増える（盾 ATK+3: 12→5 / 15→8 / 18→11 / 20→13）', () => {
+    expect([12, 15, 18, 20].map((k) => at('shield', k)[0])).toEqual([5, 8, 11, 13]);
+    expect([12, 20].map((k) => at('recover', k)[0])).toEqual([5, 13]); // 治癒 ATK+3
+  });
+
+  it('上位ほど上乗せが大きい: シールド ATK+1 < 盾 ATK+3 < 鉄壁の構え ATK+5（同じスロットで）', () => {
+    expect([at('guard', 15)[0], at('shield', 15)[0], at('bulwark', 15)[0]]).toEqual([6, 8, 10]);
+    expect(getSkill('guard').rarity ?? 'common').toBe('common');
+    expect(getSkill('bulwark').rarity).toBe('rare');
+  });
+
+  it('攻撃も同じ: 突き ATK+1 < 斬撃 ATK+3 < 大攻撃 ATK+5 < 渾身の一撃 ATK×2+5（スロット15、ATK 5）', () => {
+    expect(['jab', 'slash', 'big_attack', 'smash'].map((id) => at(id, 15)[0])).toEqual([6, 8, 10, 15]);
+  });
+
+  it('複数の効果も ATK 基準（盾打ち: 攻撃 ATK + Block ATK / 吸精: 攻撃 ATK+1 + 回復 ATK×0.5+2）', () => {
+    expect(at('shield_bash', 17)).toEqual([7, 7]);
+    expect(at('drain', 17)).toEqual([8, 5]);
+  });
+
+  it('ATK の強化（砥石 +2）は、Block・回復にも効く', () => {
+    expect(at('shield', 15, [Whetstone])[0]).toBe(10);
+    expect(at('recover', 15, [Whetstone])[0]).toBe(10);
+  });
+
+  it('敵の防御・回復は固定量のまま（ATK が固定の敵は、いつも同じ）', () => {
+    const m = machine({ enemy: ENEMY_LINEUP.find((e) => e.id === 'skeleton')! });
+    const guard = previewSkill(m.ctx, m.ctx.enemy, m.ctx.player, 15);
+    expect(guard.parts).toEqual([{ type: 'block', value: 6 }]);
+  });
+
+  it('会心の一撃は ATK×1.5（スロット21 は ATK 11 で 16）。覇王の宝珠で ATK×2（22）+ Block 8 になる', () => {
+    expect(at('ace_strike', 21)).toEqual([16]);
+    expect(at('ace_strike', 21, [OverlordOrb])).toEqual([22, 8]);
+  });
+
+  it('実際の戦闘でも、回復量はスロットの ATK 基準（15 の治癒 = 8）', async () => {
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['K', 'Q', '5'], playerSlots: { 15: 'recover' }, playerHp: 30 });
+    expect(m.ctx.player.hp).toBe(38);
   });
 });
 
@@ -119,12 +171,12 @@ describe('予測ダメージ', () => {
     expect(formatPreview(p)).toBe('大攻撃 → 15ダメージ');
   });
 
-  it('21 は会心の一撃（ATK 11 × 3 = 33）。ブラックジャックでも変わらない', () => {
+  it('21 は会心の一撃（ATK 11 × 1.5 = 16）。ブラックジャックでも変わらない', () => {
     const m = machine();
     give(m, 'player', ['A', 'K']);
     const p = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 21);
     expect(p.skill?.id).toBe('ace_strike');
-    expect(p.parts[0]).toEqual({ type: 'attack', value: 33 });
+    expect(p.parts[0]).toEqual({ type: 'attack', value: 16 });
   });
 
   it('レリックと敵の特性による補正を反映する', () => {
@@ -200,13 +252,14 @@ describe('スロット表の各マスの効果', () => {
   it('攻撃はダメージ数、Block は B+数。空きスロットは通常攻撃の数', () => {
     const b = badges(machine(), 'player');
     // 基本攻撃力は 11以下=1、スロットが上がるごとに +1（小攻撃 ATK×0.5 は最低 1）
-    expect(b).toMatchObject({ 11: '1', 12: '2', 13: '3', 15: 'B6', 18: 'B8', 20: '15', 21: '33' });
+    // Block も ATK 基準（シールド ATK+1 → 15 で 6、盾 ATK+3 → 18 で 11）。会心の一撃は ATK×1.5
+    expect(b).toMatchObject({ 11: '1', 12: '2', 13: '3', 15: 'B6', 18: 'B11', 20: '15', 21: '16' });
   });
 
   it('回復は +数。複数の効果は並べる（吸精: 攻撃と回復）', () => {
     expect(badgeText({ type: 'heal', value: 4 })).toBe('+4');
     const m = machine({ playerSlots: { 17: 'drain', 16: 'shield_bash' } });
-    expect(badges(m, 'player')).toMatchObject({ 17: '8 +4', 16: '6 B5' }); // 17 は ATK 7 + 1、16 は ATK 6
+    expect(badges(m, 'player')).toMatchObject({ 17: '8 +5', 16: '6 B6' }); // 17 は ATK 7: 攻撃 +1 / 回復 ATK×0.5+2。16 は ATK 6: 攻撃 ATK / Block ATK
   });
 
   it('レリックで変わった効果が出る（砥石 ATK+2: 大攻撃 12）。敵のスロットも同じ', () => {

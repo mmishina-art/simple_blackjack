@@ -267,9 +267,9 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(38);
   });
 
-  it('覇王の宝珠: 会心の一撃が覇王の一撃（ATK×4 + Block 8）に変わる', async () => {
+  it('覇王の宝珠: 会心の一撃（ATK×1.5）が覇王の一撃（ATK×2 + Block 8）に変わる', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['3', '4'], enemyHp: 100, relics: [OverlordOrb], stopAt: ['CheckDeath'] });
-    expect(m.ctx.enemy.hp).toBe(100 - 44); // 21 は ATK 11: ATK×4
+    expect(m.ctx.enemy.hp).toBe(100 - 22); // 21 は ATK 11: ATK×2（宝珠なしなら ×1.5 = 16）
     expect(m.ctx.player.block).toBe(8 - 3); // 敵の基本攻撃3は Block で吸収
   });
 });
@@ -306,11 +306,11 @@ describe('敵の特性', () => {
   it('屍食鬼: HPを削るたびHP+4', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 20 });
     expect(m.ctx.enemy.hp).toBe(24);
-    expect(m.ctx.player.hp).toBe(60 - (12 - 8)); // 貪り喰う ATK4×3。後攻の盾 Block 8 が先に付与される
+    expect(m.ctx.player.hp).toBe(60 - (12 - 11)); // 貪り喰う ATK4×3。後攻の盾（18 は ATK 8 + 3 = Block 11）が先に付与される
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon') });
-    expect(m.ctx.player.hp).toBe(60 - (17 + 3 - 8)); // 業火 ATK5×3+2 + 息吹3。後攻の盾 Block 8 が先に付与される
+    expect(m.ctx.player.hp).toBe(60 - (17 + 3 - 11)); // 業火 ATK5×3+2 + 息吹3。後攻の盾 Block 11 が先に付与される
   });
 });

@@ -2,7 +2,7 @@ import type { EventBus } from '../events/EventBus';
 import type { Entity } from '../entities/Entity';
 import { damageTakenMultiplier } from '../rules/bust';
 import type { RuleSet } from '../rules/RuleSet';
-import { attackValue, getSkill, slotKeyOf, type SkillDef } from './Skill';
+import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
 export interface PreviewPart {
   type: 'attack' | 'block' | 'heal';
@@ -31,8 +31,9 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
       const calc = env.bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: raw, skill });
       return { type: 'attack', value: Math.max(0, Math.floor(calc.damage * damageTakenMultiplier(calc.defender, env.rules))) };
     }
-    if (e.type === 'block') return { type: 'block', value: Math.max(0, Math.floor(env.bus.emit('onBlockGained', { entity: user, amount: e.amount }).amount)) };
-    return { type: 'heal', value: Math.max(0, Math.floor(env.bus.emit('onHealed', { entity: user, amount: e.amount }).amount)) };
+    const amount = supportValue(e, user.attackAt(total));
+    if (e.type === 'block') return { type: 'block', value: Math.max(0, Math.floor(env.bus.emit('onBlockGained', { entity: user, amount }).amount)) };
+    return { type: 'heal', value: Math.max(0, Math.floor(env.bus.emit('onHealed', { entity: user, amount }).amount)) };
   });
   return { skill, parts };
 }
