@@ -1,6 +1,6 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
-import { ARMOR_POOL, DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
+import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import { pickWeighted, tierWeights } from '../core/rarity';
 import { canPlaceAt, getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
@@ -183,7 +183,7 @@ export function upgradeSlot(run: RunState, key: SlotKey): SkillId | null {
 export const CODEX_BOOST = 2;
 
 /**
- * 敵撃破の報酬（3択 + 祭壇の「見る目」）。スキルと道具に分け、**道具を必ず1つ**含める（残りはスキル）。
+ * 敵撃破の報酬（3択 + 祭壇の「見る目」）。スキルと道具に分け、**道具を必ず1つ**含める（残りはスキル）。防具は出ない。
  * 並びは、スキル → 道具。レア度が高いほど出にくい。
  */
 export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
@@ -194,17 +194,8 @@ export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
   const skillWeight = tierWeights(SKILL_POOL, rarityOf, stage);
   const count = 3 + (run?.bonus.extraChoices ?? 0);
   const skills = pickWeighted(SKILL_POOL, count - 1, rng, (id) => skillWeight(id) * boost(id));
-  // 道具の枠: 道具と、いま装備しているより硬い防具（同じか柔らかい防具は出さない）から1つ
-  // いま装備しているより硬い防具（上限が小さい、または上限が同じで回復がある）だけを出す
-  const better = (id: SkillId): boolean => {
-    if (!run) return true;
-    const cur = getSkill(run.armor);
-    const cand = getSkill(id);
-    return (cand.damageCap ?? Infinity) < (cur.damageCap ?? Infinity)
-      || ((cand.damageCap ?? Infinity) === (cur.damageCap ?? Infinity) && (cand.defendHeal ?? 0) > (cur.defendHeal ?? 0));
-  };
-  const harder = ARMOR_POOL.filter(better);
-  const itemPool = [...ITEM_POOL, ...harder];
+  // 道具の枠: 道具から 1 つ（防具は報酬に出ない。ショップでだけ買える）
+  const itemPool = ITEM_POOL;
   const itemWeight = tierWeights(itemPool, rarityOf, stage);
   const items = pickWeighted(itemPool, 1, rng, (id) => itemWeight(id) * boost(id));
   return [...skills, ...items];

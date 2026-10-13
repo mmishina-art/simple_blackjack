@@ -11,8 +11,6 @@ export class Entity {
   readonly hand = new Hand();
   /** 装備している防具の「被ダメージ上限」（防御したラウンドに効く）。プレイヤーのみ。 */
   armorCap?: number;
-  /** 装備している防具の効果: 防御したときに回復する HP。 */
-  defendHeal = 0;
   /** このラウンドの被ダメージの上限（防御したときだけ。HP の減少がこの値を超えない）。null なら上限なし。 */
   damageCap: number | null = null;
   /** このラウンドに、上限の対象として受けたダメージ（HP の減少）の合計。 */

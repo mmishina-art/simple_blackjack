@@ -194,7 +194,6 @@ function startBattle(tile: TileDef): void {
     playerHp: run.hp,
     playerSlots: run.slots,
     playerArmorCap: armorCap(run),
-    playerDefendHeal: getSkill(run.armor).defendHeal ?? 0,
     playerFallback: run.fallbackSkill,
     playerAttack: run.baseAttack,
     playerBlock: run.bonus.startBlock,

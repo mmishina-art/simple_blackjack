@@ -32,8 +32,6 @@ export interface BattleOptions {
   playerAttack?: number;
   /** 装備している防具の被ダメージ上限（防御したラウンドに効く）。省略時は RuleSet.defendCap。 */
   playerArmorCap?: number;
-  /** 装備している防具の「防御したときの回復」。 */
-  playerDefendHeal?: number;
   /** 戦闘開始時にプレイヤーが持つブロック（祭壇の強化）。 */
   playerBlock?: number;
   rules?: Partial<RuleSet>;
@@ -66,7 +64,6 @@ export class BattleMachine {
     );
     const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp, { ...opts.enemy.slots }, opts.enemy.fallbackSkill, opts.enemy.attack);
     player.armorCap = opts.playerArmorCap;
-    player.defendHeal = opts.playerDefendHeal ?? 0;
     player.scaleAttackBySlot = true; // プレイヤーの基本パワーは、スロットごとに変わる（敵は固定）
     player.block = opts.playerBlock ?? 0;
     if (opts.playerHp !== undefined) player.hp = Math.min(opts.playerHp, player.maxHp);

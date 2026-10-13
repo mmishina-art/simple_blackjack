@@ -29,8 +29,6 @@ export interface SkillDef {
   rarity?: Rarity;
   /** 防具の効果: 防御したラウンドに受けるダメージ（HP の減少）の上限。 */
   damageCap?: number;
-  /** 防具の効果: 防御したときに回復する HP。 */
-  defendHeal?: number;
   /** 祠のバージョンアップで変わる先（コモン→レア、レア→レジェンド）。ないスキル・道具は強化できない。 */
   upgradesTo?: SkillId;
 }
@@ -146,7 +144,7 @@ export function supportFormula(effect: { amount: number; mult?: number }): strin
 
 /** 効果の要約。atk を渡すと実数値（＝16）も併記する。 */
 function describeEffects(skill: SkillDef, atk?: number): string {
-  if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? `・HP +${skill.defendHeal}` : ''}`;
+  if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}`;
   const value = (v: (atk: number) => number): string => (atk === undefined ? '' : `＝${v(atk)}`);
   return skill.effects
     .map((e) => {
@@ -169,7 +167,7 @@ function bonusFormula(mult: number, add: number): string {
  * 基本パワーに対する上乗せだけを示す（「攻撃 +5」「ブロック +3」「回復 +3」「攻撃 ×1.5+3」）。固定量は数字のまま。
  */
 export function describeSkillBonus(skill: SkillDef): string {
-  if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? `・HP +${skill.defendHeal}` : ''}`;
+  if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}`;
   return skill.effects
     .map((e) => {
       if (e.type === 'attack') return `攻撃 ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
@@ -189,7 +187,7 @@ export function describeSkill(skill: SkillDef, atk?: number): string {
  * 計算式は describeSkill（マウスを乗せたときの詳細）にある。atk は、そのスロットの基本パワー。
  */
 export function describeSkillShort(skill: SkillDef, atk: number): string {
-  if (skill.damageCap !== undefined) return `被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? ` + 回復 ${skill.defendHeal}` : ''}`;
+  if (skill.damageCap !== undefined) return `被ダメージ最大 ${skill.damageCap}`;
   const parts: { label: string; value: number; count: number }[] = [];
   for (const e of skill.effects) {
     const label = e.type === 'attack' ? '攻撃' : e.type === 'block' ? 'ブロック' : '回復';

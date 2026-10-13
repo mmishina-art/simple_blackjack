@@ -70,7 +70,7 @@ export function generateShop(run: RunState, rng: Rng): ShopOffer[] {
     const c = getSkill(id);
     const cap = c.damageCap ?? Infinity;
     const curCap = cur.damageCap ?? Infinity;
-    return cap < curCap || (cap === curCap && (c.defendHeal ?? 0) > (cur.defendHeal ?? 0));
+    return cap < curCap;
   };
   const itemPool = [...ITEM_POOL, ...ARMOR_POOL.filter(better)];
   const itemW = tierWeights(itemPool, rarityOf, run.stage);
