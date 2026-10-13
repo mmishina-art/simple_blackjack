@@ -49,7 +49,25 @@ function button(label: string, onClick: () => void): HTMLButtonElement {
   return b;
 }
 
+/** 冒険中は、どの画面でも体力とゴールドを上端に出す（タイトル・記録の画面では隠す）。戦闘中は、戦闘中の体力を出す。 */
+const statusBar = el('div', 'run-status');
+statusBar.hidden = true;
+statusBar.setAttribute('aria-label', '体力とゴールド');
+document.body.append(statusBar);
+let liveHp: number | null = null;
+function refreshStatus(): void {
+  const hp = liveHp ?? run.hp;
+  statusBar.innerHTML = `<span class="run-status__hp${hp <= run.maxHp * 0.3 ? ' run-status__hp--low' : ''}">HP <b>${Math.max(0, hp)}</b>/${run.maxHp}</span><span class="run-status__gold"><b>${run.gold}</b> G</span>`;
+}
+function setStatus(visible: boolean): void {
+  statusBar.hidden = !visible;
+  if (visible) refreshStatus();
+}
+// 画面が切り替わる（買う・売る・マップへ戻るなど）たびに、数値を更新する
+new MutationObserver(() => { if (!statusBar.hidden) refreshStatus(); }).observe(root, { childList: true });
+
 function leaveBattle(): void {
+  liveHp = null;
   view?.destroy();
   view = null;
   unbindSounds?.();
@@ -133,6 +151,8 @@ function startBattle(tile: TileDef): void {
     relics: run.relics,
   });
   unbindSounds = bindBattleSounds(machine, audio);
+  liveHp = machine.ctx.player.hp;
+  machine.onChange(() => { liveHp = machine.ctx.player.hp; refreshStatus(); });
   view = new BattleView(root, machine, run, (won) => buildResult(machine, tile, won));
   void machine.run();
 }
@@ -161,6 +181,7 @@ function startAdventure(): void {
   bareRun = false;
   shopOffers.clear();
   run = createRun(undefined, meta);
+  setStatus(true);
   showMapScreen();
 }
 
@@ -169,6 +190,7 @@ function startBareAdventure(): void {
   bareRun = true;
   shopOffers.clear();
   run = createRun();
+  setStatus(true);
   showMapScreen('素の状態で出発した（祭壇の強化は使わず、記録も残らない）');
 }
 
@@ -186,7 +208,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   const shardsLine = (gained: number) =>
     el('p', 'result__line result__shards', bareRun ? '素の状態の冒険（魂片・図鑑は記録されない）' : `魂片 +${gained}（所持 ${meta.shards}）`);
   const endButtons = (retry: string) => {
-    const altar = button('魂の祭壇', () => showAltar(root, meta, showTitle));
+    const altar = button('魂の祭壇', () => { setStatus(false); showAltar(root, meta, showTitle); });
     altar.classList.replace('btn--retry', 'btn--stand');
     return [altar, button(retry, restartRun)];
   };
@@ -211,6 +233,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     // 最後の階層のボスを倒した: 魂片を記録して、エンディングへ。エンディングが終わると、タイトルに戻る
     const gained = endRun(true);
     box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('エンディングへ', () => {
+      setStatus(false);
       showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun }, showTitle);
     }));
     return box;
@@ -257,6 +280,7 @@ function offerSkillReward(): void {
 
 /** タイトル画面。音声はユーザー操作後でないと鳴らせないため、ここでタップさせる。 */
 function showTitle(): void {
+  setStatus(false);
   const screen = el('main', 'title');
   const art = el('div', 'enemy-stage title-stage');
   art.append(el('div', 'enemy-backdrop', STAGE_BACKDROP), el('div', 'title-art', TITLE_ART));
