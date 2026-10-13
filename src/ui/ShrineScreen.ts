@@ -25,7 +25,7 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
   const upgradeCandidates = SLOT_KEYS.filter((k) => { const id = run.slots[k]; return !!id && !!getSkill(id).upgradesTo; });
 
   const choices: { icon: string; name: string; description: string; run(): void }[] = [];
-  choices.push({ icon: '替', name: '入れ替え', description: 'スキル・道具・道具袋・防具を、好きなだけ入れ替える（何度でも。済んでも、祠はまた使える）', run: () => showSwapScreen(root, run, { onClose: show }) });
+  choices.push({ icon: '替', name: '入れ替え', description: 'スキル・道具・道具袋の中身を、好きなだけ入れ替える（何度でも。済んでも、祠はまた使える）', run: () => showSwapScreen(root, run, { onClose: show }) });
   if (upgradeCandidates.length > 0) choices.push({ icon: '昇', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを1つ上のレア度に変える（コモン→レア 40 G、レア→レジェンド 80 G。道具は不可）', run: pickUpgrade });
   choices.push({ icon: '祈', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
   choices.push({ icon: '去', name: '立ち去る', description: '何もしない（また来られる）', run: opts.onLeave });

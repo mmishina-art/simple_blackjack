@@ -89,7 +89,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         },
       }));
     }
-    slotList.append(buildArmorRow(), buildPouchRow());
+    slotList.append(buildPouchRow(), buildArmorRow()); // 道具袋は 21 のすぐ下、そのあとに防御
     screen.append(slotList);
 
     const actions = document.createElement('div');
