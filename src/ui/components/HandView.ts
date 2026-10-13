@@ -7,22 +7,29 @@ const MANY_CARDS = 5;
 
 /** 手札と合計値の表示。 */
 export class HandView {
+  /** 合計値の行（上）と、手札の行（下: カードと、右側の「発動するスキル」の表示）をまとめた外枠。 */
   readonly el = document.createElement('div');
+  /** 手札の行の右側。いま発動するスキルの名前とダメージなどを出す（SlotStrip の caption を入れる）。 */
+  readonly side = document.createElement('div');
+  private rowEl = document.createElement('div');
   private cardsEl = document.createElement('div');
   private totalEl = document.createElement('div');
   private shown = 0;
 
   constructor() {
-    this.el.className = 'hand';
+    this.el.className = 'hand-block';
+    this.rowEl.className = 'hand';
     this.cardsEl.className = 'hand__cards';
+    this.side.className = 'hand__side';
     this.totalEl.className = 'hand__total';
-    this.el.append(this.cardsEl, this.totalEl);
+    this.rowEl.append(this.cardsEl, this.side);
+    this.el.append(this.totalEl, this.rowEl);
   }
 
   update(entity: Entity, rules: RuleSet): void {
     const { hand } = entity;
     // 枚数が多いときは、短い画面でカードを重ねて1行に収める（CSS の .hand--many）
-    this.el.classList.toggle('hand--many', hand.size >= MANY_CARDS);
+    this.rowEl.classList.toggle('hand--many', hand.size >= MANY_CARDS);
     const keys = hand.cards.map((c) => c.suit + c.rank + (hand.isFaceDown(c) ? '*' : ''));
     const key = keys.join(',');
     const prevKey = this.cardsEl.dataset.key ?? '';

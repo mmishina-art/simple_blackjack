@@ -1145,3 +1145,21 @@ section { min-width: 0; }
 @media (max-height: 800px) {
   .loadout--armed .loadout__slots .lslot--fixed { display: none; }
 }
+
+/* ---- 勝負の結果を主役に: 合計値を上の行に、発動するスキル名とダメージを手札の右側に出す ---- */
+.hand-block { display: flex; flex-direction: column; gap: 2px; }
+.hand-block > .hand__total { text-align: left; font-size: 34px; line-height: 1.1; min-height: 1.1em; }
+.hand-block > .hand__total--bust { font-size: 26px; }
+.hand__side { flex: 1 1 0; min-width: 0; display: flex; justify-content: flex-end; }
+.battle .hand__side .slots__caption {
+  min-height: 0; flex-direction: column; align-items: flex-end; justify-content: center; gap: 0; text-align: right; padding: 0;
+}
+.battle .hand__side .callout__icon { display: none; }
+.battle .hand__side .callout__name { flex: none; max-width: 100%; font-size: 18px; }
+.battle .hand__side .callout__fx b { font-size: 30px; }
+.battle .hand__side .callout__note { display: block; margin: 0; text-align: right; }
+@media (max-height: 850px) {
+  .battle .hand-block > .hand__total { font-size: 28px; }
+  .battle .hand__side .callout__name { font-size: 16px; }
+  .battle .hand__side .callout__fx b { font-size: 24px; }
+}

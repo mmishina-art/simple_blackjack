@@ -86,6 +86,9 @@ export class BattleView {
     const topRow = section('top-row', this.roundEl, topRight);
     this.enemyView.el.append(this.buildTraits()); // 敵の舞台の上に重ねる（高さを使わない）
     const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemySlotStrip.el, this.enemyView.el, this.enemyHand.el);
+    // 合計値（勝負の結果）を上に、発動するスキルとダメージを手札の右側に出す
+    this.enemyHand.side.append(this.enemySlotStrip.caption);
+    this.playerHand.side.append(this.slotStrip.caption);
     this.banner.className = 'turn-banner';
     this.banner.hidden = true;
     this.banner.setAttribute('aria-hidden', 'true'); // 同じ内容が、読み上げ用のログにも出る

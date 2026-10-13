@@ -18,7 +18,8 @@ export class SlotStrip {
   readonly el = document.createElement('div');
   private cells = new Map<SlotKey, HTMLElement>();
   private keys: SlotKey[];
-  private caption = document.createElement('div');
+  /** 発動するスキルの表示。BattleView が、手札の右側へ移す（合計値を上に、スキルを手札の横に置くため）。 */
+  readonly caption = document.createElement('div');
   private calloutKey = '';
 
   constructor(minTotal?: number) {
