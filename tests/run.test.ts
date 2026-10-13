@@ -6,7 +6,7 @@ import { getSkill, hasSkill, rarityOfSkill, SLOT_KEYS } from '../src/core/skills
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
 import { STAGE_ROWS, STAGES } from '../src/map/stages';
-import { rarityWeights } from '../src/core/rarity';
+import { RARITY_RATE, rarityRates, tierWeights } from '../src/core/rarity';
 import { nextTiles, tileOf, type TileKind } from '../src/map/StageMap';
 import {
   Boots, Breastplate, FateRing, LifeCandle, OverlordOrb, RELIC_POOL, ScapegoatDoll, SealKey, SturdyShield,
@@ -88,7 +88,7 @@ describe('階層の構成', () => {
     expect(ids(STAGES[2])).toEqual(new Set(['flame', 'golem', 'imp', 'dragon']));
   });
 
-  it('次の階層へ: 最大 HP が +10、HP が最大の半分（+10 の分も）回復し、位置・済みのマスが新しい階層になる。最後の階層では進めない', () => {
+  it('次の階層へ: 最大 HP が +10、HP が最大の7割（+10 の分も）回復し、位置・済みのマスが新しい階層になる。最後の階層では進めない', () => {
     const run = createRun();
     expect(run.stage).toBe(1);
     run.hp = 5;
@@ -120,11 +120,44 @@ describe('階層の構成', () => {
     expect(run.stats.maxRow).toBe(STAGE_ROWS + 1);
   });
 
-  it('階層が進むほど、レアが出やすい', () => {
-    expect(rarityWeights(1)).toEqual({ common: 6, rare: 3, legend: 1 });
-    expect(rarityWeights(2).legend).toBeGreaterThan(rarityWeights(1).legend);
-    expect(rarityWeights(3).legend).toBeGreaterThan(rarityWeights(2).legend);
-    expect(rarityWeights(3).common).toBeLessThan(rarityWeights(1).common);
+  it('階層が進むほど、レアとレジェンドが出やすい。どの階層も、割合の合計は 100', () => {
+    for (const st of [1, 2, 3] as const) expect(Object.values(RARITY_RATE[st]).reduce((x, y) => x + y, 0)).toBe(100);
+    expect(rarityRates(1).legend).toBeLessThan(rarityRates(2).legend);
+    expect(rarityRates(2).legend).toBeLessThan(rarityRates(3).legend);
+    expect(rarityRates(1).common).toBeGreaterThan(rarityRates(3).common);
+    expect(rarityRates(0)).toEqual(rarityRates(1)); // 範囲外は端の階層
+    expect(rarityRates(9)).toEqual(rarityRates(3));
+  });
+
+  it('レア度ごとの割合は、そのレア度の個数に左右されない（個数が多いレジェンドが出やすくならない）', () => {
+    const pool = ['c1', 'c2', 'r1', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6'];
+    const rarityOf = (id: string) => (id.startsWith('c') ? 'common' : id.startsWith('r') ? 'rare' : 'legend') as 'common' | 'rare' | 'legend';
+    const w = tierWeights(pool, rarityOf, 1);
+    const share = (r: 'common' | 'rare' | 'legend') => pool.filter((x) => rarityOf(x) === r).reduce((sum, x) => sum + w(x), 0);
+    expect(share('common')).toBeCloseTo(70);
+    expect(share('rare')).toBeCloseTo(27);
+    expect(share('legend')).toBeCloseTo(3); // 6個あっても、合計で 3
+  });
+
+  it('実際の抽選でも、階層ごとのレア度の割合になる（スキル報酬・レリック）', () => {
+    for (const stage of [1, 2, 3] as const) {
+      const run = createRun();
+      run.stage = stage;
+      const skillCount = { common: 0, rare: 0, legend: 0 };
+      const relicCount = { common: 0, rare: 0, legend: 0 };
+      const N = 3000;
+      for (let i = 0; i < N; i++) {
+        const rng = seededRng(i + 1);
+        // スキルの2枠だけを数える（3枠目は道具・防具の枠で、別のプール）
+        for (const id of offerSkills(rng, run).slice(0, 2)) skillCount[rarityOfSkill(getSkill(id))]++;
+        for (const r of offerRelics(run, rng)) relicCount[r.rarity ?? 'common']++;
+      }
+      const rate = RARITY_RATE[stage];
+      // 重複なしで選ぶので、少しずれる。レジェンドが、決めた割合を大きく超えないことを確かめる
+      expect(skillCount.legend / (N * 2) * 100, `skill stage${stage}`).toBeLessThan(rate.legend + 5);
+      expect(skillCount.common / (N * 2) * 100, `skill stage${stage}`).toBeGreaterThan(rate.common - 12);
+      expect(relicCount.legend / (N * 3) * 100, `relic stage${stage}`).toBeLessThan(rate.legend + 12); // レリックのレジェンドは3個しかない
+    }
   });
 });
 

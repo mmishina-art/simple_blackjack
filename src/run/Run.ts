@@ -1,7 +1,7 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { ARMOR_POOL, DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
-import { pickWeighted, rarityWeights } from '../core/rarity';
+import { pickWeighted, tierWeights } from '../core/rarity';
 import { getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, validStartingSkills, type MetaState, type RunBonus } from '../meta/Meta';
@@ -108,7 +108,7 @@ export function isFinalStage(run: RunState): boolean {
 }
 
 /** 階層の合間に回復する割合（最大 HP に対して）。 */
-export const STAGE_CLEAR_HEAL = 0.5;
+export const STAGE_CLEAR_HEAL = 0.7;
 /** 階層を踏破するたびに増える最大 HP（その分、HP も増える）。 */
 export const STAGE_CLEAR_MAX_HP = 10;
 
@@ -186,10 +186,12 @@ export const CODEX_BOOST = 2;
  */
 export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
   const favored = new Set(run?.favored ?? []);
-  const w = rarityWeights(run?.stage ?? 1);
-  const weight = (id: SkillId): number => w[rarityOfSkill(getSkill(id))] * (favored.has(id) ? CODEX_BOOST : 1);
+  const stage = run?.stage ?? 1;
+  const rarityOf = (id: SkillId) => rarityOfSkill(getSkill(id));
+  const boost = (id: SkillId): number => (favored.has(id) ? CODEX_BOOST : 1);
+  const skillWeight = tierWeights(SKILL_POOL, rarityOf, stage);
   const count = 3 + (run?.bonus.extraChoices ?? 0);
-  const skills = pickWeighted(SKILL_POOL, count - 1, rng, weight);
+  const skills = pickWeighted(SKILL_POOL, count - 1, rng, (id) => skillWeight(id) * boost(id));
   // 道具の枠: 道具と、いま装備しているより硬い防具（同じか柔らかい防具は出さない）から1つ
   // いま装備しているより硬い防具（上限が小さい、または上限が同じで回復がある）だけを出す
   const better = (id: SkillId): boolean => {
@@ -200,12 +202,15 @@ export function offerSkills(rng: Rng, run?: RunState): SkillId[] {
       || ((cand.damageCap ?? Infinity) === (cur.damageCap ?? Infinity) && (cand.defendHeal ?? 0) > (cur.defendHeal ?? 0));
   };
   const harder = ARMOR_POOL.filter(better);
-  const items = pickWeighted([...ITEM_POOL, ...harder], 1, rng, weight);
+  const itemPool = [...ITEM_POOL, ...harder];
+  const itemWeight = tierWeights(itemPool, rarityOf, stage);
+  const items = pickWeighted(itemPool, 1, rng, (id) => itemWeight(id) * boost(id));
   return [...skills, ...items];
 }
 
 /** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */
 export function offerRelics(run: RunState, rng: Rng): Relic[] {
   const owned = new Set(run.relics.map((r) => r.id));
-  return pickWeighted(RELIC_POOL.filter((r) => !owned.has(r.id)), 3, rng, (r) => rarityWeights(run.stage)[r.rarity ?? 'common']);
+  const pool = RELIC_POOL.filter((r) => !owned.has(r.id));
+  return pickWeighted(pool, 3, rng, tierWeights(pool, (r) => r.rarity ?? 'common', run.stage));
 }

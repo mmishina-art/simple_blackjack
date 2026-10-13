@@ -4,14 +4,29 @@ export type Rarity = 'common' | 'rare' | 'legend';
 
 export const RARITY_LABEL: Record<Rarity, string> = { common: 'コモン', rare: 'レア', legend: 'レジェンド' };
 
-/** 報酬の抽選での出やすさ。 */
-export const RARITY_WEIGHT: Record<Rarity, number> = { common: 6, rare: 3, legend: 1 };
+/**
+ * 報酬・宝箱・祠で、どのレア度が出るかの割合（階層ごと）。階層が進むほど、レアとレジェンドが出やすくなる。
+ * 「レア度ごとの割合」なので、そのレア度のものが何個あっても、割合は変わらない（個数の多いレア度が出やすくなったりしない）。
+ */
+export const RARITY_RATE: Record<1 | 2 | 3, Record<Rarity, number>> = {
+  1: { common: 70, rare: 27, legend: 3 },
+  2: { common: 52, rare: 38, legend: 10 },
+  3: { common: 38, rare: 47, legend: 15 },
+};
 
-/** 階層が進むほど、レアが出やすくなる（1階層: 6:3:1、2階層: 4:4:2、3階層: 3:4:3）。 */
-export function rarityWeights(stage: number): Record<Rarity, number> {
-  if (stage >= 3) return { common: 3, rare: 4, legend: 3 };
-  if (stage === 2) return { common: 4, rare: 4, legend: 2 };
-  return RARITY_WEIGHT;
+export function rarityRates(stage: number): Record<Rarity, number> {
+  return RARITY_RATE[Math.max(1, Math.min(3, Math.floor(stage))) as 1 | 2 | 3];
+}
+
+/**
+ * 抽選の重み: そのレア度の割合を、候補の中の同じレア度の個数で割る（レア度ごとの割合が、個数に左右されない）。
+ * 候補にないレア度は出ない（その分は、ほかのレア度に回る）。
+ */
+export function tierWeights<T>(pool: readonly T[], rarityOf: (item: T) => Rarity, stage: number): (item: T) => number {
+  const rates = rarityRates(stage);
+  const count: Record<Rarity, number> = { common: 0, rare: 0, legend: 0 };
+  for (const item of pool) count[rarityOf(item)]++;
+  return (item) => rates[rarityOf(item)] / count[rarityOf(item)];
 }
 
 /** 重み付きで重複なしに count 個選ぶ。 */

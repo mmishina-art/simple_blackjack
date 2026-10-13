@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickWeighted, RARITY_LABEL, RARITY_WEIGHT } from '../src/core/rarity';
+import { pickWeighted, RARITY_LABEL, RARITY_RATE } from '../src/core/rarity';
 import { Entity } from '../src/core/entities/Entity';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { SKILL_POOL } from '../src/core/skills/catalog';
@@ -38,7 +38,7 @@ describe('レア度', () => {
     const n = (r: string) => SKILL_POOL.filter((id) => rarityOfSkill(getSkill(id)) === r).length;
     expect(per('common', n('common'))).toBeGreaterThan(per('rare', n('rare')));
     expect(per('rare', n('rare'))).toBeGreaterThan(per('legend', n('legend')));
-    expect(RARITY_WEIGHT.common).toBeGreaterThan(RARITY_WEIGHT.legend);
+    expect(RARITY_RATE[1].common).toBeGreaterThan(RARITY_RATE[1].legend);
   });
 
   it('宝箱のレリックも所持済みを除き、重み付きで3つ選ばれる', () => {

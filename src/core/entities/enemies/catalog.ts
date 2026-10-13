@@ -136,7 +136,7 @@ export const Gargoyle: EnemyDef = {
 };
 
 export const Wraith: EnemyDef = {
-  id: 'wraith', name: '亡霊', maxHp: 26, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.wraith, fallbackSkill: 'wraith_touch',
+  id: 'wraith', name: '亡霊', maxHp: 24, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.wraith, fallbackSkill: 'wraith_touch',
   trait: '冷気（ラウンドの初めに、あなたの Block が 2 減る）', relics: [Chill],
 };
 
