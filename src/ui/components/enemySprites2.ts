@@ -229,4 +229,33 @@ const imp = `
   <ellipse cx="90" cy="46" rx="2" ry="3.5" fill="#120808"/><ellipse cx="112" cy="46" rx="2" ry="3.5" fill="#120808"/>
 </svg>`;
 
-export const NEW_ENEMY_SPRITES: Record<string, string> = { knight, merman, gargoyle, wraith, serpent, flame, golem, imp };
+
+/** 鋼鉄のゴーレム（第2・第3階層）: リベット打ちの鋼板に、青白い目。大きな盾を構える。 */
+const ironGolem = `
+<svg viewBox="0 0 200 160" role="img" aria-label="鋼鉄のゴーレム" xmlns="http://www.w3.org/2000/svg">${defs('Ig', 19)}
+  <defs><linearGradient id="igPlate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa5ad"/><stop offset="1" stop-color="#2b343b"/></linearGradient></defs>
+  ${shadow}
+  <g filter="url(#inkIg)" ${STROKE}>
+    <!-- 脚 -->
+    <path d="M70 124h26v26H66zM104 124h26l4 26h-30z" fill="url(#igPlate)"/>
+    <!-- 胴 -->
+    <path d="M54 62h92l8 62H46z" fill="url(#igPlate)"/>
+    <path d="M54 62h92l8 62H46z" fill="url(#hatchIg)" opacity=".7"/>
+    <path d="M100 62v62M60 90h80" stroke="#1d242a" stroke-width="3" fill="none"/>
+    <!-- 腕 -->
+    <path d="M30 70h26l-2 46H34zM144 70h26l-4 46h-20z" fill="url(#igPlate)"/>
+    <!-- 頭 -->
+    <path d="M72 18h56l6 34H66z" fill="url(#igPlate)"/>
+    <path d="M72 18h56l6 34H66z" fill="url(#hatchIg)" opacity=".6"/>
+    <!-- 大盾 -->
+    <path d="M6 66h46v52c0 14-10 24-23 30-13-6-23-16-23-30z" fill="#586670"/>
+    <path d="M6 66h46v52c0 14-10 24-23 30-13-6-23-16-23-30z" fill="url(#hatchIg)"/>
+    <path d="M29 72v70M12 96h34" stroke="#c9d3da" stroke-width="3.5" fill="none"/>
+  </g>
+  <g fill="#cfd8de" stroke="#070605" stroke-width="1.5"><circle cx="64" cy="72" r="3"/><circle cx="136" cy="72" r="3"/><circle cx="64" cy="114" r="3"/><circle cx="136" cy="114" r="3"/><circle cx="82" cy="26" r="2.5"/><circle cx="118" cy="26" r="2.5"/></g>
+  <path d="M80 34h40v9H80z" fill="#0b1014" stroke="#070605" stroke-width="2.5"/>
+  <path d="M84 38.5h12M104 38.5h12" stroke="#7fd8ff" stroke-width="5" stroke-linecap="round"/>
+  <ellipse cx="100" cy="38" rx="26" ry="8" fill="#7fd8ff" opacity=".2"/>
+</svg>`;
+
+export const NEW_ENEMY_SPRITES: Record<string, string> = { knight, merman, gargoyle, wraith, serpent, flame, golem, imp, iron_golem: ironGolem };

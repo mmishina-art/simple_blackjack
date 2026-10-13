@@ -84,6 +84,7 @@ export class BattleView {
     topRight.className = 'top-row__right';
     topRight.append(historyBtn, infoBtn, this.muteBtn);
     const topRow = section('top-row', this.roundEl, topRight);
+    this.enemyView.el.append(this.buildTraits()); // 敵の舞台の上に重ねる（高さを使わない）
     const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemySlotStrip.el, this.enemyView.el, this.enemyHand.el);
     this.banner.className = 'turn-banner';
     this.banner.hidden = true;
@@ -202,6 +203,33 @@ export class BattleView {
         this.container.classList.add('is-flash');
       }
     }
+  }
+
+  /** 敵の特殊能力（特性）を、常に見える1行で出す。長いときは省略し、タップ・長押しで全文（title）。 */
+  private buildTraits(): HTMLElement {
+    const line = document.createElement('div');
+    line.className = 'enemy-trait';
+    const traits = this.machine.ctx.enemyDef.relics ?? [];
+    line.hidden = traits.length === 0;
+    for (const t of traits) {
+      const chip = document.createElement('span');
+      chip.className = 'enemy-trait__item';
+      chip.title = `${t.name}: ${t.description}`;
+      const icon = document.createElement('span');
+      icon.className = 'medal medal--sm';
+      icon.textContent = t.icon;
+      const text = document.createElement('span');
+      text.className = 'enemy-trait__text';
+      const strong = document.createElement('strong');
+      strong.textContent = t.name;
+      const desc = document.createElement('span');
+      desc.className = 'enemy-trait__desc';
+      desc.textContent = ` ${t.description}`;
+      text.append(strong, desc);
+      chip.append(icon, text);
+      line.append(chip);
+    }
+    return line;
   }
 
   /** 所持レリックのメダリオン（HPバーの名前の横に表示）。 */

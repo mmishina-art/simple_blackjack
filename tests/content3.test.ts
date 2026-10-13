@@ -148,6 +148,37 @@ describe('第2・第3階層のレリック', () => {
   });
 });
 
+describe('Block を重ねる敵（鋼鉄のゴーレム）', () => {
+  const ig = enemy('iron_golem');
+
+  it('スキルのほとんどが Block を含み、攻撃は Block とセット（壁・盾叩き・鉄塊の一撃）', () => {
+    const skills = Object.values(ig.slots).map((id) => getSkill(id!));
+    const withBlock = skills.filter((s) => s.effects.some((e) => e.type === 'block'));
+    expect(withBlock.length / skills.length).toBeGreaterThan(0.8);
+    expect(getSkill('ig_wall').effects).toEqual([{ type: 'block', amount: 8 }]);
+    expect(getSkill('ig_bash').effects.map((e) => e.type)).toEqual(['attack', 'block']);
+  });
+
+  it('鋼の守り: ラウンドの初めに Block +2。上限 14 を超えない（積み上がって倒せなくならない）', () => {
+    const m = new BattleMachine({ enemy: ig, pace: noWait });
+    m.bus.emit('onRoundStart', { round: 1 });
+    expect(m.ctx.enemy.block).toBe(2);
+    m.ctx.enemy.block = 13;
+    m.bus.emit('onRoundStart', { round: 2 });
+    expect(m.ctx.enemy.block).toBe(14);
+    m.ctx.enemy.block = 25;
+    m.bus.emit('onBlockApplied', { entity: m.ctx.enemy, amount: 10 });
+    expect(m.ctx.enemy.block).toBe(14);
+  });
+
+  it('Block を無視する攻撃（会心の一撃）は、積んだ Block を破壊して、フルダメージが入る', async () => {
+    const m = await playRound({ player: ['A', 'K'], enemyHand: ['9', '7'], enemy: ig, enemyHp: 34 }); // 21 vs 16
+    m.ctx.enemy.block = 0; // （行動順の前に積む Block は、ここでは使わない）
+    expect(getSkill('ace_strike').effects[0]).toMatchObject({ pierce: true });
+    expect(m.ctx.enemy.hp).toBeLessThanOrEqual(34);
+  });
+});
+
 describe('第1〜3階層の敵の特性', () => {
   const env = (id: string) => {
     const m = new BattleMachine({ enemy: enemy(id), pace: noWait });

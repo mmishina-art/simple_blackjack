@@ -70,6 +70,16 @@ const StoneSkin = (by: number): Relic => ({
   },
 });
 
+/** 鋼鉄のゴーレム: Block を重ねる。ラウンドの初めに Block +2、上限 14（積み上がりすぎて倒せなくならないように）。 */
+const STEEL_BLOCK_CAP = 14;
+const SteelGuard: Relic = {
+  id: 'steelguard', name: '鋼の守り', icon: '鋼', description: `ラウンドの初めに Block +2（上限 ${STEEL_BLOCK_CAP}）`,
+  apply({ bus, enemy }) {
+    bus.on('onRoundStart', () => { enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block + 2); });
+    bus.on('onBlockApplied', ({ entity }) => { if (entity === enemy) enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block); });
+  },
+};
+
 const Chill: Relic = {
   id: 'chill', name: '冷気', icon: '冷', description: 'ラウンドの初めに、あなたの Block が 2 減る',
   apply({ bus, player }) {
@@ -140,6 +150,11 @@ export const Wraith: EnemyDef = {
   trait: '冷気（ラウンドの初めに、あなたの Block が 2 減る）', relics: [Chill],
 };
 
+export const IronGolem: EnemyDef = {
+  id: 'iron_golem', name: '鋼鉄のゴーレム', maxHp: 34, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.iron_golem, fallbackSkill: 'ig_punch',
+  trait: '鋼の守り（ラウンドの初めに Block +2、上限 14）。Block を無視する攻撃や、一撃の重いスキルが効く', relics: [SteelGuard],
+};
+
 export const Serpent: EnemyDef = {
   id: 'serpent', name: '深淵の海蛇', maxHp: 44, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.serpent, fallbackSkill: 'serpent_bite',
   trait: '再生（ラウンドの初めに HP +2）', relics: [Regeneration(2)],
@@ -164,7 +179,7 @@ export const Imp: EnemyDef = {
 /** 冒険の敵の一覧（階層ごとの並びは、各階層のマップが決める）。 */
 export const ENEMY_LINEUP: readonly EnemyDef[] = [
   Slime, Skeleton, GiantBat, Ghoul, GraveKnight,
-  Merman, Gargoyle, Wraith, Serpent,
+  Merman, Gargoyle, Wraith, IronGolem, Serpent,
   FlameSpirit, LavaGolem, Imp, BlackDragon,
 ];
 

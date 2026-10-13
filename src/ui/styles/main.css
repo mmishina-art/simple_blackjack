@@ -229,6 +229,20 @@ section { min-width: 0; }
   border: 1px solid var(--gold-dim);
   box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.9);
 }
+.enemy-trait {
+  position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 8px; min-width: 0; padding: 2px 6px;
+  font-size: 12px; color: var(--bone-dim); background: rgba(8, 6, 4, 0.72); border: 1px solid var(--gold-dim); border-radius: 6px;
+}
+.enemy-trait[hidden] { display: none; }
+.enemy-trait__item { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.enemy-trait__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.enemy-trait .medal--sm { width: 20px; height: 20px; font-size: 11px; }
+/* 短い画面（敵の舞台が小さい）では、特性の名前だけを左上に小さく出す（絵を隠さない。説明は長押し・「敵の技」で） */
+@media (max-height: 760px) {
+  .enemy-trait { right: auto; top: 3px; left: 4px; padding: 1px 6px 1px 3px; }
+  .enemy-trait__desc { display: none; }
+}
+.enemy-trait__text strong { color: var(--bone); font-weight: 700; }
 .enemy-backdrop { position: absolute; inset: 0; }
 .enemy-stage[data-stage="2"] .enemy-backdrop { filter: hue-rotate(150deg) saturate(1.1) brightness(0.95); }
 .enemy-stage[data-stage="3"] .enemy-backdrop { filter: hue-rotate(-25deg) saturate(1.5) brightness(1.05); }

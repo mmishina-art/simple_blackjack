@@ -227,9 +227,15 @@ defineSkill({
 });
 atk('imp_hellfire', '地獄の業火', 2, 3, '獄');
 
+// 鋼鉄のゴーレム（Block を多用する敵）。壁で守りを固め、盾で殴り、Block を重ねる
+atk('ig_punch', '鉄の拳', 1, 1, '拳');
+defineSkill({ id: 'ig_wall', name: '鋼の壁', icon: '壁', effects: [{ type: 'block', amount: 8 }] });
+defineSkill({ id: 'ig_bash', name: '盾叩き', icon: '叩', effects: [{ type: 'attack', mult: 1, add: 3 }, { type: 'block', amount: 6 }] });
+defineSkill({ id: 'ig_crush', name: '鉄塊の一撃', icon: '塊', effects: [{ type: 'attack', mult: 1, add: 6 }, { type: 'block', amount: 5 }] });
+
 // 敵のスキルのレア度: 強い技ほど高い（スロット表の色で技の格が分かる）
-assignRarity(['slime_melt', 'skel_slash', 'bat_drain', 'bat_dive', 'ghoul_rend', 'dragon_breath', 'knight_bash', 'merman_rush', 'garg_swoop', 'wraith_drain', 'serpent_coil', 'flame_burst', 'golem_slam', 'imp_hex'], 'rare');
-assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dragon_inferno', 'dragon_apocalypse', 'knight_cleave', 'merman_tide', 'garg_crush', 'wraith_curse', 'wraith_wail', 'serpent_tide', 'serpent_abyss', 'flame_inferno', 'flame_nova', 'golem_eruption', 'imp_siphon', 'imp_hellfire'], 'legend');
+assignRarity(['slime_melt', 'skel_slash', 'bat_drain', 'bat_dive', 'ghoul_rend', 'dragon_breath', 'knight_bash', 'merman_rush', 'garg_swoop', 'ig_bash', 'wraith_drain', 'serpent_coil', 'flame_burst', 'golem_slam', 'imp_hex'], 'rare');
+assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dragon_inferno', 'dragon_apocalypse', 'knight_cleave', 'merman_tide', 'garg_crush', 'wraith_curse', 'wraith_wail', 'serpent_tide', 'serpent_abyss', 'flame_inferno', 'flame_nova', 'golem_eruption', 'imp_siphon', 'imp_hellfire', 'ig_crush'], 'legend');
 
 export const ENEMY_SLOTS = {
   slime: slotsFromRanges([[14, 16, 'slime_acid'], [17, 19, 'slime_melt'], [20, 21, 'slime_engulf']]),
@@ -244,6 +250,7 @@ export const ENEMY_SLOTS = {
   flame: slotsFromRanges([[15, 17, 'flame_burst'], [18, 19, 'flame_inferno'], [20, 21, 'flame_nova']]),
   golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 19, 'golem_slam'], [20, 21, 'golem_eruption']]),
   imp: slotsFromRanges([[15, 17, 'imp_hex'], [18, 19, 'imp_siphon'], [20, 21, 'imp_hellfire']]),
+  iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 21, 'ig_crush']]),
   dragon: slotsFromRanges([
     [13, 17, 'dragon_claw'], [18, 19, 'dragon_breath'], [20, 20, 'dragon_inferno'], [21, 21, 'dragon_apocalypse'],
   ]),

@@ -22,7 +22,7 @@ import { noWait, playRound, WITH_BLOCKS } from './helpers';
 describe('敵', () => {
   it('全員にスプライトがあり、スロットのスキルが全て実在する', () => {
     expect(new Set(ENEMY_LINEUP.map((e) => e.id)).size).toBe(ENEMY_LINEUP.length);
-    expect(ENEMY_LINEUP).toHaveLength(13); // 第1階層 5 / 第2階層 4 / 第3階層 4
+    expect(ENEMY_LINEUP).toHaveLength(14); // 第1階層 5 / 第2階層 4 + 鋼鉄のゴーレム / 第3階層 4
     for (const e of ENEMY_LINEUP) {
       expect(ENEMY_SPRITES[e.id], e.id).toBeTruthy();
       expect(hasSkill(e.fallbackSkill), `${e.id} fallback`).toBe(true);
@@ -85,8 +85,8 @@ describe('階層の構成', () => {
   it('階層ごとの敵: 第1階層は 5 種、第2階層は魚人・ガーゴイル・亡霊・海蛇、第3階層は精霊・ゴーレム・悪魔・黒竜', () => {
     const ids = (m: (typeof STAGES)[number]) => new Set(Object.values(m.tiles).flatMap((t) => (t.enemyId ? [t.enemyId] : [])));
     expect(ids(STAGES[0])).toEqual(new Set(['slime', 'skeleton', 'bat', 'ghoul', 'knight']));
-    expect(ids(STAGES[1])).toEqual(new Set(['merman', 'gargoyle', 'wraith', 'serpent']));
-    expect(ids(STAGES[2])).toEqual(new Set(['flame', 'golem', 'imp', 'dragon']));
+    expect(ids(STAGES[1])).toEqual(new Set(['merman', 'gargoyle', 'wraith', 'iron_golem', 'serpent']));
+    expect(ids(STAGES[2])).toEqual(new Set(['flame', 'golem', 'imp', 'iron_golem', 'dragon']));
   });
 
   it('次の階層へ: 最大 HP が +10、HP が最大の7割（+10 の分も）回復し、位置・済みのマスが新しい階層になる。最後の階層では進めない', () => {

@@ -22,7 +22,7 @@ describe('スロット表に出すスロット（敵の個性）', () => {
     const lefts = Object.fromEntries(ENEMY_LINEUP.map((e) => [e.id, gaugeKeys(e.ai.standOn)[0]]));
     expect(lefts).toEqual({
       slime: 14, skeleton: 15, bat: 18, ghoul: 16, knight: 17,
-      merman: 15, gargoyle: 16, wraith: 16, serpent: 18,
+      merman: 15, gargoyle: 16, wraith: 16, iron_golem: 15, serpent: 18,
       flame: 17, golem: 15, imp: 17, dragon: 18,
     }); // 弱い敵ほど低い合計で止まり、強い敵ほど高い合計まで引く
     expect(new DealerAI(15).standOn).toBe(15);
