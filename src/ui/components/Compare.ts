@@ -53,8 +53,8 @@ export function buildSlotCompare(before: SlotPreview, after: SlotPreview): HTMLE
   const tagOf = (p: SlotPreview): string => (p.id ? kindTag(getSkill(p.id)) : '');
   const note = before.id ? `「${before.name}」は失われる（上書き。道具袋には戻らない）` : undefined;
   return wrap(
-    side('いま', before.name, before.icon, before.id ? medalKindClass(before.kind) : '', tagOf(before), before.short),
-    side('セット後', after.name, after.icon, after.id ? medalKindClass(after.kind) : '', tagOf(after), after.short, true),
+    side('いま', before.name, before.icon, before.id ? medalKindClass(before.kind) : ' medal--basic', tagOf(before), before.short),
+    side('セット後', after.name, after.icon, after.id ? medalKindClass(after.kind) : ' medal--basic', tagOf(after), after.short, true),
     diffLines(before.totals, after.totals),
     note,
   );
