@@ -58,15 +58,13 @@ export const ACE_STRIKE_ID: SkillId = defineSkill({
 }).id;
 /**
  * 祠のバージョンアップで、会心の一撃が育つ系統（報酬には出ない。固定スロット 21 のまま）。一撃必殺のイメージで、効果は攻撃だけ（ブロックを無視して破壊する）。
- * 会心の一撃（コモン POW×1.5）→ 覇王の一撃（レア ×2）→ 覇王の裁き（レジェンド ×3）→ 天覇の一撃（×4）→ 終焉の一撃（×5）。
+ * 会心の一撃（コモン POW×1.5）→ 覇王の一撃（レア ×2）→ 終焉の一撃（レジェンド ×4）。
  */
 const overlord = (id: string, name: string, icon: string, mult: number): void => {
   defineSkill({ id, name, icon, effects: [{ type: 'attack', mult, pierce: true }] });
 };
 overlord('overlord_strike', '覇王の一撃', '覇', 2);
-overlord('overlord_judge', '覇王の裁き', '裁', 3);
-overlord('heaven_strike', '天覇の一撃', '天', 4);
-overlord('final_strike', '終焉の一撃', '終', 5);
+overlord('final_strike', '終焉の一撃', '終', 4);
 
 // ---- 道具: 効果は基本パワー（POW）に関係なく固定（低いスロットでも、同じだけ効く）。レリックで強化できるものもある ----
 const item = (id: string, name: string, icon: string, effect: SkillDef['effects'][number]): SkillDef =>
@@ -99,20 +97,20 @@ defineSkill({
   id: 'siphon', name: '吸魂', icon: '魂',
   effects: [{ type: 'attack', mult: 1.5, add: 3 }, { type: 'heal', mult: 0.5, amount: 5 }],
 });
-assignRarity(['smash', 'overlord_judge', 'heaven_strike', 'final_strike', 'fortress', 'aegis', 'siphon', 'guard_mail', 'mithril_mail', 'impale', 'rampage', 'miracle', 'flurry', 'elixir'], 'legend');
+assignRarity(['smash', 'final_strike', 'fortress', 'aegis', 'siphon', 'guard_mail', 'mithril_mail', 'impale', 'rampage', 'miracle', 'flurry', 'elixir'], 'legend');
 
-/** 祠のバージョンアップ先。コモン→レア、レア→レジェンド。道具は強化できない。会心の一撃の系統だけは、レジェンドの中でさらに 2 段育つ。 */
+/** 祠のバージョンアップ先。コモン→レア、レア→レジェンド。道具は強化できない。会心の一撃の系統は、固定スロット 21 のまま、2 段育つ。 */
 const UPGRADES: Record<SkillId, SkillId> = {
   jab: 'big_attack', slash: 'heavy', big_attack: 'smash', heavy: 'smash',
   guard: 'bulwark', shield: 'bulwark', bulwark: 'fortress',
-  ace_strike: 'overlord_strike', overlord_strike: 'overlord_judge', overlord_judge: 'heaven_strike', heaven_strike: 'final_strike', rally: 'shield_bash', shield_bash: 'aegis', drain: 'siphon',
+  ace_strike: 'overlord_strike', overlord_strike: 'final_strike', rally: 'shield_bash', shield_bash: 'aegis', drain: 'siphon',
   lunge: 'pierce_stab', pierce_stab: 'impale', chop: 'berserk', berserk: 'rampage',
   mend: 'holy_light', holy_light: 'miracle', twin_strike: 'flurry',
 };
 for (const [from, to] of Object.entries(UPGRADES)) getSkill(from).upgradesTo = to;
 
 /** 報酬には出ず、バージョンアップでだけ手に入るスキル（図鑑には載る）。 */
-export const UPGRADE_ONLY_SKILLS: readonly SkillId[] = ['overlord_strike', 'overlord_judge', 'heaven_strike', 'final_strike'];
+export const UPGRADE_ONLY_SKILLS: readonly SkillId[] = ['overlord_strike', 'final_strike'];
 
 /** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。基本パワーが基準で、スロットが高いほど強い。 */
 export const SKILL_POOL: readonly SkillId[] = [

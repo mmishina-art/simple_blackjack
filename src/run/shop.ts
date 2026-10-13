@@ -112,13 +112,9 @@ export function sellFromInventory(run: RunState, id: SkillId): number | null {
   return gold;
 }
 
-/** 同じレア度どうしの段（レジェンドの中で育つ会心の一撃の系統）の、バージョンアップの代金。 */
-export const SAME_RARITY_UPGRADE_COST = 60;
-
-/** 祠のバージョンアップの代金: 強化先と今のスキルの買値の差（コモン→レア 40 G、レア→レジェンド 80 G。同じレア度の段は 60 G）。強化先がなければ null。 */
+/** 祠のバージョンアップの代金: 強化先と今のスキルの買値の差（コモン→レア 40 G、レア→レジェンド 80 G）。強化先がなければ null。 */
 export function upgradeCost(id: SkillId): number | null {
   const to = getSkill(id).upgradesTo;
   if (!to) return null;
-  const diff = priceOfSkill(to) - priceOfSkill(id);
-  return diff > 0 ? diff : SAME_RARITY_UPGRADE_COST;
+  return priceOfSkill(to) - priceOfSkill(id);
 }

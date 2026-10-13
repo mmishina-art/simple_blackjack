@@ -411,18 +411,18 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.block).toBe(0); // ブロックの効果はない
   });
 
-  it('祠のバージョンアップ: 固定スロット 21 の会心の一撃は、覇王の一撃 → 覇王の裁き → 天覇の一撃 → 終焉の一撃と育つ（入れ替え・上書きはできないまま）', () => {
+  it('祠のバージョンアップ: 固定スロット 21 の会心の一撃は、覇王の一撃 → 終焉の一撃と育つ（入れ替え・上書きはできないまま）', () => {
     const run = createRun();
     expect(run.slots[21]).toBe('ace_strike');
     expect(canUpgradeSlot(run, 21)).toBe(true);
-    const chain = ['overlord_strike', 'overlord_judge', 'heaven_strike', 'final_strike'];
+    const chain = ['overlord_strike', 'final_strike'];
     for (const id of chain) expect(upgradeSlot(run, 21)).toBe(id);
     expect(run.slots[21]).toBe('final_strike');
     expect(canUpgradeSlot(run, 21)).toBe(false); // もう上はない
-    // レア度: 会心の一撃（コモン）→ 覇王の一撃（レア）→ あとはレジェンド
-    expect(['ace_strike', ...chain].map((id) => rarityOfSkill(getSkill(id)))).toEqual(['common', 'rare', 'legend', 'legend', 'legend']);
-    // 代金: コモン→レア 40 G、レア→レジェンド 80 G、同じレア度の段は 60 G
-    expect(['ace_strike', ...chain.slice(0, 3)].map((id) => upgradeCost(id))).toEqual([40, 80, 60, 60]);
+    // レア度: 会心の一撃（コモン）→ 覇王の一撃（レア）→ 終焉の一撃（レジェンド）
+    expect(['ace_strike', ...chain].map((id) => rarityOfSkill(getSkill(id)))).toEqual(['common', 'rare', 'legend']);
+    // 代金: コモン→レア 40 G、レア→レジェンド 80 G
+    expect(['ace_strike', 'overlord_strike'].map((id) => upgradeCost(id))).toEqual([40, 80]);
     expect(swapSlots(run, 21, 20)).toBe(false); // 固定スロットは、動かせないまま
     expect(canUpgradeSlot(run, 11)).toBe(false); // 11以下（小攻撃）には強化先がない
   });
