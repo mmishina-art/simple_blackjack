@@ -1,5 +1,5 @@
 import { Hand } from '../cards/Hand';
-import { BASIC_ATTACK_ID, START_ATTACK } from '../skills/catalog';
+import { BASIC_ATTACK_ID, slotAttack, START_ATTACK } from '../skills/catalog';
 import type { SkillId, SlotTable } from '../skills/Skill';
 
 export type EntityId = 'player' | 'enemy';
@@ -22,6 +22,17 @@ export class Entity {
     public attack = START_ATTACK,
   ) {
     this.hp = maxHp;
+  }
+
+  /**
+   * true なら、基本攻撃力が発動するスロットで変わる（プレイヤー）: 11以下=1、スロットが上がるごとに +1。attack の強化分は、その上に足す。
+   * false なら attack で固定（敵）。
+   */
+  scaleAttackBySlot = false;
+
+  /** 合計値 total のスロットで発動するスキルの基本攻撃力。 */
+  attackAt(total: number): number {
+    return this.scaleAttackBySlot ? slotAttack(this.attack, total) : this.attack;
   }
 
   get isDead(): boolean {

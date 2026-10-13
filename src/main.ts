@@ -2,7 +2,8 @@ import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { customCount, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
-import { describeSkill, getSkill, rarityOfSkill } from './core/skills/Skill';
+import { slotAttack } from './core/skills/catalog';
+import { describeSkillRange, getSkill, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { resolveShrine, useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
@@ -182,7 +183,7 @@ function offerSkillReward(): void {
   showChoiceScreen(root, {
     heading: 'スキル獲得',
     sub: 'ひとつ選び、スロットにセットする',
-    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkill(getSkill(id), run.baseAttack) })),
+    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkillRange(getSkill(id), slotAttack(run.baseAttack, 12), slotAttack(run.baseAttack, 20)) })),
     onPick(i) {
       run.inventory.push(ids[i]);
       syncCodex();

@@ -1,5 +1,5 @@
 import { audio } from '../audio/AudioManager';
-import { DEFAULT_PLAYER_FALLBACK, START_ATTACK } from '../core/skills/catalog';
+import { DEFAULT_PLAYER_FALLBACK, slotAttack, START_ATTACK } from '../core/skills/catalog';
 import { SKILL_POOL } from '../core/skills/catalog';
 import { describeSkill, getSkill, rarityOfSkill, slotLabel } from '../core/skills/Skill';
 import {
@@ -109,7 +109,8 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
  *  - 11以下と 21 は固定。初期装備（15・18・20）も置き換えられ、「初期装備に戻す」で元に戻せる
  */
 export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void, onBack: () => void): void {
-  const atk = START_ATTACK + computeBonus(meta).attack;
+  const baseAtk = START_ATTACK + computeBonus(meta).attack;
+  const atkAt = (key: number): number => slotAttack(baseAtk, key); // 基本攻撃力はスロットごとに変わる
   const fallback = getSkill(DEFAULT_PLAYER_FALLBACK);
 
   const render = (): void => {
@@ -132,7 +133,7 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
       list.append(buildSlotRow({
         key: slot.key,
         skill: slot.effectiveId ? getSkill(slot.effectiveId) : null,
-        fallback, atk,
+        fallback, atk: atkAt(slot.key),
         locked: !slot.editable,
         tag: slot.customId ? '変更' : slot.defaultId && slot.editable ? '初期' : undefined,
         tagTone: slot.customId ? 'custom' : undefined,
@@ -166,7 +167,7 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
       options.push({
         kind: 'reset', icon: '戻',
         name: def ? `初期装備に戻す（${def.name}）` : '空きに戻す（通常攻撃）',
-        detail: def ? describeSkill(def, atk) : '何も装備しない',
+        detail: def ? describeSkill(def, atkAt(slot.key)) : '何も装備しない',
         onPick() {
           setStartingSkill(meta, slot.key, null);
           saveMeta(meta);
@@ -180,7 +181,7 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
       const isCurrent = slot.effectiveId === id;
       options.push({
         icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill),
-        detail: describeSkill(skill, atk),
+        detail: describeSkill(skill, atkAt(slot.key)),
         badge: isCurrent ? '現在' : elsewhere.length ? `${elsewhere.map(slotLabel).join('・')} に配置中` : undefined,
         disabled: !slot.canChange || isCurrent,
         onPick() {
@@ -194,7 +195,7 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
     const state = slot.customId ? '変更済み' : slot.defaultId ? '初期装備' : '空き';
     openSheet({
       title: `${slotLabel(slot.key)} のスロット`,
-      subtitle: `いま: ${current ? `${current.name}（${describeSkill(current, atk)}）` : '通常攻撃'}　[${state}]`,
+      subtitle: `いま: ${current ? `${current.name}（${describeSkill(current, atkAt(slot.key))}）` : '通常攻撃'}　[${state}]`,
       notice: slot.canChange ? undefined
         : `装備を変えられる数がいっぱい（${used} / ${capacity}）。別のスロットを「初期装備に戻す」と空きます。祭壇の「初期装備枠」でも増やせます。`,
       options,

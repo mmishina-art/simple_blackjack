@@ -1,5 +1,6 @@
 import { audio } from '../audio/AudioManager';
-import { describeSkill, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
+import { slotAttack } from '../core/skills/catalog';
+import { describeSkill, describeSkillRange, getSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { inventoryEntries } from '../run/loadout';
 import { equipSkill, isSlotLocked, unequipSlot, type RunState } from '../run/Run';
@@ -30,7 +31,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const head = document.createElement('header');
     head.className = 'loadout__head';
     head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__atk">基本攻撃力 ATK ${run.baseAttack}</p>
+      <p class="loadout__atk">基本攻撃力 ATK ${slotAttack(run.baseAttack, 11)}〜${slotAttack(run.baseAttack, 21)}（スロットが高いほど強い）</p>
       <p class="loadout__hint">${armed ? '置きたいスロットをタップ' : '変えたいスロットをタップして、持ち物のスキルを置く'}</p>`;
     screen.append(head);
 
@@ -39,7 +40,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const banner = document.createElement('div');
       banner.className = `armed ${rarityClass(rarityOfSkill(skill))}`;
       banner.innerHTML = `<span class="medal">${skill.icon}</span>
-        <span class="armed__text"><strong>${skill.name} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkill(skill, run.baseAttack)}</span></span>`;
+        <span class="armed__text"><strong>${skill.name} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillRange(skill, slotAttack(run.baseAttack, 12), slotAttack(run.baseAttack, 20))}</span></span>`;
       screen.append(banner);
     }
 
@@ -55,7 +56,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         key,
         skill: id ? getSkill(id) : null,
         fallback: getSkill(run.fallbackSkill),
-        atk: run.baseAttack,
+        atk: slotAttack(run.baseAttack, key),
         locked,
         effective: effective.get(key),
         target: !!armed && !locked,
@@ -85,7 +86,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const skill = getSkill(e.id);
       const chip = document.createElement('div');
       chip.className = `chip chip--static ${rarityClass(rarityOfSkill(skill))}`;
-      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkill(skill, run.baseAttack)}</small></span>`;
+      chip.innerHTML = `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillRange(skill, slotAttack(run.baseAttack, 12), slotAttack(run.baseAttack, 20))}</small></span>`;
       chips.append(chip);
     }
     inv.append(chips);
@@ -121,7 +122,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const skill = getSkill(e.id);
       options.push({
         icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill),
-        detail: describeSkill(skill, run.baseAttack),
+        detail: describeSkill(skill, slotAttack(run.baseAttack, key)),
         badge: e.count > 1 ? `×${e.count}` : undefined,
         note: current ? `いまの「${current.name}」と入れ替える` : undefined,
         onPick() { if (equipSkill(run, key, e.id)) render(); },
@@ -129,7 +130,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     }
     openSheet({
       title: `${slotLabel(key)} のスロット`,
-      subtitle: current ? `いま: ${current.name}（${describeSkill(current, run.baseAttack)}）` : 'いま: 通常攻撃（空き）',
+      subtitle: current ? `いま: ${current.name}（${describeSkill(current, slotAttack(run.baseAttack, key))}）` : 'いま: 通常攻撃（空き）',
       options,
       empty: '置けるスキルがない。敵を倒すとスキルが手に入る。',
     });

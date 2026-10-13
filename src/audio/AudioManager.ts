@@ -1,5 +1,5 @@
 export type SfxName =
-  | 'click' | 'deal' | 'flip' | 'block' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
+  | 'click' | 'deal' | 'flip' | 'block' | 'break' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
 
 const STORAGE_KEY = 'bj-muted';
 
@@ -187,6 +187,13 @@ export class AudioManager {
         this.bell(1175, t + 0.01, 0.42, 0.2);
         this.bell(1760, t + 0.07, 0.3, 0.1);
         this.sweepNoise(t, 0.12, 900, 3200, 0.07, 0.02);
+        break;
+      case 'break':
+        // 会心の一撃が Block を破壊した: ガラスが割れるような、高い破片の音と、低い衝撃
+        this.noise(t, 0.07, 5200, 0.4);
+        this.tone(1900, t, 0.18, 'sine', 0.25, 500);
+        this.bell(1400, t + 0.02, 0.25, 0.14);
+        this.tone(140, t, 0.12, 'sine', 0.35, 70);
         break;
       case 'guard':
         // Block が攻撃を防いだ: 短く硬い「ガキン」（Block を得る音とは別。鋭く、余韻は短い）

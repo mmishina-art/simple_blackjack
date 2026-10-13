@@ -23,11 +23,10 @@ export class FirstActionState implements BattleState {
 
     if (turn.mode === 'simultaneous') {
       const plan = [player, enemy].map((user) => ({ user, target: user === player ? enemy : player, skill: declare(user) }));
-      for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'block');
-      for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'heal');
-      await ctx.wait(PACE.block);
-      for (const { user, target, skill } of plan) if (skill) applyEffects(ctx, user, target, skill, 'attack');
-      await ctx.wait(PACE.action);
+      await ctx.wait(PACE.declare);
+      for (const { user, target, skill } of plan) if (skill) await applyEffects(ctx, user, target, skill, 'block');
+      for (const { user, target, skill } of plan) if (skill) await applyEffects(ctx, user, target, skill, 'heal');
+      for (const { user, target, skill } of plan) if (skill) await applyEffects(ctx, user, target, skill, 'attack');
       return 'CheckDeath';
     }
 
@@ -37,18 +36,17 @@ export class FirstActionState implements BattleState {
 
     // 単独行動（バースト・サレンダー）: そのままの順序で処理
     if (!turn.second) {
-      if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'all');
-      await ctx.wait(PACE.action);
+      await ctx.wait(PACE.declare);
+      if (firstSkill) await applyEffects(ctx, first, other, firstSkill, 'all');
       return 'CheckDeath';
     }
 
-    // 通常: 後攻のスキルも宣言し、両者の Block を先に付与する
+    // 通常: 後攻のスキルも宣言し、両者の Block を先に付与する（効果は1つずつ、間をあけて見せる）
     const secondSkill = declare(other);
-    if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'block');
-    if (secondSkill) applyEffects(ctx, other, first, secondSkill, 'block');
-    await ctx.wait(PACE.block);
-    if (firstSkill) applyEffects(ctx, first, other, firstSkill, 'rest');
-    await ctx.wait(PACE.action);
+    await ctx.wait(PACE.declare);
+    if (firstSkill) await applyEffects(ctx, first, other, firstSkill, 'block');
+    if (secondSkill) await applyEffects(ctx, other, first, secondSkill, 'block');
+    if (firstSkill) await applyEffects(ctx, first, other, firstSkill, 'rest');
     return 'SurvivalCheck';
   }
 }
@@ -72,12 +70,12 @@ export class SecondActionState implements BattleState {
     if (second.id in ctx.plan) {
       // Block は先攻の行動前に付与済み。残り（攻撃・回復）をここで処理する
       const skill = ctx.plan[second.id];
-      if (skill) applyEffects(ctx, second, other, skill, 'rest');
+      if (skill) await applyEffects(ctx, second, other, skill, 'rest');
     } else {
       const skill = activateSkill(ctx, second, skillForTotal(second, second.hand.total(ctx.rules)));
-      if (skill) applyEffects(ctx, second, other, skill, 'all');
+      await ctx.wait(PACE.declare);
+      if (skill) await applyEffects(ctx, second, other, skill, 'all');
     }
-    await ctx.wait(PACE.action);
     return 'CheckDeath';
   }
 }

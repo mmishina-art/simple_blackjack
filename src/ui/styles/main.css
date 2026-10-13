@@ -267,6 +267,10 @@ section { min-width: 0; }
 }
 .float--damage { color: #e8b24a; }
 .player-area .float--damage { color: var(--blood-hi); }
+.float--block { color: #8cc4f5; }
+.float--heal { color: #8ee0a0; }
+/* スキル名は、数字より小さく、少し下に出る */
+.float--skill { top: 58%; font-family: var(--font-body); font-size: 20px; font-weight: 800; letter-spacing: 0.08em; color: var(--gold); white-space: nowrap; }
 @keyframes floatUp {
   0% { transform: translate(-50%, 10px) scale(0.6); opacity: 0; }
   20% { transform: translate(-50%, -6px) scale(1.2); opacity: 1; }
@@ -979,3 +983,38 @@ section { min-width: 0; }
 .history__list p { margin: 0; }
 .history__list p:last-child { color: var(--bone); font-weight: 700; }
 .history__list .history__round { margin-top: 6px; color: var(--gold); font-size: 12px; letter-spacing: 0.2em; }
+
+/* ---- 効果の画面演出（Block・回復・防御）。その場が光る ---- */
+.fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; }
+.fx--block {
+  background: radial-gradient(ellipse at center, rgba(140, 196, 245, 0.5), rgba(70, 130, 220, 0.16) 55%, transparent 78%);
+  box-shadow: inset 0 0 26px rgba(140, 196, 245, 0.85);
+  animation: fxPulse 0.8s ease-out forwards;
+}
+.fx--heal {
+  background: radial-gradient(ellipse at 50% 100%, rgba(120, 230, 150, 0.5), transparent 72%);
+  box-shadow: inset 0 0 26px rgba(142, 224, 160, 0.75);
+  animation: fxPulse 0.9s ease-out forwards;
+}
+.fx--heal::before { /* 立ちのぼる粒 */
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle 3px at 20% 80%, #c8ffd8, transparent), radial-gradient(circle 2px at 40% 90%, #c8ffd8, transparent),
+    radial-gradient(circle 3px at 60% 85%, #c8ffd8, transparent), radial-gradient(circle 2px at 78% 92%, #c8ffd8, transparent),
+    radial-gradient(circle 2px at 90% 80%, #c8ffd8, transparent);
+  animation: fxRise 0.9s ease-out forwards;
+}
+.fx--guard {
+  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.75), rgba(160, 205, 250, 0.32) 32%, transparent 60%);
+  animation: fxBurst 0.5s ease-out forwards;
+}
+.fx--break {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 244, 200, 0.9), rgba(255, 170, 70, 0.45) 30%, transparent 62%),
+    repeating-conic-gradient(from 8deg at 50% 45%, rgba(255, 200, 110, 0.55) 0 4deg, transparent 4deg 22deg);
+  animation: fxBurst 0.6s ease-out forwards;
+}
+@keyframes fxPulse { 0% { opacity: 0; transform: scale(0.96); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.03); } }
+@keyframes fxRise { 0% { opacity: 1; transform: translateY(14px); } 100% { opacity: 0; transform: translateY(-34px); } }
+@keyframes fxBurst { 0% { opacity: 0; transform: scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) { .fx, .fx::before { animation: none; opacity: 0.55; } }

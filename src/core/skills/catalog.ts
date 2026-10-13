@@ -1,43 +1,47 @@
 import { assignRarity, defineSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
 
-/** 基本攻撃力（ATK）基準の攻撃スキル: ダメージ = floor(ATK × mult) + add */
+/**
+ * 基本攻撃力（ATK）基準のスキル。攻撃: floor(ATK × mult) + add / Block・回復: floor(ATK × mult) + amount。
+ * プレイヤーの ATK は発動するスロットで変わる（11以下=1、+1ずつ）ので、合計値が高いほど強い。
+ * 上位のスキルほど、固定の上乗せが大きい（コモン +0〜3 / レア +5 / レジェンド +10 が目安）。
+ */
 const atk = (id: string, name: string, mult: number, add = 0, icon = '攻'): SkillDef =>
   defineSkill({ id, name, icon, effects: [{ type: 'attack', mult, add }] });
 
 // ---- プレイヤーのスキル ----
 export const BASIC_ATTACK_ID: SkillId = atk('basic_attack', '通常攻撃', 1, 0, '攻').id;
 atk('small_attack', '小攻撃', 0.5, 0, '小');
-atk('big_attack', '大攻撃', 1, 5, '大');
-atk('jab', '突き', 1, 1, '突');
-atk('slash', '斬撃', 1, 3, '斬');
-atk('heavy', '重撃', 2, 1, '重');
-atk('smash', '渾身の一撃', 3, 0, '渾');
-defineSkill({ id: 'guard', name: 'シールド', icon: '守', effects: [{ type: 'block', amount: 6 }] });
-defineSkill({ id: 'bulwark', name: '鉄壁の構え', icon: '壁', effects: [{ type: 'block', amount: 10 }] });
-defineSkill({ id: 'shield', name: '盾', icon: '盾', effects: [{ type: 'block', amount: 8 }] });
-defineSkill({ id: 'recover', name: '治癒', icon: '治', effects: [{ type: 'heal', amount: 10 }] });
+atk('jab', '突き', 1, 1, '突');          // コモン: ATK+1
+atk('slash', '斬撃', 1, 3, '斬');        // コモン: ATK+3
+atk('big_attack', '大攻撃', 1, 5, '大'); // レア: ATK+5
+atk('heavy', '重撃', 1.5, 3, '重');      // レア: ATK×1.5+3
+atk('smash', '渾身の一撃', 2, 5, '渾');  // レジェンド: ATK×2+5
+defineSkill({ id: 'guard', name: 'シールド', icon: '守', effects: [{ type: 'block', mult: 1, amount: 1 }] });   // コモン: ATK+1
+defineSkill({ id: 'shield', name: '盾', icon: '盾', effects: [{ type: 'block', mult: 1, amount: 3 }] });       // コモン: ATK+3
+defineSkill({ id: 'bulwark', name: '鉄壁の構え', icon: '壁', effects: [{ type: 'block', mult: 1, amount: 5 }] }); // レア: ATK+5
+defineSkill({ id: 'recover', name: '治癒', icon: '治', effects: [{ type: 'heal', mult: 1, amount: 3 }] });     // コモン: ATK+3
 defineSkill({
   id: 'shield_bash', name: '盾打ち', icon: '殴',
-  effects: [{ type: 'attack', mult: 1 }, { type: 'block', amount: 5 }],
+  effects: [{ type: 'attack', mult: 1 }, { type: 'block', mult: 1, amount: 0 }],
 });
 defineSkill({
   id: 'drain', name: '吸精', icon: '吸',
-  effects: [{ type: 'attack', mult: 1, add: 1 }, { type: 'heal', amount: 4 }],
+  effects: [{ type: 'attack', mult: 1, add: 1 }, { type: 'heal', mult: 0.5, amount: 2 }],
 });
 defineSkill({
   id: 'rally', name: '鼓舞', icon: '鼓',
-  effects: [{ type: 'block', amount: 5 }, { type: 'heal', amount: 4 }],
+  effects: [{ type: 'block', mult: 1, amount: 0 }, { type: 'heal', mult: 0.5, amount: 2 }],
 });
 
-/** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。 */
+/** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。ATK×1.5。相手の Block を無視して破壊する。 */
 export const ACE_STRIKE_ID: SkillId = defineSkill({
   id: 'ace_strike', name: '会心の一撃', icon: '会',
-  effects: [{ type: 'attack', mult: 3 }],
+  effects: [{ type: 'attack', mult: 1.5, pierce: true }], // Block を無視して破壊する（ほかの攻撃との違い）
 }).id;
-/** 覇王の宝珠で会心の一撃が置き換わるスキル。 */
+/** 覇王の宝珠で会心の一撃が置き換わるスキル。会心の一撃の 1.5 倍が 2 倍になり、Block も付く。 */
 defineSkill({
   id: 'overlord_strike', name: '覇王の一撃', icon: '覇',
-  effects: [{ type: 'attack', mult: 4 }, { type: 'block', amount: 8 }],
+  effects: [{ type: 'attack', mult: 2, pierce: true }, { type: 'block', amount: 8 }],
 });
 
 assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike'], 'rare');
@@ -59,6 +63,15 @@ export const DEFAULT_PLAYER_SLOTS: SlotTable = {
 };
 /** プレイヤーの初期の基本攻撃力。 */
 export const START_ATTACK = 5;
+
+/**
+ * プレイヤーの基本攻撃力は、攻撃スキルが発動するスロットで変わる: 11以下=1、スロットが1上がるごとに +1（21=11）。
+ * attack は「START_ATTACK + 強化（祭壇・砥石・祠）」で、強化はどのスロットにも同じだけ足される
+ * （標準の attack=5 のとき、スロット15の攻撃力が 5 で、従来の固定値と同じ）。
+ */
+export function slotAttack(attack: number, key: number): number {
+  return attack - START_ATTACK + (Math.max(11, Math.min(key, 21)) - 10);
+}
 export const DEFAULT_PLAYER_FALLBACK: SkillId = BASIC_ATTACK_ID;
 
 // ---- 敵 ----
