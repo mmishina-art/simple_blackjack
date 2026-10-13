@@ -860,6 +860,26 @@ section { min-width: 0; }
 .battle .enemy-stage { flex: 1 1 auto; height: auto; min-height: 120px; contain: size; }
 .battle .enemy-sprite { height: 92%; max-height: 170px; width: auto; aspect-ratio: 4 / 3; }
 
+/* ---- いま発動するスキルの大きな表示（スロット表の下）: アイコン・名前・効果の数値 ---- */
+.battle .slots__caption { min-height: 46px; display: flex; align-items: center; }
+.slots__caption--callout { gap: 8px; padding: 0 2px; color: var(--bone); }
+.battle .callout__icon { width: 36px; height: 36px; font-size: 18px; }
+.callout__name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--font-body); font-size: 20px; font-weight: 800; letter-spacing: 0.06em; color: var(--gold);
+}
+.callout__fx { flex: none; display: inline-flex; align-items: baseline; gap: 2px; white-space: nowrap; }
+.callout__fx b { font-family: var(--font-display); font-size: 26px; font-weight: 900; line-height: 1; }
+.callout__fx small { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+.callout__note { margin-left: 4px; font-size: 10px; color: var(--bone-dim); }
+.callout__fx--attack { color: #ffa27e; }
+.callout__fx--heal { color: #8ee0a0; }
+.callout__fx--block { color: #8cc4f5; }
+.is-fizzle .callout__name { color: var(--bone-dim); }
+.slots__caption--callout.is-pop { animation: calloutPop 0.28s ease-out; }
+@keyframes calloutPop { 0% { transform: translateY(3px) scale(0.97); opacity: 0.4; } 100% { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .slots__caption--callout.is-pop { animation: none; } }
+
 /* ---- 短い画面の戦闘画面（iPhone SE など） ----
    戦闘画面は1画面に収める（Hit / Stand のボタンが画面の外に出ると押せない）。ところが高さが約 850px 以下だと、
    ログ欄が潰れてプレイヤー欄と重なり、さらに低いと（iPhone SE など）下のボタンが画面の外に出ていた。
@@ -874,7 +894,10 @@ section { min-width: 0; }
   .battle .enemy-stage { min-height: 84px; }
   .battle .hand { min-height: 64px; }
   .battle .card { width: 44px; height: 64px; }
-  .battle .slots__caption { min-height: 1.4em; }
+  .battle .slots__caption { min-height: 40px; }
+  .battle .callout__icon { width: 32px; height: 32px; font-size: 16px; }
+  .battle .callout__name { font-size: 18px; }
+  .battle .callout__fx b { font-size: 22px; }
   .battle .actions { gap: 10px; }
   .battle .actions .btn { min-height: 60px; }
   .battle .actions .btn--surrender { min-height: 46px; }
@@ -887,7 +910,10 @@ section { min-width: 0; }
   .battle .hpbar__row { margin-bottom: 2px; }
   .battle .hpbar__track { height: 10px; }
   .battle .slot { padding: 2px 0 1px; }
-  .battle .slots__caption { min-height: 1.3em; font-size: 11px; line-height: 1.3; }
+  .battle .slots__caption { min-height: 30px; font-size: 11px; line-height: 1.3; }
+  .battle .callout__icon { width: 26px; height: 26px; font-size: 13px; }
+  .battle .callout__name { font-size: 15px; }
+  .battle .callout__fx b { font-size: 17px; }
   .battle .enemy-stage { min-height: 76px; }
   .battle .hand { min-height: 58px; }
   .battle .card { width: 40px; height: 58px; }

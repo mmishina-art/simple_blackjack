@@ -18,6 +18,7 @@ export class SurrenderState implements BattleState {
     const gained = Math.max(0, Math.floor(amount));
     player.block += gained;
     ctx.log(`${player.name}は Block を ${gained} 得た`);
+    ctx.bus.emit('onBlockApplied', { entity: player, amount: gained });
     ctx.notify();
     await ctx.wait(PACE.surrender);
     return 'Initiative';

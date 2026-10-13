@@ -6,6 +6,7 @@ import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, slotKeyOf, slotLabe
 import { slotLook } from '../../core/skills/look';
 import { rarityClass } from '../rarity';
 import { gaugeKeys, gaugeState } from '../slotGauge';
+import { fxChips, type Callout } from '../callout';
 
 /**
  * 合計値スロット表と、現在の合計値で発動するスキルの表示。プレイヤーと敵の両方で使う。
@@ -18,6 +19,7 @@ export class SlotStrip {
   private cells = new Map<SlotKey, HTMLElement>();
   private keys: SlotKey[];
   private caption = document.createElement('div');
+  private calloutKey = '';
 
   constructor(minTotal?: number) {
     this.keys = gaugeKeys(minTotal);
@@ -37,11 +39,11 @@ export class SlotStrip {
   }
 
   /**
-   * preview: 現在の合計値で発動するスキルの予測テキスト（レリック補正込み）。
+   * callout: いま発動するスキルの大きな表示（名前・アイコン・効果の数値。レリック補正込みの予測）。
    * totalHidden: 手札が伏せられていて合計値が分からない（敵の行動前）。
    * effects: スロットごとの効果の予測（レリック・特性・相手のバーストを反映）。
    */
-  update(entity: Entity, rules: RuleSet, preview?: string, totalHidden = false, effects?: ReadonlyMap<SlotKey, readonly PreviewPart[]>): void {
+  update(entity: Entity, rules: RuleSet, callout?: Callout | null, totalHidden = false, effects?: ReadonlyMap<SlotKey, readonly PreviewPart[]>): void {
     const size = entity.hand.size;
     const total = entity.hand.total(rules);
     const known = size > 0 && !totalHidden;
@@ -70,16 +72,63 @@ export class SlotStrip {
         : `${fallbackLabel(fallback)}（空きスロット・${describeSkill(fallback, entity.attack)}）`;
     }
 
-    if (size === 0) this.caption.textContent = '';
-    else if (totalHidden) this.caption.textContent = '最後の1枚が伏せられている（合計は不明）';
-    else if (bust) this.caption.textContent = `バースト！ ${bustPenaltyText(rules)}`;
+    const text = (s: string) => {
+      this.caption.className = 'slots__caption';
+      this.caption.textContent = s;
+      this.calloutKey = '';
+    };
+    if (size === 0) text('');
+    else if (totalHidden) text('最後の1枚が伏せられている（合計は不明）');
+    else if (bust) text(`バースト！ ${bustPenaltyText(rules)}`);
+    else if (callout) this.renderCallout(callout);
     else {
       const id = entity.slots[slotKeyOf(total)];
       const skill = getSkill(id ?? entity.fallbackSkill);
-      this.caption.textContent = preview
-        ? `予測: ${preview}`
-        : `発動: ${id ? skill.name : fallbackLabel(skill)}（${describeSkill(skill, entity.attack)}）`;
+      text(`発動: ${id ? skill.name : fallbackLabel(skill)}（${describeSkill(skill, entity.attack)}）`);
     }
     this.el.classList.toggle('slots--bust', bust);
+  }
+
+  /** 発動するスキルを、アイコン・名前・効果の数値で大きく出す。スキルが変わったときだけ、ぽんと弾む。 */
+  private renderCallout(c: Callout): void {
+    const chips = fxChips(c.parts, c.targetBlock);
+    const key = `${c.name}|${chips.map((x) => x.main + x.unit).join(',')}`;
+    const changed = key !== this.calloutKey;
+    this.calloutKey = key;
+    const medal = document.createElement('span');
+    medal.className = `medal medal--sm callout__icon ${rarityClass(c.rarity)}`;
+    medal.textContent = c.icon;
+    const name = document.createElement('span');
+    name.className = 'callout__name';
+    name.textContent = c.name;
+    this.caption.className = `slots__caption slots__caption--callout${c.fizzled ? ' is-fizzle' : ''}`;
+    this.caption.replaceChildren(medal, name);
+    for (const chip of chips) {
+      const fx = document.createElement('span');
+      fx.className = `callout__fx callout__fx--${chip.type}`;
+      const main = document.createElement('b');
+      main.textContent = chip.main;
+      const unit = document.createElement('small');
+      unit.textContent = chip.unit;
+      fx.append(main, unit);
+      if (chip.note) {
+        const note = document.createElement('span');
+        note.className = 'callout__note';
+        note.textContent = chip.note;
+        fx.append(note);
+      }
+      this.caption.append(fx);
+    }
+    if (c.fizzled) {
+      const why = document.createElement('small');
+      why.className = 'callout__note';
+      why.textContent = 'スキルが発動しない';
+      this.caption.append(why);
+    }
+    if (changed) {
+      this.caption.classList.remove('is-pop');
+      void this.caption.offsetWidth; // アニメーション再始動
+      this.caption.classList.add('is-pop');
+    }
   }
 }

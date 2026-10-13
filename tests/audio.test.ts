@@ -25,8 +25,10 @@ class FakeContext {
   close = vi.fn(async () => { this.state = 'closed'; });
   gains: Array<Record<string, unknown>> = [];
   createGain = () => { const n = node(); this.gains.push(n); return n; };
-  createBiquadFilter = node;
-  createOscillator = node;
+  filters: Array<Record<string, unknown>> = [];
+  oscs: Array<Record<string, unknown>> = [];
+  createBiquadFilter = () => { const n = node(); this.filters.push(n); return n; };
+  createOscillator = () => { const n = node(); this.oscs.push(n); return n; };
   createBufferSource = node;
   createBuffer = () => ({ getChannelData: () => new Float32Array(8) });
   constructor() { FakeContext.instances.push(this); }
@@ -58,7 +60,25 @@ afterEach(() => {
 const ctxOf = () => FakeContext.instances.at(-1)!;
 
 describe('タイトル画面の BGM', () => {
-  it('最初のタップ（どこでも）で AudioContext を作り、BGM を始める。タップ前は何もしない', () => {
+  it('起動時に unlock() しておけば、自動再生が許される環境ではタップなしで鳴り、許されない環境では最初のタップで鳴る', () => {
+    // 許される環境（resume() がそのまま running になる）
+    const a = new AudioManager();
+    a.unlock();
+    expect(ctxOf().state).toBe('running');
+    // 許されない環境（resume() しても suspended のまま）→ 最初のタップで鳴り始める
+    FakeContext.instances = [];
+    for (const k of Object.keys(listeners)) delete listeners[k];
+    FakeContext.resumeTo = 'suspended';
+    const b = new AudioManager();
+    b.unlock();
+    expect(ctxOf().state).toBe('suspended');
+    FakeContext.resumeTo = 'running';
+    fire('click');
+    expect(ctxOf().state).toBe('running');
+    expect(FakeContext.instances).toHaveLength(1); // 作り直さず、そのまま鳴らす
+  });
+
+  it('起動時に unlock() しなくても、最初のタップ（どこでも）で AudioContext を作り、BGM を始める', () => {
     new AudioManager();
     expect(FakeContext.instances).toHaveLength(0);
     fire('click');
@@ -154,5 +174,99 @@ describe('スリープ・ロックから戻ったとき', () => {
     expect(a.muted).toBe(true);
     const master = ctxOf().gains[0].gain as { value: number }; // 最初に作る gain がマスター
     expect(master.value).toBe(0);
+  });
+});
+
+describe('カードの効果音（軽く落ち着いた音。ほかの効果音と区別する）', () => {
+  const unlocked = () => {
+    const a = new AudioManager();
+    fire('click');
+    ctxOf().state = 'running';
+    return a;
+  };
+
+  it('配る音（deal）は、やわらかいノイズと小さな sine だけ。square や sawtooth は使わない', () => {
+    const a = unlocked();
+    const c = ctxOf();
+    const before = { oscs: c.oscs.length, filters: c.filters.length }; // BGM が作った分は除く
+    a.sfx('deal');
+    const oscs = c.oscs.slice(before.oscs);
+    expect(oscs.length).toBeGreaterThan(0);
+    for (const o of oscs) expect(o.type).toBe('sine');
+    expect(c.filters.length - before.filters).toBe(1); // 紙のすべる音（ノイズ）
+  });
+
+  it('配る音は、毎回ほんの少し高さが変わる（同じ音が続かない）', () => {
+    const a = unlocked();
+    const c = ctxOf();
+    const before = c.filters.length;
+    const rand = vi.spyOn(Math, 'random');
+    rand.mockReturnValueOnce(0).mockReturnValueOnce(1);
+    a.sfx('deal');
+    a.sfx('deal');
+    rand.mockRestore();
+    const [x, y] = c.filters.slice(before).map((f) => (f.frequency as { value: number }).value);
+    expect(x).not.toBe(y);
+    expect(Math.abs(x - y) / x).toBeLessThan(0.3); // 別の音になるほどは変えない
+  });
+
+  it('めくる音（flip）は、配る音と別の音: 帯域が上へ動く「しゅっ」という音', () => {
+    const a = unlocked();
+    const c = ctxOf();
+    const before = c.filters.length;
+    a.sfx('flip');
+    const swept = c.filters.slice(before).some((f) => (f.frequency as { exponentialRampToValueAtTime: { mock: { calls: unknown[] } } }).exponentialRampToValueAtTime.mock.calls.length > 0);
+    expect(swept).toBe(true);
+    const d = unlocked();
+    const c2 = ctxOf();
+    const before2 = c2.filters.length;
+    d.sfx('deal');
+    expect(c2.filters.slice(before2).some((f) => (f.frequency as { exponentialRampToValueAtTime: { mock: { calls: unknown[] } } }).exponentialRampToValueAtTime.mock.calls.length > 0)).toBe(false);
+  });
+});
+
+describe('Block・回復の効果音', () => {
+  const play = (name: Parameters<AudioManager['sfx']>[0]) => {
+    const a = new AudioManager();
+    fire('click');
+    ctxOf().state = 'running';
+    const c = ctxOf();
+    const o0 = c.oscs.length;
+    const f0 = c.filters.length;
+    a.sfx(name);
+    const oscs = c.oscs.slice(o0).map((o) => ({
+      type: o.type as string,
+      freq: ((o.frequency as { setValueAtTime: { mock: { calls: number[][] } } }).setValueAtTime.mock.calls[0] ?? [0, 0])[0],
+      at: ((o.frequency as { setValueAtTime: { mock: { calls: number[][] } } }).setValueAtTime.mock.calls[0] ?? [0, 0])[1],
+    }));
+    const filters = c.filters.slice(f0);
+    const swept = filters.some((f) => (f.frequency as { exponentialRampToValueAtTime: { mock: { calls: unknown[] } } }).exponentialRampToValueAtTime.mock.calls.length > 0);
+    return { oscs, filters, swept };
+  };
+
+  it('回復: sine と triangle だけの、やさしい4音（ドミソド）が順に上がる', () => {
+    const { oscs } = play('heal');
+    for (const o of oscs) expect(['sine', 'triangle']).toContain(o.type);
+    // 基音の開始時刻（ド の1オクターブ上の倍音も 1046.5 なので、いちばん遅い開始を、その音の基音とみなす）
+    const rising = [523.25, 659.25, 784, 1046.5].map((f) => Math.max(...oscs.filter((o) => o.freq === f).map((o) => o.at)));
+    expect(rising).toEqual([...rising].sort((a, b) => a - b));
+    expect(new Set(rising).size).toBe(4);
+  });
+
+  it('Block を得る: 低い響きと、高い金属の余韻（鋭い矩形波・鋸波は使わない）', () => {
+    const { oscs, swept } = play('block');
+    for (const o of oscs) expect(['sine']).toContain(o.type);
+    expect(oscs.some((o) => o.freq < 250)).toBe(true);
+    expect(oscs.some((o) => o.freq > 1000)).toBe(true);
+    expect(swept).toBe(true); // 立ち上がる空気
+  });
+
+  it('防いだ音（guard）は、Block を得る音（block）と別の音: 帯域は動かず、短く硬い', () => {
+    const guard = play('guard');
+    const block = play('block');
+    expect(guard.swept).toBe(false);
+    expect(block.swept).toBe(true);
+    expect(guard.oscs.some((o) => o.freq < 150)).toBe(true); // 低いどすっ
+    expect(guard.oscs.length).not.toBe(block.oscs.length);
   });
 });

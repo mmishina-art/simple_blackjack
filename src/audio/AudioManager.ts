@@ -1,5 +1,5 @@
 export type SfxName =
-  | 'click' | 'deal' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
+  | 'click' | 'deal' | 'flip' | 'block' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
 
 const STORAGE_KEY = 'bj-muted';
 
@@ -108,7 +108,10 @@ export class AudioManager {
     if (this.ctx) this.master.gain.setTargetAtTime(muted ? 0 : 1, this.ctx.currentTime, 0.02);
   }
 
-  /** ユーザー操作の中で呼ぶ。AudioContext を作成し BGM を開始する。 */
+  /**
+   * AudioContext を作成し BGM を開始する。起動時にも呼ぶ（タイトルの BGM を最初から鳴らすため）。
+   * 自動再生が許されない環境では、止まった状態（suspended）で待ち、最初のタップで resume されて鳴り始める。
+   */
   unlock(): void {
     if (!this.ctx) {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -142,10 +145,19 @@ export class AudioManager {
       case 'click':
         this.tone(660, t, 0.06, 'square', 0.25, 880);
         break;
-      case 'deal':
-        this.noise(t, 0.05, 3500, 0.35);
-        this.tone(300, t, 0.05, 'triangle', 0.2, 200);
+      case 'deal': {
+        // カードを置く・配る音: 軽くて落ち着いた、紙がすべる小さな音。毎回ほんの少し高さを変える（同じ音が続かないように）
+        const r = 0.9 + Math.random() * 0.2;
+        this.noise(t, 0.08, 2600 * r, 0.32, undefined, 0.012);
+        this.tone(1500 * r, t + 0.015, 0.04, 'sine', 0.07, 1000 * r);
         break;
+      }
+      case 'flip': {
+        // 伏せカードをめくる音: 「しゅっ」と上がる紙の音。置く音より少し長く、明るい
+        this.sweepNoise(t, 0.16, 1400, 4600, 0.4, 0.03);
+        this.tone(900, t + 0.1, 0.07, 'sine', 0.08, 1300);
+        break;
+      }
       case 'attack':
         this.noise(t, 0.18, 1800, 0.5);
         this.tone(520, t, 0.22, 'sawtooth', 0.35, 90);
@@ -169,13 +181,24 @@ export class AudioManager {
           this.tone(f, t + i * 0.13, i === 5 ? 0.7 : 0.16, 'square', 0.22),
         );
         break;
+      case 'block':
+        // Block を得る: 盾を構える。低いどっしりした響きの上に、澄んだ金属の余韻が上へ立ち上がる
+        this.tone(190, t, 0.16, 'sine', 0.42, 95);
+        this.bell(1175, t + 0.01, 0.42, 0.2);
+        this.bell(1760, t + 0.07, 0.3, 0.1);
+        this.sweepNoise(t, 0.12, 900, 3200, 0.07, 0.02);
+        break;
       case 'guard':
-        this.noise(t, 0.08, 4200, 0.4);
-        this.tone(880, t, 0.14, 'square', 0.18, 660);
-        this.tone(1320, t + 0.02, 0.1, 'triangle', 0.15);
+        // Block が攻撃を防いだ: 短く硬い「ガキン」（Block を得る音とは別。鋭く、余韻は短い）
+        this.noise(t, 0.05, 3400, 0.38);
+        this.bell(780, t, 0.16, 0.22);
+        this.tone(120, t, 0.09, 'sine', 0.3, 70);
         break;
       case 'heal':
-        [523, 659, 784].forEach((f, i) => this.tone(f, t + i * 0.07, 0.22, 'sine', 0.3));
+        // 回復: やさしく上がる鈴の4音（ドミソド）が重なって、ゆっくり消える。あたたかい低音と、最後にきらめき
+        [523.25, 659.25, 784, 1046.5].forEach((f, i) => this.chime(f, t + i * 0.075, i === 3 ? 0.8 : 0.5, 0.2 + i * 0.02));
+        this.tone(261.63, t, 0.9, 'sine', 0.1);
+        this.tone(2093, t + 0.3, 0.18, 'triangle', 0.05);
         break;
       case 'pick':
         this.tone(440, t, 0.08, 'square', 0.2);
@@ -212,6 +235,19 @@ export class AudioManager {
     }
   }
 
+  /** 金属の鈴: 基音に、整数倍でない倍音（2.76 倍・5.4 倍）を短く重ねる。 */
+  private bell(freq: number, start: number, dur: number, vol: number): void {
+    this.tone(freq, start, dur, 'sine', vol);
+    this.tone(freq * 2.76, start, dur * 0.6, 'sine', vol * 0.35);
+    this.tone(freq * 5.4, start, dur * 0.35, 'sine', vol * 0.15);
+  }
+
+  /** やわらかい鈴: 基音と 1 オクターブ上の sine だけ（金属っぽくならない、あたたかい音）。 */
+  private chime(freq: number, start: number, dur: number, vol: number): void {
+    this.tone(freq, start, dur, 'sine', vol);
+    this.tone(freq * 2, start, dur * 0.6, 'sine', vol * 0.3);
+  }
+
   private tone(
     freq: number, start: number, dur: number, type: OscillatorType, vol: number,
     slideTo?: number, dest?: AudioNode,
@@ -230,15 +266,38 @@ export class AudioManager {
     osc.stop(start + dur + 0.05);
   }
 
-  private noise(start: number, dur: number, cutoff: number, vol: number, dest?: AudioNode): void {
+  /** attack > 0 なら、立ち上がりをなだらかにする（やわらかい音）。 */
+  private noise(start: number, dur: number, cutoff: number, vol: number, dest?: AudioNode, attack = 0): void {
     const ctx = this.ctx!;
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.value = cutoff;
+    this.envelope(src, filter, start, dur, vol, attack, dest);
+  }
+
+  /** 帯域が from → to へ動くノイズ（しゅっという紙の音）。 */
+  private sweepNoise(start: number, dur: number, from: number, to: number, vol: number, attack: number): void {
+    const ctx = this.ctx!;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(from, start);
+    filter.frequency.exponentialRampToValueAtTime(to, start + dur);
+    this.envelope(src, filter, start, dur, vol, attack);
+  }
+
+  private envelope(src: AudioBufferSourceNode, filter: BiquadFilterNode, start: number, dur: number, vol: number, attack: number, dest?: AudioNode): void {
+    const ctx = this.ctx!;
     const g = ctx.createGain();
-    g.gain.setValueAtTime(vol, start);
+    if (attack > 0) {
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.linearRampToValueAtTime(vol, start + attack);
+    } else {
+      g.gain.setValueAtTime(vol, start);
+    }
     g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
     src.connect(filter).connect(g).connect(dest ?? this.sfxGain);
     src.start(start);
