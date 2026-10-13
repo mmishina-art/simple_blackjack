@@ -144,14 +144,18 @@ export interface RunSummary {
   maxRow: number;
   enemiesDefeated: number;
   cleared: boolean;
+  /** 倒したボスの数のうち、最後の階層より前のもの（階層を踏破した数）。 */
+  stagesCleared?: number;
 }
 
 export const SHARD_PER_ROW = 2;
 export const SHARD_PER_ENEMY = 4;
 export const SHARD_CLEAR_BONUS = 40;
+/** 最後の階層より前の階層を踏破するたびの魂片。 */
+export const SHARD_STAGE_BONUS = 12;
 
 export function computeShards(s: RunSummary): number {
-  return s.maxRow * SHARD_PER_ROW + s.enemiesDefeated * SHARD_PER_ENEMY + (s.cleared ? SHARD_CLEAR_BONUS : 0);
+  return s.maxRow * SHARD_PER_ROW + s.enemiesDefeated * SHARD_PER_ENEMY + (s.stagesCleared ?? 0) * SHARD_STAGE_BONUS + (s.cleared ? SHARD_CLEAR_BONUS : 0);
 }
 
 /** 冒険の終了処理（負けても魂片が入る）。獲得量を返す。 */
@@ -166,7 +170,7 @@ export function finishRun(meta: MetaState, s: RunSummary): number {
 
 // ---- 図鑑 ----
 /** 最初から図鑑に載っているスキル（初期スロットのスキル）。 */
-export const STARTER_SKILLS: readonly SkillId[] = ['small_attack', 'herb', 'guard', 'shield', 'big_attack', 'ace_strike'];
+export const STARTER_SKILLS: readonly SkillId[] = ['small_attack', 'herb', 'big_attack', 'ace_strike'];
 
 export function isSkillDiscovered(meta: MetaState, id: SkillId): boolean {
   return STARTER_SKILLS.includes(id) || meta.codex.skills.includes(id);

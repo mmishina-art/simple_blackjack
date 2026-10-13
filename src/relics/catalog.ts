@@ -13,7 +13,7 @@ export const Whetstone: Relic = {
 };
 
 export const Breastplate: Relic = {
-  id: 'breastplate', rarity: 'common', name: '鋼の胸当て', icon: '胸',
+  id: 'breastplate', rarity: 'rare', name: '鋼の胸当て', icon: '胸',
   description: '受ける攻撃ダメージ -1（最低1）',
   apply({ bus, player }) {
     bus.on('onDamageCalculated', (p) => {
@@ -48,14 +48,14 @@ export const ScapegoatDoll: Relic = {
 
 export const FateRing: Relic = {
   id: 'ring', rarity: 'rare', name: '運命の指輪', icon: '輪',
-  description: '合計値が同値で同時攻撃になったラウンド、与える攻撃ダメージ +5',
+  description: '合計値が同値で同時攻撃になったラウンド、与える攻撃ダメージ +8',
   apply({ bus, player }) {
     let simultaneous = false;
     bus.on('onInitiativeDecided', (p) => {
       simultaneous = p.turn.mode === 'simultaneous';
     }, 10);
     bus.on('onDamageCalculated', (p) => {
-      if (simultaneous && p.attacker === player && p.damage > 0) return { ...p, damage: p.damage + 5 };
+      if (simultaneous && p.attacker === player && p.damage > 0) return { ...p, damage: p.damage + 8 };
     });
   },
 };
@@ -84,10 +84,10 @@ export const SturdyShield: Relic = {
 
 export const LifeCandle: Relic = {
   id: 'candle', rarity: 'common', name: '命の蝋燭', icon: '燭',
-  description: '各バトルの開始時に HP +5',
+  description: '各バトルの開始時に HP +3',
   apply({ bus, player }) {
     bus.on('onBattleStart', () => {
-      player.hp = Math.min(player.maxHp, player.hp + 5);
+      player.hp = Math.min(player.maxHp, player.hp + 3);
     });
   },
 };
@@ -125,9 +125,9 @@ export const Bracer: Relic = {
 
 export const TitanBlood: Relic = {
   id: 'titan', rarity: 'rare', name: '巨人の血', icon: '巨',
-  description: '小攻撃（11以下）が「ATK×0.5」から「ATK×3」に変わる',
+  description: '小攻撃（11以下）が「ATK×0.5」から「ATK×2+10」に変わる',
   apply({ bus, player }) {
-    reshapeSkill(bus, player, 'small_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 3, add: 0 }] }));
+    reshapeSkill(bus, player, 'small_attack', (s) => ({ ...s, effects: [{ type: 'attack', mult: 2, add: 10 }] }));
   },
 };
 
@@ -159,7 +159,80 @@ export const ArtisanTools: Relic = {
   },
 };
 
+
+// ---- 第2・第3階層から出るレリック ----
+export const DefenderCharm: Relic = {
+  id: 'defender', rarity: 'common', name: '守りの護符', icon: '護',
+  description: '防御したとき、HP +6',
+  apply({ bus, player }) {
+    bus.on('onSurrender', ({ entity }) => {
+      if (entity !== player) return;
+      const before = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + 6);
+      if (player.hp > before) bus.emit('onHealApplied', { entity: player, amount: player.hp - before });
+    });
+  },
+};
+
+export const LuckyDice: Relic = {
+  id: 'dice', rarity: 'common', name: '幸運の賽', icon: '賽',
+  description: '合計がちょうど 21 で Stand したとき、Block +8',
+  apply({ bus, player, rules }) {
+    bus.on('onStand', ({ entity }) => {
+      if (entity === player && player.hand.total(rules) === rules.blackjackScore) {
+        player.block += 8;
+        bus.emit('onBlockApplied', { entity: player, amount: 8 });
+      }
+    });
+  },
+};
+
+export const ThornMail: Relic = {
+  id: 'thorn', rarity: 'rare', name: '棘の鎧', icon: '棘',
+  description: '敵から HP を削られたとき、その 1/3（切り上げ）のダメージを敵にも与える',
+  apply({ bus, player, enemy }) {
+    bus.on('onDamageDealt', ({ defender, hpLoss }) => {
+      if (defender === player && hpLoss > 0 && !enemy.isDead) enemy.hp = Math.max(0, enemy.hp - Math.ceil(hpLoss / 3));
+    });
+  },
+};
+
+export const TriumphCup: Relic = {
+  id: 'cup', rarity: 'rare', name: '凱旋の杯', icon: '杯',
+  description: '敵に勝つたび、HP +5',
+  apply({ bus, player }) {
+    bus.on('onBattleEnd', ({ winner }) => {
+      if (winner === player) player.hp = Math.min(player.maxHp, player.hp + 5);
+    });
+  },
+};
+
+export const Bloodlust: Relic = {
+  id: 'bloodlust', rarity: 'rare', name: '血の渇き', icon: '渇',
+  description: '敵がバーストしたラウンド、与える攻撃ダメージ +6',
+  apply({ bus, player, enemy, rules }) {
+    bus.on('onDamageCalculated', (p) => {
+      if (p.attacker === player && p.damage > 0 && enemy.hand.total(rules) > rules.bustLimit) return { ...p, damage: p.damage + 6 };
+    });
+  },
+};
+
+export const Unyielding: Relic = {
+  id: 'unyielding', rarity: 'legend', name: '不屈の心', icon: '心',
+  description: '各バトルで一度だけ、致命傷を HP 1 で耐える',
+  apply({ bus, player }) {
+    let used = false;
+    bus.on('onDamageDealt', ({ defender }) => {
+      if (defender === player && player.hp <= 0 && !used) {
+        used = true;
+        player.hp = 1;
+      }
+    });
+  },
+};
+
 /** 報酬として出現するレリックの一覧。 */
 export const RELIC_POOL: readonly Relic[] = [
   Whetstone, Breastplate, VampireFang, ScapegoatDoll, FateRing, Boots, SturdyShield, LifeCandle, OverlordOrb, SealKey, Lockpick, Bracer, TitanBlood, HerbalistBag, ArtisanTools,
+  DefenderCharm, LuckyDice, ThornMail, TriumphCup, Bloodlust, Unyielding,
 ];

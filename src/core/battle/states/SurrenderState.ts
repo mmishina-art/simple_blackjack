@@ -17,6 +17,13 @@ export class SurrenderState implements BattleState {
     player.damageCap = player.armorCap ?? rules.defendCap;
     player.capTaken = 0;
     ctx.log(`${player.name}は防御に徹した…（受けるダメージは最大 ${player.damageCap}）`);
+    if (player.defendHeal > 0) {
+      const { amount } = ctx.bus.emit('onHealed', { entity: player, amount: player.defendHeal, skill: null });
+      const before = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + Math.max(0, Math.floor(amount)));
+      ctx.log(`${player.name}は HP を ${player.hp - before} 回復した`);
+      ctx.bus.emit('onHealApplied', { entity: player, amount: player.hp - before });
+    }
     ctx.notify();
     await ctx.wait(PACE.surrender);
     return 'Initiative';

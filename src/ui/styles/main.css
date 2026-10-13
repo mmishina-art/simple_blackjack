@@ -229,7 +229,23 @@ section { min-width: 0; }
   border: 1px solid var(--gold-dim);
   box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.9);
 }
+.enemy-trait {
+  position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 8px; min-width: 0; padding: 2px 6px;
+  font-size: 12px; color: var(--bone-dim); background: rgba(8, 6, 4, 0.72); border: 1px solid var(--gold-dim); border-radius: 6px;
+}
+.enemy-trait[hidden] { display: none; }
+.enemy-trait__item { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.enemy-trait__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.enemy-trait .medal--sm { width: 20px; height: 20px; font-size: 11px; }
+/* 短い画面（敵の舞台が小さい）では、特性の名前だけを左上に小さく出す（絵を隠さない。説明は長押し・「敵の技」で） */
+@media (max-height: 760px) {
+  .enemy-trait { right: auto; top: 3px; left: 4px; padding: 1px 6px 1px 3px; }
+  .enemy-trait__desc { display: none; }
+}
+.enemy-trait__text strong { color: var(--bone); font-weight: 700; }
 .enemy-backdrop { position: absolute; inset: 0; }
+.enemy-stage[data-stage="2"] .enemy-backdrop { filter: hue-rotate(150deg) saturate(1.1) brightness(0.95); }
+.enemy-stage[data-stage="3"] .enemy-backdrop { filter: hue-rotate(-25deg) saturate(1.5) brightness(1.05); }
 .enemy-backdrop svg { width: 100%; height: 100%; display: block; }
 .stage-fog { animation: fog 9s ease-in-out infinite alternate; }
 @keyframes fog { from { transform: translateX(-12px); opacity: 0.7; } to { transform: translateX(12px); opacity: 1; } }
@@ -479,6 +495,13 @@ section { min-width: 0; }
 
 .map-board-wrap { min-height: 0; display: flex; justify-content: center; }
 .map-board { height: 100%; max-width: 100%; }
+/* 長い階層（第2・第3階層）: 幅に合わせて縦に伸ばし、スクロールする。上下の端は、少しぼかして続きがあることを示す */
+.map-board-wrap--tall {
+  overflow-y: auto; align-items: flex-start; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+}
+.map-board--tall { width: 100%; max-width: 420px; height: auto; flex: none; }
 .edge { stroke: #3a2f22; stroke-width: 3; stroke-linecap: round; }
 .edge--active { stroke: var(--gold); stroke-width: 4; }
 .tile__bg { fill: #14100b; stroke: var(--gold-dim); stroke-width: 2.5; }
@@ -635,6 +658,30 @@ section { min-width: 0; }
 .title-art svg { height: 100%; width: auto; max-width: 100%; display: block; overflow: visible; }
 .title-stage { width: 100%; }
 
+/* ---- エンディング ---- */
+.ending {
+  position: relative; height: 100dvh; max-width: 480px; margin: 0 auto; overflow: hidden;
+  padding: max(var(--safe-top), calc(env(safe-area-inset-top) + 28px)) 20px calc(env(safe-area-inset-bottom) + 20px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center;
+}
+.ending__bg { position: absolute; inset: 0; opacity: 0.35; filter: hue-rotate(-25deg) saturate(1.4) brightness(0.8); }
+.ending__bg svg { width: 100%; height: 100%; display: block; }
+.ending__body { position: relative; flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.ending__text {
+  margin: 0; font-family: var(--font-body); font-size: 19px; line-height: 2; letter-spacing: 0.08em; color: var(--bone); white-space: pre-line;
+  text-shadow: 0 2px 10px #000; animation: endingFade 1.4s ease both;
+}
+.ending__art { width: min(78%, 280px); animation: endingFade 1.4s ease both; }
+.ending__art svg { width: 100%; height: auto; display: block; }
+.ending__end { margin: 0; font-family: var(--font-display); font-size: 34px; letter-spacing: 0.2em; color: var(--gold); text-shadow: 0 2px 14px #000; animation: endingFade 1.6s ease 0.3s both; }
+.ending__end small { display: block; margin-top: 6px; font-family: var(--font-body); font-size: 13px; letter-spacing: 0.3em; color: var(--bone-dim); }
+.ending__list { list-style: none; margin: 0; padding: 0; font-size: 15px; line-height: 1.9; color: var(--bone); animation: endingFade 1.6s ease 0.8s both; }
+.ending__next { position: relative; width: 100%; max-width: 320px; min-height: 52px; flex: none; }
+.ending__skip { position: relative; min-height: 44px; padding: 0 14px; background: none; border: 0; cursor: pointer; font-family: var(--font-body); font-size: 13px; letter-spacing: 0.1em; color: var(--bone-dim); text-decoration: underline; text-underline-offset: 4px; }
+.ending__skip[hidden] { display: none; }
+@keyframes endingFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ending__text, .ending__art, .ending__end, .ending__list { animation: none; } }
+
 /* ---- Loadout: 固定スロットは変更対象外なので、選べる行とは別の見え方にする ---- */
 .lslot--fixed {
   background: transparent; border-color: transparent; cursor: default; color: var(--bone-dim);
@@ -727,7 +774,10 @@ section { min-width: 0; }
 .lslot--fixed.lslot--steel { border-color: transparent; box-shadow: none; border-bottom: 1px solid #1f242a; }
 
 /* ======== UI 再設計: スロット行・選択シート・出撃準備 ======== */
-.lslot { grid-template-columns: 38px 28px minmax(0, 1fr) auto 14px; min-height: 42px; }
+.lslot { grid-template-columns: 56px 28px minmax(0, 1fr) auto 14px; min-height: 42px; }
+.lslot__key { display: flex; align-items: baseline; gap: 3px; }
+.lslot__atk { font-family: var(--font-body); font-size: 13px; font-weight: 400; color: var(--bone-dim); letter-spacing: 0; }
+.lslot__desc { font-size: 12px; color: var(--bone); }
 .lslot--tap { cursor: pointer; }
 .lslot--tap:active { filter: brightness(1.35); }
 .lslot__go { font-size: 22px; line-height: 1; color: var(--gold); text-align: center; }

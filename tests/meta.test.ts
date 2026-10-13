@@ -168,9 +168,9 @@ describe('初期装備（出撃準備: 図鑑のスキルを出撃時に装備�
 
   it('初期装備と同じスキルを置く・null を渡すと「変更なし」に戻り、枠を消費しない', () => {
     const meta = withCodex();
-    expect(setStartingSkill(meta, 15, 'smash')).toBe(true);
+    expect(setStartingSkill(meta, 20, 'smash')).toBe(true);
     expect(customCount(meta)).toBe(1);
-    expect(setStartingSkill(meta, 15, 'guard')).toBe(true); // 初期装備と同じ → 変更なし
+    expect(setStartingSkill(meta, 20, 'big_attack')).toBe(true); // 初期装備と同じ → 変更なし
     expect(customCount(meta)).toBe(0);
     expect(setStartingSkill(meta, 13, 'slash')).toBe(true);
     expect(setStartingSkill(meta, 13, null)).toBe(true);
@@ -182,15 +182,16 @@ describe('初期装備（出撃準備: 図鑑のスキルを出撃時に装備�
     meta.shards = 200;
     buyUpgrade(meta, 'kit');
     setStartingSkill(meta, 13, 'slash');
-    setStartingSkill(meta, 15, 'smash');
+    setStartingSkill(meta, 20, 'smash');
     const run = createRun(undefined, meta);
     expect(run.slots[13]).toBe('slash');
-    expect(run.slots[15]).toBe('smash');
-    expect(run.slots[18]).toBe('shield');
+    expect(run.slots[20]).toBe('smash');
+    expect(run.slots[12]).toBe('herb');
+    expect(run.slots[15]).toBeUndefined(); // シールド・盾は初期装備ではない
     expect(run.slots[11]).toBe('small_attack');
     expect(run.slots[21]).toBe('ace_strike');
-    setStartingSkill(meta, 15, null);
-    expect(createRun(undefined, meta).slots[15]).toBe('guard');
+    setStartingSkill(meta, 20, null);
+    expect(createRun(undefined, meta).slots[20]).toBe('big_attack');
     setStartingSkill(meta, 13, null);
     expect(createRun(undefined, meta).slots[13]).toBeUndefined();
   });
@@ -211,17 +212,17 @@ describe('出撃準備の表示用ロジック', () => {
 
   it('prepSlots: 全11スロットを返し、初期装備・変更後・実際に入るスキルを区別する', () => {
     const meta = withCodex();
-    setStartingSkill(meta, 15, 'smash');
+    setStartingSkill(meta, 20, 'smash');
     const slots = prepSlots(meta);
     expect(slots).toHaveLength(11);
-    const s15 = slots.find((s) => s.key === 15)!;
-    expect(s15).toMatchObject({ defaultId: 'guard', customId: 'smash', effectiveId: 'smash', editable: true });
+    const s20 = slots.find((s) => s.key === 20)!;
+    expect(s20).toMatchObject({ defaultId: 'big_attack', customId: 'smash', effectiveId: 'smash', editable: true });
     const s13 = slots.find((s) => s.key === 13)!;
     expect(s13).toMatchObject({ defaultId: null, customId: null, effectiveId: null, editable: true });
     const s11 = slots.find((s) => s.key === 11)!;
     expect(s11).toMatchObject({ effectiveId: 'small_attack', editable: false, canChange: false });
     expect(slots.find((s) => s.key === 21)!.editable).toBe(false);
-    expect(slots.find((s) => s.key === 18)!).toMatchObject({ effectiveId: 'shield', customId: null });
+    expect(slots.find((s) => s.key === 18)!).toMatchObject({ effectiveId: null, customId: null }); // 初期装備にシールド・盾はない
   });
 
   it('枠がいっぱいのとき、変更済みでないスロットは canChange=false（選べない理由の表示に使う）', () => {
@@ -246,7 +247,7 @@ describe('出撃準備の表示用ロジック', () => {
     const meta = withCodex();
     expect(placedElsewhere(meta, 'big_attack', 13)).toEqual([20]);
     expect(placedElsewhere(meta, 'big_attack', 20)).toEqual([]);
-    expect(placedElsewhere(meta, 'guard', 13)).toEqual([15]);
+    expect(placedElsewhere(meta, 'herb', 13)).toEqual([12]);
   });
 
   it('hasUnusedKitOpportunity: 初期スキル以外が図鑑にあり、枠が余っているときだけ true', () => {

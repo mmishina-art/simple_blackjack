@@ -9,7 +9,7 @@ const t = (id: string, kind: TileKind, col: number, row: number, next: string[],
  *   左ルート: 宝箱と祠で運試し（敵は少なめ）
  *   中ルート: 宿屋を通る安全な道
  *   右ルート: 敵が多く、スキルを稼げる
- * 3つの道は大広間（食屍鬼）で合流し、その先で再び分岐してボスへ向かう。
+ * 3つの道は大広間（屍食鬼）で合流し、その先で再び分岐して、ボスの墓守の騎士へ向かう。
  */
 export const STAGE_1: StageMap = {
   id: 'stage1',
@@ -37,6 +37,6 @@ export const STAGE_1: StageMap = {
     t('P2', 'enemy', 2, 6, ['Q'], 'bat'),
 
     t('Q', 'inn', 1, 7, ['B']),
-    t('B', 'boss', 1, 8, [], 'dragon'),
+    t('B', 'boss', 1, 8, [], 'knight'),
   ].map((tile) => [tile.id, tile])),
 };

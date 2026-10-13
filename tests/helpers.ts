@@ -5,8 +5,13 @@ import { Slime } from '../src/core/entities/enemies/Slime';
 import type { StateId } from '../src/core/battle/types';
 import { seededRng } from '../src/core/util/Rng';
 import type { Relic } from '../src/relics/Relic';
+import { DEFAULT_PLAYER_SLOTS } from '../src/core/skills/catalog';
+import type { SlotTable } from '../src/core/skills/Skill';
 
 export const noWait = async () => {};
+
+/** 守りのスキルを置いた編成（初期装備にはシールド・盾はないので、Block を試すテストで使う）。15 = シールド（Block 6）/ 18 = 盾（Block 11）。 */
+export const WITH_BLOCKS: SlotTable = { ...DEFAULT_PLAYER_SLOTS, 15: 'guard', 18: 'shield' };
 
 export interface RoundSetup extends Partial<BattleOptions> {
   player: Rank[];

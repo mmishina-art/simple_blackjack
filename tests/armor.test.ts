@@ -5,6 +5,8 @@ import { seededRng } from '../src/core/util/Rng';
 import { CODEX_ARMOR_TOTAL } from '../src/meta/Meta';
 import { ArtisanTools } from '../src/relics/catalog';
 import { armorCap, createRun, equipArmor, equipSkill, offerSkills } from '../src/run/Run';
+import { BlackDragon } from '../src/core/entities/enemies/catalog';
+import type { Rank } from '../src/core/cards/Card';
 import { playRound } from './helpers';
 
 describe('防具', () => {
@@ -50,16 +52,17 @@ describe('防具', () => {
       if (isArmor(getSkill(last))) expect(getSkill(last).damageCap!).toBeLessThan(5);
     }
     const run = createRun();
-    run.armor = 'guard_mail'; // これ以上硬い防具はない
+    run.armor = 'mithril_mail'; // これ以上硬い防具はない
     for (let seed = 1; seed <= 60; seed++) expect(offerSkills(seededRng(seed), run).some((id) => isArmor(getSkill(id)))).toBe(false);
   });
 
   it('戦闘: 装備の上限が防御に効く。匠の工具で上限が 1 下がる', async () => {
-    const base = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerArmorCap: 4 });
+    const dragon = { enemy: BlackDragon, enemyHand: ['9', '9'] as Rank[], from: 'Surrender' as const }; // 火炎の息は、どの上限も超える
+    const base = await playRound({ player: ['K', '5'], ...dragon, playerArmorCap: 4 });
     expect(base.ctx.player.hp).toBe(60 - 4);
-    const tools = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerArmorCap: 4, relics: [ArtisanTools] });
+    const tools = await playRound({ player: ['K', '5'], ...dragon, playerArmorCap: 4, relics: [ArtisanTools] });
     expect(tools.ctx.player.hp).toBe(60 - 3);
-    const def = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', relics: [ArtisanTools] });
+    const def = await playRound({ player: ['K', '5'], ...dragon, relics: [ArtisanTools] });
     expect(def.ctx.player.hp).toBe(60 - 4); // 既定の上限 5 → 4
   });
 });

@@ -7,7 +7,7 @@ import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
 import {
-  armorCap, createRun, enemyOfTile, isCleared, markCleared, moveTo, offerRelics, offerSkills, type RunState,
+  advanceStage, armorCap, STAGE_CLEAR_MAX_HP, createRun, enemyOfTile, isCleared, isFinalStage, markCleared, moveTo, offerRelics, offerSkills, type RunState,
 } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
@@ -18,6 +18,7 @@ import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
 import { showShrine } from './ui/ShrineScreen';
 import { showSettings } from './ui/SettingsScreen';
+import { showEnding } from './ui/EndingScreen';
 import { setupUpdateBanner } from './ui/UpdateBanner';
 import { hasUnusedKitOpportunity } from './meta/prep';
 import { showAltar, showCodex, showPrep } from './ui/MetaScreens';
@@ -116,6 +117,7 @@ function startBattle(tile: TileDef): void {
     playerHp: run.hp,
     playerSlots: run.slots,
     playerArmorCap: armorCap(run),
+    playerDefendHeal: getSkill(run.armor).defendHeal ?? 0,
     playerFallback: run.fallbackSkill,
     playerAttack: run.baseAttack,
     playerBlock: run.bonus.startBlock,
@@ -139,7 +141,7 @@ function syncCodex(): void {
 function endRun(cleared: boolean): number {
   if (bareRun) return 0; // 魂片・戦績も記録しない
   syncCodex();
-  const summary: RunSummary = { maxRow: run.stats.maxRow, enemiesDefeated: run.stats.enemiesDefeated, cleared };
+  const summary: RunSummary = { maxRow: run.stats.maxRow, enemiesDefeated: run.stats.enemiesDefeated, cleared, stagesCleared: run.stage - 1 };
   const gained = finishRun(meta, summary);
   saveMeta(meta);
   return gained;
@@ -187,12 +189,40 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   run.stats.enemiesDefeated++;
   markCleared(run, tile.id);
 
+  if (tile.kind === 'boss' && !isFinalStage(run)) {
+    box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('次の階層へ', offerStageRelic));
+    return box;
+  }
   if (tile.kind === 'boss') {
-    box.append(el('p', 'result__line', `${run.map.name}を踏破した！`), shardsLine(endRun(true)), ...endButtons('もう一度挑む'));
+    // 最後の階層のボスを倒した: 魂片を記録して、エンディングへ。エンディングが終わると、タイトルに戻る
+    const gained = endRun(true);
+    box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('エンディングへ', () => {
+      showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun }, showTitle);
+    }));
     return box;
   }
   box.append(button('次へ', offerSkillReward));
   return box;
+}
+
+/** 階層を踏破した報酬: 遺物を3択で獲得し、HP が回復して、次の階層へ進む。 */
+function offerStageRelic(): void {
+  const relics = offerRelics(run, defaultRng);
+  const enter = (): void => {
+    const before = run.hp;
+    advanceStage(run);
+    showMapScreen(`第${run.stage}階層「${run.map.name}」へ。最大 HP +${STAGE_CLEAR_MAX_HP}、HP が ${run.hp - before} 回復した。`);
+  };
+  if (relics.length === 0) return enter();
+  showChoiceScreen(root, {
+    heading: '階層を踏破した',
+    sub: '遺物をひとつ選べ',
+    options: relics,
+    onPick(i) {
+      run.relics.push(relics[i]);
+      enter();
+    },
+  });
 }
 
 /** 敵を倒した報酬: スキルを3択で獲得し、そのまま編成画面でセットする。 */
@@ -230,7 +260,7 @@ function showTitle(): void {
   });
   renderMute();
   const h1 = el('h1', '', 'BLACKJACK<small>ROGUELIKE</small>');
-  const sub = el('p', '', '二十一に近き者が先を制す。分かれ道を選び、地下墓所の主を討て。');
+  const sub = el('p', '', '二十一に近き者が先を制す。三つの階層を越え、竜の巣の主を討て。');
   const start = el('button', 'btn btn--hit title__start', '<span class="btn__main">冒険を始める</span>');
   start.addEventListener('click', () => {
     audio.unlock();

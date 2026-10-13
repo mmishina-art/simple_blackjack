@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickWeighted, RARITY_LABEL, RARITY_WEIGHT } from '../src/core/rarity';
+import { pickWeighted, RARITY_LABEL, RARITY_RATE } from '../src/core/rarity';
 import { Entity } from '../src/core/entities/Entity';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { SKILL_POOL } from '../src/core/skills/catalog';
@@ -38,7 +38,7 @@ describe('レア度', () => {
     const n = (r: string) => SKILL_POOL.filter((id) => rarityOfSkill(getSkill(id)) === r).length;
     expect(per('common', n('common'))).toBeGreaterThan(per('rare', n('rare')));
     expect(per('rare', n('rare'))).toBeGreaterThan(per('legend', n('legend')));
-    expect(RARITY_WEIGHT.common).toBeGreaterThan(RARITY_WEIGHT.legend);
+    expect(RARITY_RATE[1].common).toBeGreaterThan(RARITY_RATE[1].legend);
   });
 
   it('宝箱のレリックも所持済みを除き、重み付きで3つ選ばれる', () => {
@@ -104,18 +104,19 @@ describe('レリックによる上書きの検出（編成画面の赤字表示�
     for (const eff of effectiveSlotSkills(createRun()).values()) expect(eff.changed).toBe(false);
   });
 
-  it('巨人の血: 11以下の小攻撃が ATK×0.5＝1 から ATK×3＝3 に上書きされる', () => {
+  it('巨人の血: 11以下の小攻撃が ATK×0.5＝1 から ATK×2+10＝12 に上書きされる', () => {
     const run = createRun();
     run.relics.push(TitanBlood);
     const eff = effectiveSlotSkills(run).get(11)!;
     expect(eff.changed).toBe(true);
     expect(eff.baseText).toBe('攻撃 ATK×0.5＝1'); // 11以下の ATK は 1（攻撃は最低 1）
-    expect(eff.text).toBe('攻撃 ATK×3＝3');
+    expect(eff.text).toBe('攻撃 ATK×2+10＝12');
     expect(effectiveSlotSkills(run).get(20)!.changed).toBe(false);
   });
 
   it('砥石（ATK+1）は、基本攻撃力が基準の効果（攻撃・Block）の実数値を上書きする', () => {
     const run = createRun();
+    run.slots[15] = 'guard'; // 初期装備にはシールドがないので、置く
     run.relics.push(Whetstone);
     const all = effectiveSlotSkills(run);
     expect(all.get(20)!.text).toBe('攻撃 ATK+5＝16'); // 20 は ATK 10 + 砥石 1
