@@ -2,9 +2,10 @@ import { audio } from '../../audio/AudioManager';
 
 /**
  * 画面の上の固定の行: 左に「戻る」（全画面で同じ位置・同じ見た目）、中央に見出し。
+ * disabled なら、戻るボタンを押せなくする。
  * onBack を渡さないときは、戻るボタンを出さず、見出しだけを中央に置く（置き先を決めるまで閉じられない画面など）。
  */
-export function buildTopBar(title: string, onBack?: () => void, label = '戻る'): HTMLElement {
+export function buildTopBar(title: string, onBack?: () => void, label = '戻る', disabled = false): HTMLElement {
   const bar = document.createElement('div');
   bar.className = 'topbar';
   const left = document.createElement(onBack ? 'button' : 'span');
@@ -12,6 +13,7 @@ export function buildTopBar(title: string, onBack?: () => void, label = '戻る'
   if (onBack) {
     left.textContent = `‹ ${label}`;
     left.setAttribute('aria-label', label);
+    if (disabled) { (left as HTMLButtonElement).disabled = true; left.setAttribute('aria-disabled', 'true'); } // 戻れない理由は、画面の本文に出す
     left.addEventListener('click', () => {
       audio.sfx('click');
       onBack();

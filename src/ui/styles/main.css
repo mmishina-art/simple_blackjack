@@ -1250,3 +1250,14 @@ section { min-width: 0; }
 .btn--surrender .btn__main { font-size: 22px; letter-spacing: 0.08em; }
 .btn--surrender .btn__sub { font-size: 11px; letter-spacing: 0.04em; }
 .btn__shield { width: 20px; height: 20px; }
+
+/* ---- 祠の入れ替え: ドラッグ&ドロップ・仮置き（レア度の制限に合わないものは赤） ---- */
+.swap .lslot--tap[data-spot] { touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.swap .lslot--tap[data-spot] .lslot__key, .swap .lslot--tap[data-spot] .medal { touch-action: none; } /* 指では、左のアイコン側をつかんで動かす（それ以外は画面のスクロール） */
+.swap .lslot--drag { opacity: 0.35; }
+.swap .lslot--over { border-color: var(--gold) !important; background: #2a1f0e !important; box-shadow: 0 0 12px rgba(176, 141, 62, 0.6) !important; }
+.lslot--violation, .swap .lslot--violation { border-color: #d0453a !important; background: #3a1512 !important; box-shadow: 0 0 8px rgba(208, 69, 58, 0.45) !important; }
+.lslot--violation .lslot__name { color: #ff9a8f; }
+.swap__warn { margin: 0; padding: 8px 10px; border: 1px solid #d0453a; border-radius: 3px; background: #3a1512; color: #ffb4ab; font-size: 13px; line-height: 1.5; }
+.drag-ghost { position: fixed; z-index: 1000; pointer-events: none; margin: 0; opacity: 0.92; transform: scale(1.03); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6); }
+.topbar__back:disabled { opacity: 0.35; cursor: not-allowed; }

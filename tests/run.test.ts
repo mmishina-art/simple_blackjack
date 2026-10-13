@@ -14,7 +14,7 @@ import {
 } from '../src/relics/catalog';
 import {
   createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
-  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot,
+  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot, placementViolations,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
 import { upgradeCost } from '../src/run/shop';
@@ -551,6 +551,21 @@ describe('祠の入れ替え（スロット・道具袋・防具の間で、何�
     expect(canSwapSpots(run, { kind: 'slot', key: 16 }, { kind: 'slot', key: 13 })).toBe(false);
     expect(canSwapSpots(run, { kind: 'slot', key: 11 }, { kind: 'slot', key: 12 })).toBe(false); // 固定
     expect(canSwapSpots(run, { kind: 'slot', key: 12 }, { kind: 'slot', key: 13 })).toBe(false); // どちらも空き
+  });
+
+  it('仮置き: tentative ならレア度の制限に合わない場所にも置けて、placementViolations に出る。直すまで残る', () => {
+    const run = createRun();
+    run.slots[19] = 'smash'; // レジェンド（18 以上）
+    expect(placementViolations(run)).toEqual([]);
+    expect(canSwapSpots(run, { kind: 'slot', key: 19 }, { kind: 'slot', key: 13 })).toBe(false); // 通常は不可
+    expect(swapSpots(run, { kind: 'slot', key: 19 }, { kind: 'slot', key: 13 }, { tentative: true })).toBe(true);
+    expect(placementViolations(run)).toEqual([13]);
+    expect(swapSpots(run, { kind: 'slot', key: 13 }, { kind: 'slot', key: 18 }, { tentative: true })).toBe(true);
+    expect(placementViolations(run)).toEqual([]);
+    // 固定スロットと防具の制限は、仮置きでも守る
+    expect(canSwapSpots(run, { kind: 'slot', key: 18 }, { kind: 'slot', key: 11 }, { tentative: true })).toBe(false);
+    run.inventory = ['iron_shield'];
+    expect(canSwapSpots(run, { kind: 'pouch' }, { kind: 'slot', key: 13 }, { tentative: true })).toBe(false);
   });
 
   it('スロット ↔ 道具袋（袋は 1 つ）。袋が空でも、スロットの中身を袋に移せる', () => {
