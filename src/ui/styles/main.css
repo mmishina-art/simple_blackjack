@@ -970,7 +970,7 @@ section { min-width: 0; }
 }
 
 /* ---- 短い画面の編成画面 ----
-   スキル獲得直後の編成画面（置くスキルのバナー付き）は、約 743px の高さが必要で、それより低い画面では「あとでセットする」のボタンが画面の外に出ていた。
+   スキル獲得直後の編成画面（置くスキルのバナー付き）は、約 743px の高さが必要で、それより低い画面では「セットしない（売る）」のボタンが画面の外に出ていた。
    通常の編成画面も、約 673px より低いとはみ出していた。
    高さ 750px 以下で .loadout の中だけを少し詰めて、約 695px の高さまで収める（スロットの行は、押しやすさのため 42px のまま）。
    それより低い画面（iPhone SE の 667px など）は対象外で、スクロールすればボタンに届く。 */
@@ -1124,3 +1124,8 @@ section { min-width: 0; }
 .chip { font: inherit; color: inherit; text-align: left; cursor: pointer; background: #14100b; }
 .lslot__arrow { color: var(--bone-dim); }
 .lslot__after { color: var(--gold); }
+
+/* 防御スロット（防具）は、ほかのスロットから少し離し、鋼色の枠にして区別する */
+.loadout__slots .lslot--armor { margin-top: 8px; background: #0f141a; border-color: #46607a; }
+.loadout__slots .lslot--armor .lslot__key { color: #a9c6e4; }
+.loadout__slots .lslot--armor.lslot--target { border-color: #8fb4d8; box-shadow: 0 0 8px rgba(120, 170, 220, 0.35); }

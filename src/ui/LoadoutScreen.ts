@@ -122,10 +122,21 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
     const close = document.createElement('button');
     close.className = 'btn btn--retry loadout__btn';
-    close.innerHTML = `<span class="btn__main">${armed ? 'あとでセットする' : '閉じる'}</span>`;
+    close.innerHTML = armed
+      ? `<span class="btn__main">セットしない（売る）</span><span class="btn__sub">+${sellPrice(armed)} G</span>`
+      : '<span class="btn__main">閉じる</span>';
     close.addEventListener('click', () => {
       audio.sfx('click');
-      opts.onClose();
+      if (!armed) return opts.onClose();
+      const id = armed;
+      const sk = getSkill(id);
+      openSheet({
+        title: `「${sk.name}」を売る？`,
+        subtitle: `セットしないものは売却する（${sellPrice(id)} G）。売ったものは戻らない`,
+        options: [{ kind: 'confirm', icon: '売', name: `売る（+${sellPrice(id)} G）`, detail: describeSkillBonus(sk), onPick() {
+          if (sellFromInventory(run, id) !== null) { audio.sfx('click'); opts.onClose(`「${sk.name}」を ${sellPrice(id)} G で売った（所持 ${run.gold} G）。`); }
+        } }],
+      });
     });
     const actions = document.createElement('div');
     actions.className = 'loadout__actions';
