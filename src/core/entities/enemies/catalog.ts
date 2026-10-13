@@ -98,7 +98,7 @@ const Scorch: Relic = {
 };
 
 export const Skeleton: EnemyDef = {
-  id: 'skeleton', name: '骸骨兵', maxHp: 22, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
+  id: 'skeleton', name: '骸骨兵', maxHp: 20, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
   trait: '骨の鎧（受けるダメージ -2）', relics: [BoneArmor],
 };
 
@@ -108,7 +108,7 @@ export const GiantBat: EnemyDef = {
 };
 
 export const Ghoul: EnemyDef = {
-  id: 'ghoul', name: '屍食鬼', maxHp: 20, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
+  id: 'ghoul', name: '屍食鬼', maxHp: 18, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
   trait: '屍の渇き（HPを削るたびに HP +2）', relics: [CorpseThirst],
 };
 
@@ -120,7 +120,7 @@ export const BlackDragon: EnemyDef = {
 
 // ---- 第1階層のボス ----
 export const GraveKnight: EnemyDef = {
-  id: 'knight', name: '墓守の騎士', maxHp: 32, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.knight, fallbackSkill: 'knight_slash',
+  id: 'knight', name: '墓守の騎士', maxHp: 30, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.knight, fallbackSkill: 'knight_slash',
   trait: '重装（戦闘開始時に Block 6）', relics: [IronClad],
 };
 
@@ -136,7 +136,7 @@ export const Gargoyle: EnemyDef = {
 };
 
 export const Wraith: EnemyDef = {
-  id: 'wraith', name: '亡霊', maxHp: 24, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.wraith, fallbackSkill: 'wraith_touch',
+  id: 'wraith', name: '亡霊', maxHp: 22, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.wraith, fallbackSkill: 'wraith_touch',
   trait: '冷気（ラウンドの初めに、あなたの Block が 2 減る）', relics: [Chill],
 };
 

@@ -97,7 +97,7 @@ describe('第2・第3階層の道具・防具', () => {
 describe('第2・第3階層のレリック', () => {
   it('守りの護符: 防御したとき HP +6', async () => {
     const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerHp: 30, relics: [DefenderCharm] });
-    expect(m.ctx.player.hp).toBe(30 + 6 - 4); // スライムの溶解 4
+    expect(m.ctx.player.hp).toBe(30 + 6 - 3); // スライムの溶解 3
   });
 
   it('幸運の賽: 合計 21 で Stand したとき Block +8（21 でなければ付かない）', async () => {

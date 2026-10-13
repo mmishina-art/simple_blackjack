@@ -116,6 +116,7 @@ describe('レリックによる上書きの検出（編成画面の赤字表示�
 
   it('砥石（ATK+1）は、基本攻撃力が基準の効果（攻撃・Block）の実数値を上書きする', () => {
     const run = createRun();
+    run.slots[15] = 'guard'; // 初期装備にはシールドがないので、置く
     run.relics.push(Whetstone);
     const all = effectiveSlotSkills(run);
     expect(all.get(20)!.text).toBe('攻撃 ATK+5＝16'); // 20 は ATK 10 + 砥石 1

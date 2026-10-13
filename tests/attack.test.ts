@@ -12,7 +12,7 @@ import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine } from '../src/map/events';
 import { OverlordOrb, Whetstone } from '../src/relics/catalog';
 import { createRun } from '../src/run/Run';
-import { noWait, playRound } from './helpers';
+import { noWait, playRound, WITH_BLOCKS } from './helpers';
 
 const machine = (opts: Partial<ConstructorParameters<typeof BattleMachine>[0]> = {}) =>
   new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, ...opts });
@@ -43,9 +43,11 @@ describe('基本攻撃力（ATK）', () => {
     expect(describeSkill(getSkill('skel_guard'))).toBe('Block 6'); // 敵の防御は固定量のまま
   });
 
-  it('初期スロットの 18 は盾（Block 8）で、回復スキルは入っていない（回復は薬草）', () => {
+  it('初期スロットにはシールド・盾はない（守りは防具が受け持つ）。回復スキルも入っていない（回復は薬草）', () => {
     const m = machine();
-    expect(m.ctx.player.slots[18]).toBe('shield');
+    expect(m.ctx.player.slots[15]).toBeUndefined();
+    expect(m.ctx.player.slots[18]).toBeUndefined();
+    expect(Object.values(m.ctx.player.slots).sort()).toEqual(['ace_strike', 'big_attack', 'herb', 'small_attack']);
     expect(Object.values(m.ctx.player.slots)).not.toContain('mend');
   });
 
@@ -291,8 +293,8 @@ describe('予測ダメージ', () => {
   it('敵の予測も、バーストしたプレイヤーへの1.5倍を反映する', () => {
     const m = machine();
     give(m, 'player', ['K', 'Q', '5']); // 25: バースト
-    give(m, 'enemy', ['9', '9']);       // 18: 溶解 4
-    expect(previewSkill(m.ctx, m.ctx.enemy, m.ctx.player, 18).parts[0].value).toBe(6); // 4 × 1.5
+    give(m, 'enemy', ['9', '9']);       // 18: 溶解 3
+    expect(previewSkill(m.ctx, m.ctx.enemy, m.ctx.player, 18).parts[0].value).toBe(4); // 3 × 1.5
   });
 
   it('伏せカードがあるうちは、敵のバーストを予測に漏らさない（めくられたら1.5倍）', () => {
@@ -306,7 +308,7 @@ describe('予測ダメージ', () => {
   });
 
   it('防御スキルは Block の値を出す。敵の Block 吸収後も示す', () => {
-    const m = machine();
+    const m = machine({ playerSlots: WITH_BLOCKS });
     give(m, 'player', ['7', '8']); // 15: シールド
     expect(formatPreview(previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 15))).toBe('シールド → Block +6');
     const n = machine();
@@ -323,7 +325,7 @@ describe('スロット表の各マスの効果', () => {
   };
 
   it('攻撃はダメージ数、Block は B+数。空きスロットは通常攻撃の数', () => {
-    const b = badges(machine(), 'player');
+    const b = badges(machine({ playerSlots: WITH_BLOCKS }), 'player');
     // 基本攻撃力は 11以下=1、スロットが上がるごとに +1（小攻撃 ATK×0.5 は最低 1）
     // Block も ATK 基準（シールド ATK+1 → 15 で 6、盾 ATK+3 → 18 で 11）。会心の一撃は ATK×1.5
     expect(b).toMatchObject({ 11: '1', 12: '+8', 13: '3', 15: 'B6', 18: 'B11', 20: '15', 21: '16' }); // 12 は薬草（道具・回復 8 固定）
@@ -337,13 +339,13 @@ describe('スロット表の各マスの効果', () => {
 
   it('レリックで変わった効果が出る（砥石 ATK+1: 大攻撃 11）。敵のスロットも同じ', () => {
     expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('16'); // ATK 10 + 1 = 11、ATK+5
-    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '4', 20: '6' }); // スライム ATK3: 溶解 ATK+1 / 飲み込み ATK×2
+    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '3', 20: '6' }); // スライム ATK3: 溶解 ATK / 飲み込み ATK×2
   });
 
   it('相手がバーストしているときは 1.5倍、伏せカードがあるうちは等倍', () => {
     const m = machine();
     give(m, 'player', ['K', 'Q', '5']); // バースト
-    expect(badges(m, 'enemy')[17]).toBe('6'); // 4 × 1.5
+    expect(badges(m, 'enemy')[17]).toBe('4'); // 3 × 1.5
     const n = machine();
     give(n, 'enemy', ['K', 'Q']);
     n.ctx.enemy.hand.add(makeCard('5', 'S'), { faceDown: true });
@@ -361,9 +363,9 @@ describe('敵のスキル一覧（実数値つき）', () => {
     const r15 = rows.find((r) => r.key === 15)!;
     expect(r15).toMatchObject({ isFallback: false });
     expect(r15.skill.id).toBe('skel_guard');
-    // 骸骨兵 ATK4: 斬り下ろし ATK+1 = 5 / 兜割り ATK×2 = 8
-    expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 ATK+1＝5');
-    expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 ATK×2＝8');
+    // 骸骨兵 ATK4: 斬り下ろし ATK = 4 / 兜割り ATK+3 = 7
+    expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 ATK＝4');
+    expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 ATK+3＝7');
   });
 
   it('敵は全員 ATK を持ち、一覧が作れる', () => {

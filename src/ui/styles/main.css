@@ -481,6 +481,13 @@ section { min-width: 0; }
 
 .map-board-wrap { min-height: 0; display: flex; justify-content: center; }
 .map-board { height: 100%; max-width: 100%; }
+/* 長い階層（第2・第3階層）: 幅に合わせて縦に伸ばし、スクロールする。上下の端は、少しぼかして続きがあることを示す */
+.map-board-wrap--tall {
+  overflow-y: auto; align-items: flex-start; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+}
+.map-board--tall { width: 100%; max-width: 420px; height: auto; flex: none; }
 .edge { stroke: #3a2f22; stroke-width: 3; stroke-linecap: round; }
 .edge--active { stroke: var(--gold); stroke-width: 4; }
 .tile__bg { fill: #14100b; stroke: var(--gold-dim); stroke-width: 2.5; }

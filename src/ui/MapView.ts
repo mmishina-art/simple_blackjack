@@ -2,12 +2,18 @@ import { audio } from '../audio/AudioManager';
 import { rarityClass } from './rarity';
 import { isCleared, reachableTiles, type RunState } from '../run/Run';
 import { tileOf, TILE_LABEL, type TileDef, type TileKind } from '../map/StageMap';
+import { stageRows } from '../map/stages';
 
 const NS = 'http://www.w3.org/2000/svg';
 const W = 360;
-const H = 640;
 const COL_X = [70, 180, 290];
-const ROW_Y = (row: number, rows: number): number => 586 - row * ((586 - 64) / Math.max(1, rows - 1));
+/** 9段までは、画面の高さに収める（従来どおり）。それより長い階層は、段の間隔を一定にして、縦にスクロールする。 */
+const FIT_ROWS = 9;
+const ROW_STEP = 62;
+const PAD = 56;
+const boardHeight = (rows: number): number => (rows <= FIT_ROWS ? 640 : PAD * 2 + (rows - 1) * ROW_STEP);
+const ROW_Y = (row: number, rows: number): number =>
+  rows <= FIT_ROWS ? 586 - row * ((586 - 64) / Math.max(1, rows - 1)) : boardHeight(rows) - PAD - row * ROW_STEP;
 
 const ICON: Record<TileKind, string> = { start: '始', empty: '', enemy: '敵', chest: '宝', inn: '宿', shrine: '祠', boss: '王' };
 
@@ -46,10 +52,12 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   hud.append(relics);
 
   // 中央: マップ（SVG）
-  const rows = Math.max(...Object.values(run.map.tiles).map((t) => t.row)) + 1;
+  const rows = stageRows(run.map);
+  const H = boardHeight(rows);
+  const tall = rows > FIT_ROWS;
   const pos = (t: TileDef) => ({ x: COL_X[t.col], y: ROW_Y(t.row, rows) });
   const reachable = new Set(reachableTiles(run).map((t) => t.id));
-  const board = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'map-board', role: 'img', 'aria-label': 'ステージマップ' });
+  const board = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: `map-board${tall ? ' map-board--tall' : ''}`, role: 'img', 'aria-label': 'ステージマップ' });
 
   for (const t of Object.values(run.map.tiles)) {
     for (const n of t.next) {
@@ -101,7 +109,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   board.append(pawn);
 
   const boardWrap = document.createElement('section');
-  boardWrap.className = 'map-board-wrap';
+  boardWrap.className = `map-board-wrap${tall ? ' map-board-wrap--tall' : ''}`;
   boardWrap.append(board);
 
   // 下部: メッセージと操作
@@ -121,4 +129,11 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
 
   screen.append(hud, boardWrap, foot);
   root.replaceChildren(screen);
+  // 長い階層は、いまいる位置が画面の中ほどに来るようにスクロールしておく
+  if (tall) {
+    requestAnimationFrame(() => {
+      const scale = board.getBoundingClientRect().height / H;
+      boardWrap.scrollTop = Math.max(0, here.y * scale - boardWrap.clientHeight / 2);
+    });
+  }
 }

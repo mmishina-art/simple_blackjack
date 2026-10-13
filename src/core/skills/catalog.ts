@@ -124,12 +124,10 @@ export const DEFAULT_ARMOR_ID: SkillId = 'iron_shield';
 /** スロットに置けるものすべて（スキル + 道具。防具は防御スロット専用）。図鑑・出撃準備・祠の抽選に使う。 */
 export const ALL_POOL: readonly SkillId[] = [...SKILL_POOL, ...ITEM_POOL];
 
-/** プレイヤーの初期スロット。12 は薬草（道具）、21 は会心の一撃で固定。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
+/** プレイヤーの初期スロット。12 は薬草（道具）、20 は大攻撃、21 は会心の一撃で固定（守りは防具が受け持つので、シールド・盾は初期装備にしない）。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
 export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   11: 'small_attack',
   12: 'herb', // 初期から回復を持つ（低い合計値で止まったときの、HP を保つ手段。薬草は固定の回復）
-  15: 'guard',
-  18: 'shield',
   20: 'big_attack',
   21: ACE_STRIKE_ID,
 };
@@ -149,27 +147,27 @@ export const DEFAULT_PLAYER_FALLBACK: SkillId = BASIC_ATTACK_ID;
 // ---- 敵 ----
 atk('slime_touch', 'ぬめる体当たり', 1, 0, '攻');
 atk('slime_acid', '酸の飛沫', 1, 0, '酸');
-atk('slime_melt', '溶解', 1, 1, '剛');
+atk('slime_melt', '溶解', 1, 0, '剛');
 atk('slime_engulf', '飲み込み', 2, 0, '絶');
 
 atk('skel_stab', '錆びた突き', 1, 0, '攻');
 defineSkill({ id: 'skel_guard', name: '盾を構える', icon: '守', effects: [{ type: 'block', amount: 6 }] });
-atk('skel_slash', '斬り下ろし', 1, 1, '剛');
-atk('skel_cleave', '兜割り', 2, 0, '絶');
+atk('skel_slash', '斬り下ろし', 1, 0, '剛');
+atk('skel_cleave', '兜割り', 1, 3, '絶');
 
 atk('bat_nip', '噛みつき', 1, 0, '攻');
-atk('bat_bite', '鋭い牙', 1, 1, '牙');
+atk('bat_bite', '鋭い牙', 1, 0, '牙');
 defineSkill({
   id: 'bat_drain', name: '吸血', icon: '吸',
-  effects: [{ type: 'attack', mult: 1, add: 2 }, { type: 'heal', amount: 3 }],
+  effects: [{ type: 'attack', mult: 1, add: 1 }, { type: 'heal', amount: 3 }],
 });
-atk('bat_dive', '急降下', 2, 0, '剛');
+atk('bat_dive', '急降下', 1, 3, '剛');
 atk('bat_screech', '血の饗宴', 2, 2, '絶');
 
 atk('ghoul_scratch', '引っ掻き', 1, 0, '攻');
 atk('ghoul_claw', '腐爪', 1, 0, '爪');
-atk('ghoul_rend', '引き裂き', 1, 1, '剛');
-atk('ghoul_devour', '貪り喰う', 2, 0, '絶');
+atk('ghoul_rend', '引き裂き', 1, 0, '剛');
+atk('ghoul_devour', '貪り喰う', 1, 3, '絶');
 
 atk('dragon_swipe', '尾の一撃', 1, 0, '攻');
 atk('dragon_claw', '竜爪', 1, 2, '爪');
@@ -180,7 +178,7 @@ atk('dragon_apocalypse', '終焉の炎', 2, 6, '滅');
 
 // ---- 第1階層のボス・第2階層・第3階層の敵 ----
 atk('knight_slash', '錆びた大剣', 1, 1, '剣');
-atk('knight_bash', '盾打ち', 1, 2, '殴');
+atk('knight_bash', '盾打ち', 1, 1, '殴');
 defineSkill({ id: 'knight_guard', name: '塔盾を構える', icon: '守', effects: [{ type: 'block', amount: 8 }] });
 atk('knight_cleave', '断罪の一閃', 2, 0, '断');
 

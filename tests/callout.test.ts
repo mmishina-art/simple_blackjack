@@ -52,11 +52,11 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     expect(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)).toBeNull();
   });
 
-  it('敵のスキルも同じ形で出る（スライム 18 = 溶解 4ダメージ）', () => {
+  it('敵のスキルも同じ形で出る（スライム 18 = 溶解 3ダメージ）', () => {
     const m = machine();
     give(m, 'enemy', ['9', '9']);
     const c = calloutOf(m.ctx, m.ctx.enemy, m.ctx.player)!;
     expect(c.name).toBe('溶解');
-    expect(fxChips(c.parts, 0)[0].main).toBe('4');
+    expect(fxChips(c.parts, 0)[0].main).toBe('3');
   });
 });

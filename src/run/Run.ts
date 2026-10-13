@@ -5,7 +5,7 @@ import { pickWeighted, tierWeights } from '../core/rarity';
 import { getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, validStartingSkills, type MetaState, type RunBonus } from '../meta/Meta';
-import { STAGE_ROWS, STAGES } from '../map/stages';
+import { STAGES, stageRowOffset } from '../map/stages';
 import { nextTiles, tileOf, type StageMap, type TileDef } from '../map/StageMap';
 import { RELIC_POOL } from '../relics/catalog';
 import type { Relic } from '../relics/Relic';
@@ -85,7 +85,7 @@ export function moveTo(run: RunState, id: string): TileDef {
   const target = reachableTiles(run).find((t) => t.id === id);
   if (!target) throw new Error(`Cannot move ${run.position} -> ${id}`);
   run.position = id;
-  run.stats.maxRow = Math.max(run.stats.maxRow, (run.stage - 1) * STAGE_ROWS + target.row); // 階層をまたいで通算
+  run.stats.maxRow = Math.max(run.stats.maxRow, stageRowOffset(run.stage) + target.row); // 階層をまたいで通算
   return target;
 }
 
@@ -110,7 +110,7 @@ export function isFinalStage(run: RunState): boolean {
 /** 階層の合間に回復する割合（最大 HP に対して）。 */
 export const STAGE_CLEAR_HEAL = 0.7;
 /** 階層を踏破するたびに増える最大 HP（その分、HP も増える）。 */
-export const STAGE_CLEAR_MAX_HP = 10;
+export const STAGE_CLEAR_MAX_HP = 12;
 
 /** 次の階層へ進む。最大 HP が増え、HP が回復し、位置が新しい階層のスタートになる。最後の階層なら何もせず false。 */
 export function advanceStage(run: RunState): boolean {

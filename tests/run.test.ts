@@ -5,7 +5,7 @@ import { ARMOR_POOL, ITEM_POOL, SKILL_POOL } from '../src/core/skills/catalog';
 import { getSkill, hasSkill, rarityOfSkill, SLOT_KEYS } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, resolveShrine, useInn } from '../src/map/events';
-import { STAGE_ROWS, STAGES } from '../src/map/stages';
+import { STAGES, stageRowOffset, stageRows } from '../src/map/stages';
 import { RARITY_RATE, rarityRates, tierWeights } from '../src/core/rarity';
 import { nextTiles, tileOf, type TileKind } from '../src/map/StageMap';
 import {
@@ -17,7 +17,7 @@ import {
   advanceStage, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
-import { noWait, playRound } from './helpers';
+import { noWait, playRound, WITH_BLOCKS } from './helpers';
 
 describe('敵', () => {
   it('全員にスプライトがあり、スロットのスキルが全て実在する', () => {
@@ -75,10 +75,11 @@ describe.each(STAGES.map((m, i) => [i + 1, m] as const))('第%i階層のマッ�
 });
 
 describe('階層の構成', () => {
-  it('3つの階層があり、ボスは 墓守の騎士 → 深淵の海蛇 → 黒竜。段数は同じ', () => {
+  it('3つの階層があり、ボスは 墓守の騎士 → 深淵の海蛇 → 黒竜', () => {
     expect(STAGES).toHaveLength(3);
     expect(STAGES.map((m) => Object.values(m.tiles).find((t) => t.kind === 'boss')!.enemyId)).toEqual(['knight', 'serpent', 'dragon']);
-    for (const m of STAGES) expect(Math.max(...Object.values(m.tiles).map((t) => t.row)) + 1).toBe(STAGE_ROWS);
+    // 階層が進むほど、長い（第1階層 9段 → 第2階層 14段 → 第3階層 19段 = 約2倍）
+    expect(STAGES.map(stageRows)).toEqual([9, 14, 19]);
   });
 
   it('階層ごとの敵: 第1階層は 5 種、第2階層は魚人・ガーゴイル・亡霊・海蛇、第3階層は精霊・ゴーレム・悪魔・黒竜', () => {
@@ -117,7 +118,8 @@ describe('階層の構成', () => {
     expect(run.stats.maxRow).toBe(1);
     advanceStage(run);
     moveTo(run, 'A');
-    expect(run.stats.maxRow).toBe(STAGE_ROWS + 1);
+    expect(stageRowOffset(2)).toBe(9);
+    expect(run.stats.maxRow).toBe(9 + 1);
   });
 
   it('階層が進むほど、レアとレジェンドが出やすい。どの階層も、割合の合計は 100', () => {
@@ -262,6 +264,7 @@ describe('スキルの付け替え', () => {
 describe('祠: 入れ替えとバージョンアップ', () => {
   it('入れ替え: 2つのスロットの中身を交換し、空きへは移動になる。固定スロットは動かせない', () => {
     const run = createRun();
+    run.slots = { ...WITH_BLOCKS };
     expect(swapSlots(run, 15, 18)).toBe(true);
     expect([run.slots[15], run.slots[18]]).toEqual(['shield', 'guard']);
     expect(swapSlots(run, 15, 13)).toBe(true); // 空きへ移動
@@ -275,6 +278,7 @@ describe('祠: 入れ替えとバージョンアップ', () => {
 
   it('バージョンアップ: コモン→レア、レア→レジェンド。道具・固定スキルは不可', () => {
     const run = createRun();
+    run.slots = { ...WITH_BLOCKS };
     expect(canUpgradeSlot(run, 15)).toBe(true); // シールド(コモン)
     expect(upgradeSlot(run, 15)).toBe('bulwark');
     expect(rarityOfSkill(getSkill('bulwark'))).toBe('rare');
@@ -362,12 +366,12 @@ describe('レリックの効果', () => {
 
   it('胸当て: 受ける攻撃ダメージ -1', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40, relics: [Breastplate] });
-    expect(m.ctx.player.hp).toBe(60 - 3); // 溶解 4 - 1
+    expect(m.ctx.player.hp).toBe(60 - 2); // 溶解 3 - 1
   });
 
   it('吸血の牙: 敵のHPを削るたびHP+1', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40, playerHp: 50, relics: [VampireFang] });
-    expect(m.ctx.player.hp).toBe(50 + 1 - 4);
+    expect(m.ctx.player.hp).toBe(50 + 1 - 3);
   });
 
   it('身代わりの人形: 最初のバーストでは敵も行動しない', async () => {
@@ -388,7 +392,7 @@ describe('レリックの効果', () => {
   });
 
   it('堅牢の盾: 獲得する Block +3', async () => {
-    const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], relics: [SturdyShield], stopAt: ['CheckDeath'] });
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], relics: [SturdyShield], stopAt: ['CheckDeath'], playerSlots: WITH_BLOCKS });
     expect(m.ctx.player.block).toBe(6 + 3 - 3); // 盾 6 + 3、敵の酸 3
   });
 
@@ -426,7 +430,7 @@ describe('敵の特性', () => {
 
   it('骸骨兵: 骨の鎧（受けるダメージ -2）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemy: enemy('skeleton') });
-    expect(m.ctx.enemy.hp).toBe(22 - 13); // 大攻撃15 - 骨の鎧2
+    expect(m.ctx.enemy.hp).toBe(20 - 13); // 大攻撃15 - 骨の鎧2
   });
 
   it('大蝙蝠: 同値なら必ず敵が先攻', async () => {
@@ -436,12 +440,12 @@ describe('敵の特性', () => {
 
   it('屍食鬼: HPを削るたびHP+2', async () => {
     const m = await playRound({ player: ['9', '8'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 15 });
-    expect(m.ctx.player.hp).toBe(60 - 8); // 貪り喰う ATK4×2 = 8（17 は未設定で Block なし）
+    expect(m.ctx.player.hp).toBe(60 - 7); // 貪り喰う ATK4+3 = 7（17 は未設定で Block なし）
     expect(m.ctx.enemy.hp).toBe(15 + 2 - 7); // HP を削って +2 回復、そのあと後攻の通常攻撃（17 は ATK 7）
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
-    const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon') });
+    const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon'), playerSlots: WITH_BLOCKS });
     expect(m.ctx.player.hp).toBe(60 - (18 - 11)); // 業火 ATK6×2+3 + 息吹3 = 18。後攻の盾 Block 11 が先に付与される
   });
 });
