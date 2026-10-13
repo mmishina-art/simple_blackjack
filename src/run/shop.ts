@@ -45,6 +45,11 @@ export function enemyGold(def: EnemyDef, boss = false): number {
   return Math.round((enemyLevel(def) * 4 + 14) * (boss ? 2.5 : 1));
 }
 
+/** 実際に得るゴールド: 敵ごとの量に、祭壇の「商人の心得」の割合を掛ける。 */
+export function rewardGold(run: RunState, def: EnemyDef, boss = false): number {
+  return Math.round(enemyGold(def, boss) * (1 + run.bonus.goldRate));
+}
+
 export interface ShopOffer {
   /** skill = スキル・道具・防具（持ち物に入る）/ relic = レリック（すぐ効く）。 */
   type: 'skill' | 'relic';

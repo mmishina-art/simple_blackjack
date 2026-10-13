@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { ENEMY_LINEUP } from '../src/core/entities/enemies/catalog';
 import { seededRng } from '../src/core/util/Rng';
 import { INN_HEAL_RATIO, useInn } from '../src/map/events';
@@ -11,7 +10,7 @@ import {
 } from '../src/meta/Meta';
 import { inventoryEntries } from '../src/run/loadout';
 import { createRun, offerSkills } from '../src/run/Run';
-import { noWait } from './helpers';
+import { enemyGold, rewardGold } from '../src/run/shop';
 
 class FakeStorage {
   data = new Map<string, string>();
@@ -70,16 +69,15 @@ describe('祭壇の強化（魂片で恒久強化）', () => {
     for (const u of UPGRADES) for (let i = 1; i < u.costs.length; i++) expect(u.costs[i]).toBeGreaterThan(u.costs[i - 1]);
   });
 
-  it('強化が冒険の初期状態に反映される（HP・POW・戦闘開始ブロック・宿屋・報酬の選択肢）', () => {
+  it('強化が冒険の初期状態に反映される（HP・POW・取得ゴールド・宿屋・報酬の選択肢）', () => {
     const meta = emptyMeta();
-    meta.upgrades = { vitality: 2, might: 1, ward: 3, rest: 2, insight: 1 };
-    expect(computeBonus(meta)).toEqual({ maxHp: 10, attack: 1, startBlock: 6, innHeal: 0.2, extraChoices: 1 });
+    meta.upgrades = { vitality: 2, might: 1, greed: 3, rest: 2, insight: 1 };
+    expect(computeBonus(meta)).toEqual({ maxHp: 10, attack: 1, goldRate: 0.1 * 3, innHeal: 0.2, extraChoices: 1 });
     const run = createRun(undefined, meta);
     expect(run.maxHp).toBe(40);
     expect(run.hp).toBe(40);
     expect(run.baseAttack).toBe(6);
-    const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerBlock: run.bonus.startBlock, pace: noWait });
-    expect(m.ctx.player.block).toBe(6);
+    expect(rewardGold(run, ENEMY_LINEUP[0])).toBe(Math.round(enemyGold(ENEMY_LINEUP[0]) * 1.3)); // 商人の心得 3: +30%
     run.hp = 10;
     expect(useInn(run)).toBe(Math.ceil(40 * (INN_HEAL_RATIO + 0.2)));
     expect(offerSkills(seededRng(1), run)).toHaveLength(4);
@@ -87,7 +85,7 @@ describe('祭壇の強化（魂片で恒久強化）', () => {
 
   it('強化なしなら今までどおり', () => {
     const run = createRun(undefined, emptyMeta());
-    expect([run.maxHp, run.baseAttack, run.bonus.startBlock, run.bonus.extraChoices]).toEqual([30, 5, 0, 0]); // 初期の最大 HP は 30
+    expect([run.maxHp, run.baseAttack, run.bonus.goldRate, run.bonus.extraChoices]).toEqual([30, 5, 0, 0]); // 初期の最大 HP は 30
   });
 });
 
@@ -247,5 +245,24 @@ describe('モンスター図鑑（倒した敵の記録）', () => {
     discoverEnemy(old, 'ghoul');
     resetAllMeta(old);
     expect(old.codex.enemies).toEqual([]);
+  });
+});
+
+describe('廃止した強化「守りの心得」（戦闘開始時のブロック。商人の心得に置き換え）の、保存データの移行', () => {
+  it('買っていた分の魂片を返し、記録から消す。ほかの強化は変えない。2回読み込んでも二重に返さない', () => {
+    const st = new FakeStorage();
+    st.setItem(META_KEY, JSON.stringify({ version: 1, shards: 10, upgrades: { vitality: 2, ward: 2 }, codex: { skills: [], relics: [], enemies: [] }, stats: {} }));
+    const meta = loadMeta(st);
+    expect(meta.shards).toBe(10 + 25 + 45); // 守りの心得 2 レベル分
+    expect(meta.upgrades).toEqual({ vitality: 2 });
+    saveMeta(meta, st);
+    expect(loadMeta(st).shards).toBe(80);
+  });
+
+  it('祭壇の強化に「守りの心得」はなく、「商人の心得」（取得ゴールド +10%×3）がある', () => {
+    expect(UPGRADES.map((u) => u.id)).not.toContain('ward');
+    const greed = UPGRADES.find((u) => u.id === 'greed')!;
+    expect(greed.describe(2)).toBe('取得ゴールド +20%');
+    expect(greed.costs).toHaveLength(3);
   });
 });
