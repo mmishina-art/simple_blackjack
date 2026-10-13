@@ -2,7 +2,7 @@ import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { ARMOR_POOL, DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, ITEM_POOL, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import { pickWeighted, tierWeights } from '../core/rarity';
-import { getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
+import { canPlaceAt, getSkill, isArmor, rarityOfSkill, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, type MetaState, type RunBonus } from '../meta/Meta';
 import { STAGES, stageRowOffset } from '../map/stages';
@@ -132,7 +132,7 @@ export function equipSkill(run: RunState, key: SlotKey, skillId: SkillId): boole
   // 通常攻撃（空スロット）はスキルとしてセットできない
   if (skillId === run.fallbackSkill || isArmor(getSkill(skillId))) return false;
   const idx = run.inventory.indexOf(skillId);
-  if (idx < 0 || isSlotLocked(run, key)) return false;
+  if (idx < 0 || isSlotLocked(run, key) || !canPlaceAt(getSkill(skillId), key)) return false; // レア度の制限もある
   run.inventory.splice(idx, 1);
   run.slots[key] = skillId;
   return true;
@@ -158,6 +158,8 @@ export function swapSlots(run: RunState, a: SlotKey, b: SlotKey): boolean {
   const ia = run.slots[a];
   const ib = run.slots[b];
   if (!ia && !ib) return false;
+  // 入れ替えたあとの場所が、レア度の制限に合っているか
+  if ((ia && !canPlaceAt(getSkill(ia), b)) || (ib && !canPlaceAt(getSkill(ib), a))) return false;
   if (ib) run.slots[a] = ib; else delete run.slots[a];
   if (ia) run.slots[b] = ia; else delete run.slots[b];
   return true;
@@ -166,7 +168,9 @@ export function swapSlots(run: RunState, a: SlotKey, b: SlotKey): boolean {
 /** バージョンアップできるスロットか（スキルが入っていて、強化先があり、固定でない。道具は強化先がない）。 */
 export function canUpgradeSlot(run: RunState, key: SlotKey): boolean {
   const id = run.slots[key];
-  return !!id && !isSlotLocked(run, key) && !!getSkill(id).upgradesTo;
+  if (!id || isSlotLocked(run, key)) return false;
+  const to = getSkill(id).upgradesTo;
+  return !!to && canPlaceAt(getSkill(to), key); // 強化先のレア度が、そのスロットに置けること
 }
 
 /** 祠のバージョンアップ: スロットのスキルを1つ上のレア度のスキルに変える。 */

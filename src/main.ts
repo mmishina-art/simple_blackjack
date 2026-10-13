@@ -2,7 +2,7 @@ import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, type MetaState, type RunSummary } from './meta/Meta';
-import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, rarityOfSkill } from './core/skills/Skill';
+import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, placementNote, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
@@ -230,7 +230,7 @@ function offerSkillReward(): void {
   showChoiceScreen(root, {
     heading: 'スキル獲得',
     sub: 'ひとつ選んで装備する（スキル: 基本攻撃力が基準 / 道具: 効果が固定 / 防具: 防御スロット）',
-    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkillBonus(getSkill(id)), tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
+    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
     onPick(i) {
       run.inventory.push(ids[i]);
       syncCodex();

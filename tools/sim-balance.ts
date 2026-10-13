@@ -6,7 +6,7 @@ import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { drawOdds } from '../src/core/cards/odds';
 import { enemyLevel } from '../src/core/entities/enemies/level';
 import { slotAttack } from '../src/core/skills/catalog';
-import { attackValue, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
+import { attackValue, canPlaceAt, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
 import { advanceStage, armorCap, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, upgradeSlot, type RunState } from '../src/run/Run';
@@ -32,7 +32,7 @@ function rewardScore(id: SkillId, run: RunState): number {
   const sk = getSkill(id);
   if (isArmor(sk)) return (sk.damageCap ?? 9) < armorCap(run) ? 40 + (armorCap(run) - sk.damageCap!) * 10 : -1;
   let best = 0;
-  for (const k of Object.keys(WEIGHT).map(Number)) best = Math.max(best, WEIGHT[k] * (slotValue(id, k, run, 0.5) - slotValue(run.slots[k], k, run, 0.5)));
+  for (const k of Object.keys(WEIGHT).map(Number)) if (canPlaceAt(sk, k)) best = Math.max(best, WEIGHT[k] * (slotValue(id, k, run, 0.5) - slotValue(run.slots[k], k, run, 0.5)));
   return best;
 }
 
@@ -41,6 +41,7 @@ function place(run: RunState, id: SkillId): void {
   if (isArmor(sk)) { if (rewardScore(id, run) > 0) equipArmor(run, id); return; }
   let bestK = -1, bestG = 0;
   for (const k of Object.keys(WEIGHT).map(Number)) {
+    if (!canPlaceAt(sk, k)) continue;
     const g = WEIGHT[k] * (slotValue(id, k, run, 0.5) - slotValue(run.slots[k], k, run, 0.5));
     if (g > bestG) { bestG = g; bestK = k; }
   }

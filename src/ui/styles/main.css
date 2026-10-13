@@ -1098,3 +1098,4 @@ section { min-width: 0; }
 .compare__diff { list-style: none; margin: 10px 0 0; padding: 0; text-align: center; font-size: 14px; line-height: 1.9; color: var(--bone); }
 .compare__note { margin: 6px 0 0; font-size: 12px; line-height: 1.6; text-align: center; color: #ff9b8a; }
 .loadout .chip--static { background: #120e09; border: 1px solid #2a2118; box-shadow: none; }
+.lslot--blocked { opacity: 0.45; }
