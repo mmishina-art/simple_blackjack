@@ -122,7 +122,7 @@ describe('図鑑', () => {
   });
 });
 
-describe('編成画面の持ち物の表示用ロジック', () => {
+describe('装備画面の持ち物の表示用ロジック', () => {
   it('inventoryEntries: 種類ごとに個数をまとめ、レア度の高い順に並べる', () => {
     const run = createRun();
     run.inventory.push('jab', 'smash', 'jab', 'heavy', 'jab');

@@ -9,7 +9,7 @@ import type { RunState } from '../run/Run';
 
 export interface ShopOptions {
   offers: ShopOffer[];
-  /** スキル・道具・防具を買った（編成画面で置き先を決める）。 */
+  /** スキル・道具・防具を買った（装備画面で置き先を決める）。 */
   onBought(offer: ShopOffer): void;
   /** 最初に出す一言。 */
   note?: string;

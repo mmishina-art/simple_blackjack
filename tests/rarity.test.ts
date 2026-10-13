@@ -97,7 +97,7 @@ describe('固定スロットの解錠（11以下はレリックで変更でき�
   });
 });
 
-describe('レリックによる上書きの検出（編成画面の赤字表示）', async () => {
+describe('レリックによる上書きの検出（装備画面の赤字表示）', async () => {
   const { effectiveSlotSkills } = await import('../src/run/effective');
   const { TitanBlood, Whetstone } = await import('../src/relics/catalog');
 
