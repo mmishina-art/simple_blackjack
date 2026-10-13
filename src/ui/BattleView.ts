@@ -105,7 +105,7 @@ export class BattleView {
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
     this.surrenderBtn.className = 'btn btn--surrender';
-    this.surrenderBtn.innerHTML = `<span class="btn__main">${SHIELD_ICON}<span>防御</span></span><span class="btn__sub"></span>`;
+    this.surrenderBtn.innerHTML = `<span class="btn__main">${SHIELD_ICON}<span>Guard</span></span><span class="btn__sub"></span>`;
     this.surrenderSub = this.surrenderBtn.querySelector('.btn__sub')!;
     this.renderDefend();
     const actions = section('actions', this.hitBtn, this.standBtn, this.surrenderBtn);
@@ -290,7 +290,7 @@ export class BattleView {
   private renderDefend(): void {
     const { ctx } = this.machine;
     const cap = ctx.player.armorCap ?? ctx.rules.defendCap;
-    const text = `上限 ${cap}`;
+    const text = `防御・上限 ${cap}`;
     if (this.surrenderSub.textContent !== text) this.surrenderSub.textContent = text;
     // 短い表示では伝えきれない説明は、読み上げ・ホバー用に残す
     this.surrenderBtn.title = this.surrenderBtn.ariaLabel = `防御: 被ダメージ最大 ${cap}・このラウンドはスキルが発動しない`;

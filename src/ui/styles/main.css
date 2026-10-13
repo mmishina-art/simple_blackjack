@@ -1242,3 +1242,6 @@ section { min-width: 0; }
 .btn--hit .btn__sub--odds { gap: 8px; }
 
 .btn--surrender .btn__main { font-size: 20px; }
+
+.btn--surrender .btn__main { font-size: 19px; letter-spacing: 0.03em; }
+.btn__shield { width: 17px; height: 17px; }
