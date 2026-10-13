@@ -34,6 +34,8 @@ export interface RunState {
   fallbackSkill: SkillId;
   /** スロットにセットしていない所持スキル。 */
   inventory: SkillId[];
+  /** 所持ゴールド。敵を倒すともらえ、ショップで使う。持ち物を売っても増える。 */
+  gold: number;
   relics: Relic[];
   /** 祭壇の強化による、この冒険のボーナス。 */
   bonus: RunBonus;
@@ -57,7 +59,7 @@ export function createRun(map: StageMap = STAGES[0], meta?: MetaState): RunState
     map, stage: Math.max(1, STAGES.findIndex((m) => m.id === map.id) + 1), position: map.start, cleared: [],
     maxHp, hp: maxHp, baseAttack: START_ATTACK + bonus.attack,
     slots, armor: DEFAULT_ARMOR_ID, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
-    inventory: [], relics: [], bonus,
+    inventory: [], gold: 0, relics: [], bonus,
     favored: meta ? [...meta.codex.skills] : [],
     stats: { maxRow: 0, enemiesDefeated: 0 },
   };

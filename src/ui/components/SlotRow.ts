@@ -23,6 +23,8 @@ export interface SlotRowOptions {
   target?: boolean;
   /** セット待ちのスキルを、ここには置けない（レア度の制限）。薄く出す。 */
   blocked?: boolean;
+  /** セット待ちのスキルを置いたあとの、効果の短い表示。あれば「いま → あと」で出す。 */
+  after?: string;
   onTap?(): void;
 }
 
@@ -43,7 +45,8 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
   const short = describeSkillShort(eff?.changed ? eff.skill : shown, eff?.changed ? eff.atk : o.atk);
   const formula = eff?.changed ? eff.text : describeSkill(shown, o.atk);
   const baseNote = eff?.changed ? `\n本来: ${eff.baseText}` : '';
-  const desc = eff?.changed ? `<span class="over">${short}</span>` : short;
+  const now = eff?.changed ? `<span class="over">${short}</span>` : short;
+  const desc = o.after ? `${now} <span class="lslot__arrow" aria-hidden="true">→</span> <strong class="lslot__after">${o.after}</strong>` : now;
   const detail = `${o.skill ? o.skill.name : fallbackLabel(o.fallback)}\n${formula}${baseNote}\n基本値（ATK）${o.atk}（合計 ${slotLabel(o.key)} のスロット）`;
   const interactive = !o.locked && !!o.onTap;
 

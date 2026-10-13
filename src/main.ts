@@ -16,6 +16,8 @@ import { createInstallEntry } from './ui/InstallGuide';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
+import { generateShop, enemyGold, type ShopOffer } from './run/shop';
+import { showShop } from './ui/ShopScreen';
 import { showShrine } from './ui/ShrineScreen';
 import { showSettings } from './ui/SettingsScreen';
 import { showEnding } from './ui/EndingScreen';
@@ -64,6 +66,9 @@ function showMapScreen(message = ''): void {
   }, message);
 }
 
+/** ショップの品揃え（マスごと。出入りしても変わらない）。 */
+const shopOffers = new Map<string, ShopOffer[]>();
+
 /** 到着したマスのイベント。済みのマスでは何も起きない。 */
 function resolveTile(tile: TileDef): void {
   if (isCleared(run, tile.id)) return showMapScreen();
@@ -101,6 +106,11 @@ function resolveTile(tile: TileDef): void {
         onDone: (message) => { markCleared(run, tile.id); showMapScreen(message); },
         onLeave: () => showMapScreen(),
       });
+    }
+    case 'shop': {
+      let offers = shopOffers.get(tile.id);
+      if (!offers) shopOffers.set(tile.id, (offers = generateShop(run, defaultRng)));
+      return showShop(root, run, { offers, onLeave: () => { markCleared(run, tile.id); showMapScreen(); } });
     }
     default:
       return showMapScreen(tile.kind === 'empty' ? '何もなかった。' : '');
@@ -149,6 +159,7 @@ function endRun(cleared: boolean): number {
 /** 冒険を始める。装備は出撃準備で決めた保存済みの設定が使われる。 */
 function startAdventure(): void {
   bareRun = false;
+  shopOffers.clear();
   run = createRun(undefined, meta);
   showMapScreen();
 }
@@ -156,6 +167,7 @@ function startAdventure(): void {
 /** 素の状態で冒険を始める: 祭壇の強化・図鑑・出撃準備の変更を使わず、記録も残さない（バランスを試すため）。 */
 function startBareAdventure(): void {
   bareRun = true;
+  shopOffers.clear();
   run = createRun();
   showMapScreen('素の状態で出発した（祭壇の強化は使わず、記録も残らない）');
 }
@@ -187,6 +199,9 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   run.hp = machine.ctx.player.hp;
   run.stats.enemiesDefeated++;
   markCleared(run, tile.id);
+  const gold = enemyGold(enemyOfTile(tile), tile.kind === 'boss');
+  run.gold += gold;
+  box.append(el('p', 'result__line result__gold', `ゴールド +${gold}（所持 ${run.gold} G）`));
 
   if (tile.kind === 'boss' && !isFinalStage(run)) {
     box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('次の階層へ', offerStageRelic));
@@ -210,6 +225,7 @@ function offerStageRelic(): void {
   const enter = (): void => {
     const before = run.hp;
     advanceStage(run);
+    shopOffers.clear();
     showMapScreen(`第${run.stage}階層「${run.map.name}」へ。最大 HP +${STAGE_CLEAR_MAX_HP}、HP が ${run.hp - before} 回復した。`);
   };
   if (relics.length === 0) return enter();

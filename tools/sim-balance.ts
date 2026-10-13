@@ -9,6 +9,7 @@ import { slotAttack } from '../src/core/skills/catalog';
 import { attackValue, canPlaceAt, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
+import { buyOffer, enemyGold, generateShop, sellFromInventory } from '../src/run/shop';
 import { advanceStage, armorCap, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, upgradeSlot, type RunState } from '../src/run/Run';
 
 const N = Number(process.argv[2] ?? 600);
@@ -95,7 +96,7 @@ const stageReached: Record<number, number> = {};
       let pick = opts[Math.floor(rng.next() * opts.length)];
       if (SMART_PATH) {
         const hpRatio = run.hp / run.maxHp;
-        const score = (k: string): number => ({ inn: hpRatio < 0.7 ? 5 : 1, chest: 3, shrine: 3, enemy: 2, boss: 2, empty: 1, start: 0 } as Record<string, number>)[k] ?? 0;
+        const score = (k: string): number => ({ inn: hpRatio < 0.7 ? 5 : 1, chest: 3, shop: 3, shrine: 3, enemy: 2, boss: 2, empty: 1, start: 0 } as Record<string, number>)[k] ?? 0;
         pick = [...opts].sort((a, b) => score(b.kind) - score(a.kind) || rng.next() - 0.5)[0];
       }
       const tile = moveTo(run, pick.id);
@@ -134,11 +135,22 @@ const stageReached: Record<number, number> = {};
         if (m.ctx.winner !== m.ctx.player) { dead = tile.id; break; }
         pe.w++; stat.won++;
         run.hp = m.ctx.player.hp;
+        if (!process.env.NO_GOLD) run.gold += enemyGold(def, tile.kind === 'boss');
         if (tile.kind === 'enemy') {
           const offer = offerSkills(rng, run);
           const best = [...offer].sort((a, b) => rewardScore(b, run) - rewardScore(a, run))[0];
           run.inventory.push(best);
           place(run, best);
+        }
+      } else if (tile.kind === 'shop' && !process.env.NO_GOLD) {
+        // 持ち物の余りを売り、遺物 → 効果の大きい順に買う
+        for (const id of [...run.inventory]) sellFromInventory(run, id);
+        const offers = generateShop(run, rng);
+        for (const o of offers.filter((x) => x.type === 'relic')) buyOffer(run, o);
+        const skills = offers.filter((x) => x.type === 'skill').sort((a, b) => rewardScore(b.id, run) - rewardScore(a.id, run));
+        for (const o of skills) {
+          if (rewardScore(o.id, run) <= 0 || run.gold < o.price) continue;
+          if (buyOffer(run, o)) { place(run, o.id); }
         }
       } else if (tile.kind === 'chest') {
         const r = offerRelics(run, rng);

@@ -2,7 +2,7 @@ import type { StageMap, TileDef, TileKind } from './StageMap';
 
 /**
  * 地図を、段ごとの文字列から作る（下の段から順に。1段は左・中・右の3文字）。
- *   '.' = マスなし / 'C' = 宝箱 / 'I' = 宿屋 / 'H' = 祠 / 'O' = 何もない / 英小文字 a, b, c … = 敵（enemies の何番目か）
+ *   '.' = マスなし / 'C' = 宝箱 / 'I' = 宿屋 / 'H' = 祠 / 'P' = ショップ / 'O' = 何もない / 英小文字 a, b, c … = 敵（enemies の何番目か）
  * スタート（0段）とボス（最上段）は、中央に1つずつ置く。各マスは、1つ上の段の、左右に1列以内のマスへ進める
  * （中央に1マスだけの段は、合流点になる）。ID は、スタート=S、1段目=A、ボス=B、それ以外は「r段+L/M/R」。
  */
@@ -12,6 +12,7 @@ export function buildStage(id: string, name: string, enemies: readonly string[],
     if (ch === 'C') return { kind: 'chest' };
     if (ch === 'I') return { kind: 'inn' };
     if (ch === 'H') return { kind: 'shrine' };
+    if (ch === 'P') return { kind: 'shop' };
     if (ch === 'O') return { kind: 'empty' };
     const idx = ch.charCodeAt(0) - 'a'.charCodeAt(0);
     if (idx >= 0 && idx < enemies.length) return { kind: 'enemy', enemyId: enemies[idx] };
