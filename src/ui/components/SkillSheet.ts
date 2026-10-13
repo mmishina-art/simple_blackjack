@@ -15,6 +15,8 @@ export interface SheetOption {
   disabled?: boolean;
   /** reset は「外す」「初期装備に戻す」のような操作の選択肢（スキルとは別の見た目）。 */
   kind?: 'skill' | 'reset';
+  /** この選択肢が属する区分（「スキル」「道具」）。区分が変わるところに見出しが出る。 */
+  section?: string;
   onPick(): void;
 }
 
@@ -66,7 +68,15 @@ export function openSheet(cfg: SheetConfig): () => void {
   }
 
   let firstEnabled: HTMLButtonElement | null = null;
+  let lastSection: string | undefined;
   for (const opt of cfg.options) {
+    if (opt.section && opt.section !== lastSection) {
+      const h = document.createElement('h3');
+      h.className = 'sheet__section';
+      h.textContent = opt.section;
+      list.append(h);
+    }
+    lastSection = opt.section ?? lastSection;
     const btn = document.createElement('button');
     btn.className = `pick ${opt.kind === 'reset' ? 'pick--reset' : rarityClass(opt.rarity)}`;
     btn.disabled = !!opt.disabled;

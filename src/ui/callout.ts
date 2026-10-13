@@ -3,7 +3,7 @@ import type { EventBus } from '../core/events/EventBus';
 import type { Rarity } from '../core/rarity';
 import type { RuleSet } from '../core/rules/RuleSet';
 import { previewSkill, type PreviewPart } from '../core/skills/preview';
-import { BASIC_ICON, fallbackLabel, rarityOfSkill, slotKeyOf } from '../core/skills/Skill';
+import { BASIC_ICON, fallbackLabel, isItem, rarityOfSkill, slotKeyOf } from '../core/skills/Skill';
 
 /** 「いま発動するスキル」の大きな表示（スロット表の下）に必要な内容。 */
 export interface Callout {
@@ -15,6 +15,8 @@ export interface Callout {
   targetBlock: number;
   /** 不発（スキルが発動しない）。 */
   fizzled: boolean;
+  /** 道具（効果が基本攻撃力に関係なく固定）。 */
+  item: boolean;
 }
 
 export interface FxChip {
@@ -48,7 +50,7 @@ export function calloutOf(env: { bus: EventBus; rules: RuleSet }, user: Entity, 
   const total = user.hand.total(env.rules);
   if (user.hand.size === 0 || total > env.rules.bustLimit) return null;
   const p = previewSkill(env, user, target, total);
-  if (!p.skill) return { name: '不発', icon: '×', rarity: 'common', parts: [], targetBlock: target.block, fizzled: true };
+  if (!p.skill) return { name: '不発', icon: '×', rarity: 'common', parts: [], targetBlock: target.block, fizzled: true, item: false };
   const empty = !user.slots[slotKeyOf(total)];
   const fallback = empty && p.skill.id === user.fallbackSkill;
   return {
@@ -58,5 +60,6 @@ export function calloutOf(env: { bus: EventBus; rules: RuleSet }, user: Entity, 
     parts: p.parts,
     targetBlock: target.block,
     fizzled: false,
+    item: isItem(p.skill),
   };
 }

@@ -34,8 +34,8 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
       return { type: 'attack', value: Math.max(0, Math.floor(calc.damage * damageTakenMultiplier(calc.defender, env.rules))), ...(e.pierce ? { pierce: true } : {}) };
     }
     const amount = supportValue(e, user.attackAt(total));
-    if (e.type === 'block') return { type: 'block', value: Math.max(0, Math.floor(env.bus.emit('onBlockGained', { entity: user, amount }).amount)) };
-    return { type: 'heal', value: Math.max(0, Math.floor(env.bus.emit('onHealed', { entity: user, amount }).amount)) };
+    if (e.type === 'block') return { type: 'block', value: Math.max(0, Math.floor(env.bus.emit('onBlockGained', { entity: user, amount, skill }).amount)) };
+    return { type: 'heal', value: Math.max(0, Math.floor(env.bus.emit('onHealed', { entity: user, amount, skill }).amount)) };
   });
   return { skill, parts };
 }

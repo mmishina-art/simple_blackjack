@@ -37,7 +37,9 @@ describe('基本攻撃力（ATK）', () => {
     expect(describeSkill(getSkill('big_attack'))).toBe('攻撃 ATK+5');
     expect(describeSkill(getSkill('shield'))).toBe('Block ATK+3'); // Block・回復も基本攻撃力が基準
     expect(describeSkill(getSkill('shield'), 8)).toBe('Block ATK+3＝11');
-    expect(describeSkill(getSkill('recover'), 5)).toBe('回復 ATK+3＝8');
+    expect(describeSkill(getSkill('herb'), 5)).toBe('回復 8'); // 道具は固定（ATK に関係ない）
+    expect(describeSkill(getSkill('herb'), 12)).toBe('回復 8');
+    expect(describeSkill(getSkill('bomb'))).toBe('攻撃 10');
     expect(describeSkill(getSkill('skel_guard'))).toBe('Block 6'); // 敵の防御は固定量のまま
   });
 
@@ -106,7 +108,8 @@ describe('スロットごとの基本攻撃力（プレイヤー）', () => {
     expect(describeSkillBonus(getSkill('heavy'))).toBe('攻撃 ×1.5+3');
     expect(describeSkillBonus(getSkill('smash'))).toBe('攻撃 ×2+5');
     expect(describeSkillBonus(getSkill('shield'))).toBe('Block +3');
-    expect(describeSkillBonus(getSkill('recover'))).toBe('回復 +3');
+    expect(describeSkillBonus(getSkill('herb'))).toBe('回復 8'); // 道具は固定量のまま
+    expect(describeSkillBonus(getSkill('bomb'))).toBe('攻撃 10');
     expect(describeSkillBonus(getSkill('drain'))).toBe('攻撃 +1 + 回復 ×0.5+2');
     expect(describeSkillBonus(getSkill('ace_strike'))).toBe('攻撃 ×1.5（Block無視・破壊）');
     expect(describeSkillBonus(getSkill('skel_guard'))).toBe('Block 6'); // 固定量は数字のまま
@@ -129,7 +132,7 @@ describe('防御・回復もスロットの基本攻撃力が基準（上位の�
 
   it('Block・回復は、スロットが高いほど増える（盾 ATK+3: 12→5 / 15→8 / 18→11 / 20→13）', () => {
     expect([12, 15, 18, 20].map((k) => at('shield', k)[0])).toEqual([5, 8, 11, 13]);
-    expect([12, 20].map((k) => at('recover', k)[0])).toEqual([5, 13]); // 治癒 ATK+3
+    expect([12, 20].map((k) => at('herb', k)[0])).toEqual([8, 8]); // 薬草（道具）は、スロットが変わっても固定
   });
 
   it('上位ほど上乗せが大きい: シールド ATK+1 < 盾 ATK+3 < 鉄壁の構え ATK+5（同じスロットで）', () => {
@@ -149,7 +152,7 @@ describe('防御・回復もスロットの基本攻撃力が基準（上位の�
 
   it('ATK の強化（砥石 +2）は、Block・回復にも効く', () => {
     expect(at('shield', 15, [Whetstone])[0]).toBe(10);
-    expect(at('recover', 15, [Whetstone])[0]).toBe(10);
+    expect(at('herb', 15, [Whetstone])[0]).toBe(8); // 道具は ATK の強化の影響を受けない
   });
 
   it('敵の防御・回復は固定量のまま（ATK が固定の敵は、いつも同じ）', () => {
@@ -163,9 +166,11 @@ describe('防御・回復もスロットの基本攻撃力が基準（上位の�
     expect(at('ace_strike', 21, [OverlordOrb])).toEqual([22, 8]);
   });
 
-  it('実際の戦闘でも、回復量はスロットの ATK 基準（15 の治癒 = 8）', async () => {
-    const m = await playRound({ player: ['7', '8'], enemyHand: ['K', 'Q', '5'], playerSlots: { 15: 'recover' }, playerHp: 30 });
-    expect(m.ctx.player.hp).toBe(38);
+  it('実際の戦闘でも、薬草（道具）の回復量は固定（どのスロットでも 8）', async () => {
+    const a = await playRound({ player: ['7', '8'], enemyHand: ['K', 'Q', '5'], playerSlots: { 15: 'herb' }, playerHp: 20 });
+    const b = await playRound({ player: ['A', '9'], enemyHand: ['K', 'Q', '5'], playerSlots: { 20: 'herb' }, playerHp: 20 });
+    expect(a.ctx.player.hp).toBe(28);
+    expect(b.ctx.player.hp).toBe(28);
   });
 });
 
@@ -322,7 +327,7 @@ describe('スロット表の各マスの効果', () => {
     const b = badges(machine(), 'player');
     // 基本攻撃力は 11以下=1、スロットが上がるごとに +1（小攻撃 ATK×0.5 は最低 1）
     // Block も ATK 基準（シールド ATK+1 → 15 で 6、盾 ATK+3 → 18 で 11）。会心の一撃は ATK×1.5
-    expect(b).toMatchObject({ 11: '1', 12: '2', 13: '3', 15: 'B6', 18: 'B11', 20: '15', 21: '16' });
+    expect(b).toMatchObject({ 11: '1', 12: '+8', 13: '3', 15: 'B6', 18: 'B11', 20: '15', 21: '16' }); // 12 は薬草（道具・回復 8 固定）
   });
 
   it('回復は +数。複数の効果は並べる（吸精: 攻撃と回復）', () => {

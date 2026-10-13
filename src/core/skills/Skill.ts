@@ -14,6 +14,11 @@ export type SkillEffect =
 export type SkillId = string;
 
 export interface SkillDef {
+  /**
+   * 'skill'（省略時）= 基本攻撃力（ATK）が基準で、スロットが高いほど強い。
+   * 'item'（道具）= ATK に関係なく、効果は固定。レリックで強化できるものもある。
+   */
+  kind?: 'skill' | 'item';
   id: SkillId;
   name: string;
   /** スロット表に表示する1文字。 */
@@ -79,6 +84,11 @@ export function fallbackLabel(skill: SkillDef): string {
   return skill.id === 'basic_attack' ? '通常攻撃' : `通常攻撃（${skill.name}）`;
 }
 
+/** 道具（効果が基本攻撃力に関係なく固定）か。 */
+export function isItem(skill: SkillDef): boolean {
+  return skill.kind === 'item';
+}
+
 export function hasSkill(id: SkillId): boolean {
   return registry.has(id);
 }
@@ -96,6 +106,7 @@ export function attackValue(effect: { mult: number; add?: number }, atk: number)
 
 /** 「ATK×3+2」のような計算式の表記。 */
 export function attackFormula(effect: { mult: number; add?: number }): string {
+  if (!effect.mult) return String(effect.add ?? 0); // 固定ダメージ（道具）
   const mult = effect.mult === 1 ? 'ATK' : `ATK×${effect.mult}`;
   return effect.add ? `${mult}+${effect.add}` : mult;
 }
@@ -117,7 +128,7 @@ function describeEffects(skill: SkillDef, atk?: number): string {
   const value = (v: (atk: number) => number): string => (atk === undefined ? '' : `＝${v(atk)}`);
   return skill.effects
     .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${value((a) => attackValue(e, a))}${e.pierce ? '（Block無視・破壊）' : ''}`;
+      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（Block無視・破壊）' : ''}`;
       const label = e.type === 'block' ? 'Block' : '回復';
       // 固定量（mult なし）は、基本攻撃力に関係ないので、数字だけ
       return e.mult ? `${label} ${supportFormula(e)}${value((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
@@ -138,7 +149,7 @@ function bonusFormula(mult: number, add: number): string {
 export function describeSkillBonus(skill: SkillDef): string {
   return skill.effects
     .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${bonusFormula(e.mult, e.add ?? 0)}${e.pierce ? '（Block無視・破壊）' : ''}`;
+      if (e.type === 'attack') return `攻撃 ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${e.pierce ? '（Block無視・破壊）' : ''}`;
       const label = e.type === 'block' ? 'Block' : '回復';
       return e.mult ? `${label} ${bonusFormula(e.mult, e.amount)}` : `${label} ${e.amount}`;
     })

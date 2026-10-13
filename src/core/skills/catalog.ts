@@ -19,7 +19,6 @@ atk('smash', '渾身の一撃', 2, 5, '渾');  // レジェンド: ATK×2+5
 defineSkill({ id: 'guard', name: 'シールド', icon: '守', effects: [{ type: 'block', mult: 1, amount: 1 }] });   // コモン: ATK+1
 defineSkill({ id: 'shield', name: '盾', icon: '盾', effects: [{ type: 'block', mult: 1, amount: 3 }] });       // コモン: ATK+3
 defineSkill({ id: 'bulwark', name: '鉄壁の構え', icon: '壁', effects: [{ type: 'block', mult: 1, amount: 5 }] }); // レア: ATK+5
-defineSkill({ id: 'recover', name: '治癒', icon: '治', effects: [{ type: 'heal', mult: 1, amount: 3 }] });     // コモン: ATK+3
 defineSkill({
   id: 'shield_bash', name: '盾打ち', icon: '殴',
   effects: [{ type: 'attack', mult: 1 }, { type: 'block', mult: 1, amount: 0 }],
@@ -44,18 +43,34 @@ defineSkill({
   effects: [{ type: 'attack', mult: 2, pierce: true }, { type: 'block', amount: 8 }],
 });
 
-assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike'], 'rare');
+// ---- 道具: 効果は基本攻撃力（ATK）に関係なく固定（低いスロットでも、同じだけ効く）。レリックで強化できるものもある ----
+const item = (id: string, name: string, icon: string, effect: SkillDef['effects'][number]): SkillDef =>
+  defineSkill({ id, name, icon, kind: 'item', effects: [effect] });
+item('herb', '薬草', '草', { type: 'heal', amount: 8 });                    // コモン: 回復 8（固定）
+item('tonic', '回復薬', '薬', { type: 'heal', amount: 14 });                // レア: 回復 14
+item('wood_shield', '木の盾', '木', { type: 'block', amount: 7 });          // コモン: Block 7
+item('iron_shield', '鉄の盾', '鉄', { type: 'block', amount: 12 });         // レア: Block 12
+item('bomb', '爆弾', '爆', { type: 'attack', mult: 0, add: 10 });           // コモン: 10 ダメージ（固定）
+
+assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike', 'tonic', 'iron_shield'], 'rare');
 assignRarity(['smash', 'overlord_strike'], 'legend');
 
-/** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。 */
+/** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。基本攻撃力が基準で、スロットが高いほど強い。 */
 export const SKILL_POOL: readonly SkillId[] = [
   'big_attack', 'jab', 'slash', 'heavy', 'smash',
-  'guard', 'shield', 'bulwark', 'recover', 'shield_bash', 'drain', 'rally',
+  'guard', 'shield', 'bulwark', 'shield_bash', 'drain', 'rally',
 ];
 
-/** プレイヤーの初期スロット。21 は会心の一撃で固定。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
+/** 報酬として出現する道具。効果は固定（基本攻撃力に関係ない）。 */
+export const ITEM_POOL: readonly SkillId[] = ['herb', 'tonic', 'wood_shield', 'iron_shield', 'bomb'];
+
+/** 入手できるものすべて（スキル + 道具）。図鑑・出撃準備・祠の抽選に使う。 */
+export const ALL_POOL: readonly SkillId[] = [...SKILL_POOL, ...ITEM_POOL];
+
+/** プレイヤーの初期スロット。12 は薬草（道具）、21 は会心の一撃で固定。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
 export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   11: 'small_attack',
+  12: 'herb', // 初期から回復を持つ（低い合計値で止まったときの、HP を保つ手段。薬草は固定の回復）
   15: 'guard',
   18: 'shield',
   20: 'big_attack',

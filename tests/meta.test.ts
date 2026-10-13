@@ -76,19 +76,19 @@ describe('祭壇の強化（魂片で恒久強化）', () => {
     meta.upgrades = { vitality: 2, might: 1, ward: 3, rest: 2, insight: 1 };
     expect(computeBonus(meta)).toEqual({ maxHp: 10, attack: 1, startBlock: 6, innHeal: 0.2, extraChoices: 1 });
     const run = createRun(undefined, meta);
-    expect(run.maxHp).toBe(70);
-    expect(run.hp).toBe(70);
+    expect(run.maxHp).toBe(40);
+    expect(run.hp).toBe(40);
     expect(run.baseAttack).toBe(6);
     const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerBlock: run.bonus.startBlock, pace: noWait });
     expect(m.ctx.player.block).toBe(6);
     run.hp = 10;
-    expect(useInn(run)).toBe(Math.ceil(70 * (INN_HEAL_RATIO + 0.2)));
+    expect(useInn(run)).toBe(Math.ceil(40 * (INN_HEAL_RATIO + 0.2)));
     expect(offerSkills(seededRng(1), run)).toHaveLength(4);
   });
 
   it('強化なしなら今までどおり', () => {
     const run = createRun(undefined, emptyMeta());
-    expect([run.maxHp, run.baseAttack, run.bonus.startBlock, run.bonus.extraChoices]).toEqual([60, 5, 0, 0]);
+    expect([run.maxHp, run.baseAttack, run.bonus.startBlock, run.bonus.extraChoices]).toEqual([30, 5, 0, 0]); // 初期の最大 HP は 30
   });
 });
 

@@ -2,7 +2,7 @@ import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { customCount, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
-import { describeSkillBonus, getSkill, rarityOfSkill } from './core/skills/Skill';
+import { describeSkillBonus, getSkill, isItem, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { resolveShrine, useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
@@ -181,8 +181,8 @@ function offerSkillReward(): void {
   const ids = offerSkills(defaultRng, run);
   showChoiceScreen(root, {
     heading: 'スキル獲得',
-    sub: 'ひとつ選び、スロットにセットする',
-    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkillBonus(getSkill(id)) })),
+    sub: 'ひとつ選び、スロットにセットする（スキルは基本攻撃力が基準、道具は効果が固定）',
+    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkillBonus(getSkill(id)), tag: isItem(getSkill(id)) ? '道具' : 'スキル' })),
     onPick(i) {
       run.inventory.push(ids[i]);
       syncCodex();

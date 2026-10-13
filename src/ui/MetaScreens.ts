@@ -1,9 +1,9 @@
 import { audio } from '../audio/AudioManager';
 import { DEFAULT_PLAYER_FALLBACK, slotAttack, START_ATTACK } from '../core/skills/catalog';
-import { SKILL_POOL } from '../core/skills/catalog';
-import { describeSkill, getSkill, rarityOfSkill, slotLabel } from '../core/skills/Skill';
+import { ITEM_POOL, SKILL_POOL } from '../core/skills/catalog';
+import { describeSkill, getSkill, isItem, rarityOfSkill, slotLabel } from '../core/skills/Skill';
 import {
-  buyUpgrade, canBuy, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeBonus, customCount, isRelicDiscovered, isSkillDiscovered,
+  buyUpgrade, canBuy, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeBonus, customCount, isRelicDiscovered, isSkillDiscovered,
   nextCost, saveMeta, setStartingSkill, STARTER_SKILLS, startingCapacity, UPGRADES, upgradeLevel, type MetaState,
 } from '../meta/Meta';
 import { placedElsewhere, prepCandidates, prepSlots, type PrepSlot } from '../meta/prep';
@@ -67,21 +67,27 @@ export function showAltar(root: HTMLElement, meta: MetaState, onClose: () => voi
 /** 図鑑: 入手したスキル・レリックの一覧。未入手は「？」。 */
 export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => void): void {
   const screen = el('main', 'meta-screen');
-  const found = [...new Set([...STARTER_SKILLS, ...SKILL_POOL])].filter((id) => isSkillDiscovered(meta, id)).length;
-  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">入手したものは次回から報酬に出やすくなる。スキルは出撃時に最初から置ける</p>`));
+  const all = [...new Set([...STARTER_SKILLS, ...SKILL_POOL, ...ITEM_POOL])];
+  const kindOf = (wantItem: boolean): string[] => all.filter((id) => isItem(getSkill(id)) === wantItem);
+  screen.append(el('header', 'meta-head', `<h1>図鑑</h1><p class="meta-head__sub">入手したものは次回から報酬に出やすくなる。スキル・道具は出撃時に最初から置ける</p>`));
 
-  const skills = el('section', 'codex');
-  skills.append(el('h2', 'codex__title', `スキル　${found} / ${CODEX_SKILL_TOTAL}`));
-  const sGrid = el('div', 'codex__grid');
-  for (const id of new Set([...STARTER_SKILLS, ...SKILL_POOL])) {
-    const known = isSkillDiscovered(meta, id);
-    const skill = getSkill(id);
-    sGrid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,
-      known
-        ? `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name} ${rarityBadge(rarityOfSkill(skill))}<small>${describeSkill(skill)}</small></span>`
-        : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
-  }
-  skills.append(sGrid);
+  const section = (title: string, ids: string[], total: number): HTMLElement => {
+    const box = el('section', 'codex');
+    box.append(el('h2', 'codex__title', `${title}　${ids.filter((id) => isSkillDiscovered(meta, id)).length} / ${total}`));
+    const grid = el('div', 'codex__grid');
+    for (const id of ids) {
+      const known = isSkillDiscovered(meta, id);
+      const skill = getSkill(id);
+      grid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,
+        known
+          ? `<span class="medal medal--sm">${skill.icon}</span><span>${skill.name} ${rarityBadge(rarityOfSkill(skill))}<small>${describeSkill(skill)}</small></span>`
+          : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
+    }
+    box.append(grid);
+    return box;
+  };
+  const skills = section('スキル', kindOf(false), CODEX_SKILL_TOTAL);
+  const items = section('道具', kindOf(true), CODEX_ITEM_TOTAL);
 
   const relics = el('section', 'codex');
   const rFound = RELIC_POOL.filter((r) => isRelicDiscovered(meta, r.id)).length;
@@ -97,7 +103,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
   relics.append(rGrid);
 
   const body = el('div', 'meta-body');
-  body.append(skills, relics);
+  body.append(skills, items, relics);
   screen.append(body, backButton('戻る', onClose));
   root.replaceChildren(screen);
 }
@@ -175,22 +181,25 @@ export function showPrep(root: HTMLElement, meta: MetaState, onStart: () => void
         },
       });
     }
-    for (const id of prepCandidates(meta)) {
-      const skill = getSkill(id);
-      const elsewhere = placedElsewhere(meta, id, slot.key);
-      const isCurrent = slot.effectiveId === id;
-      options.push({
-        icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill),
-        detail: describeSkill(skill, atkAt(slot.key)),
-        badge: isCurrent ? '現在' : elsewhere.length ? `${elsewhere.map(slotLabel).join('・')} に配置中` : undefined,
-        disabled: !slot.canChange || isCurrent,
-        onPick() {
-          if (setStartingSkill(meta, slot.key, id)) {
-            saveMeta(meta);
-            render();
-          }
-        },
-      });
+    // スキルと道具に分けて並べる（それぞれ、レア度の高い順）
+    for (const [label, wantItem] of [['スキル', false], ['道具', true]] as const) {
+      for (const id of prepCandidates(meta).filter((x) => isItem(getSkill(x)) === wantItem)) {
+        const skill = getSkill(id);
+        const elsewhere = placedElsewhere(meta, id, slot.key);
+        const isCurrent = slot.effectiveId === id;
+        options.push({
+          icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: label,
+          detail: describeSkill(skill, atkAt(slot.key)),
+          badge: isCurrent ? '現在' : elsewhere.length ? `${elsewhere.map(slotLabel).join('・')} に配置中` : undefined,
+          disabled: !slot.canChange || isCurrent,
+          onPick() {
+            if (setStartingSkill(meta, slot.key, id)) {
+              saveMeta(meta);
+              render();
+            }
+          },
+        });
+      }
     }
     const state = slot.customId ? '変更済み' : slot.defaultId ? '初期装備' : '空き';
     openSheet({

@@ -41,9 +41,9 @@ export interface BattleEvents {
     skill: SkillDef | null;
   };
   /** Block 獲得直前。amount の書き換えが可能。 */
-  onBlockGained: { entity: Entity; amount: number };
+  onBlockGained: { entity: Entity; amount: number; /** 発動したスキル・道具（降伏の Block などは null）。道具だけを強化するレリックが見分けるために使う。 */ skill?: SkillDef | null };
   /** 回復直前。amount の書き換えが可能。 */
-  onHealed: { entity: Entity; amount: number };
+  onHealed: { entity: Entity; amount: number; skill?: SkillDef | null };
   /**
    * Block・回復が実際に反映された後（通知のみ）。onBlockGained / onHealed は、スロット表や予測表示が効果を計算するときにも
    * 発火するので、効果音のように「本当に起きたとき」だけ反応したいものは、こちらを使う。

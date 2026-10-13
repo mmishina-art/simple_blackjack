@@ -101,6 +101,12 @@ export class SlotStrip {
     const name = document.createElement('span');
     name.className = 'callout__name';
     name.textContent = c.name;
+    if (c.item) {
+      const tag = document.createElement('em');
+      tag.className = 'kind-tag';
+      tag.textContent = '道具';
+      name.append(' ', tag);
+    }
     this.caption.className = `slots__caption slots__caption--callout${c.fizzled ? ' is-fizzle' : ''}`;
     this.caption.replaceChildren(medal, name);
     for (const chip of chips) {
