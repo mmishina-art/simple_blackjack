@@ -164,7 +164,7 @@ section { min-width: 0; }
 }
 
 /* Actions (thumb zone): 鉄板に金縁 */
-.actions { display: grid; grid-template-columns: 1fr 1fr 0.78fr; gap: 8px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .btn {
   min-height: 72px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
@@ -452,7 +452,7 @@ section { min-width: 0; }
 .slots__caption { min-height: 1.4em; font-size: 12px; letter-spacing: 0.06em; color: var(--bone-dim); }
 .slots--bust .slots__caption { color: var(--blood-hi); }
 
-.actions { grid-template-columns: 1fr 1fr 0.78fr; gap: 8px; }
+.actions { grid-template-columns: 1fr 1fr; gap: 12px; }
 
 @media (max-height: 760px) {
   .slot__icon { font-size: 12px; }
@@ -919,6 +919,7 @@ section { min-width: 0; }
   .battle .callout__fx b { font-size: 22px; }
   .battle .actions { gap: 10px; }
   .battle .actions .btn { min-height: 60px; }
+  .battle .actions .btn--surrender { min-height: 46px; }
   /* 手札が5枚以上（HandView が .hand--many を付ける）のときは、折り返さずにカードを少し重ねて1行に収める。
      折り返すと手札の高さが増えて、ボタンが画面の外に出る */
   .battle .hand--many .card + .card { margin-left: -16px; }
@@ -937,6 +938,7 @@ section { min-width: 0; }
   .battle .card { width: 40px; height: 58px; }
   .battle .actions { gap: 8px; }
   .battle .actions .btn { min-height: 52px; }
+  .battle .actions .btn--surrender { min-height: 44px; }
 }
 
 /* ---- 短い画面の編成画面 ----
@@ -1241,7 +1243,10 @@ section { min-width: 0; }
 .btn__shield { width: 20px; height: 20px; flex: none; color: #8fd4c4; }
 .btn--hit .btn__sub--odds { gap: 8px; }
 
-.btn--surrender .btn__main { font-size: 20px; }
 
-.btn--surrender .btn__main { font-size: 19px; letter-spacing: 0.03em; }
-.btn__shield { width: 17px; height: 17px; }
+
+/* Guard は、Hit・Stand の下に、幅いっぱいの 1 行（盾のマーク + Guard + 説明）。色は深い緑青 */
+.btn--surrender { grid-column: 1 / -1; min-height: 52px; flex-direction: row; gap: 10px; }
+.btn--surrender .btn__main { font-size: 22px; letter-spacing: 0.08em; }
+.btn--surrender .btn__sub { font-size: 11px; letter-spacing: 0.04em; }
+.btn__shield { width: 20px; height: 20px; }
