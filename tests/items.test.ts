@@ -44,7 +44,7 @@ describe('スキルと道具', () => {
   });
 
   it('道具の効果は固定: スロット・ATK の強化に関係なく、いつも同じ', () => {
-    for (const [id, value] of [['herb', 8], ['tonic', 14], ['wood_shield', 7], ['iron_shield', 12], ['bomb', 10]] as const) {
+    for (const [id, value] of [['herb', 8], ['tonic', 14], ['bomb', 10]] as const) {
       const values = [12, 15, 20].flatMap((k) => [effectAt(id, k)[0], effectAt(id, k, [Whetstone], 8)[0]]);
       expect(new Set(values), id).toEqual(new Set([value]));
     }
@@ -52,7 +52,7 @@ describe('スキルと道具', () => {
 
   it('同じ種類のスキルは、スロットが高いほど強い（道具との違い）', () => {
     expect([12, 20].map((k) => effectAt('shield', k)[0])).toEqual([5, 13]);
-    expect(effectAt('wood_shield', 12)[0]).toBe(effectAt('wood_shield', 20)[0]);
+    expect(effectAt('herb', 12)[0]).toBe(effectAt('herb', 20)[0]);
   });
 
   it('爆弾は固定ダメージ（10）。実際の戦闘でも、スロットに関係なく同じ', async () => {
@@ -80,9 +80,7 @@ describe('道具を強化するレリック', () => {
     expect(effectAt('drain', 17, [HerbalistBag])).toEqual(effectAt('drain', 17)); // スキルは変わらない
   });
 
-  it('匠の工具: 道具の Block・ダメージ +4。スキルの Block・攻撃には効かない', () => {
-    expect(effectAt('wood_shield', 15, [ArtisanTools])).toEqual([11]);
-    expect(effectAt('iron_shield', 15, [ArtisanTools])).toEqual([16]);
+  it('匠の工具: 道具のダメージ +4。スキルの Block・攻撃には効かない', () => {
     expect(effectAt('bomb', 15, [ArtisanTools])).toEqual([14]);
     expect(effectAt('shield', 15, [ArtisanTools])).toEqual(effectAt('shield', 15));
     expect(effectAt('big_attack', 15, [ArtisanTools])).toEqual(effectAt('big_attack', 15));

@@ -2,12 +2,12 @@ import { audio } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { customCount, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, startingCapacity, type MetaState, type RunSummary } from './meta/Meta';
-import { describeSkillBonus, getSkill, isItem, rarityOfSkill } from './core/skills/Skill';
+import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, rarityOfSkill } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
 import {
-  createRun, enemyOfTile, isCleared, markCleared, moveTo, offerRelics, offerSkills, type RunState,
+  armorCap, createRun, enemyOfTile, isCleared, markCleared, moveTo, offerRelics, offerSkills, type RunState,
 } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
@@ -111,6 +111,7 @@ function startBattle(tile: TileDef): void {
     playerMaxHp: run.maxHp,
     playerHp: run.hp,
     playerSlots: run.slots,
+    playerArmorCap: armorCap(run),
     playerFallback: run.fallbackSkill,
     playerAttack: run.baseAttack,
     playerBlock: run.bonus.startBlock,
@@ -124,7 +125,7 @@ function startBattle(tile: TileDef): void {
 /** 持っているスキル・レリックを図鑑に登録する（負けても残る）。 */
 function syncCodex(): void {
   let changed = false;
-  for (const id of [...Object.values(run.slots), ...run.inventory]) if (id) changed = discoverSkill(meta, id) || changed;
+  for (const id of [...Object.values(run.slots), run.armor, ...run.inventory]) if (id) changed = discoverSkill(meta, id) || changed;
   for (const r of run.relics) changed = discoverRelic(meta, r.id) || changed;
   if (changed) saveMeta(meta);
 }
@@ -184,8 +185,8 @@ function offerSkillReward(): void {
   const ids = offerSkills(defaultRng, run);
   showChoiceScreen(root, {
     heading: 'スキル獲得',
-    sub: 'ひとつ選び、スロットにセットする（スキルは基本攻撃力が基準、道具は効果が固定）',
-    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkillBonus(getSkill(id)), tag: isItem(getSkill(id)) ? '道具' : 'スキル' })),
+    sub: 'ひとつ選んで装備する（スキル: 基本攻撃力が基準 / 道具: 効果が固定 / 防具: 防御スロット）',
+    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: describeSkillBonus(getSkill(id)), tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
     onPick(i) {
       run.inventory.push(ids[i]);
       syncCodex();

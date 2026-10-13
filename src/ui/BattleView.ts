@@ -1,5 +1,7 @@
 import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
+import { enemyLevel } from '../core/entities/enemies/level';
+import { drawOdds, formatPercent } from '../core/cards/odds';
 import type { Entity } from '../core/entities/Entity';
 import { BattleLog } from './components/BattleLog';
 import { EnemyView, floatText, playFx } from './components/EnemyView';
@@ -34,6 +36,10 @@ export class BattleView {
   private shownTurn: TurnInfo | null = null;
   private roundEl = document.createElement('div');
   private hitBtn = document.createElement('button');
+  private hitSub!: HTMLElement;
+  private surrenderSub!: HTMLElement;
+  /** 敵のレベル（攻撃するときの平均ダメージ）。 */
+  private enemyLv = 1;
   private standBtn = document.createElement('button');
   private surrenderBtn = document.createElement('button');
   private muteBtn = document.createElement('button');
@@ -50,6 +56,7 @@ export class BattleView {
     /** 戦闘終了時のオーバーレイ内容を作る（次の画面への遷移はここで行う）。 */
     private readonly buildResult: (won: boolean) => HTMLElement,
   ) {
+    this.enemyLv = enemyLevel(machine.ctx.enemyDef);
     this.container = document.createElement('main');
     this.container.className = 'battle';
     this.enemyView = new EnemyView(machine.ctx.enemyDef.id);
@@ -68,7 +75,7 @@ export class BattleView {
     const infoBtn = document.createElement('button');
     infoBtn.className = 'info-btn';
     infoBtn.textContent = '敵の技';
-    infoBtn.addEventListener('click', () => this.showSheet((close) => buildEnemyInfo(machine.ctx.enemy, machine.ctx.enemyDef, close)));
+    infoBtn.addEventListener('click', () => this.showSheet((close) => buildEnemyInfo(machine.ctx.enemy, machine.ctx.enemyDef, machine.ctx.player.hp, close)));
     const historyBtn = document.createElement('button');
     historyBtn.className = 'info-btn';
     historyBtn.textContent = '記録';
@@ -87,10 +94,13 @@ export class BattleView {
 
     this.hitBtn.className = 'btn btn--hit';
     this.hitBtn.innerHTML = '<span class="btn__main">Hit</span><span class="btn__sub">引く</span>';
+    this.hitSub = this.hitBtn.querySelector('.btn__sub')!;
     this.standBtn.className = 'btn btn--stand';
     this.standBtn.innerHTML = '<span class="btn__main">Stand</span><span class="btn__sub">勝負</span>';
     this.surrenderBtn.className = 'btn btn--surrender';
-    this.surrenderBtn.innerHTML = `<span class="btn__main">撤退</span><span class="btn__sub">Block +${machine.ctx.rules.surrenderBlock}・スキル発動なし</span>`;
+    this.surrenderBtn.innerHTML = '<span class="btn__main">防御</span><span class="btn__sub"></span>';
+    this.surrenderSub = this.surrenderBtn.querySelector('.btn__sub')!;
+    this.renderDefend();
     const actions = section('actions', this.hitBtn, this.standBtn, this.surrenderBtn);
     this.hitBtn.addEventListener('click', () => this.act('hit'));
     this.standBtn.addEventListener('click', () => this.act('stand'));
@@ -111,7 +121,7 @@ export class BattleView {
       machine.bus.on('onSkillUsed', ({ user, skill }) => floatText(this.areaOf(user), `「${skill.name}」`, 'skill')),
       machine.bus.on('onBlockApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'block', amount)),
       machine.bus.on('onHealApplied', ({ entity, amount }) => this.playSupportEffect(entity, 'heal', amount)),
-      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage, p.broken ?? 0)),
+      machine.bus.on('onDamageDealt', (p) => this.playDamageEffects(p.attacker?.id ?? null, p.defender, p.hpLoss, p.absorbed, p.damage, p.broken ?? 0, p.reduced ?? 0)),
       machine.bus.on('onBattleEnd', ({ winner }) => {
         if (winner.id === 'player') window.setTimeout(() => this.enemyView.play('defeated'), 300);
       }),
@@ -171,15 +181,15 @@ export class BattleView {
     floatText(area, `+${amount}`, kind, kind === 'block' ? 'Block' : 'HP');
   }
 
-  private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number, broken = 0): void {
-    const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : '';
+  private playDamageEffects(attacker: 'player' | 'enemy' | null, target: Entity, hpLoss: number, absorbed: number, damage: number, broken = 0, reduced = 0): void {
+    const text = hpLoss > 0 ? `-${hpLoss}` : absorbed > 0 ? 'GUARD' : reduced > 0 ? 'GUARD' : '';
     if (!text) return;
     const kind = hpLoss > 0 ? 'damage' : 'block'; // 全部防いだときは、ダメージの色ではなく Block の色
     if (absorbed > 0) playFx(this.areaOf(target), 'guard');
     if (broken > 0) playFx(this.areaOf(target), 'break'); // Block を破壊（会心の一撃）
     // ログ欄の代わりに、数字の下へ内訳（Block が防いだ量・バーストの倍率）を添える
     const mult = damageTakenMultiplier(target, this.machine.ctx.rules);
-    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', broken > 0 ? `Block破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : ''].filter(Boolean).join('・');
+    const notes = [absorbed > 0 ? `Block ${absorbed}` : '', broken > 0 ? `Block破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : '', reduced > 0 ? `防具 −${reduced}` : ''].filter(Boolean).join('・');
     if (target.id === 'enemy') {
       if (hpLoss > 0) this.enemyView.play('hurt');
       this.enemyView.floatText(text, kind, notes);
@@ -215,8 +225,8 @@ export class BattleView {
 
   private render(): void {
     const { ctx } = this.machine;
-    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, ctx.enemy.attack);
-    // 自分の ATK は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の ATK は出す
+    this.enemyHp.update(ctx.enemy.name, ctx.enemy.hp, ctx.enemy.maxHp, ctx.enemy.block, this.enemyLv);
+    // 自分の ATK は表示しない（スロット表の各マスと、発動するスキルの数値に出ているため）。敵の LV（攻撃するときの平均ダメージ）は出す
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
@@ -234,10 +244,44 @@ export class BattleView {
     // Hit / Stand は PlayerAction で入力待ちのときのみ活性
     const active = this.machine.canAct;
     this.hitBtn.disabled = !active;
+    this.renderOdds(active);
+    this.renderDefend();
     this.standBtn.disabled = !active;
     this.surrenderBtn.disabled = !active;
 
     if (ctx.winner) this.showResult(ctx.winner === ctx.player);
+  }
+
+  /** 防御ボタンの説明。装備している防具と、このラウンドに受けるダメージの上限（レリックの補正後）を出す。 */
+  private renderDefend(): void {
+    const { ctx } = this.machine;
+    const cap = ctx.player.armorCap ?? ctx.rules.defendCap;
+    const text = `被ダメージ最大 ${cap}・スキルは発動しない`;
+    if (this.surrenderSub.textContent !== text) this.surrenderSub.textContent = text;
+  }
+
+  /** Hit ボタンの下に、次に引いたときのバースト・ブラックジャックの確率を、アイコン + 数字で出す（入力待ちのときだけ）。 */
+  private renderOdds(active: boolean): void {
+    const { ctx } = this.machine;
+    const odds = active ? drawOdds(ctx.deck, ctx.player.hand, ctx.enemy.hand, ctx.rules) : null;
+    const bust = odds ? formatPercent(odds.bust) : '';
+    const bj = odds ? formatPercent(odds.blackjack) : '';
+    const key = `${bust}|${bj}`;
+    if (this.hitSub.dataset.key === key) return;
+    this.hitSub.dataset.key = key;
+    this.hitSub.classList.toggle('btn__sub--odds', !!odds);
+    // 読み上げ・長押しの説明は文字で（アイコンだけに頼らない）
+    this.hitBtn.setAttribute('aria-label', odds ? `Hit 引く。次に引くとバースト ${bust}、ブラックジャック ${bj}` : 'Hit 引く');
+    this.hitBtn.title = odds ? `バースト ${bust} / ブラックジャック ${bj}` : '';
+    if (!odds) return void (this.hitSub.textContent = '引く');
+    const chip = (icon: string, cls: string, text: string): HTMLElement => {
+      const el = document.createElement('span');
+      el.className = `odds odds--${cls}`;
+      el.innerHTML = icon;
+      el.append(text);
+      return el;
+    };
+    this.hitSub.replaceChildren(chip(ICON_BURST, 'bust', bust), chip(ICON_SPADE, 'bj', bj));
   }
 
   private showResult(won: boolean): void {
@@ -246,6 +290,10 @@ export class BattleView {
     this.overlay.replaceChildren(this.buildResult(won));
   }
 }
+
+/** バースト（とげとげの爆発）とブラックジャック（スペード）のアイコン。色は CSS（currentColor）。 */
+const ICON_BURST = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1l2.4 6.1L20 4l-2.1 6.2L23 12l-5.1 1.8L20 20l-5.6-3.1L12 23l-2.4-6.1L4 20l2.1-6.2L1 12l5.1-1.8L4 4l5.6 3.1z"/></svg>';
+const ICON_SPADE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5C12 1.5 3 8.8 3 14.2a4.6 4.6 0 0 0 8 3.1L10 22.5h4l-1-5.2a4.6 4.6 0 0 0 8-3.1C21 8.8 12 1.5 12 1.5z"/></svg>';
 
 function section(cls: string, ...children: HTMLElement[]): HTMLElement {
   const el = document.createElement('section');

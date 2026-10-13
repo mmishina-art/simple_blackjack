@@ -9,6 +9,12 @@ export class Entity {
   /** シールド値。ダメージは HP より先に Block を減らす。戦闘中は持ち越され、戦闘が終わると消える。 */
   block = 0;
   readonly hand = new Hand();
+  /** 装備している防具の「被ダメージ上限」（防御したラウンドに効く）。プレイヤーのみ。 */
+  armorCap?: number;
+  /** このラウンドの被ダメージの上限（防御したときだけ。HP の減少がこの値を超えない）。null なら上限なし。 */
+  damageCap: number | null = null;
+  /** このラウンドに、上限の対象として受けたダメージ（HP の減少）の合計。 */
+  capTaken = 0;
 
   constructor(
     readonly id: EntityId,

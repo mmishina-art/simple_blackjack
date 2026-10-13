@@ -3,7 +3,8 @@ import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
 /**
- * サレンダー: 自分のスキルは発動せず、防御として Block を得る。
+ * 防御（サレンダー）: 自分のスキルは発動せず、このラウンドに受けるダメージ（HP の減少）に上限がつく。
+ * 上限は装備している防具の値（なければ RuleSet.defendCap）。Block は得ない。
  * 敵の手札は確定済みなので、そのまま Initiative へ進み、敵だけが行動する（行動順の比較はなし）。
  */
 export class SurrenderState implements BattleState {
@@ -13,12 +14,9 @@ export class SurrenderState implements BattleState {
     const { player, rules } = ctx;
     ctx.playerSurrendered = true;
     ctx.bus.emit('onSurrender', { entity: player });
-    ctx.log(`${player.name}は防御に徹した…`);
-    const { amount } = ctx.bus.emit('onBlockGained', { entity: player, amount: rules.surrenderBlock });
-    const gained = Math.max(0, Math.floor(amount));
-    player.block += gained;
-    ctx.log(`${player.name}は Block を ${gained} 得た`);
-    ctx.bus.emit('onBlockApplied', { entity: player, amount: gained });
+    player.damageCap = player.armorCap ?? rules.defendCap;
+    player.capTaken = 0;
+    ctx.log(`${player.name}は防御に徹した…（受けるダメージは最大 ${player.damageCap}）`);
     ctx.notify();
     await ctx.wait(PACE.surrender);
     return 'Initiative';

@@ -22,7 +22,7 @@ export class HpBar {
     this.blockChip.className = 'block-chip';
     this.blockChip.hidden = true;
     this.atkChip.className = 'atk-chip';
-    this.atkChip.title = '基本攻撃力（ATK）。攻撃スキルのダメージの基準。プレイヤーは、発動するスロットで変わる（11以下=1、スロットが上がるごとに +1）';
+    this.atkChip.title = '敵のレベル（LV）= 攻撃するときの平均ダメージ。LV 5 なら、1回の攻撃で約 5 ダメージ';
     const right = document.createElement('span');
     right.className = 'hpbar__right';
     right.append(this.blockChip, this.atkChip, this.label);
@@ -35,12 +35,12 @@ export class HpBar {
     this.left.append(el);
   }
 
-  update(name: string, hp: number, maxHp: number, block = 0, attack?: number | string): void {
+  update(name: string, hp: number, maxHp: number, block = 0, level?: number): void {
     this.name.textContent = name;
     this.label.textContent = `HP ${hp} / ${maxHp}`;
     this.fill.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
-    this.atkChip.hidden = attack === undefined;
-    if (attack !== undefined) this.atkChip.textContent = `ATK ${attack}`;
+    this.atkChip.hidden = level === undefined;
+    if (level !== undefined) this.atkChip.textContent = `LV ${level}`;
     this.blockChip.hidden = block <= 0;
     this.blockChip.textContent = `守 ${block}`;
   }

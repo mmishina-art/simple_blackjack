@@ -38,6 +38,8 @@ export interface BattleEvents {
     hpLoss: number;
     /** Block を無視する攻撃（会心の一撃）が、相手の Block を破壊した量。 */
     broken?: number;
+    /** 防御の上限（防具）で軽減された量。 */
+    reduced?: number;
     skill: SkillDef | null;
   };
   /** Block 獲得直前。amount の書き換えが可能。 */

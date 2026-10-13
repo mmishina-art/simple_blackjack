@@ -48,11 +48,16 @@ const item = (id: string, name: string, icon: string, effect: SkillDef['effects'
   defineSkill({ id, name, icon, kind: 'item', effects: [effect] });
 item('herb', '薬草', '草', { type: 'heal', amount: 8 });                    // コモン: 回復 8（固定）
 item('tonic', '回復薬', '薬', { type: 'heal', amount: 14 });                // レア: 回復 14
-item('wood_shield', '木の盾', '木', { type: 'block', amount: 7 });          // コモン: Block 7
-item('iron_shield', '鉄の盾', '鉄', { type: 'block', amount: 12 });         // レア: Block 12
 item('bomb', '爆弾', '爆', { type: 'attack', mult: 0, add: 10 });           // コモン: 10 ダメージ（固定）
 
-assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike', 'tonic', 'iron_shield'], 'rare');
+// ---- 防具: 防御スロットに置く。防御したラウンドに受けるダメージ（HP の減少）の上限。数字が小さいほど硬い ----
+const armor = (id: string, name: string, icon: string, damageCap: number): SkillDef =>
+  defineSkill({ id, name, icon, kind: 'armor', effects: [], damageCap });
+armor('iron_shield', '鉄の盾', '鉄', 5);   // コモン: 上限 5（戦士の初期装備）
+armor('steel_shield', '鋼の盾', '鋼', 4);  // レア: 上限 4
+armor('guard_mail', '守りの鎧', '鎧', 3);  // レジェンド: 上限 3
+
+assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike', 'tonic', 'steel_shield'], 'rare');
 // レジェンドの Block・複合スキル（祠のバージョンアップの行き先。報酬にも出る）
 defineSkill({ id: 'fortress', name: '城塞', icon: '城', effects: [{ type: 'block', mult: 1, amount: 10 }] }); // レジェンド: ATK+10
 defineSkill({
@@ -63,7 +68,7 @@ defineSkill({
   id: 'siphon', name: '吸魂', icon: '魂',
   effects: [{ type: 'attack', mult: 1.5, add: 3 }, { type: 'heal', mult: 0.5, amount: 5 }],
 });
-assignRarity(['smash', 'overlord_strike', 'fortress', 'aegis', 'siphon'], 'legend');
+assignRarity(['smash', 'overlord_strike', 'fortress', 'aegis', 'siphon', 'guard_mail'], 'legend');
 
 /** 祠のバージョンアップ先。コモン→レア、レア→レジェンド。道具・固定スキルは強化できない。 */
 const UPGRADES: Record<SkillId, SkillId> = {
@@ -81,9 +86,14 @@ export const SKILL_POOL: readonly SkillId[] = [
 ];
 
 /** 報酬として出現する道具。効果は固定（基本攻撃力に関係ない）。 */
-export const ITEM_POOL: readonly SkillId[] = ['herb', 'tonic', 'wood_shield', 'iron_shield', 'bomb'];
+export const ITEM_POOL: readonly SkillId[] = ['herb', 'tonic', 'bomb'];
 
-/** 入手できるものすべて（スキル + 道具）。図鑑・出撃準備・祠の抽選に使う。 */
+/** 報酬として出現する防具（防御スロットに置く）。 */
+export const ARMOR_POOL: readonly SkillId[] = ['iron_shield', 'steel_shield', 'guard_mail'];
+/** 戦士の初期装備の防具。 */
+export const DEFAULT_ARMOR_ID: SkillId = 'iron_shield';
+
+/** スロットに置けるものすべて（スキル + 道具。防具は防御スロット専用）。図鑑・出撃準備・祠の抽選に使う。 */
 export const ALL_POOL: readonly SkillId[] = [...SKILL_POOL, ...ITEM_POOL];
 
 /** プレイヤーの初期スロット。12 は薬草（道具）、21 は会心の一撃で固定。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */

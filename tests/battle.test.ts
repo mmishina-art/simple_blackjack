@@ -189,7 +189,7 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
     for (const i of inputs) if (actions.has(i.round)) expect(actions.get(i.round)).toEqual(i.cards);
   });
 
-  it('撤退しても敵の手札は確定済み（追加ドローなし）で、そのまま Initiative で公開される', async () => {
+  it('防御しても敵の手札は確定済み（追加ドローなし）で、そのまま Initiative で公開される', async () => {
     const m = machine(6);
     const { inputs, actions } = await observeBattle(m, () => 'surrender');
     expect(inputs.length).toBeGreaterThan(0);
@@ -524,17 +524,30 @@ describe('Block とサレンダー', () => {
     expect(m.ctx.enemy.block).toBe(4);
   });
 
-  it('サレンダー: Block 5 を得て、敵の攻撃を受け止める。自分のスキルは不発', async () => {
+  it('防御: 受けるダメージが防具の上限に抑えられる（既定 5）。自分のスキルは不発で、Block は得ない', async () => {
     const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender' });
     expect(m.ctx.turn?.mode).toBe('defend');
-    expect(m.ctx.player.hp).toBe(60 - 3); // 溶解8 - Block5
+    expect(m.ctx.player.hp).toBe(60 - 5); // 溶解8 → 上限5
+    expect(m.ctx.player.block).toBe(0);
     expect(m.ctx.enemy.hp).toBe(16);       // 自分は行動していない
   });
 
-  it('サレンダーの Block もレリックの影響を受ける（堅牢の盾 +3）', async () => {
-    const { SturdyShield } = await import('../src/relics/catalog');
-    const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', relics: [SturdyShield] });
-    expect(m.ctx.player.hp).toBe(60); // Block 8 で溶解8を完全に防ぐ
+  it('防具の上限を渡すと、その値になる（鋼の盾 4 / 守りの鎧 3）。上限より小さい攻撃は、そのまま', async () => {
+    const steel = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerArmorCap: 4 });
+    expect(steel.ctx.player.hp).toBe(60 - 4);
+    const weak = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerArmorCap: 20 });
+    expect(weak.ctx.player.hp).toBe(60 - 8); // 溶解8 は上限20 を超えない
+  });
+
+  it('防御の上限は Block が先に吸収したあとの HP の減少に掛かる', async () => {
+    // Block 6 を持って防御: 溶解8 → Block 6 が吸収、HP の減少は 2（上限 5 以内）
+    const m = await playRound({ player: ['K', '5'], enemyHand: ['9', '9'], from: 'Surrender', playerBlock: 6 });
+    expect(m.ctx.player.hp).toBe(60 - 2);
+  });
+
+  it('防御しないときは上限が効かない（次のラウンドも解除される）', async () => {
+    const m = await playRound({ player: ['K', '9'], enemyHand: ['9', '9'] }); // 19 vs 18、防御なし
+    expect(m.ctx.player.damageCap).toBeNull();
   });
 
   it('サレンダー中に敵がバーストしたら誰も行動しない', async () => {
@@ -547,14 +560,14 @@ describe('Block の持ち越し', () => {
   it('Block は戦闘中ラウンドをまたいで残り、次のラウンドの攻撃も吸収する', async () => {
     const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], stopAt: ['Deal'] }); // 15 vs 14: 盾6, 敵の酸5
     expect(m.ctx.player.block).toBe(1);
-    // 次のラウンド: プレイヤーが防御（Block+5 → 6）、敵の溶解8
+    // 次のラウンド: プレイヤーが防御（上限 5）、敵の溶解8
     m.ctx.player.hand.clear();
     m.ctx.enemy.hand.clear();
     ['K', '5'].forEach((r) => m.ctx.player.hand.add(makeCard(r as never, 'S')));
     ['9', '9'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as never, 'H')));
     await m.runFrom('Surrender', ['Deal']);
     expect(m.ctx.player.block).toBe(0);
-    expect(m.ctx.player.hp).toBe(60 - 2); // 持ち越し1 + サレンダー5 = 6、溶解8 → 2通る
+    expect(m.ctx.player.hp).toBe(60 - 5); // 持ち越し Block 1 が吸収 → HP の減少 7 を、上限 5 に抑える
   });
 });
 
