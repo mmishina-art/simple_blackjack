@@ -1,6 +1,7 @@
 import { slotAttack } from '../core/skills/catalog';
 import { canPlaceAt, describeSkill, getSkill, placementNote, rarityOfSkill, SLOT_KEYS, slotLabel, type SlotKey } from '../core/skills/Skill';
 import { resolveShrine } from '../map/events';
+import { upgradeCost } from '../run/shop';
 import { isSlotLocked, swapSlots, upgradeSlot, type RunState } from '../run/Run';
 import type { Rng } from '../core/util/Rng';
 import { showChoiceScreen } from './ChoiceScreen';
@@ -26,7 +27,7 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
 
   const choices: { icon: string; name: string; description: string; run(): void }[] = [];
   if (canSwap) choices.push({ icon: '替', name: '入れ替え', description: '2つのスロットのスキル・道具を入れ替える（空きスロットへの移動もできる）', run: pickSwapFirst });
-  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', name: 'バージョンアップ', description: 'スキルを1つ上のレア度に変える（コモン→レア、レア→レジェンド。道具は不可）', run: pickUpgrade });
+  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを1つ上のレア度に変える（コモン→レア 40 G、レア→レジェンド 80 G。道具は不可）', run: pickUpgrade });
   choices.push({ icon: '祈', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
   choices.push({ icon: '去', name: '立ち去る', description: '何もしない（また来られる）', run: opts.onLeave });
 
@@ -81,14 +82,18 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
         const from = getSkill(run.slots[k]!);
         const to = getSkill(from.upgradesTo!);
         const blocked = !canPlaceAt(to, k);
+        const cost = upgradeCost(from.id)!;
+        const poor = run.gold < cost;
         return {
-          disabled: blocked,
-          note: blocked ? `「${to.name}」は ${placementNote(to)}。先に入れ替えで、高いスロットへ動かす` : undefined,
+          disabled: blocked || poor,
+          badge: `${cost} G`,
+          note: blocked ? `「${to.name}」は ${placementNote(to)}。先に入れ替えで、高いスロットへ動かす` : poor ? `ゴールドが足りない（所持 ${run.gold} G）` : undefined,
           icon: to.icon, name: `${slotLabel(k)}　${from.name} → ${to.name}`,
           detail: describeSkill(to, slotAttack(run.baseAttack, k)), rarity: rarityOfSkill(to),
           onPick() {
-            upgradeSlot(run, k);
-            opts.onDone(`「${from.name}」が「${to.name}」にバージョンアップした。`);
+            if (run.gold < cost || !upgradeSlot(run, k)) return;
+            run.gold -= cost;
+            opts.onDone(`「${from.name}」が「${to.name}」にバージョンアップした（-${cost} G）。`);
           },
         };
       }),

@@ -4,7 +4,7 @@ import { seededRng } from '../src/core/util/Rng';
 import { stageRows } from '../src/map/stages';
 import { STAGES } from '../src/map/stages';
 import { createRun } from '../src/run/Run';
-import { buyOffer, enemyGold, generateShop, priceOfSkill, sellFromInventory, sellPrice } from '../src/run/shop';
+import { upgradeCost, buyOffer, enemyGold, generateShop, priceOfSkill, sellFromInventory, sellPrice } from '../src/run/shop';
 
 describe('ゴールドとショップ', () => {
   it('冒険は 0 G で始まり、敵を倒すほど多くもらえる（ボスは 2.5 倍）', () => {
@@ -62,5 +62,12 @@ describe('ゴールドとショップ', () => {
       expect(Object.values(stage.tiles).some((t) => t.kind === 'shop')).toBe(true);
       expect(stageRows(stage)).toBeGreaterThan(0);
     }
+  });
+
+  it('祠のバージョンアップの代金は、買値の差（コモン→レア 40、レア→レジェンド 80）。強化先がなければ null', () => {
+    expect(upgradeCost('big_attack')).not.toBeNull();
+    expect(upgradeCost('fortress')).toBeNull();
+    expect(upgradeCost('jab')).toBe(priceOfSkill('big_attack') - priceOfSkill('jab'));
+    expect(upgradeCost('heavy')).toBe(priceOfSkill('smash') - priceOfSkill('heavy'));
   });
 });
