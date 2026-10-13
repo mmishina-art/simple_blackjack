@@ -101,7 +101,7 @@ describe('階層の構成', () => {
     expect(run.position).toBe('S');
     expect(run.cleared).toEqual([]);
     expect(run.maxHp).toBe(30 + STAGE_CLEAR_MAX_HP); // 最大 HP が増える
-    expect(run.hp).toBe(5 + STAGE_CLEAR_MAX_HP + Math.ceil(run.maxHp * STAGE_CLEAR_HEAL));
+    expect(run.hp).toBe(Math.min(run.maxHp, 5 + STAGE_CLEAR_MAX_HP + Math.ceil(run.maxHp * STAGE_CLEAR_HEAL)));
     run.hp = run.maxHp - 1;
     advanceStage(run);
     expect(run.stage).toBe(3);
