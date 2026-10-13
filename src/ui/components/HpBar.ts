@@ -1,3 +1,6 @@
+/** ブロックのマーク: 六角形が 3 つ寄り合った、蜂の巣のようなバリアーの板（結晶・蜘蛛の巣に見えないよう、放射状の線は使わない）。 */
+const BARRIER_ICON = '<svg class="block-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12.0,2.2 16.5,4.8 16.5,10.0 12.0,12.6 7.5,10.0 7.5,4.8" fill="currentColor" fill-opacity="0.55" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><polygon points="7.5,10.0 12.0,12.6 12.0,17.8 7.5,20.4 3.0,17.8 3.0,12.6" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><polygon points="16.5,10.0 21.0,12.6 21.0,17.8 16.5,20.4 12.0,17.8 12.0,12.6" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+
 export class HpBar {
   readonly el = document.createElement('div');
   private fill = document.createElement('div');
@@ -42,6 +45,8 @@ export class HpBar {
     this.atkChip.hidden = level === undefined;
     if (level !== undefined) this.atkChip.textContent = `LV ${level}`;
     this.blockChip.hidden = block <= 0;
-    this.blockChip.textContent = `守 ${block}`;
+    this.blockChip.innerHTML = `${BARRIER_ICON}<span>${block}</span>`;
+    this.blockChip.setAttribute('aria-label', `ブロック ${block}`);
+    this.blockChip.title = `ブロック ${block}`;
   }
 }
