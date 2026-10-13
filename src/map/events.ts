@@ -55,7 +55,7 @@ const SHRINE_EFFECTS: ShrineEffect[] = [
     apply(run, rng) {
       const id = pickWeighted(ALL_POOL, 1, rng, tierWeights(ALL_POOL, (sid) => rarityOfSkill(getSkill(sid)), run.stage))[0];
       run.inventory.push(id);
-      return { id: 'old-art', title: '古き技の記憶', text: `「${getSkill(id).name}」を授かった。（持ち物に入った）` };
+      return { id: 'old-art', title: '古き技の記憶', text: `「${getSkill(id).name}」を授かった。` };
     },
   },
   {

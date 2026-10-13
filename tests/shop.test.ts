@@ -4,6 +4,7 @@ import { seededRng } from '../src/core/util/Rng';
 import { stageRows } from '../src/map/stages';
 import { STAGES } from '../src/map/stages';
 import { createRun } from '../src/run/Run';
+import { POUCH_SIZE, stashInPouch } from '../src/run/loadout';
 import { upgradeCost, buyOffer, enemyGold, generateShop, priceOfSkill, sellFromInventory, sellPrice } from '../src/run/shop';
 
 describe('ゴールドとショップ', () => {
@@ -69,5 +70,27 @@ describe('ゴールドとショップ', () => {
     expect(upgradeCost('fortress')).toBeNull();
     expect(upgradeCost('jab')).toBe(priceOfSkill('big_attack') - priceOfSkill('jab'));
     expect(upgradeCost('heavy')).toBe(priceOfSkill('smash') - priceOfSkill('heavy'));
+  });
+
+  it('道具袋は 1 つ: 袋に入れると、いまの袋の中身は売られる（空なら何も売らない）', () => {
+    expect(POUCH_SIZE).toBe(1);
+    const run = createRun();
+    run.inventory.push('jab');
+    expect(stashInPouch(run, 'jab')).toEqual({ sold: [], gold: 0 });
+    expect(run.inventory).toEqual(['jab']);
+    run.inventory.push('big_attack'); // 袋がいっぱいのところへ、新しく得た物
+    const r = stashInPouch(run, 'big_attack')!;
+    expect(r.sold).toEqual(['jab']);
+    expect(r.gold).toBe(sellPrice('jab'));
+    expect(run.inventory).toEqual(['big_attack']);
+    expect(run.gold).toBe(sellPrice('jab'));
+    expect(stashInPouch(run, 'smash')).toBeNull(); // 持っていない物は入れられない
+  });
+
+  it('同じスキルを 2 つ持っているときも、1 つだけ残す', () => {
+    const run = createRun();
+    run.inventory.push('jab', 'jab');
+    stashInPouch(run, 'jab');
+    expect(run.inventory).toEqual(['jab']);
   });
 });

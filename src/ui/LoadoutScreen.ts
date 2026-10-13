@@ -1,20 +1,27 @@
 import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
-import { canPlaceAt, describeSkill, describeSkillBonus, describeSkillShort, placementNote, getSkill, isArmor, KIND_LABEL, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId, type SkillKind } from '../core/skills/Skill';
+import { canPlaceAt, describeSkill, describeSkillBonus, describeSkillShort, placementNote, getSkill, isArmor, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
-import { inventoryEntries } from '../run/loadout';
+import { stashInPouch } from '../run/loadout';
 import { previewSlot } from '../run/effective';
 import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { sellFromInventory, sellPrice } from '../run/shop';
 import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
 import { buildSlotRow } from './components/SlotRow';
-import { openSheet, type SheetOption } from './components/SkillSheet';
+import { openSheet } from './components/SkillSheet';
 import { kindTag, medalKindClass } from './kind';
 import { rarityBadge, rarityClass } from './rarity';
 
 export interface LoadoutOptions {
   /** スキル獲得直後など、あらかじめ「セット待ち」にしておく持ち物のスキル。置いたら自動で閉じる。 */
   armed?: SkillId;
+  /**
+   * セット待ちになった経緯。reward = 報酬・祈りで得た（袋に入れる / 売る）、pouch = 袋から取り出した（やめる / 売る）、
+   * shop = ショップで買った（袋に入れる / 買うのをやめて返金）。省略時は reward。
+   */
+  mode?: 'reward' | 'pouch' | 'shop';
+  /** shop のとき、「買うのをやめる」で呼ぶ（返金して売り切れを戻す）。 */
+  undo?(): void;
   /** 閉じる。message があればマップ画面に表示する。 */
   onClose(message?: string): void;
 }
@@ -25,10 +32,10 @@ export interface LoadoutOptions {
  *  - スキル獲得直後は、上に「置くスキル」が表示され、置きたいスロットをタップするだけ
  *  - 11以下（小攻撃）と 21（会心の一撃）は固定で、選べない平らな行。レリックで解錠されると選べる
  */
-const KINDS: readonly SkillKind[] = ['skill', 'item', 'armor'];
 
 export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptions): void {
   let armed: SkillId | null = opts.armed && run.inventory.includes(opts.armed) ? opts.armed : null;
+  let armedMode = opts.mode ?? 'reward';
 
   const render = (): void => {
     const screen = document.createElement('main');
@@ -37,7 +44,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const head = document.createElement('header');
     head.className = 'loadout__head';
     head.innerHTML = `<h1>編成</h1>
-      <p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : 'スロットをタップして、持ち物を置く（上書きのみ。置き換えた元のものは失われる）'}</p>`;
+      <p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : 'スロットの確認（置くのは、スキルを得たときと、道具袋から）'}</p>`;
     screen.append(head);
 
     if (armed) {
@@ -51,7 +58,6 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
     // スロット一覧
     const effective = effectiveSlotSkills(run);
-    const entries = inventoryEntries(run);
     const slotList = document.createElement('div');
     slotList.className = 'loadout__slots';
     for (const key of SLOT_KEYS) {
@@ -67,7 +73,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         target: !!armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key),
         blocked: !!armed && !isArmor(getSkill(armed)) && !canPlaceAt(getSkill(armed), key),
         after: armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key) ? previewSlot(run, key, armed).short : undefined,
-        onTap: () => {
+        onTap: !armed ? undefined : () => {
           if (armed && isArmor(getSkill(armed))) return; // 防具は、下の防具の欄に装備する
           if (armed && !canPlaceAt(getSkill(armed), key)) return; // レア度の制限: ここには置けない
           if (armed) {
@@ -78,69 +84,43 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
                 opts.onClose(`「${skill.name}」を ${slotLabel(key)} にセットした。`);
               }
             });
-            return;
           }
-          openPicker(key);
         },
       }));
     }
-    slotList.append(buildArmorRow());
+    slotList.append(buildArmorRow(), buildPouchRow());
     screen.append(slotList);
 
-    // 持ち物（表示のみ。置くときはスロットをタップする）。セット待ちのときは上のバナーに集中させるため隠す
-    const inv = document.createElement('div');
-    inv.className = 'loadout__inv';
-    inv.innerHTML = `<div class="loadout__inv-title">持ち物（${run.inventory.length}）　<span class="loadout__gold">${run.gold} G</span>　タップで売る</div>`;
-    const chips = document.createElement('div');
-    chips.className = 'loadout__chips';
-    if (entries.length === 0) chips.textContent = 'なし（敵を倒すとスキル・道具が手に入る）';
-    // スキルと道具に分けて並べる
-    for (const kind of KINDS) {
-      const label = KIND_LABEL[kind];
-      const group = entries.filter((e) => kindOfSkill(getSkill(e.id)) === kind);
-      if (group.length === 0) continue;
-      const h = document.createElement('div');
-      h.className = 'loadout__kind';
-      h.textContent = label;
-      chips.append(h);
-      for (const e of group) {
-        const skill = getSkill(e.id);
-        const chip = document.createElement('button');
-        chip.className = 'chip'; // 枠は同じ。レア度はアイコンだけで示す。タップで売る
-        chip.title = `売る（${sellPrice(e.id)} G）`;
-        chip.addEventListener('click', () => openSheet({
-          title: `「${skill.name}」を売る？`,
-          subtitle: `${sellPrice(e.id)} G で売れる（所持 ${run.gold} G）。売ったものは戻らない`,
-          options: [{ kind: 'confirm', icon: '売', name: `売る（+${sellPrice(e.id)} G）`, detail: describeSkillBonus(skill), onPick() { if (sellFromInventory(run, e.id) !== null) { audio.sfx('click'); render(); } } }],
-        }));
-        chip.innerHTML = `<span class="medal medal--sm ${rarityClass(rarityOfSkill(skill))}${medalKindClass(kind)}">${skill.icon}</span><span>${skill.name}${e.count > 1 ? ` ×${e.count}` : ''}<small>${describeSkillBonus(skill)}</small></span>`;
-        chips.append(chip);
-      }
-    }
-    inv.append(chips);
-    if (!armed) screen.append(inv);
-
-    const close = document.createElement('button');
-    close.className = 'btn btn--retry loadout__btn';
-    close.innerHTML = armed
-      ? `<span class="btn__main">セットしない（売る）</span><span class="btn__sub">+${sellPrice(armed)} G</span>`
-      : '<span class="btn__main">閉じる</span>';
-    close.addEventListener('click', () => {
-      audio.sfx('click');
-      if (!armed) return opts.onClose();
+    const actions = document.createElement('div');
+    actions.className = 'loadout__actions';
+    const mk = (cls: string, main: string, sub: string, onClick: () => void): HTMLButtonElement => {
+      const b = document.createElement('button');
+      b.className = `btn ${cls} loadout__btn`;
+      b.innerHTML = `<span class="btn__main">${main}</span>${sub ? `<span class="btn__sub">${sub}</span>` : ''}`;
+      b.addEventListener('click', () => { audio.sfx('click'); onClick(); });
+      return b;
+    };
+    if (!armed) {
+      actions.append(mk('btn--retry', '閉じる', '', () => opts.onClose()));
+    } else {
       const id = armed;
       const sk = getSkill(id);
-      openSheet({
+      const mode = armedMode;
+      const sellIt = (): void => { openSheet({
         title: `「${sk.name}」を売る？`,
         subtitle: `セットしないものは売却する（${sellPrice(id)} G）。売ったものは戻らない`,
         options: [{ kind: 'confirm', icon: '売', name: `売る（+${sellPrice(id)} G）`, detail: describeSkillBonus(sk), onPick() {
           if (sellFromInventory(run, id) !== null) { audio.sfx('click'); opts.onClose(`「${sk.name}」を ${sellPrice(id)} G で売った（所持 ${run.gold} G）。`); }
         } }],
-      });
-    });
-    const actions = document.createElement('div');
-    actions.className = 'loadout__actions';
-    actions.append(close);
+      }); };
+      if (mode === 'pouch') {
+        actions.append(mk('btn--stand', 'やめる', '袋にもどす', () => opts.onClose()), mk('btn--retry', '売る', `+${sellPrice(id)} G`, sellIt));
+      } else if (mode === 'shop') {
+        actions.append(mk('btn--retry', '買うのをやめる', '全額返金', () => { opts.undo?.(); opts.onClose(); }));
+      } else {
+        actions.append(mk('btn--retry', '売る', `+${sellPrice(id)} G`, sellIt));
+      }
+    }
     screen.append(actions);
     root.replaceChildren(screen);
   };
@@ -149,15 +129,15 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
   function buildArmorRow(): HTMLElement {
     const cur = getSkill(run.armor);
     const target = !!armed && isArmor(getSkill(armed));
-    const row = document.createElement('button');
+    const row = document.createElement(target ? 'button' : 'div');
     row.title = `${cur.name}\n${describeSkill(cur)}\n防御したラウンドに受けるダメージ（HP の減少）の上限`;
-    row.className = `lslot lslot--set lslot--armor lslot--tap ${rarityClass(rarityOfSkill(cur))}${target ? ' lslot--target' : ''}`;
+    row.className = `lslot lslot--set lslot--armor${target ? ' lslot--tap' : ''} ${rarityClass(rarityOfSkill(cur))}${target ? ' lslot--target' : ''}`;
     row.innerHTML = `<span class="lslot__key">防御</span>
       <span class="medal medal--sm medal--armor">${cur.icon}</span>
       <span class="lslot__name">${cur.name} ${kindTag(cur, true)}</span>
       <span class="lslot__desc">${describeSkillShort(cur, 0)}${target ? ` → <strong class="lslot__after">${describeSkillShort(getSkill(armed!), 0)}</strong>` : ''}</span>
-      <span class="lslot__go" aria-hidden="true">›</span>`;
-    row.addEventListener('click', () => {
+      <span class="lslot__go" aria-hidden="true">${target ? '›' : ''}</span>`;
+    if (target) row.addEventListener('click', () => {
       if (armed && isArmor(getSkill(armed))) {
         const id = armed;
         return confirmArmor(id, () => {
@@ -167,9 +147,56 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
           }
         });
       }
-      openArmorPicker();
     });
     return row;
+  }
+
+  /** 道具袋の行（防御スロットの下）。中身があれば、タップで「スロットに置く / 売る」。セット待ちのときは、タップで袋に入れる。 */
+  function buildPouchRow(): HTMLElement {
+    const id = armed ? null : run.inventory[0] ?? null;
+    const sk = id ? getSkill(id) : null;
+    const row = document.createElement('button');
+    const taking = !!armed && armedMode === 'pouch';
+    row.className = `lslot lslot--set lslot--pouch lslot--tap${armed && !taking ? ' lslot--target' : ''}`;
+    const icon = sk ? `<span class="medal medal--sm ${rarityClass(rarityOfSkill(sk))}${medalKindClass(kindOfSkill(sk))}">${sk.icon}</span>` : '<span class="medal medal--sm medal--empty">袋</span>';
+    const name = taking ? '取り出し中' : armed ? '袋に入れる' : sk ? `${sk.name} ${kindTag(sk)}` : '空き';
+    const desc = taking ? 'やめると袋にもどる' : armed
+      ? (run.inventory.some((x, i) => !(x === armed && i === run.inventory.indexOf(x))) ? '中身は売られる' : '1 つだけ')
+      : sk ? describeSkillBonus(sk) : '';
+    row.innerHTML = `<span class="lslot__key">道具袋</span>${icon}<span class="lslot__name">${name}</span><span class="lslot__desc">${desc}</span><span class="lslot__go" aria-hidden="true">${(armed && !taking) || sk ? '›' : ''}</span>`;
+    row.addEventListener('click', () => {
+      if (armed) return stashArmed();
+      if (!id || !sk) return;
+      openSheet({
+        title: `道具袋の「${sk.name}」`,
+        subtitle: `${describeSkillBonus(sk)}（所持 ${run.gold} G）`,
+        options: [
+          { kind: 'confirm', icon: '置', name: 'スロットに置く', detail: '置きたいスロットを選ぶ', onPick() { armed = id; armedMode = 'pouch'; render(); } },
+          { kind: 'confirm', icon: '売', name: `売る（+${sellPrice(id)} G）`, detail: describeSkillBonus(sk), onPick() { if (sellFromInventory(run, id) !== null) { audio.sfx('click'); render(); } } },
+        ],
+      });
+    });
+    return row;
+  }
+
+  /** セット待ちのものを道具袋に入れる。袋に先客がいれば、その中身は売られる（確認あり）。 */
+  function stashArmed(): void {
+    if (!armed) return;
+    const id = armed;
+    const sk = getSkill(id);
+    if (armedMode === 'pouch') return; // 袋から出したものは、もう袋にある（「やめる」で戻す）
+    const old = run.inventory.filter((x, i) => !(x === id && i === run.inventory.indexOf(id)));
+    const doStash = (): void => {
+      const r = stashInPouch(run, id);
+      if (r) { audio.sfx('pick'); opts.onClose(`「${sk.name}」を道具袋に入れた${r.sold.length ? `（元の「${r.sold.map((x) => getSkill(x).name).join('」「')}」は ${r.gold} G で売った）` : ''}。`); }
+    };
+    if (old.length === 0) return doStash();
+    const oldSk = getSkill(old[0]);
+    openSheet({
+      title: `「${sk.name}」を袋に入れる？`,
+      subtitle: `袋は 1 つだけ。いまの「${oldSk.name}」は売られる（+${sellPrice(old[0])} G）`,
+      options: [{ kind: 'confirm', icon: '袋', name: '袋に入れる', detail: `${oldSk.name} → ${sk.name}`, onPick: doStash }],
+    });
   }
 
   /** 防具を装備する前の確認。ビフォーアフターを見せて、選ばせる。 */
@@ -184,27 +211,6 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     });
   };
 
-  const openArmorPicker = (): void => {
-    const cur = getSkill(run.armor);
-    const options: SheetOption[] = inventoryEntries(run)
-      .filter((e) => isArmor(getSkill(e.id)))
-      .map((e) => {
-        const a = getSkill(e.id);
-        return {
-          icon: a.icon, name: a.name, rarity: rarityOfSkill(a), skillKind: 'armor' as const,
-          detail: `${describeSkillShort(cur, 0)} → ${describeSkillShort(a, 0)}`,
-          note: describeSkill(a),
-          onPick() { confirmArmor(e.id, () => { if (equipArmor(run, e.id)) render(); }); },
-        };
-      });
-    openSheet({
-      title: '防御スロット（防具）',
-      subtitle: `いま: ${cur.name}（${describeSkill(cur)}）`,
-      options,
-      empty: '持ち物に防具がない。敵を倒すと手に入ることがある。',
-    });
-  };
-
   /** セットする前の確認: ビフォーアフターを見せて、選ばせる（空きスロットでも、上書きでも）。 */
   const confirmPlace = (key: number, id: SkillId, done: () => void): void => {
     const before = previewSlot(run, key, run.slots[key] ?? null);
@@ -214,34 +220,6 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       subtitle: `このスロットの基本値（ATK）は ${after.atk}`,
       content: buildSlotCompare(before, after),
       options: [{ kind: 'confirm', icon: '置', name: 'セットする', detail: `${before.short} → ${after.short}`, onPick: done }],
-    });
-  };
-
-  /** スロットをタップしたときに開く、置くスキルの選択シート。 */
-  const openPicker = (key: number): void => {
-    const currentId = run.slots[key];
-    const current = currentId ? getSkill(currentId) : null;
-    const options: SheetOption[] = [];
-    const now = previewSlot(run, key, currentId ?? null);
-    const entries = inventoryEntries(run);
-    for (const kind of ['skill', 'item'] as const) {
-      for (const e of entries.filter((x) => kindOfSkill(getSkill(x.id)) === kind)) {
-        const skill = getSkill(e.id);
-        options.push({
-          icon: skill.icon, name: skill.name, rarity: rarityOfSkill(skill), section: KIND_LABEL[kind], skillKind: kind,
-          detail: `${now.short} → ${previewSlot(run, key, e.id).short}`,
-          badge: e.count > 1 ? `×${e.count}` : undefined,
-          disabled: !canPlaceAt(skill, key),
-          note: !canPlaceAt(skill, key) ? placementNote(skill) : current ? `いまの「${current.name}」は失われる（上書き）` : undefined,
-          onPick() { confirmPlace(key, e.id, () => { if (equipSkill(run, key, e.id)) render(); }); },
-        });
-      }
-    }
-    openSheet({
-      title: `${slotLabel(key)} のスロット`,
-      subtitle: `いま: ${now.name}（${now.short}）　選ぶと、セット後の変化を確認できる`,
-      options,
-      empty: '置けるものがない。敵を倒すとスキルや道具が手に入る。',
     });
   };
 

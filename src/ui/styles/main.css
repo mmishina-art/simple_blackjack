@@ -1071,7 +1071,7 @@ section { min-width: 0; }
   padding: 1px 5px; border: 1px solid #5d8f6b; border-radius: 8px; color: #9ed7ae; background: rgba(40, 80, 55, 0.35);
 }
 .kind-tag--skill { border-color: var(--gold); color: var(--gold); background: rgba(176, 141, 62, 0.15); }
-.kind-tag--armor { border-color: #6f8fb0; color: #a9c6e4; background: rgba(60, 85, 115, 0.4); }
+.kind-tag--armor { border-color: #8a8478; color: #cfc8b8; background: rgba(120, 112, 98, 0.3); }
 .sheet__section {
   margin: 8px 0 2px; padding: 0 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.25em; color: var(--gold);
 }
@@ -1125,9 +1125,9 @@ section { min-width: 0; }
 .lslot__after { color: var(--gold); }
 
 /* 防御スロット（防具）は、ほかのスロットから少し離し、鋼色の枠にして区別する */
-.loadout__slots .lslot--armor { margin-top: 8px; background: #0f141a; border-color: #46607a; }
-.loadout__slots .lslot--armor .lslot__key { color: #a9c6e4; }
-.loadout__slots .lslot--armor.lslot--target { border-color: #8fb4d8; box-shadow: 0 0 8px rgba(120, 170, 220, 0.35); }
+.loadout__slots .lslot--armor { margin-top: 8px; background: #15130f; border-color: #8a8478; }
+.loadout__slots .lslot--armor .lslot__key { color: #cfc8b8; }
+.loadout__slots .lslot--armor.lslot--target { border-color: #e0d8c4; box-shadow: 0 0 8px rgba(224, 216, 196, 0.3); }
 
 /* 冒険中の、体力とゴールドの常時表示（各画面の上端の余白の中に収める） */
 .run-status {
@@ -1139,3 +1139,27 @@ section { min-width: 0; }
 .run-status__gold b { color: var(--gold); }
 .run-status__hp--low b { color: var(--blood-hi); }
 .run-status[hidden] { display: none; }
+.medal--empty { opacity: 0.5; font-size: 12px; }
+
+/* 置くスキルのバナー付き（セット待ち）の編成画面は、高さが足りないとき、置けない固定スロット（≤11・21）を隠す */
+@media (max-height: 800px) {
+  .loadout--armed .loadout__slots .lslot--fixed { display: none; }
+}
+
+/* ---- 勝負の結果を主役に: 合計値を上の行に、発動するスキル名とダメージを手札の右側に出す ---- */
+.hand-block { display: flex; flex-direction: column; gap: 2px; }
+.hand-block > .hand__total { text-align: left; font-size: 34px; line-height: 1.1; min-height: 1.1em; }
+.hand-block > .hand__total--bust { font-size: 26px; }
+.hand__side { flex: 1 1 0; min-width: 0; display: flex; justify-content: flex-end; }
+.battle .hand__side .slots__caption {
+  min-height: 0; flex-direction: column; align-items: flex-end; justify-content: center; gap: 0; text-align: right; padding: 0;
+}
+.battle .hand__side .callout__icon { display: none; }
+.battle .hand__side .callout__name { flex: none; max-width: 100%; font-size: 18px; }
+.battle .hand__side .callout__fx b { font-size: 30px; }
+.battle .hand__side .callout__note { display: block; margin: 0; text-align: right; }
+@media (max-height: 850px) {
+  .battle .hand-block > .hand__total { font-size: 28px; }
+  .battle .hand__side .callout__name { font-size: 16px; }
+  .battle .hand__side .callout__fx b { font-size: 24px; }
+}

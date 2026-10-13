@@ -13,6 +13,7 @@ import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
 import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
 import { createInstallEntry } from './ui/InstallGuide';
+import { POUCH_SIZE } from './run/loadout';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
@@ -87,6 +88,24 @@ function showMapScreen(message = ''): void {
 /** ショップの品揃え（マスごと。出入りしても変わらない）。 */
 const shopOffers = new Map<string, ShopOffer[]>();
 
+/** ショップ。スキル・道具・防具を買うと、編成画面で置き先（スロット / 道具袋）を決める。 */
+function openShop(tile: TileDef, offers: ShopOffer[], note = ''): void {
+  showShop(root, run, {
+    offers, note,
+    onBought: (offer) => showLoadout(root, run, {
+      armed: offer.id, mode: 'shop',
+      undo() {
+        const i = run.inventory.indexOf(offer.id);
+        if (i >= 0) run.inventory.splice(i, 1);
+        run.gold += offer.price;
+        offer.sold = false;
+      },
+      onClose: (msg) => openShop(tile, offers, msg ?? ''),
+    }),
+    onLeave: () => { markCleared(run, tile.id); showMapScreen(); },
+  });
+}
+
 /** 到着したマスのイベント。済みのマスでは何も起きない。 */
 function resolveTile(tile: TileDef): void {
   if (isCleared(run, tile.id)) return showMapScreen();
@@ -121,14 +140,19 @@ function resolveTile(tile: TileDef): void {
     case 'shrine': {
       return showShrine(root, run, {
         rng: defaultRng,
-        onDone: (message) => { markCleared(run, tile.id); showMapScreen(message); },
+        onDone: (message) => {
+          markCleared(run, tile.id);
+          // 祈りでスキルを授かって、道具袋がいっぱいなら、置き先（スロット / 道具袋 / 売る）を決める
+          if (run.inventory.length > POUCH_SIZE) return showLoadout(root, run, { armed: run.inventory[run.inventory.length - 1], onClose: (msg) => showMapScreen(msg ?? message) });
+          showMapScreen(message);
+        },
         onLeave: () => showMapScreen(),
       });
     }
     case 'shop': {
       let offers = shopOffers.get(tile.id);
       if (!offers) shopOffers.set(tile.id, (offers = generateShop(run, defaultRng)));
-      return showShop(root, run, { offers, onLeave: () => { markCleared(run, tile.id); showMapScreen(); } });
+      return openShop(tile, offers);
     }
     default:
       return showMapScreen(tile.kind === 'empty' ? '何もなかった。' : '');
