@@ -267,19 +267,19 @@ describe('マスのイベント', () => {
 });
 
 describe('レリックの効果', () => {
-  it('砥石: 基本攻撃力 +2（20 の大攻撃 ATK+5 が 15 → 17）', async () => {
+  it('砥石: 基本攻撃力 +1（20 の大攻撃 ATK+5 が 15 → 16）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40, relics: [Whetstone] });
-    expect(m.ctx.enemy.hp).toBe(40 - 17);
+    expect(m.ctx.enemy.hp).toBe(40 - 16);
   });
 
-  it('胸当て: 受ける攻撃ダメージ -2', async () => {
+  it('胸当て: 受ける攻撃ダメージ -1', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40, relics: [Breastplate] });
-    expect(m.ctx.player.hp).toBe(60 - 6);
+    expect(m.ctx.player.hp).toBe(60 - 3); // 溶解 4 - 1
   });
 
-  it('吸血の牙: 敵のHPを削るたびHP+3', async () => {
+  it('吸血の牙: 敵のHPを削るたびHP+1', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 40, playerHp: 50, relics: [VampireFang] });
-    expect(m.ctx.player.hp).toBe(50 + 3 - 8);
+    expect(m.ctx.player.hp).toBe(50 + 1 - 4);
   });
 
   it('身代わりの人形: 最初のバーストでは敵も行動しない', async () => {
@@ -301,13 +301,13 @@ describe('レリックの効果', () => {
 
   it('堅牢の盾: 獲得する Block +3', async () => {
     const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], relics: [SturdyShield], stopAt: ['CheckDeath'] });
-    expect(m.ctx.player.block).toBe(6 + 3 - 5);
+    expect(m.ctx.player.block).toBe(6 + 3 - 3); // 盾 6 + 3、敵の酸 3
   });
 
-  it('命の蝋燭: 戦闘開始時にHP+8', () => {
+  it('命の蝋燭: 戦闘開始時にHP+5', () => {
     const m = new BattleMachine({ enemy: ENEMY_LINEUP[0], playerHp: 30, relics: [LifeCandle], pace: noWait });
     m.bus.emit('onBattleStart', { player: m.ctx.player, enemy: m.ctx.enemy });
-    expect(m.ctx.player.hp).toBe(38);
+    expect(m.ctx.player.hp).toBe(35);
   });
 
   it('覇王の宝珠: 会心の一撃（ATK×1.5）が覇王の一撃（ATK×2 + Block 8）に変わる', async () => {
@@ -346,14 +346,14 @@ describe('敵の特性', () => {
     expect(m.ctx.turn).toMatchObject({ mode: 'sequential', first: 'enemy', second: 'player' });
   });
 
-  it('屍食鬼: HPを削るたびHP+4', async () => {
-    const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 20 });
-    expect(m.ctx.enemy.hp).toBe(24);
-    expect(m.ctx.player.hp).toBe(60 - (12 - 11)); // 貪り喰う ATK4×3。後攻の盾（18 は ATK 8 + 3 = Block 11）が先に付与される
+  it('屍食鬼: HPを削るたびHP+3', async () => {
+    const m = await playRound({ player: ['9', '8'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 20 });
+    expect(m.ctx.player.hp).toBe(60 - 9); // 貪り喰う ATK4×2+1 = 9（17 は未設定で Block なし）
+    expect(m.ctx.enemy.hp).toBe(20 + 3 - 7); // HP を削って +3 回復、そのあと後攻の通常攻撃（17 は ATK 7）
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon') });
-    expect(m.ctx.player.hp).toBe(60 - (17 + 3 - 11)); // 業火 ATK5×3+2 + 息吹3。後攻の盾 Block 11 が先に付与される
+    expect(m.ctx.player.hp).toBe(60 - (13 - 11)); // 業火 ATK5×2 + 息吹3 = 13。後攻の盾 Block 11 が先に付与される
   });
 });

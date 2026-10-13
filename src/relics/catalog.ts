@@ -6,28 +6,28 @@ export const reduceDamage = (damage: number, by: number): number => (damage > 0 
 
 export const Whetstone: Relic = {
   id: 'whetstone', rarity: 'rare', name: '血塗れの砥石', icon: '砥',
-  description: '基本攻撃力（ATK）+2（すべての攻撃スキルに効く）',
+  description: '基本攻撃力（ATK）+1（すべての攻撃スキルに効く）',
   apply({ player }) {
-    player.attack += 2;
+    player.attack += 1;
   },
 };
 
 export const Breastplate: Relic = {
   id: 'breastplate', rarity: 'common', name: '鋼の胸当て', icon: '胸',
-  description: '受ける攻撃ダメージ -2（最低1）',
+  description: '受ける攻撃ダメージ -1（最低1）',
   apply({ bus, player }) {
     bus.on('onDamageCalculated', (p) => {
-      if (p.defender === player) return { ...p, damage: reduceDamage(p.damage, 2) };
+      if (p.defender === player) return { ...p, damage: reduceDamage(p.damage, 1) };
     });
   },
 };
 
 export const VampireFang: Relic = {
   id: 'fang', rarity: 'rare', name: '吸血の牙', icon: '牙',
-  description: '敵の HP を削るたび、HP +3',
+  description: '敵の HP を削るたび、HP +1',
   apply({ bus, player }) {
     bus.on('onDamageDealt', ({ attacker, hpLoss }) => {
-      if (attacker === player && hpLoss > 0) player.hp = Math.min(player.maxHp, player.hp + 3);
+      if (attacker === player && hpLoss > 0) player.hp = Math.min(player.maxHp, player.hp + 1);
     });
   },
 };
@@ -84,10 +84,10 @@ export const SturdyShield: Relic = {
 
 export const LifeCandle: Relic = {
   id: 'candle', rarity: 'common', name: '命の蝋燭', icon: '燭',
-  description: '各バトルの開始時に HP +8',
+  description: '各バトルの開始時に HP +5',
   apply({ bus, player }) {
     bus.on('onBattleStart', () => {
-      player.hp = Math.min(player.maxHp, player.hp + 8);
+      player.hp = Math.min(player.maxHp, player.hp + 5);
     });
   },
 };

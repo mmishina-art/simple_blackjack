@@ -26,10 +26,10 @@ const Ultrasound: Relic = {
 };
 
 const CorpseThirst: Relic = {
-  id: 'thirst', name: '屍の渇き', icon: '渇', description: 'HP を削るたびに HP +4',
+  id: 'thirst', name: '屍の渇き', icon: '渇', description: 'HP を削るたびに HP +3',
   apply({ bus, enemy }) {
     bus.on('onDamageDealt', ({ attacker, hpLoss }) => {
-      if (attacker === enemy && hpLoss > 0) enemy.hp = Math.min(enemy.maxHp, enemy.hp + 4);
+      if (attacker === enemy && hpLoss > 0) enemy.hp = Math.min(enemy.maxHp, enemy.hp + 3);
     });
   },
 };
@@ -56,7 +56,7 @@ export const GiantBat: EnemyDef = {
 };
 
 export const Ghoul: EnemyDef = {
-  id: 'ghoul', name: '屍食鬼', maxHp: 26, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
+  id: 'ghoul', name: '屍食鬼', maxHp: 24, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
   trait: '屍の渇き（HPを削るたびに回復）', relics: [CorpseThirst],
 };
 
