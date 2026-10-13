@@ -24,7 +24,7 @@ export const TRANSITIONS: Record<StateId | 'START', readonly StateId[]> = {
   FirstAction: ['SurvivalCheck', 'CheckDeath'],
   SurvivalCheck: ['SecondAction', 'CheckDeath'],
   SecondAction: ['CheckDeath'],
-  // サレンダー: Block を得て自分のスキルは不発。敵だけが行動する
+  // サレンダー: ブロックを得て自分のスキルは不発。敵だけが行動する
   Surrender: ['Initiative'],
   CheckDeath: ['Deal'],
 };

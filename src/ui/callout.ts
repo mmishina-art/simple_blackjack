@@ -11,7 +11,7 @@ export interface Callout {
   icon: string;
   rarity: Rarity;
   parts: readonly PreviewPart[];
-  /** 相手の Block（攻撃が Block に吸収されたあとの値を添えるため）。 */
+  /** 相手のブロック（攻撃がブロックに吸収されたあとの値を添えるため）。 */
   targetBlock: number;
   /** 不発（スキルが発動しない）。 */
   fizzled: boolean;
@@ -21,11 +21,11 @@ export interface Callout {
 
 export interface FxChip {
   type: PreviewPart['type'];
-  /** 大きく出す数字（攻撃=ダメージ数、回復・Block は +数）。 */
+  /** 大きく出す数字（攻撃=ダメージ数、回復・ブロックは +数）。 */
   main: string;
   /** 数字の横の単位。 */
   unit: string;
-  /** 補足（攻撃が Block に吸収されたあとの値。Block を無視する攻撃は「Block無視」）。 */
+  /** 補足（攻撃がブロックに吸収されたあとの値。ブロックを無視する攻撃は「ブロック無視」）。 */
   note?: string;
 }
 
@@ -33,12 +33,12 @@ export interface FxChip {
 export function fxChips(parts: readonly PreviewPart[], targetBlock: number): FxChip[] {
   return parts.map((part): FxChip => {
     if (part.type === 'attack') {
-      const note = part.pierce ? (targetBlock > 0 ? `Block ${targetBlock} を破壊` : 'Block無視') : targetBlock > 0 ? `Block吸収後 ${Math.max(0, part.value - targetBlock)}` : undefined;
+      const note = part.pierce ? (targetBlock > 0 ? `ブロック ${targetBlock} を破壊` : 'ブロック無視') : targetBlock > 0 ? `ブロック吸収後 ${Math.max(0, part.value - targetBlock)}` : undefined;
       return { type: 'attack', main: String(part.value), unit: 'ダメージ', note };
     }
     return part.type === 'heal'
       ? { type: 'heal', main: `+${part.value}`, unit: 'HP' }
-      : { type: 'block', main: `+${part.value}`, unit: 'Block' };
+      : { type: 'block', main: `+${part.value}`, unit: 'ブロック' };
   });
 }
 

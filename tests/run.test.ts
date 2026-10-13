@@ -280,7 +280,7 @@ describe('祠: 入れ替えとバージョンアップ', () => {
     const run = createRun();
     run.slots = { ...WITH_BLOCKS };
     run.slots[18] = 'guard';
-    expect(canUpgradeSlot(run, 18)).toBe(true); // シールド(コモン)
+    expect(canUpgradeSlot(run, 18)).toBe(true); // 受け流し(コモン)
     expect(upgradeSlot(run, 18)).toBe('bulwark');
     expect(rarityOfSkill(getSkill('bulwark'))).toBe('rare');
     expect(upgradeSlot(run, 18)).toBe('fortress');
@@ -392,9 +392,9 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(60);
   });
 
-  it('堅牢の盾: 獲得する Block +3', async () => {
+  it('堅牢の盾: 獲得するブロック +3', async () => {
     const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], relics: [SturdyShield], stopAt: ['CheckDeath'], playerSlots: WITH_BLOCKS });
-    expect(m.ctx.player.block).toBe(6 + 3 - 3); // 盾 6 + 3、敵の酸 3
+    expect(m.ctx.player.block).toBe(6 + 3 - 3); // 身構え 6 + 3、敵の酸 3
   });
 
   it('命の蝋燭: 戦闘開始時にHP+3', () => {
@@ -403,10 +403,10 @@ describe('レリックの効果', () => {
     expect(m.ctx.player.hp).toBe(33);
   });
 
-  it('覇王の宝珠: 会心の一撃（POW×1.5）が覇王の一撃（POW×2 + Block 8）に変わる', async () => {
+  it('覇王の宝珠: 会心の一撃（POW×1.5）が覇王の一撃（POW×2 + ブロック 8）に変わる', async () => {
     const m = await playRound({ player: ['7', '7', '7'], enemyHand: ['3', '4'], enemyHp: 100, relics: [OverlordOrb], stopAt: ['CheckDeath'] });
     expect(m.ctx.enemy.hp).toBe(100 - 22); // 21 は POW 11: POW×2（宝珠なしなら ×1.5 = 16）
-    expect(m.ctx.player.block).toBe(8 - 3); // 敵の基本攻撃3は Block で吸収
+    expect(m.ctx.player.block).toBe(8 - 3); // 敵の基本攻撃3はブロックで吸収
   });
 });
 
@@ -441,13 +441,13 @@ describe('敵の特性', () => {
 
   it('屍食鬼: HPを削るたびHP+2', async () => {
     const m = await playRound({ player: ['9', '8'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 15 });
-    expect(m.ctx.player.hp).toBe(60 - 7); // 貪り喰う POW4+3 = 7（17 は未設定で Block なし）
+    expect(m.ctx.player.hp).toBe(60 - 7); // 貪り喰う POW4+3 = 7（17 は未設定でブロック なし）
     expect(m.ctx.enemy.hp).toBe(15 + 2 - 7); // HP を削って +2 回復、そのあと後攻の通常攻撃（17 は POW 7）
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon'), playerSlots: WITH_BLOCKS });
-    expect(m.ctx.player.hp).toBe(60 - (18 - 11)); // 業火 POW6×2+3 + 息吹3 = 18。後攻の盾 Block 11 が先に付与される
+    expect(m.ctx.player.hp).toBe(60 - (18 - 11)); // 業火 POW6×2+3 + 息吹3 = 18。後攻の身構え ブロック 11 が先に付与される
   });
 });
 

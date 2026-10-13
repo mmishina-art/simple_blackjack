@@ -114,14 +114,14 @@ describe('レリックによる上書きの検出（編成画面の赤字表示�
     expect(effectiveSlotSkills(run).get(20)!.changed).toBe(false);
   });
 
-  it('砥石（POW+1）は、基本パワーが基準の効果（攻撃・Block）の実数値を上書きする', () => {
+  it('砥石（POW+1）は、基本パワーが基準の効果（攻撃・ブロック）の実数値を上書きする', () => {
     const run = createRun();
-    run.slots[15] = 'guard'; // 初期装備にはシールドがないので、置く
+    run.slots[15] = 'guard'; // 初期装備には受け流しがないので、置く
     run.relics.push(Whetstone);
     const all = effectiveSlotSkills(run);
     expect(all.get(20)!.text).toBe('攻撃 POW+5＝16'); // 20 は POW 10 + 砥石 1
     expect(all.get(20)!.changed).toBe(true);
-    expect(all.get(15)!.text).toBe('Block POW+1＝7'); // Block も POW 基準: 15 は POW 5 + 砥石 1
+    expect(all.get(15)!.text).toBe('ブロック POW+1＝7'); // ブロックも POW 基準: 15 は POW 5 + 砥石 1
     expect(all.get(15)!.changed).toBe(true);
   });
 

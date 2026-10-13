@@ -1,7 +1,7 @@
 import { assignRarity, defineSkill, getSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
 
 /**
- * 基本パワー（POW）基準のスキル。攻撃: floor(POW × mult) + add / Block・回復: floor(POW × mult) + amount。
+ * 基本パワー（POW）基準のスキル。攻撃: floor(POW × mult) + add / ブロック・回復: floor(POW × mult) + amount。
  * プレイヤーの POW は発動するスロットで変わる（11以下=1、+1ずつ）ので、合計値が高いほど強い。
  * 上位のスキルほど、固定の上乗せが大きい（コモン +0〜3 / レア +5 / レジェンド +10 が目安）。
  */
@@ -16,8 +16,8 @@ atk('slash', '斬撃', 1, 3, '斬');        // コモン: POW+3
 atk('big_attack', '大攻撃', 1, 5, '大'); // レア: POW+5
 atk('heavy', '重撃', 1.5, 3, '重');      // レア: POW×1.5+3
 atk('smash', '渾身の一撃', 2, 5, '渾');  // レジェンド: POW×2+5
-defineSkill({ id: 'guard', name: 'シールド', icon: '守', effects: [{ type: 'block', mult: 1, amount: 1 }] });   // コモン: POW+1
-defineSkill({ id: 'shield', name: '盾', icon: '盾', effects: [{ type: 'block', mult: 1, amount: 3 }] });       // コモン: POW+3
+defineSkill({ id: 'guard', name: '受け流し', icon: '守', effects: [{ type: 'block', mult: 1, amount: 1 }] });   // コモン: POW+1
+defineSkill({ id: 'shield', name: '身構え', icon: '構', effects: [{ type: 'block', mult: 1, amount: 3 }] });       // コモン: POW+3
 defineSkill({ id: 'bulwark', name: '鉄壁の構え', icon: '壁', effects: [{ type: 'block', mult: 1, amount: 5 }] }); // レア: POW+5
 defineSkill({
   id: 'shield_bash', name: '盾打ち', icon: '殴',
@@ -36,14 +36,14 @@ defineSkill({
 atk('lunge', '突進', 1, 2, '進');           // コモン: POW+2 → 破甲の突き → 串刺し
 atk('chop', '叩き割り', 1.5, 0, '叩');       // コモン: POW×1.5 → 狂戦士の一撃 → 暴虐
 defineSkill({ id: 'mend', name: '癒しの術', icon: '癒', effects: [{ type: 'heal', mult: 1, amount: 3 }] });       // コモン: 回復 POW+3 → 聖光 → 奇跡
-defineSkill({ id: 'pierce_stab', name: '破甲の突き', icon: '破', effects: [{ type: 'attack', mult: 1, add: 3, pierce: true }] }); // レア: POW+3・Block無視
+defineSkill({ id: 'pierce_stab', name: '破甲の突き', icon: '破', effects: [{ type: 'attack', mult: 1, add: 3, pierce: true }] }); // レア: POW+3・ブロック無視
 atk('berserk', '狂戦士の一撃', 1.5, 2, '狂'); // レア: POW×1.5+2
 defineSkill({ id: 'holy_light', name: '聖光', icon: '聖', effects: [{ type: 'heal', mult: 1, amount: 5 }] });     // レア: 回復 POW+5
 defineSkill({
   id: 'twin_strike', name: '二連斬', icon: '連',
-  effects: [{ type: 'attack', mult: 0.8, add: 1 }, { type: 'attack', mult: 0.8, add: 1 }], // レア: 2回攻撃（それぞれ Block に吸われる）
+  effects: [{ type: 'attack', mult: 0.8, add: 1 }, { type: 'attack', mult: 0.8, add: 1 }], // レア: 2回攻撃（それぞれブロックに吸われる）
 });
-defineSkill({ id: 'impale', name: '串刺し', icon: '串', effects: [{ type: 'attack', mult: 1.5, add: 4, pierce: true }] }); // レジェンド: POW×1.5+4・Block無視
+defineSkill({ id: 'impale', name: '串刺し', icon: '串', effects: [{ type: 'attack', mult: 1.5, add: 4, pierce: true }] }); // レジェンド: POW×1.5+4・ブロック無視
 atk('rampage', '暴虐', 2, 3, '暴');          // レジェンド: POW×2+3
 defineSkill({ id: 'miracle', name: '奇跡', icon: '奇', effects: [{ type: 'heal', mult: 1, amount: 10 }] });      // レジェンド: 回復 POW+10
 defineSkill({
@@ -51,12 +51,12 @@ defineSkill({
   effects: [{ type: 'attack', mult: 0.7, add: 2 }, { type: 'attack', mult: 0.7, add: 2 }, { type: 'attack', mult: 0.7, add: 2 }], // レジェンド: 3回攻撃
 });
 
-/** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。POW×1.5。相手の Block を無視して破壊する。 */
+/** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。POW×1.5。相手のブロックを無視して破壊する。 */
 export const ACE_STRIKE_ID: SkillId = defineSkill({
   id: 'ace_strike', name: '会心の一撃', icon: '会',
-  effects: [{ type: 'attack', mult: 1.5, pierce: true }], // Block を無視して破壊する（ほかの攻撃との違い）
+  effects: [{ type: 'attack', mult: 1.5, pierce: true }], // ブロックを無視して破壊する（ほかの攻撃との違い）
 }).id;
-/** 覇王の宝珠で会心の一撃が置き換わるスキル。会心の一撃の 1.5 倍が 2 倍になり、Block も付く。 */
+/** 覇王の宝珠で会心の一撃が置き換わるスキル。会心の一撃の 1.5 倍が 2 倍になり、ブロックも付く。 */
 defineSkill({
   id: 'overlord_strike', name: '覇王の一撃', icon: '覇',
   effects: [{ type: 'attack', mult: 2, pierce: true }, { type: 'block', amount: 8 }],
@@ -70,8 +70,8 @@ item('tonic', '回復薬', '薬', { type: 'heal', amount: 14 });                
 item('bomb', '爆弾', '爆', { type: 'attack', mult: 0, add: 10 });           // コモン: 10 ダメージ（固定）
 item('elixir', '霊薬', '霊', { type: 'heal', amount: 22 });                  // レジェンド: 回復 22
 item('big_bomb', '大爆弾', '轟', { type: 'attack', mult: 0, add: 16 });      // レア: 16 ダメージ（固定）
-item('ward', '守りの巻物', '巻', { type: 'block', amount: 7 });               // コモン: Block 7
-item('holy_ward', '聖なる護符', '符', { type: 'block', amount: 12 });         // レア: Block 12
+item('ward', '守りの巻物', '巻', { type: 'block', amount: 7 });               // コモン: ブロック 7
+item('holy_ward', '聖なる護符', '符', { type: 'block', amount: 12 });         // レア: ブロック 12
 
 // ---- 防具: 防御スロットに置く。防御したラウンドに受けるダメージ（HP の減少）の上限。数字が小さいほど硬い ----
 const armor = (id: string, name: string, icon: string, damageCap: number, defendHeal?: number): SkillDef =>
@@ -83,7 +83,7 @@ armor('guard_mail', '守りの鎧', '鎧', 3);  // レジェンド: 上限 3
 armor('mithril_mail', 'ミスリルの鎧', '銀', 2, 3); // レジェンド: 上限 2 + 防御すると HP +3
 
 assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'ace_strike', 'tonic', 'steel_shield', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'big_bomb', 'holy_ward', 'saint_robe'], 'rare');
-// レジェンドの Block・複合スキル（祠のバージョンアップの行き先。報酬にも出る）
+// レジェンドのブロック・複合スキル（祠のバージョンアップの行き先。報酬にも出る）
 defineSkill({ id: 'fortress', name: '城塞', icon: '城', effects: [{ type: 'block', mult: 1, amount: 10 }] }); // レジェンド: POW+10
 defineSkill({
   id: 'aegis', name: '守護の一撃', icon: '護',
@@ -227,7 +227,7 @@ defineSkill({
 });
 atk('imp_hellfire', '地獄の業火', 2, 3, '獄');
 
-// 鋼鉄のゴーレム（Block を多用する敵）。壁で守りを固め、盾で殴り、Block を重ねる
+// 鋼鉄のゴーレム（ブロックを多用する敵）。壁で守りを固め、盾で殴り、ブロックを重ねる
 atk('ig_punch', '鉄の拳', 1, 1, '拳');
 defineSkill({ id: 'ig_wall', name: '鋼の壁', icon: '壁', effects: [{ type: 'block', amount: 8 }] });
 defineSkill({ id: 'ig_bash', name: '盾叩き', icon: '叩', effects: [{ type: 'attack', mult: 1, add: 3 }, { type: 'block', amount: 6 }] });

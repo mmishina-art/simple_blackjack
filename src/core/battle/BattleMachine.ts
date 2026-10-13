@@ -34,7 +34,7 @@ export interface BattleOptions {
   playerArmorCap?: number;
   /** 装備している防具の「防御したときの回復」。 */
   playerDefendHeal?: number;
-  /** 戦闘開始時にプレイヤーが持つ Block（祭壇の強化）。 */
+  /** 戦闘開始時にプレイヤーが持つブロック（祭壇の強化）。 */
   playerBlock?: number;
   rules?: Partial<RuleSet>;
   rng?: Rng;

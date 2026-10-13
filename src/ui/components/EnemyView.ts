@@ -32,7 +32,7 @@ export class EnemyView {
 
 export type FloatKind = 'damage' | 'heal' | 'block' | 'skill';
 
-/** 数字が浮かび上がる演出。kind で色が変わる（damage=ダメージ / heal=回復 / block=Block・防御 / skill=スキル名）。note は数字の下に添える内訳。 */
+/** 数字が浮かび上がる演出。kind で色が変わる（damage=ダメージ / heal=回復 / block=ブロック・防御 / skill=スキル名）。note は数字の下に添える内訳。 */
 export function floatText(parent: HTMLElement, text: string, kind: FloatKind = 'damage', note = ''): void {
   const el = document.createElement('div');
   el.className = `float float--${kind}`;
@@ -49,7 +49,7 @@ export function floatText(parent: HTMLElement, text: string, kind: FloatKind = '
 }
 
 /**
- * 効果の画面演出（その場が光る）。block=Block を得た（青い盾の光）/ heal=回復（緑の光とささやかな粒）/ guard=攻撃を Block が防いだ（白青の火花）/ break=Block を破壊した（金と橙の砕け散る光）。
+ * 効果の画面演出（その場が光る）。block=ブロックを得た（青い盾の光）/ heal=回復（緑の光とささやかな粒）/ guard=攻撃をブロックが防いだ（白青の火花）/ break=ブロックを破壊した（金と橙の砕け散る光）。
  * 親は position: relative であること。アニメーションが終わると自動で消える。
  */
 export function playFx(parent: HTMLElement, kind: 'block' | 'heal' | 'guard' | 'break'): void {

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working in this repository.
 
 ## Project
 
-Blackjack Roguelike(`simple_blackjack`): ブラックジャック × ローグライクの対戦型 RPG の PWA。スマホ縦画面。Vite + TypeScript + vite-plugin-pwa。ゲームのルールと仕様は `README.md` を参照(スキル、Block、POW、レリック、メタ進行など)。**ルールを変えたら README も更新する。** ユーザー向けの文言は日本語。
+Blackjack Roguelike(`simple_blackjack`): ブラックジャック × ローグライクの対戦型 RPG の PWA。スマホ縦画面。Vite + TypeScript + vite-plugin-pwa。ゲームのルールと仕様は `README.md` を参照(スキル、ブロック、POW、レリック、メタ進行など)。**ルールを変えたら README も更新する。** ユーザー向けの文言は日本語。
 
 ## Running / Testing
 
@@ -16,7 +16,7 @@ npm run typecheck   # tsc --noEmit
 npm run build       # tsc --noEmit && vite build → dist/
 ```
 
-`src/` は `core`(ルール)、`run`、`map`、`meta`、`relics`、`audio`、`ui`、`main.ts`。ルール・計算は UI から切り離してテストする。戦闘のルールは順序が重要(Block を先に付与、行動順など)なので、変えたら `tests/battle.test.ts` などを必ず更新する。
+`src/` は `core`(ルール)、`run`、`map`、`meta`、`relics`、`audio`、`ui`、`main.ts`。ルール・計算は UI から切り離してテストする。戦闘のルールは順序が重要(ブロックを先に付与、行動順など)なので、変えたら `tests/battle.test.ts` などを必ず更新する。
 
 ## PWA
 

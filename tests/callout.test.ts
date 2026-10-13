@@ -20,23 +20,23 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     expect(fxChips(c.parts, c.targetBlock)).toEqual([{ type: 'attack', main: '15', unit: 'ダメージ', note: undefined }]);
   });
 
-  it('Block・回復は +数 と単位。複数の効果は並べる', () => {
+  it('ブロック・回復は +数 と単位。複数の効果は並べる', () => {
     const m = machine({ playerSlots: { 17: 'drain', 16: 'shield_bash', 15: 'guard' } });
     give(m, 'player', ['9', '8']); // 17: 吸精（攻撃+回復）
     const c = calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!;
     expect(fxChips(c.parts, 0).map((x) => `${x.main}${x.unit}`)).toEqual(['8ダメージ', '+5HP']) // 17 は POW 7 + 1;
     const n = machine({ playerSlots: { 15: 'guard' } });
     give(n, 'player', ['7', '8']);
-    expect(fxChips(calloutOf(n.ctx, n.ctx.player, n.ctx.enemy)!.parts, 0)).toEqual([{ type: 'block', main: '+6', unit: 'Block' }]);
+    expect(fxChips(calloutOf(n.ctx, n.ctx.player, n.ctx.enemy)!.parts, 0)).toEqual([{ type: 'block', main: '+6', unit: 'ブロック' }]);
   });
 
-  it('空きスロットは「通常攻撃」と明記する。敵の Block に吸収されたあとの値も添える', () => {
+  it('空きスロットは「通常攻撃」と明記する。敵のブロックに吸収されたあとの値も添える', () => {
     const m = machine();
     give(m, 'player', ['6', '7']); // 13: 空き
     m.ctx.enemy.block = 2;
     const c = calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!;
     expect(c).toMatchObject({ name: '通常攻撃', icon: '攻' });
-    expect(fxChips(c.parts, c.targetBlock)[0]).toMatchObject({ main: '3', note: 'Block吸収後 1' }); // 13 は POW 3
+    expect(fxChips(c.parts, c.targetBlock)[0]).toMatchObject({ main: '3', note: 'ブロック吸収後 1' }); // 13 は POW 3
   });
 
   it('レリックの補正が出る（砥石: 大攻撃 POW 11 + 5 = 16）', () => {

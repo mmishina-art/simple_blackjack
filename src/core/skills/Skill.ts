@@ -2,10 +2,10 @@ import type { Rarity } from '../rarity';
 
 /** スキルの効果。判別共用体なので、バフやドロー等を後から追加できる。 */
 export type SkillEffect =
-  /** 基本パワー（POW）を基準にしたダメージ: floor(POW × mult) + add。pierce なら相手の Block を無視して、その Block を破壊する（会心の一撃）。 */
+  /** 基本パワー（POW）を基準にしたダメージ: floor(POW × mult) + add。pierce なら相手のブロックを無視して、そのブロックを破壊する（会心の一撃）。 */
   | { type: 'attack'; mult: number; add?: number; pierce?: boolean }
   /**
-   * 回復・Block も基本パワーが基準: floor(POW × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
+   * 回復・ブロックも基本パワーが基準: floor(POW × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
    * mult を省略すると固定量（敵のスキルなど）で、amount のまま。
    */
   | { type: 'heal'; amount: number; mult?: number }
@@ -132,7 +132,7 @@ export function attackFormula(effect: { mult: number; add?: number }): string {
   return effect.add ? `${mult}+${effect.add}` : mult;
 }
 
-/** Block・回復の量: floor(POW × mult) + amount（mult を省略した固定量は amount のまま）。 */
+/** ブロック・回復の量: floor(POW × mult) + amount（mult を省略した固定量は amount のまま）。 */
 export function supportValue(effect: { amount: number; mult?: number }, atk: number): number {
   return Math.max(0, Math.floor(atk * (effect.mult ?? 0)) + effect.amount);
 }
@@ -150,8 +150,8 @@ function describeEffects(skill: SkillDef, atk?: number): string {
   const value = (v: (atk: number) => number): string => (atk === undefined ? '' : `＝${v(atk)}`);
   return skill.effects
     .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（Block無視・破壊）' : ''}`;
-      const label = e.type === 'block' ? 'Block' : '回復';
+      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
+      const label = e.type === 'block' ? 'ブロック' : '回復';
       // 固定量（mult なし）は、基本パワーに関係ないので、数字だけ
       return e.mult ? `${label} ${supportFormula(e)}${value((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
     })
@@ -166,33 +166,33 @@ function bonusFormula(mult: number, add: number): string {
 
 /**
  * スロットが決まっていない一覧（報酬・持ち物・バナー）用の短い説明。基本パワーはスロットで変わるので、幅（「7〜15」）では示さず、
- * 基本パワーに対する上乗せだけを示す（「攻撃 +5」「Block +3」「回復 +3」「攻撃 ×1.5+3」）。固定量は数字のまま。
+ * 基本パワーに対する上乗せだけを示す（「攻撃 +5」「ブロック +3」「回復 +3」「攻撃 ×1.5+3」）。固定量は数字のまま。
  */
 export function describeSkillBonus(skill: SkillDef): string {
   if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? `・HP +${skill.defendHeal}` : ''}`;
   return skill.effects
     .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${e.pierce ? '（Block無視・破壊）' : ''}`;
-      const label = e.type === 'block' ? 'Block' : '回復';
+      if (e.type === 'attack') return `攻撃 ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
+      const label = e.type === 'block' ? 'ブロック' : '回復';
       return e.mult ? `${label} ${bonusFormula(e.mult, e.amount)}` : `${label} ${e.amount}`;
     })
     .join(' + ');
 }
 
-/** 「攻撃 POW×3+2＝14」「Block POW+3＝8」のような効果の要約。atk を渡すと実数値も併記する。 */
+/** 「攻撃 POW×3+2＝14」「ブロック POW+3＝8」のような効果の要約。atk を渡すと実数値も併記する。 */
 export function describeSkill(skill: SkillDef, atk?: number): string {
   return describeEffects(skill, atk);
 }
 
 /**
- * スロット表の右側に出す、短い効果表示（種類と値だけ）。例: `攻撃 15` / `Block 6` / `攻撃 6×2`（2回攻撃）/ `攻撃 8 + 回復 5`。
+ * スロット表の右側に出す、短い効果表示（種類と値だけ）。例: `攻撃 15` / `ブロック 6` / `攻撃 6×2`（2回攻撃）/ `攻撃 8 + 回復 5`。
  * 計算式は describeSkill（マウスを乗せたときの詳細）にある。atk は、そのスロットの基本パワー。
  */
 export function describeSkillShort(skill: SkillDef, atk: number): string {
   if (skill.damageCap !== undefined) return `被ダメージ最大 ${skill.damageCap}${skill.defendHeal ? ` + 回復 ${skill.defendHeal}` : ''}`;
   const parts: { label: string; value: number; count: number }[] = [];
   for (const e of skill.effects) {
-    const label = e.type === 'attack' ? '攻撃' : e.type === 'block' ? 'Block' : '回復';
+    const label = e.type === 'attack' ? '攻撃' : e.type === 'block' ? 'ブロック' : '回復';
     const value = e.type === 'attack' ? attackValue(e, atk) : supportValue(e, atk);
     const last = parts[parts.length - 1];
     if (last && last.label === label && last.value === value) last.count++;
@@ -223,12 +223,12 @@ export function effectTotals(skill: SkillDef, atk: number): EffectTotals {
 }
 
 /**
- * ビフォーアフターの差分の行。例: `攻撃 5 → 8（+3）` / `回復 8 → なし（−8）` / `Block なし → 6（+6）`。
+ * ビフォーアフターの差分の行。例: `攻撃 5 → 8（+3）` / `回復 8 → なし（−8）` / `ブロック なし → 6（+6）`。
  * どちらにもない種類は出さない。ぜんぶ同じなら「効果は変わらない」。色だけに頼らず、符号と文字でも増減が分かる。
  */
 export function diffLines(before: EffectTotals, after: EffectTotals): string[] {
   const lines: string[] = [];
-  for (const [key, label] of [['attack', '攻撃'], ['block', 'Block'], ['heal', '回復']] as const) {
+  for (const [key, label] of [['attack', '攻撃'], ['block', 'ブロック'], ['heal', '回復']] as const) {
     const b = before[key];
     const a = after[key];
     if (b === 0 && a === 0) continue;

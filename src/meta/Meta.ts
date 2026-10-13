@@ -85,7 +85,7 @@ export interface UpgradeDef {
 export const UPGRADES: readonly UpgradeDef[] = [
   { id: 'vitality', name: '強き肉体', icon: '体', costs: [12, 20, 30, 45, 60], describe: (l) => `初期 HP +${l * 5}` },
   { id: 'might', name: '研ぎ澄まされた刃', icon: '刃', costs: [40, 80, 140], describe: (l) => `初期 POW +${l}` },
-  { id: 'ward', name: '守りの心得', icon: '護', costs: [25, 45, 70], describe: (l) => `戦闘開始時の Block +${l * 2}` },
+  { id: 'ward', name: '守りの心得', icon: '護', costs: [25, 45, 70], describe: (l) => `戦闘開始時のブロック +${l * 2}` },
   { id: 'rest', name: '安らぎの心得', icon: '休', costs: [20, 40, 70], describe: (l) => `宿屋の回復量 +${l * 10}%` },
   { id: 'insight', name: '見る目', icon: '眼', costs: [90], describe: (l) => `敵撃破の報酬スキルの選択肢 +${l}` },
 ];

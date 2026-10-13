@@ -6,9 +6,9 @@ import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from '.
 
 export interface PreviewPart {
   type: 'attack' | 'block' | 'heal';
-  /** 値（攻撃はレリック・特性・相手のバーストによる補正後、相手の Block 吸収前）。 */
+  /** 値（攻撃はレリック・特性・相手のバーストによる補正後、相手のブロック 吸収前）。 */
   value: number;
-  /** 攻撃が相手の Block を無視して破壊する（会心の一撃）。 */
+  /** 攻撃が相手のブロックを無視して破壊する（会心の一撃）。 */
   pierce?: boolean;
 }
 
@@ -40,7 +40,7 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
   return { skill, parts };
 }
 
-/** スロット表の各マスに添える効果の短い表示。攻撃=ダメージ数 / 回復=+回復数 / Block=B+数。 */
+/** スロット表の各マスに添える効果の短い表示。攻撃=ダメージ数 / 回復=+回復数 / ブロック=B+数。 */
 export function badgeText(part: PreviewPart): string {
   return part.type === 'attack' ? String(part.value) : part.type === 'heal' ? `+${part.value}` : `B${part.value}`;
 }
@@ -55,9 +55,9 @@ export function previewAllSlots(env: { bus: EventBus; rules: RuleSet }, user: En
 export function formatPreview(p: SkillPreview, targetBlock = 0, nameOverride?: string): string {
   if (!p.skill) return '不発（スキルが発動しない）';
   const bits = p.parts.map((part) => {
-    if (part.type === 'block') return `Block +${part.value}`;
+    if (part.type === 'block') return `ブロック +${part.value}`;
     if (part.type === 'heal') return `HP +${part.value}`;
-    const absorbed = part.pierce ? '（Block無視）' : targetBlock > 0 ? `（Block吸収後 ${Math.max(0, part.value - targetBlock)}）` : '';
+    const absorbed = part.pierce ? '（ブロック無視）' : targetBlock > 0 ? `（ブロック吸収後 ${Math.max(0, part.value - targetBlock)}）` : '';
     return `${part.value}ダメージ${absorbed}`;
   });
   return `${nameOverride ?? p.skill.name} → ${bits.join('・')}`;

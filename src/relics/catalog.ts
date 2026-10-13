@@ -74,7 +74,7 @@ export const Boots: Relic = {
 
 export const SturdyShield: Relic = {
   id: 'shield', rarity: 'common', name: '堅牢の盾', icon: '盾',
-  description: '獲得する Block +3',
+  description: '獲得するブロック +3',
   apply({ bus, player }) {
     bus.on('onBlockGained', (p) => {
       if (p.entity === player) return { ...p, amount: p.amount + 3 };
@@ -94,7 +94,7 @@ export const LifeCandle: Relic = {
 
 export const OverlordOrb: Relic = {
   id: 'orb', rarity: 'legend', name: '覇王の宝珠', icon: '珠',
-  description: '会心の一撃（21）が POW×1.5 から「覇王の一撃」（POW×2 + Block 8）に変わる',
+  description: '会心の一撃（21）が POW×1.5 から「覇王の一撃」（POW×2 + ブロック 8）に変わる',
   apply({ bus, player }) {
     bus.on('onSkillActivated', (p) => {
       if (p.user === player && p.skill?.id === 'ace_strike') return { ...p, skill: getSkill('overlord_strike') };
@@ -176,7 +176,7 @@ export const DefenderCharm: Relic = {
 
 export const LuckyDice: Relic = {
   id: 'dice', rarity: 'common', name: '幸運の賽', icon: '賽',
-  description: '合計がちょうど 21 で Stand したとき、Block +8',
+  description: '合計がちょうど 21 で Stand したとき、ブロック +8',
   apply({ bus, player, rules }) {
     bus.on('onStand', ({ entity }) => {
       if (entity === player && player.hand.total(rules) === rules.blackjackScore) {

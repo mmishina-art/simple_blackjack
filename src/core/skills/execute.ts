@@ -4,7 +4,7 @@ import { PACE } from '../battle/pace';
 import { damageTakenMultiplier } from '../rules/bust';
 import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
-/** ダメージ適用。HP より先に Block を減らす。piercing なら Block を無視する。 */
+/** ダメージ適用。HP より先にブロックを減らす。piercing ならブロックを無視する。 */
 export function applyDamage(target: Entity, amount: number, piercing = false): { absorbed: number; hpLoss: number } {
   const dmg = Math.max(0, Math.floor(amount));
   const absorbed = piercing ? 0 : Math.min(target.block, dmg);
@@ -35,8 +35,8 @@ export type EffectPart = 'block' | 'heal' | 'attack' | 'rest' | 'all';
 
 /**
  * スキルの効果を適用する。効果は1つずつ適用し、そのたびに画面の演出を見せる間（PACE）をあける
- * （どの効果が起きたか分かるように、Block → 回復 → 攻撃のように続けて起きても、ひとまとめにしない）。
- * part: 'block' = Block のみ / 'heal' = 回復のみ / 'attack' = 攻撃のみ / 'rest' = Block 以外（攻撃・回復）/ 'all' = すべて（効果の記述順）
+ * （どの効果が起きたか分かるように、ブロック → 回復 → 攻撃のように続けて起きても、ひとまとめにしない）。
+ * part: 'block' = ブロックのみ / 'heal' = 回復のみ / 'attack' = 攻撃のみ / 'rest' = ブロック 以外（攻撃・回復）/ 'all' = すべて（効果の記述順）
  */
 export async function applyEffects(
   ctx: BattleContext,
@@ -53,37 +53,37 @@ export async function applyEffects(
     if (effect.type === 'attack') {
       const base = attackValue(effect, user.attackAt(user.hand.total(ctx.rules)));
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
-      // バーストした側が受けるダメージは、レリック・特性の補正のあとに増える（そのあと Block が吸収する）
+      // バーストした側が受けるダメージは、レリック・特性の補正のあとに増える（そのあとブロックが吸収する）
       const mult = damageTakenMultiplier(calc.defender, ctx.rules);
       let damage = Math.max(0, Math.floor(calc.damage * mult));
-      // 防御中（防具の上限）: HP の減少が、残りの上限を超えないように軽減する（Block が先に吸収する）
+      // 防御中（防具の上限）: HP の減少が、残りの上限を超えないように軽減する（ブロックが先に吸収する）
       let reduced = 0;
       const def = calc.defender;
       if (def.damageCap !== null) {
         const reach = (effect.pierce ? 0 : def.block) + Math.max(0, def.damageCap - def.capTaken);
         if (damage > reach) { reduced = damage - reach; damage = reach; }
       }
-      // Block を無視する攻撃（会心の一撃）は、Block に吸われず、相手の Block をすべて破壊する
+      // ブロックを無視する攻撃（会心の一撃）は、ブロックに吸われず、相手のブロックをすべて破壊する
       const broken = effect.pierce ? calc.defender.block : 0;
       const { absorbed, hpLoss } = applyDamage(calc.defender, damage, !!effect.pierce);
       if (effect.pierce) calc.defender.block = 0;
       if (def.damageCap !== null) def.capTaken += hpLoss;
       bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, broken, reduced, skill });
       if (reduced > 0) ctx.log(`${calc.defender.name}の防具が ${reduced} ダメージを防いだ`);
-      if (broken > 0) ctx.log(`${calc.defender.name}の Block ${broken} を破壊した`);
+      if (broken > 0) ctx.log(`${calc.defender.name}のブロック ${broken} を破壊した`);
       const burst = mult !== 1 && damage > 0 ? `バースト ×${mult}` : '';
       if (hpLoss > 0 || absorbed === 0) {
-        const notes = [absorbed > 0 ? `Block ${absorbed} を消費` : '', burst].filter(Boolean);
+        const notes = [absorbed > 0 ? `ブロック ${absorbed} を消費` : '', burst].filter(Boolean);
         ctx.log(`${calc.defender.name}に${hpLoss}ダメージ${notes.length > 0 ? `（${notes.join('・')}）` : ''}`);
       } else {
-        ctx.log(`${calc.defender.name}は Block で防いだ（${[absorbed, burst].filter(Boolean).join('・')}）`);
+        ctx.log(`${calc.defender.name}はブロックで防いだ（${[absorbed, burst].filter(Boolean).join('・')}）`);
       }
     } else {
       if (effect.type === 'block') {
         const { amount } = bus.emit('onBlockGained', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))), skill });
         const gained = Math.max(0, Math.floor(amount));
         user.block += gained;
-        ctx.log(`${user.name}は Block を ${gained} 得た`);
+        ctx.log(`${user.name}はブロックを ${gained} 得た`);
         bus.emit('onBlockApplied', { entity: user, amount: gained });
       } else {
         const { amount } = bus.emit('onHealed', { entity: user, amount: supportValue(effect, user.attackAt(user.hand.total(ctx.rules))), skill });

@@ -6,7 +6,7 @@ export type EntityId = 'player' | 'enemy';
 
 export class Entity {
   hp: number;
-  /** シールド値。ダメージは HP より先に Block を減らす。戦闘中は持ち越され、戦闘が終わると消える。 */
+  /** ブロック値。ダメージは HP より先にブロックを減らす。戦闘中は持ち越され、戦闘が終わると消える。 */
   block = 0;
   readonly hand = new Hand();
   /** 装備している防具の「被ダメージ上限」（防御したラウンドに効く）。プレイヤーのみ。 */

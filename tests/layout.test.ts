@@ -98,7 +98,7 @@ describe('スロット表のメーター', () => {
     expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.slot,\s*\.slot::after\s*\{[^}]*transition:\s*none/);
   });
 
-  it('各マスの効果の色は、攻撃・回復・Block で分ける', () => {
+  it('各マスの効果の色は、攻撃・回復・ブロックで分ける', () => {
     for (const type of ['attack', 'heal', 'block']) expect(css).toContain(`.slot__badge--${type}`);
   });
 });

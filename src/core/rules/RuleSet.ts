@@ -15,7 +15,7 @@ export interface RuleSet {
   aceBonus: number;
   /** 山札の残りがこの枚数を下回ったらラウンド開始時に再シャッフル。 */
   reshuffleThreshold: number;
-  /** バーストした側が、相手の攻撃から受けるダメージの倍率（小数点以下は切り捨て。Block が先に吸収する）。 */
+  /** バーストした側が、相手の攻撃から受けるダメージの倍率（小数点以下は切り捨て。ブロックが先に吸収する）。 */
   bustDamageMultiplier: number;
 }
 

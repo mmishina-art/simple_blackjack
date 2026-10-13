@@ -1115,7 +1115,7 @@ section { min-width: 0; }
 .medal--empty { opacity: 0.5; font-size: 12px; }
 
 /* 置くスキルのバナー付き（セット待ち）の編成画面は、高さが足りないとき、置けない固定スロット（≤11・21）を隠す */
-@media (max-height: 800px) {
+@media (max-height: 900px) {
   .loadout--armed .loadout__slots .lslot--fixed { display: none; }
 }
 
@@ -1149,3 +1149,11 @@ section { min-width: 0; }
   background: #d39a3a; border: 1px solid #ffd27a; border-radius: 4px; cursor: pointer; opacity: 0.85;
 }
 .settings__box .loadout__btn { width: 100%; }
+
+/* セット待ちで「いま → セット後」を出す行は、効果の表示を名前の下の2行目にする（「ブロック」など、長い表示でも名前が欠けないように） */
+.lslot--change { grid-template-rows: auto auto; row-gap: 1px; padding-top: 4px; padding-bottom: 4px; }
+.lslot--change .lslot__key { grid-column: 1; grid-row: 1 / span 2; }
+.lslot--change .medal { grid-column: 2; grid-row: 1 / span 2; }
+.lslot--change .lslot__name { grid-column: 3 / 5; grid-row: 1; }
+.lslot--change .lslot__desc { grid-column: 3 / 5; grid-row: 2; white-space: normal; }
+.lslot--change .lslot__go { grid-column: 5; grid-row: 1 / span 2; }

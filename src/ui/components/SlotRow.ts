@@ -41,7 +41,7 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
   const name = o.skill
     ? eff?.changed && eff.skill.id !== o.skill.id ? `<span class="over">${eff.skill.name}</span>` : o.skill.name
     : `${fallbackLabel(o.fallback)}・空き`;
-  // 右側は「種類と値」だけ（攻撃 15 / Block 6 / 回復 8）。計算式は、行にマウスを乗せたとき（title）に出る
+  // 右側は「種類と値」だけ（攻撃 15 / ブロック 6 / 回復 8）。計算式は、行にマウスを乗せたとき（title）に出る
   const short = describeSkillShort(eff?.changed ? eff.skill : shown, eff?.changed ? eff.atk : o.atk);
   const formula = eff?.changed ? eff.text : describeSkill(shown, o.atk);
   const baseNote = eff?.changed ? `\n本来: ${eff.baseText}` : '';
@@ -52,7 +52,7 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
 
   const row = document.createElement(interactive ? 'button' : 'div');
   // 枠はどの行も同じデザイン。レア度は、アイコン（メダル）の色と光だけで示す。固定スロットは、少し薄く出す
-  row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${o.blocked ? ' lslot--blocked' : ''}${interactive ? ' lslot--tap' : ''}`;
+  row.className = `lslot lslot--set${o.locked ? ' lslot--fixed' : ''}${o.target ? ' lslot--target' : ''}${o.blocked ? ' lslot--blocked' : ''}${o.after ? ' lslot--change' : ''}${interactive ? ' lslot--tap' : ''}`;
   row.title = detail;
   row.innerHTML = `<span class="lslot__key">${slotLabel(o.key)}<span class="lslot__atk" aria-label="基本パワー ${o.atk}">${circledNumber(o.atk)}</span></span>
     <span class="medal medal--sm ${rarityClass(look.rarity)}${o.skill ? medalKindClass(kindOfSkill(o.skill)) : ''}">${o.skill ? o.skill.icon : BASIC_ICON}</span>
