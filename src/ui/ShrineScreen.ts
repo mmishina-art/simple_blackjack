@@ -1,8 +1,8 @@
 import { slotAttack } from '../core/skills/catalog';
-import { canPlaceAt, describeSkill, getSkill, placementNote, rarityOfSkill, SLOT_KEYS, slotLabel } from '../core/skills/Skill';
+import { canPlaceAt, describeSkill, getSkill, placementNote, rarityOfSkill, slotLabel } from '../core/skills/Skill';
 import { resolveShrine } from '../map/events';
 import { upgradeCost } from '../run/shop';
-import { upgradeSlot, type RunState } from '../run/Run';
+import { shrineUpgradeChoices, upgradeSlot, type RunState } from '../run/Run';
 import type { Rng } from '../core/util/Rng';
 import { showSwapScreen } from './SwapScreen';
 import { showChoiceScreen } from './ChoiceScreen';
@@ -17,21 +17,21 @@ export interface ShrineOptions {
 }
 
 /**
- * 祠。入れ替え（スロット・道具袋・防具を好きなだけ。回数の制限なし。済んでも祠は使える）・
- * バージョンアップ（スキルを1つ上のレア度に。道具は不可）・祈り（ランダムな効果）。入れ替え以外は、1 つ選ぶと祠は済みになる。
+ * 祠。できることは**1 つだけ**: 入れ替え（スロット・道具袋を好きなだけ。1 つでも入れ替えたら祠を出る）・
+ * バージョンアップ（候補は最大 3 つ。スキルを1つ上のレア度に。道具は不可）・祈り（ランダムな効果）。選んだら祠は済みになり、出る。
  */
 export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions): void {
-  /** バージョンアップの候補（強化先がある）。強化先のレア度の制限で置けないものは、理由つきで選べなくして出す。 */
-  const upgradeCandidates = SLOT_KEYS.filter((k) => { const id = run.slots[k]; return !!id && !!getSkill(id).upgradesTo; });
+  /** バージョンアップの候補（最大 3 つ。21 の会心の一撃系は、レジェンドになるまで必ず入る）。強化先のレア度の制限で置けないものは、理由つきで選べなくして出す。 */
+  const upgradeCandidates = shrineUpgradeChoices(run, opts.rng);
 
   const choices: { icon: string; name: string; description: string; run(): void }[] = [];
-  choices.push({ icon: '替', name: '入れ替え', description: 'スキル・道具・道具袋の中身を、好きなだけ入れ替える（何度でも。済んでも、祠はまた使える）', run: () => showSwapScreen(root, run, { onClose: show }) });
-  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを1つ上のレア度に変える（コモン→レア 40 G、レア→レジェンド 80 G。道具は不可）', run: pickUpgrade });
+  choices.push({ icon: '替', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（祠でできることは1つだけ。1 つでも入れ替えたら、祠を出る）', run: () => showSwapScreen(root, run, { onClose: (swapped) => (swapped ? opts.onDone('祠でスキルや道具を入れ替えた。') : show()) }) });
+  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを1つ上のレア度に変える（候補は最大 3 つ。会心の一撃系は必ず入る。コモン→レア 40 G、レア→レジェンド 80 G）', run: pickUpgrade });
   choices.push({ icon: '祈', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
   choices.push({ icon: '去', name: '立ち去る', description: '何もしない（また来られる）', run: opts.onLeave });
 
   const show = (): void => showChoiceScreen(root, {
-    heading: '祠', sub: 'ひとつ選べ',
+    heading: '祠', sub: 'ひとつだけ選べ',
     options: choices.map(({ icon, name, description }) => ({ icon, name, description })),
     onPick: (i) => choices[i].run(),
   });

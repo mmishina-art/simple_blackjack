@@ -14,7 +14,7 @@ import {
 } from '../src/relics/catalog';
 import {
   createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
-  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot, placementViolations,
+  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot, placementViolations, shrineUpgradeChoices,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
 import { upgradeCost } from '../src/run/shop';
@@ -275,6 +275,22 @@ describe('祠: 入れ替えとバージョンアップ', () => {
     expect(swapSlots(run, 21, 15)).toBe(false);
     expect(swapSlots(run, 14, 16)).toBe(false); // 両方空き
     expect(run.inventory).toEqual([]);
+  });
+
+  it('祠のバージョンアップの候補は最大 3 つ。21 の会心の一撃系は、レジェンドになるまで必ず入る', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const run = createRun();
+      run.slots = { ...WITH_BLOCKS };
+      Object.assign(run.slots, { 12: 'jab', 13: 'slash', 14: 'guard', 15: 'big_attack', 16: 'slash' });
+      const c = shrineUpgradeChoices(run, seededRng(seed));
+      expect(c.length).toBeLessThanOrEqual(3);
+      expect(c).toContain(21);
+    }
+    const run = createRun();
+    Object.assign(run.slots, { 12: 'jab', 13: 'slash', 14: 'guard', 15: 'big_attack', 21: 'final_strike' }); // 21 はレジェンド
+    const c = shrineUpgradeChoices(run, seededRng(1));
+    expect(c).not.toContain(21);
+    expect(c.length).toBe(3); // ほかのスキルが出る
   });
 
   it('バージョンアップ: コモン→レア、レア→レジェンド。道具・固定スキルは不可（強化先のレア度が置けるスロットで）', () => {
