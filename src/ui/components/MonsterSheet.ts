@@ -5,7 +5,7 @@ import { getSkill } from '../../core/skills/Skill';
 import { dropChances, type RunState } from '../../run/Run';
 import { rarityClass } from '../rarity';
 import { rarityOfSkill } from '../../core/skills/Skill';
-import { ENEMY_SPRITES } from './enemySprites';
+import { enemyArtHtml } from './enemyArt';
 import { buildEnemySkillList } from './EnemyInfo';
 import { openSheet } from './SkillSheet';
 
@@ -24,7 +24,7 @@ export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: b
   const sprite = document.createElement('div');
   sprite.className = 'codex__sprite monster-sheet__sprite';
   sprite.setAttribute('aria-hidden', 'true');
-  sprite.innerHTML = ENEMY_SPRITES[enemyId] ?? '';
+  sprite.innerHTML = enemyArtHtml(enemyId);
   const facts = document.createElement('div');
   facts.className = 'monster-sheet__facts';
   const stats = document.createElement('strong');

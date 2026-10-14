@@ -1,4 +1,5 @@
-import { ENEMY_SPRITES, STAGE_BACKDROP } from './enemySprites';
+import { STAGE_BACKDROP } from './enemySprites';
+import { enemyArtHtml } from './enemyArt';
 
 type Anim = 'hurt' | 'attack' | 'defeated';
 
@@ -11,7 +12,7 @@ export class EnemyView {
     this.el.className = 'enemy-stage';
     this.el.dataset.stage = String(stage); // 階層ごとに背景の色合いが変わる（CSS）
     this.sprite.className = 'enemy-sprite';
-    this.sprite.innerHTML = ENEMY_SPRITES[enemyId] ?? ENEMY_SPRITES.slime;
+    this.sprite.innerHTML = enemyArtHtml(enemyId) || enemyArtHtml('slime');
     const backdrop = document.createElement('div');
     backdrop.className = 'enemy-backdrop';
     backdrop.innerHTML = STAGE_BACKDROP;

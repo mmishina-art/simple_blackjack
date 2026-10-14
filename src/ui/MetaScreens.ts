@@ -4,7 +4,7 @@ import { getEnemy, ENEMY_LINEUP } from '../core/entities/enemies/catalog';
 import { enemyLevel } from '../core/entities/enemies/level';
 import { STAGES } from '../map/stages';
 import { dropsOf } from '../run/drops';
-import { ENEMY_SPRITES } from './components/enemySprites';
+import { enemyArtHtml } from './components/enemyArt';
 import { buildTopBar } from './components/TopBar';
 import { audio } from '../audio/AudioManager';
 import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
@@ -170,7 +170,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
                 : '<span class="drop drop--unknown" title="スキル図鑑に載ると見える"><span class="medal medal--sm">？</span></span>';
             }).join('');
         const item = el('div', `codex__item codex__item--monster${known ? '' : ' codex__item--unknown'}`,
-          `<div class="codex__sprite" aria-hidden="true">${ENEMY_SPRITES[id] ?? ''}</div>
+          `<div class="codex__sprite" aria-hidden="true">${enemyArtHtml(id)}</div>
            <div class="codex__mon">
              <strong>${known ? def.name : '？？？'}${id === bossId ? ' <em class="kind-tag">ボス</em>' : ''}${known ? ` <small>LV${enemyLevel(def)}・HP ${def.maxHp}</small>` : ''}</strong>
              ${known ? `<small>${def.trait ?? ''}</small>` : '<small>未討伐</small>'}
