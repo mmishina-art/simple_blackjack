@@ -56,20 +56,9 @@ function button(label: string, onClick: () => void): HTMLButtonElement {
   return b;
 }
 
-/** 冒険中は、どの画面でも体力とゴールドを上端に出す（タイトル・記録の画面では隠す）。戦闘中は、戦闘中の体力を出す。 */
-const statusBar = el('div', 'run-status');
-statusBar.hidden = true;
-statusBar.setAttribute('aria-label', '体力とゴールド');
-document.body.append(statusBar);
-let liveHp: number | null = null;
-function refreshStatus(): void {
-  const hp = liveHp ?? run.hp;
-  statusBar.innerHTML = `<span class="run-status__hp${hp <= run.maxHp * 0.3 ? ' run-status__hp--low' : ''}">HP <b>${Math.max(0, hp)}</b>/${run.maxHp}</span><span class="run-status__gold"><b>${run.gold}</b> G</span>`;
-}
+/** 冒険の画面かどうか（デバッグの操作を出すか）。HP とゴールドは、必要な画面の中にだけ出す（画面の上端には出さない: iPhone の上端はぼやけるため）。 */
 function setStatus(visible: boolean): void {
-  statusBar.hidden = !visible;
   debugPanel.hidden = !(visible && isDebug());
-  if (visible) refreshStatus();
 }
 
 /** デバッグモード中だけ、冒険の画面の左上に出る操作。使った冒険は、記録を残さない。 */
@@ -83,7 +72,7 @@ debugPanel.hidden = true;
     b.addEventListener('click', () => {
       cheated = true;
       onClick();
-      refreshStatus();
+      if (root.querySelector('.map-screen')) showMapScreen(); // 地図に出ているゴールドを更新する
     });
     debugPanel.append(b);
   };
@@ -91,11 +80,7 @@ debugPanel.hidden = true;
   mk('勝', 'いまの戦闘にすぐ勝つ', () => machineNow?.debugWin());
 }
 document.body.append(debugPanel);
-// 画面が切り替わる（買う・売る・マップへ戻るなど）たびに、数値を更新する
-new MutationObserver(() => { if (!statusBar.hidden) refreshStatus(); }).observe(root, { childList: true });
-
 function leaveBattle(): void {
-  liveHp = null;
   machineNow = null;
   view?.destroy();
   view = null;
@@ -200,8 +185,6 @@ function startBattle(tile: TileDef): void {
   });
   machineNow = machine;
   unbindSounds = bindBattleSounds(machine, audio);
-  liveHp = machine.ctx.player.hp;
-  machine.onChange(() => { liveHp = machine.ctx.player.hp; refreshStatus(); });
   view = new BattleView(root, machine, run, (won) => buildResult(machine, tile, won));
   void machine.run();
 }

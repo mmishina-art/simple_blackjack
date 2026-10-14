@@ -19,7 +19,7 @@ describe('地図画面の「タイトルへ」（冒険をあきらめる）', (
     expect(line).not.toMatch(/endRun|finishRun/);
   });
 
-  it('ボタンのタップ範囲は 44px 以上', () => {
-    expect(read('src/ui/styles/main.css')).toMatch(/\.map-hud__giveup \{ min-height: 44px;/);
+  it('ボタンのタップ範囲は 44px 以上（地図の下のボタンの行）', () => {
+    expect(read('src/ui/styles/main.css')).toMatch(/\.map-foot__btn \{ min-height: 52px; \}/);
   });
 });

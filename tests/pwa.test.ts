@@ -87,7 +87,7 @@ describe('画面の上端（iPhone のぼかしの帯を避ける）', () => {
   });
 
   it('上端の余白は、安全領域 + 24px（--safe-top）以上にしている', () => {
-    expect(css).toMatch(/--top-gap:\s*24px/);
+    expect(css).toMatch(/--top-gap:\s*28px/);
     expect(css).toMatch(/--safe-top:\s*calc\(env\(safe-area-inset-top\) \+ var\(--top-gap\)\)/);
     // 安全領域だけ（余白なし）の上端の指定が残っていない
     expect(css).not.toMatch(/padding:\s*calc\(env\(safe-area-inset-top\)/);

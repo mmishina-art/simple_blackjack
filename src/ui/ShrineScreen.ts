@@ -39,7 +39,7 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
 
   function pickUpgrade(): void {
     openSheet({
-      title: 'バージョンアップ', subtitle: '強くするスキルを選ぶ',
+      title: 'バージョンアップ', subtitle: `強くするスキルを選ぶ（所持 ${run.gold} G）`,
       options: upgradeCandidates.map((k) => {
         const from = getSkill(run.slots[k]!);
         const to = getSkill(from.upgradesTo!);
