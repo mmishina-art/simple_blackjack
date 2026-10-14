@@ -29,3 +29,13 @@ describe('全体の見た目のルール（段階1）', () => {
     expect(read('src/ui/rarity.ts')).toContain('class="sr-only"');
   });
 });
+
+describe('全体の見た目のルール（段階2）', () => {
+  it('スキル獲得・宝箱・踏破の褒美も、上に挿絵（店・祠・宿屋と同じ形）', () => {
+    const main = read('src/main.ts');
+    expect(main).toContain("scene: { kind: 'reward'");
+    expect(main).toContain("scene: { kind: 'chest', line");
+    expect(main).toContain("scene: { kind: 'chest', title: '踏破の褒美'");
+    expect(read('src/ui/styles/main.css')).toContain('.choice:has(.scene) { justify-content: flex-start;');
+  });
+});

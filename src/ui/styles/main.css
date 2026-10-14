@@ -1408,3 +1408,20 @@ section { min-width: 0; }
 .pick--danger .pick__text strong { color: var(--danger-text); }
 /* 上の行（‹ 戻る）がある選択画面は、ほかの画面と同じく上から詰める（真ん中に浮かせない） */
 .choice--bar { justify-content: flex-start; gap: 12px; }
+
+/* ======== 段階2: 選ぶ画面の形をそろえる ========
+ * スキル獲得・宝箱・踏破の褒美も、店・祠・宿屋と同じく、上に挿絵、その下に選択肢（上から詰める。真ん中に浮かせない）。
+ * 祠の選択肢も、ほかの画面と同じ茶の札にする（色の系統は、左の帯とアイコンだけで見分ける）。
+ */
+:root { --reward-accent: #d2ad55; --chest-accent: #e0b04a; }
+.scene--reward { --scene-accent: var(--reward-accent); }
+.scene--chest { --scene-accent: var(--chest-accent); }
+.choice:has(.scene) { justify-content: flex-start; gap: 14px; }
+.choice--reward .choice__head, .choice--chest .choice__head { text-align: left; }
+.choice--shrine .choice__card { background: linear-gradient(180deg, var(--panel-hi), var(--panel)); border-color: var(--gold-dim); border-left: 4px solid var(--tone, var(--shrine-accent)); }
+.choice--shrine .choice__text span { color: var(--bone-dim); }
+@media (max-height: 700px) {
+  .choice--reward, .choice--chest { padding-top: max(var(--safe-top), calc(env(safe-area-inset-top) + 12px)); padding-bottom: calc(env(safe-area-inset-bottom) + 10px); gap: 8px; }
+  .choice--reward .scene__art svg, .choice--chest .scene__art svg { height: 100px; }
+  .choice--reward .choice__card, .choice--chest .choice__card { padding: 10px 12px; }
+}
