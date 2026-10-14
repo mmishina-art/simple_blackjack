@@ -97,11 +97,15 @@ describe('ゴールドとショップ', () => {
     }
   });
 
-  it('祠のバージョンアップの代金は、買値の差（コモン→レア 40、レア→レジェンド 80）。強化先がなければ null', () => {
-    expect(upgradeCost('big_attack')).not.toBeNull();
-    expect(upgradeCost('fortress')).toBeNull();
-    expect(upgradeCost('jab')).toBe(priceOfSkill('big_attack') - priceOfSkill('jab'));
-    expect(upgradeCost('heavy')).toBe(priceOfSkill('smash') - priceOfSkill('heavy'));
+  it('祠のバージョンアップの代金: ＋はレア度ごと（コモン 30・レア 50・レジェンド 80）、会心の一撃の系統は段階ごと（40 → 80）。強化先がなければ null', () => {
+    expect(upgradeCost('jab')).toBe(30);
+    expect(upgradeCost('big_attack')).toBe(50);
+    expect(upgradeCost('smash')).toBe(80);
+    expect(upgradeCost('ace_strike')).toBe(40);
+    expect(upgradeCost('overlord_strike')).toBe(80);
+    expect(upgradeCost('jab_plus')).toBeNull();
+    expect(upgradeCost('final_strike')).toBeNull();
+    expect(upgradeCost('herb')).toBeNull();
   });
 
   it('道具袋は 1 つ: 袋に入れると、いまの袋の中身は売られる（空なら何も売らない）', () => {

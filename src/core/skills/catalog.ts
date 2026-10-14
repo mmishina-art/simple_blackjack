@@ -1,4 +1,5 @@
-import { assignRarity, defineSkill, getSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
+import type { Rarity } from '../rarity';
+import { assignRarity, defineSkill, getSkill, rarityOfSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
 
 /**
  * 基本パワー（POW）基準のスキル。攻撃: floor(POW × mult) + add / ブロック・回復: floor(POW × mult) + amount。
@@ -97,15 +98,13 @@ defineSkill({
 });
 assignRarity(['smash', 'final_strike', 'fortress', 'aegis', 'siphon', 'mithril_shield', 'impale', 'rampage', 'miracle', 'flurry', 'elixir'], 'legend');
 
-/** 祠のバージョンアップ先。コモン→レア、レア→レジェンド。道具は強化できない。会心の一撃の系統は、固定スロット 21 のまま、2 段育つ。 */
-const UPGRADES: Record<SkillId, SkillId> = {
-  jab: 'big_attack', slash: 'heavy', big_attack: 'smash', heavy: 'smash',
-  guard: 'bulwark', shield: 'bulwark', bulwark: 'fortress',
-  ace_strike: 'overlord_strike', overlord_strike: 'final_strike', rally: 'shield_bash', shield_bash: 'aegis', drain: 'siphon',
-  lunge: 'pierce_stab', pierce_stab: 'impale', chop: 'berserk', berserk: 'rampage',
-  mend: 'holy_light', holy_light: 'miracle', twin_strike: 'flurry',
-};
-for (const [from, to] of Object.entries(UPGRADES)) getSkill(from).upgradesTo = to;
+/**
+ * 祠のバージョンアップ: **レア度は変えず、一段階だけ強くする**（スキル名に「＋」が付き、効果が上がる）。道具・防具は強化できない。
+ * ただし 21 の会心の一撃は、レジェンドのまま、別に 2 段階育つ（会心の一撃 → 覇王の一撃 → 終焉の一撃。名前と効果が変わる）。
+ */
+const ACE_CHAIN: Record<SkillId, SkillId> = { ace_strike: 'overlord_strike', overlord_strike: 'final_strike' };
+for (const [from, to] of Object.entries(ACE_CHAIN)) getSkill(from).upgradesTo = to;
+assignRarity(['ace_strike', 'overlord_strike', 'final_strike'], 'legend'); // 会心の一撃の系統は、どの段階もレジェンド
 
 /** 報酬には出ず、バージョンアップでだけ手に入るスキル（図鑑には載る）。 */
 export const UPGRADE_ONLY_SKILLS: readonly SkillId[] = ['overlord_strike', 'final_strike'];
@@ -117,6 +116,28 @@ export const SKILL_POOL: readonly SkillId[] = [
   'fortress', 'aegis', 'siphon',
   'lunge', 'chop', 'mend', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'impale', 'rampage', 'miracle', 'flurry',
 ];
+
+/** 「＋」のスキルの ID と名前の目印。 */
+export const PLUS_ID_SUFFIX = '_plus';
+export const PLUS_NAME_SUFFIX = '＋';
+/** 「＋」で増える固定の上乗せ（レア度ごと）。複数の効果があるスキルは、効果ごとに半分（切り上げ）ずつ。 */
+export const PLUS_BONUS: Record<Rarity, number> = { common: 3, rare: 5, legend: 7 };
+
+/** 強化したスキル（「＋」）か。 */
+export const isPlusSkill = (id: SkillId): boolean => id.endsWith(PLUS_ID_SUFFIX);
+/** 「＋」を外した、もとのスキルの ID（図鑑は、もとのスキルだけを数える）。 */
+export const baseSkillId = (id: SkillId): SkillId => (isPlusSkill(id) ? id.slice(0, -PLUS_ID_SUFFIX.length) : id);
+
+/** 報酬に出るスキルごとに、「＋」のスキルを作る。レア度は同じで、攻撃・ブロック・回復の上乗せが増える。 */
+for (const id of SKILL_POOL) {
+  const base = getSkill(id);
+  const rarity = rarityOfSkill(base);
+  const n = PLUS_BONUS[rarity];
+  const per = base.effects.length === 1 ? n : Math.ceil(n / 2);
+  const effects = base.effects.map((e): SkillDef['effects'][number] => (e.type === 'attack' ? { ...e, add: (e.add ?? 0) + per } : { ...e, amount: e.amount + per }));
+  defineSkill({ ...base, id: `${id}${PLUS_ID_SUFFIX}`, name: `${base.name}${PLUS_NAME_SUFFIX}`, effects, upgradesTo: undefined });
+  base.upgradesTo = `${id}${PLUS_ID_SUFFIX}`;
+}
 
 /** 報酬として出現する道具。効果は固定（基本パワーに関係ない）。 */
 export const ITEM_POOL: readonly SkillId[] = ['herb', 'tonic', 'elixir', 'bomb', 'big_bomb', 'ward', 'holy_ward'];

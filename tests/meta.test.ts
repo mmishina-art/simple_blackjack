@@ -150,6 +150,14 @@ describe('セーブデータ', () => {
     expect(loadMeta(st)).toEqual(meta);
   });
 
+  it('「＋」のスキルは、図鑑ではもとのスキルとして数える（＋は図鑑に載らない）', () => {
+    const meta = emptyMeta();
+    expect(discoverSkill(meta, 'smash_plus')).toBe(true);
+    expect(meta.codex.skills).toEqual(['smash']);
+    expect(discoverSkill(meta, 'smash')).toBe(false);
+    expect(isSkillDiscovered(meta, 'smash_plus')).toBe(true);
+  });
+
   it('削除したレリックの図鑑の記録は、読み込み時に捨てる', () => {
     const st = new FakeStorage();
     const meta = emptyMeta();

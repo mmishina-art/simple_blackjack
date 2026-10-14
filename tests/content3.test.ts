@@ -9,20 +9,28 @@ import { ArtisanTools, CounterStance, DefenderCharm, FullRing, LuckyDice, NoBust
 import { noWait, playRound } from './helpers';
 
 const enemy = (id: string) => ENEMY_LINEUP.find((e) => e.id === id)!;
-const ORDER = ['common', 'rare', 'legend'];
 
 describe('第2・第3階層のスキル', () => {
-  it('強化の道: コモン → レア → レジェンド（新しいスキルも、必ず1段ずつ上がる）', () => {
-    const chains = [
-      ['lunge', 'pierce_stab', 'impale'], ['chop', 'berserk', 'rampage'], ['mend', 'holy_light', 'miracle'], ['twin_strike', 'flurry'],
-    ];
-    for (const chain of chains) {
-      chain.forEach((id, i) => {
-        expect(SKILL_POOL, id).toContain(id);
-        expect(ORDER.indexOf(rarityOfSkill(getSkill(id))), id).toBe(ORDER.indexOf(rarityOfSkill(getSkill(chain[0]))) + i);
-        expect(getSkill(id).upgradesTo, id).toBe(chain[i + 1]);
-      });
+  it('強化は「＋」: レア度は同じで、名前に＋が付き、効果が上がる。＋は、それ以上は強化できない', () => {
+    for (const id of ['lunge', 'pierce_stab', 'impale', 'chop', 'berserk', 'rampage', 'mend', 'holy_light', 'miracle', 'twin_strike', 'flurry']) {
+      const base = getSkill(id);
+      expect(SKILL_POOL, id).toContain(id);
+      const plus = getSkill(base.upgradesTo!);
+      expect(plus.id).toBe(`${id}_plus`);
+      expect(plus.name).toBe(`${base.name}＋`);
+      expect(rarityOfSkill(plus), id).toBe(rarityOfSkill(base));
+      expect(plus.upgradesTo, id).toBeUndefined();
+      expect(SKILL_POOL, id).not.toContain(plus.id); // 報酬には出ない
     }
+  });
+
+  it('＋の上乗せ: コモン +3・レア +5・レジェンド +7（複数の効果は、効果ごとに半分（切り上げ））', () => {
+    expect(getSkill('jab_plus').effects).toEqual([{ type: 'attack', mult: 1, add: 4 }]); // コモン: 1 + 3
+    expect(getSkill('guard_plus').effects).toEqual([{ type: 'block', mult: 1, amount: 4 }]); // コモン: 1 + 3
+    expect(getSkill('big_attack_plus').effects).toEqual([{ type: 'attack', mult: 1, add: 10 }]); // レア: 5 + 5
+    expect(getSkill('smash_plus').effects).toEqual([{ type: 'attack', mult: 2, add: 12 }]); // レジェンド: 5 + 7
+    expect(getSkill('drain_plus').effects).toEqual([{ type: 'attack', mult: 1, add: 4 }, { type: 'heal', mult: 0.5, amount: 5 }]); // レア: 2 つの効果に +3 ずつ
+    expect(getSkill('pierce_stab_plus').effects).toEqual([{ type: 'attack', mult: 1, add: 8, pierce: true }]); // ブロック無視は残る
   });
 
   it('レア度が高いほど強い（スロット 17、POW 7 での、攻撃・回復の合計）', () => {
