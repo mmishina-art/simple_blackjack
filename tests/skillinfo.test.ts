@@ -22,3 +22,9 @@ describe('装備画面のスキルアイコンの説明', () => {
     expect(read('src/ui/components/SlotRow.ts')).toContain("b.type = 'button'");
   });
 });
+
+describe('装備画面の説明文', () => {
+  it('スキルの確認の画面には「いまの装備の確認…」の説明文を出さない', () => {
+    expect(read('src/ui/LoadoutScreen.ts')).not.toContain('いまの装備の確認');
+  });
+});

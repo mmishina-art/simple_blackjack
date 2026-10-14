@@ -47,7 +47,9 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
     const head = document.createElement('header');
     head.className = 'loadout__head';
-    head.innerHTML = `<p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : tab === 'relics' ? 'いま持っているレリック（レア度の高い順）' : 'いまの装備の確認（道具袋の中身は、タップで置く・売る）'}</p>`;
+    // 説明文は、置き先を選ぶとき・レリックのタブのときだけ。スキルの確認の画面（ふだん）は、説明なし
+    const hint = armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : tab === 'relics' ? 'いま持っているレリック（レア度の高い順）' : '';
+    if (hint) head.innerHTML = `<p class="loadout__hint">${hint}</p>`;
     if (!armed) {
       const tabs = document.createElement('div');
       tabs.className = 'codex-tabs loadout__tabs';
