@@ -160,10 +160,9 @@ describe('スロットの見た目の規則（全画面共通）', async () => {
     expect(slotLook(13, undefined).rarity).toBe('common');
   });
 
-  it('敵のスキルも強さに応じたレア度（弱い技=コモン、大技=レア、必殺=レジェンド）', () => {
-    expect(rarityOfSkill(getSkill('slime_acid'))).toBe('common');
-    expect(rarityOfSkill(getSkill('slime_melt'))).toBe('rare');
-    expect(rarityOfSkill(getSkill('dragon_apocalypse'))).toBe('legend');
-    expect(rarityOfSkill(getSkill('slime_touch'))).toBe('common');
+  it('敵のスキルは色分けしない（レア度はすべてコモン。危ない場所は「危険」、21 は「必殺」で示す）', () => {
+    for (const def of ENEMY_LINEUP) {
+      for (const id of [...Object.values(def.slots), def.fallbackSkill]) expect(rarityOfSkill(getSkill(id!)), id).toBe('common');
+    }
   });
 });

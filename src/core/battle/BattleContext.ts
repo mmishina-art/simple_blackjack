@@ -22,6 +22,8 @@ export interface BattleContext {
   plan: Partial<Record<EntityId, SkillDef | null>>;
   /** このラウンドでプレイヤーがサレンダー（防御）を選んだ。 */
   playerSurrendered: boolean;
+  /** このラウンドの敵の手札が「21 か、バーストか」（BUST or DIE の予告）。敵が引き終えたときに決まる。 */
+  bustOrDie: boolean;
   winner: Entity | null;
   /** デバッグ用: 次の死亡判定で、敵を倒した（プレイヤーの勝ち）ことにする。 */
   debugWin: boolean;

@@ -5,7 +5,7 @@ import type { EnemyDef } from './EnemyDef';
 export const Slime: EnemyDef = {
   id: 'slime',
   name: 'スライム',
-  maxHp: 16,
+  maxHp: 14,
   attack: 3,
   ai: new DealerAI(14),
   slots: ENEMY_SLOTS.slime,

@@ -108,13 +108,13 @@ const Scorch: Relic = {
 };
 
 export const Skeleton: EnemyDef = {
-  id: 'skeleton', name: '骸骨兵', maxHp: 20, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
+  id: 'skeleton', name: '骸骨兵', maxHp: 18, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.skeleton, fallbackSkill: 'skel_stab',
   trait: '骨の鎧（受けるダメージ -2）', relics: [BoneArmor],
 };
 
 export const GiantBat: EnemyDef = {
-  id: 'bat', name: '大蝙蝠', maxHp: 22, attack: 3, ai: new DealerAI(18), slots: ENEMY_SLOTS.bat, fallbackSkill: 'bat_nip',
-  trait: '超音波（同値なら必ず先攻）。18まで引く危険な賭け', relics: [Ultrasound],
+  id: 'bat', name: '大蝙蝠', maxHp: 16, attack: 3, ai: new DealerAI(13), slots: ENEMY_SLOTS.bat, fallbackSkill: 'bat_nip',
+  trait: '超音波（同値なら必ず先攻）。13で止まり、低い合計で急降下してくる', relics: [Ultrasound],
 };
 
 export const Ghoul: EnemyDef = {
@@ -123,7 +123,7 @@ export const Ghoul: EnemyDef = {
 };
 
 export const BlackDragon: EnemyDef = {
-  id: 'dragon', name: '黒竜', maxHp: 70, attack: 6, attackBonus: BREATH_BONUS, ai: new DealerAI(18), slots: ENEMY_SLOTS.dragon, fallbackSkill: 'dragon_swipe',
+  id: 'dragon', name: '黒竜', maxHp: 90, attack: 6, attackBonus: BREATH_BONUS, ai: new DealerAI(18), slots: ENEMY_SLOTS.dragon, fallbackSkill: 'dragon_swipe',
   trait: '竜の息吹（攻撃ダメージ +3）', relics: [DragonBreath],
 };
 
@@ -136,12 +136,12 @@ export const GraveKnight: EnemyDef = {
 
 // ---- 第2階層: 沈んだ大聖堂 ----
 export const Merman: EnemyDef = {
-  id: 'merman', name: '沼の魚人', maxHp: 28, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.merman, fallbackSkill: 'merman_jab',
+  id: 'merman', name: '沼の魚人', maxHp: 26, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.merman, fallbackSkill: 'merman_jab',
   trait: '再生（ラウンドの初めに HP +1）', relics: [Regeneration(1)],
 };
 
 export const Gargoyle: EnemyDef = {
-  id: 'gargoyle', name: 'ガーゴイル', maxHp: 28, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.gargoyle, fallbackSkill: 'garg_claw',
+  id: 'gargoyle', name: 'ガーゴイル', maxHp: 26, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.gargoyle, fallbackSkill: 'garg_claw',
   trait: '石の肌（受けるダメージ -3）', relics: [StoneSkin(3)],
 };
 
@@ -151,18 +151,18 @@ export const Wraith: EnemyDef = {
 };
 
 export const IronGolem: EnemyDef = {
-  id: 'iron_golem', name: '鋼鉄のゴーレム', maxHp: 34, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.iron_golem, fallbackSkill: 'ig_punch',
+  id: 'iron_golem', name: '鋼鉄のゴーレム', maxHp: 32, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.iron_golem, fallbackSkill: 'ig_punch',
   trait: '鋼の守り（ラウンドの初めにブロック +2、上限 14）。ブロックを無視する攻撃や、一撃の重いスキルが効く', relics: [SteelGuard],
 };
 
 export const Serpent: EnemyDef = {
-  id: 'serpent', name: '深淵の海蛇', maxHp: 44, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.serpent, fallbackSkill: 'serpent_bite',
+  id: 'serpent', name: '深淵の海蛇', maxHp: 48, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.serpent, fallbackSkill: 'serpent_bite',
   trait: '再生（ラウンドの初めに HP +2）', relics: [Regeneration(2)],
 };
 
 // ---- 第3階層: 竜の巣 ----
 export const FlameSpirit: EnemyDef = {
-  id: 'flame', name: '炎の精霊', maxHp: 34, attack: 5, attackBonus: 2, ai: new DealerAI(17), slots: ENEMY_SLOTS.flame, fallbackSkill: 'flame_spark',
+  id: 'flame', name: '炎の精霊', maxHp: 40, attack: 5, attackBonus: 2, ai: new DealerAI(17), slots: ENEMY_SLOTS.flame, fallbackSkill: 'flame_spark',
   trait: '燃焼（攻撃ダメージ +2）', relics: [Scorch],
 };
 
@@ -172,7 +172,7 @@ export const LavaGolem: EnemyDef = {
 };
 
 export const Imp: EnemyDef = {
-  id: 'imp', name: '業火の悪魔', maxHp: 36, attack: 5, ai: new DealerAI(17), slots: ENEMY_SLOTS.imp, fallbackSkill: 'imp_stab',
+  id: 'imp', name: '業火の悪魔', maxHp: 42, attack: 5, ai: new DealerAI(17), slots: ENEMY_SLOTS.imp, fallbackSkill: 'imp_stab',
   trait: '悪魔の取引（同値なら必ず先攻）', relics: [Contract],
 };
 

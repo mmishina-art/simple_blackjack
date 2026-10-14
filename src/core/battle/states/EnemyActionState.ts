@@ -1,4 +1,5 @@
 import type { BattleContext } from '../BattleContext';
+import { isBustOrDie } from '../../rules/bust';
 import { PACE } from '../pace';
 import type { BattleState, StateId } from '../types';
 
@@ -22,6 +23,9 @@ export class EnemyActionState implements BattleState {
 
     // バーストしたかどうかも伏せカードが明かすまで分からないので、ログには出さない
     ctx.log(`${enemy.name}は${enemy.hand.size}枚で手札を決めた`);
+    // 手札が 21 かバーストなら、どちらかは伏せたまま予告する（21 なら攻撃 2 倍、バーストなら行動できない）
+    ctx.bustOrDie = isBustOrDie(enemy, rules);
+    if (ctx.bustOrDie) ctx.log(`BUST or DIE ── ${enemy.name}の手は 21 か、バーストか`);
     if (!enemy.hand.isBust(rules)) ctx.bus.emit('onStand', { entity: enemy });
     await ctx.wait(PACE.settle);
     return 'PlayerDeal';

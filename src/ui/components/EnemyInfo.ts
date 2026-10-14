@@ -1,7 +1,8 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { EnemyDef } from '../../core/entities/enemies/EnemyDef';
-import { BASIC_ICON, describeSkillShort, fallbackLabel } from '../../core/skills/Skill';
-import { slotLook } from '../../core/skills/look';
+import { createRuleSet } from '../../core/rules/RuleSet';
+import { BASIC_ICON, describeSkillShort, fallbackLabel, SLOT_MAX } from '../../core/skills/Skill';
+import { effectTone, slotLook } from '../../core/skills/look';
 import { describeSlotTable } from '../../core/skills/table';
 import { enemyLevel, hitsToDefeat } from '../../core/entities/enemies/level';
 import { rarityClass } from '../rarity';
@@ -33,11 +34,20 @@ export function buildEnemySkillList(enemy: Entity, standOn = 0): HTMLElement {
   for (const row of describeSlotTable(enemy).filter((r) => r.key >= standOn)) {
     const el = document.createElement('div');
     const look = slotLook(row.key, row.isFallback ? null : row.skill);
-    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}`;
+    const fatal = !row.isFallback && row.skill.fatal;
+    // 21 は必殺: 攻撃は 2 倍した値を出し、「必殺」の札を添える（危険の一撃と比べやすいように）
+    const mult21 = createRuleSet().enemy21Multiplier;
+    const die = row.key === SLOT_MAX && row.skill.effects.some((e) => e.type === 'attack');
+    // 役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 の必殺は赤（lslot--die）
+    const tone = !die ? effectTone(row.skill) ?? 'attack' : null;
+    const short = describeSkillShort(row.skill, enemy.attackAt(row.key));
+    const desc = die ? `${short.replace(/攻撃 (\d+)/, (_, n: string) => `攻撃 ${Number(n) * mult21}`)} <em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>` : short;
+    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}${fatal ? ' lslot--fatal' : ''}${die ? ' lslot--die' : ''}${tone ? ` lslot--tone-${tone}` : ''}`;
+    // 危険な合計値は、赤い印と「危険」の文字で示す（色だけに頼らない）。21 は「必殺」（攻撃 2 倍）
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>
-      <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}</span>
-      <span class="lslot__desc">${describeSkillShort(row.skill, enemy.attackAt(row.key))}</span>`;
+      <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}${fatal ? ' <em class="fatal-tag">危険</em>' : ''}</span>
+      <span class="lslot__desc">${desc}</span>`;
     list.append(el);
   }
   return list;

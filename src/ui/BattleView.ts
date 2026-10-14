@@ -14,7 +14,7 @@ import { relicButton } from './components/relicMedal';
 import { previewAllSlots } from '../core/skills/preview';
 import { SLOT_KEYS } from '../core/skills/Skill';
 import { calloutOf } from './callout';
-import { damageTakenMultiplier } from '../core/rules/bust';
+import { damageDealtMultiplier, damageTakenMultiplier } from '../core/rules/bust';
 import { turnBanner } from './turnBanner';
 import type { TurnInfo } from '../core/rules/initiative';
 
@@ -35,6 +35,8 @@ export class BattleView {
   private enemySlotStrip: SlotStrip;
   private log = new BattleLog();
   private banner = document.createElement('div');
+  /** 「BUST or DIE」の予告（敵の手が 21 かバーストのとき、伏せ札がめくられるまで出す）。 */
+  private omen = document.createElement('div');
   private bannerTimer = 0;
   private shownTurn: TurnInfo | null = null;
   private roundEl = document.createElement('div');
@@ -96,6 +98,11 @@ export class BattleView {
     this.banner.hidden = true;
     this.banner.setAttribute('aria-hidden', 'true'); // 同じ内容が、読み上げ用のログにも出る
     this.enemyView.el.append(this.banner);
+    this.omen.className = 'omen';
+    this.omen.hidden = true;
+    this.omen.setAttribute('aria-hidden', 'true'); // 同じ内容が、読み上げ用のログにも出る
+    this.omen.innerHTML = '<span class="omen__main">BUST <small>or</small> DIE</span><span class="omen__sub">敵の手は 21 か、バーストか</span>';
+    this.enemyView.el.append(this.omen);
     this.playerHp.attach(this.buildRelicChips());
     this.playerArea = section('player-area', this.playerHand.el, this.slotStrip.el, this.playerHp.el);
 
@@ -195,8 +202,11 @@ export class BattleView {
     if (absorbed > 0) playFx(this.areaOf(target), 'guard');
     if (broken > 0) playFx(this.areaOf(target), 'break'); // ブロックを破壊（会心の一撃）
     // ログ欄の代わりに、数字の下へ内訳（ブロックが防いだ量・バーストの倍率）を添える
-    const mult = damageTakenMultiplier(target, this.machine.ctx.rules);
-    const notes = [absorbed > 0 ? `ブロック ${absorbed}` : '', broken > 0 ? `ブロック破壊 ${broken}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : '', reduced > 0 ? `防具 −${reduced}` : ''].filter(Boolean).join('・');
+    const { rules } = this.machine.ctx;
+    const mult = damageTakenMultiplier(target, rules);
+    const atk = attacker ? this.machine.ctx.entityOf(attacker) : null;
+    const mult21 = atk ? damageDealtMultiplier(atk, atk.hand.total(rules), rules) : 1;
+    const notes = [absorbed > 0 ? `ブロック ${absorbed}` : '', broken > 0 ? `ブロック破壊 ${broken}` : '', mult21 !== 1 && damage > 0 ? `21×${mult21}` : '', mult !== 1 && damage > 0 ? `バースト×${mult}` : '', reduced > 0 ? `防具 −${reduced}` : ''].filter(Boolean).join('・');
     if (target.id === 'enemy') {
       if (hpLoss > 0) this.enemyView.play('hurt');
       this.enemyView.floatText(text, kind, notes);
@@ -262,7 +272,10 @@ export class BattleView {
     this.playerHand.update(ctx.player, ctx.rules);
     this.slotStrip.update(ctx.player, ctx.rules, calloutOf(ctx, ctx.player, ctx.enemy), false, previewAllSlots(ctx, ctx.player, ctx.enemy, SLOT_KEYS));
     const hidden = ctx.enemy.hand.hasHidden;
-    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : calloutOf(ctx, ctx.enemy, ctx.player), hidden, previewAllSlots(ctx, ctx.enemy, ctx.player, SLOT_KEYS));
+    const omen = hidden && ctx.bustOrDie;
+    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : calloutOf(ctx, ctx.enemy, ctx.player), hidden, previewAllSlots(ctx, ctx.enemy, ctx.player, SLOT_KEYS),
+      omen ? 'BUST or DIE: 21 なら攻撃 2 倍、バーストなら行動できない' : undefined);
+    if (this.omen.hidden === omen) this.omen.hidden = !omen;
     this.roundEl.textContent =
       ctx.round > 0 ? `ROUND ${ctx.round}` : '';
     // 行動順が決まったら（伏せカードがめくられたあと）、帯で知らせる

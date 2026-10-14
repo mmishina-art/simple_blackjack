@@ -1,7 +1,7 @@
 import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
 import { PACE } from '../battle/pace';
-import { damageTakenMultiplier } from '../rules/bust';
+import { damageDealtMultiplier, damageTakenMultiplier } from '../rules/bust';
 import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
 /** ダメージ適用。HP より先にブロックを減らす。piercing ならブロックを無視する。 */
@@ -54,8 +54,10 @@ export async function applyEffects(
       const base = attackValue(effect, user.attackAt(user.hand.total(ctx.rules)));
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
       // バーストした側が受けるダメージは、レリック・特性の補正のあとに増える（そのあとブロックが吸収する）
+      // 敵の 21 は、攻撃ダメージが 2 倍（BUST or DIE の DIE）。バーストの倍率と同じく、補正のあとに掛ける
+      const mult21 = damageDealtMultiplier(user, user.hand.total(ctx.rules), ctx.rules);
       const mult = damageTakenMultiplier(calc.defender, ctx.rules);
-      let damage = Math.max(0, Math.floor(calc.damage * mult));
+      let damage = Math.max(0, Math.floor(calc.damage * mult21 * mult));
       // 防御中（防具の上限）: HP の減少が、残りの上限を超えないように軽減する（ブロックが先に吸収する）
       let reduced = 0;
       const def = calc.defender;
@@ -71,7 +73,7 @@ export async function applyEffects(
       bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, broken, reduced, skill });
       if (reduced > 0) ctx.log(`${calc.defender.name}の防具が ${reduced} ダメージを防いだ`);
       if (broken > 0) ctx.log(`${calc.defender.name}のブロック ${broken} を破壊した`);
-      const burst = mult !== 1 && damage > 0 ? `バースト ×${mult}` : '';
+      const burst = [mult21 !== 1 && damage > 0 ? `21 ×${mult21}` : '', mult !== 1 && damage > 0 ? `バースト ×${mult}` : ''].filter(Boolean).join('・');
       if (hpLoss > 0 || absorbed === 0) {
         const notes = [absorbed > 0 ? `ブロック ${absorbed} を消費` : '', burst].filter(Boolean);
         ctx.log(`${calc.defender.name}に${hpLoss}ダメージ${notes.length > 0 ? `（${notes.join('・')}）` : ''}`);

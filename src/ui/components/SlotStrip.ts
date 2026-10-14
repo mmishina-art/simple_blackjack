@@ -2,8 +2,8 @@ import type { Entity } from '../../core/entities/Entity';
 import { bustPenaltyText } from '../../core/rules/bust';
 import type { RuleSet } from '../../core/rules/RuleSet';
 import { badgeText, type PreviewPart } from '../../core/skills/preview';
-import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, slotKeyOf, slotLabel, type SlotKey } from '../../core/skills/Skill';
-import { slotLook } from '../../core/skills/look';
+import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, SLOT_MAX, slotKeyOf, slotLabel, type SlotKey } from '../../core/skills/Skill';
+import { effectTone, slotLook } from '../../core/skills/look';
 import { rarityClass } from '../rarity';
 import { gaugeKeys, gaugeState } from '../slotGauge';
 import { fxChips, type Callout } from '../callout';
@@ -44,7 +44,7 @@ export class SlotStrip {
    * totalHidden: 手札が伏せられていて合計値が分からない（敵の行動前）。
    * effects: スロットごとの効果の予測（レリック・特性・相手のバーストを反映）。
    */
-  update(entity: Entity, rules: RuleSet, callout?: Callout | null, totalHidden = false, effects?: ReadonlyMap<SlotKey, readonly PreviewPart[]>): void {
+  update(entity: Entity, rules: RuleSet, callout?: Callout | null, totalHidden = false, effects?: ReadonlyMap<SlotKey, readonly PreviewPart[]>, hiddenNote = '最後の1枚が伏せられている（合計は不明）'): void {
     const size = entity.hand.size;
     const total = entity.hand.total(rules);
     const known = size > 0 && !totalHidden;
@@ -57,7 +57,10 @@ export class SlotStrip {
       const skill = id ? getSkill(id) : null;
       // 11以下と21は特殊スロット（金）。ほかはスキルのレア度に合わせる（空きはコモン）
       const look = slotLook(key, skill);
-      cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
+      // 敵の技の役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 の必殺は赤（slot--die）
+      const tone = entity.id === 'enemy' && key !== SLOT_MAX ? effectTone(skill) ?? 'attack' : null;
+      // 敵の危険な合計値は、赤い数字と上の小さな赤い三角（説明の文字にも「危険」）。敵の 21 は必殺（血の赤で塗る）
+      cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${skill?.fatal ? ' slot--fatal' : ''}${entity.id === 'enemy' && key === SLOT_MAX ? ' slot--die' : ''}${tone ? ` slot--tone-${tone}` : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
       cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;
       const val = document.createElement('span');
       val.className = 'slot__val';
@@ -69,7 +72,7 @@ export class SlotStrip {
       }
       cell.append(val);
       cell.title = skill
-        ? `${skill.name}（${describeSkill(skill, entity.attackAt(key))}）`
+        ? `${skill.fatal ? '危険: ' : ''}${entity.id === 'enemy' && key === SLOT_MAX ? '必殺（攻撃2倍）: ' : ''}${skill.name}（${describeSkill(skill, entity.attackAt(key))}）`
         : `${fallbackLabel(fallback)}（空きスロット・${describeSkill(fallback, entity.attackAt(key))}）`;
     }
 
@@ -79,7 +82,7 @@ export class SlotStrip {
       this.calloutKey = '';
     };
     if (size === 0) text('');
-    else if (totalHidden) text('最後の1枚が伏せられている（合計は不明）');
+    else if (totalHidden) text(hiddenNote);
     else if (bust) text(`バースト！ ${bustPenaltyText(rules, entity)}`);
     else if (callout) this.renderCallout(callout);
     else {

@@ -171,113 +171,133 @@ export function slotAttack(attack: number, key: number): number {
 export const DEFAULT_PLAYER_FALLBACK: SkillId = BASIC_ATTACK_ID;
 
 // ---- 敵 ----
-atk('slime_touch', 'ぬめる体当たり', 1, 0, '攻');
-atk('slime_acid', '酸の飛沫', 1, 0, '酸');
+atk('slime_touch', 'ぬめる体当たり', 0.5, 0, '攻');
+atk('slime_acid', '酸の飛沫', 0.5, 0, '酸');
 atk('slime_melt', '溶解', 1, 0, '剛');
-atk('slime_engulf', '飲み込み', 2, 0, '絶');
+atk('slime_engulf', '飲み込み', 2, 4, '絶');
 
-atk('skel_stab', '錆びた突き', 1, 0, '攻');
+atk('skel_stab', '錆びた突き', 0.5, 0, '攻');
 defineSkill({ id: 'skel_guard', name: '盾を構える', icon: '守', effects: [{ type: 'block', amount: 6 }] });
 atk('skel_slash', '斬り下ろし', 1, 0, '剛');
-atk('skel_cleave', '兜割り', 1, 3, '絶');
+atk('skel_cleave', '兜割り', 2, 2, '絶');
 
 atk('bat_nip', '噛みつき', 1, 0, '攻');
 atk('bat_bite', '鋭い牙', 1, 0, '牙');
 defineSkill({
   id: 'bat_drain', name: '吸血', icon: '吸',
-  effects: [{ type: 'attack', mult: 1, add: 1 }, { type: 'heal', amount: 3 }],
+  effects: [{ type: 'attack', mult: 1, add: 0 }, { type: 'heal', amount: 3 }],
 });
-atk('bat_dive', '急降下', 1, 3, '剛');
-atk('bat_screech', '血の饗宴', 2, 2, '絶');
+atk('bat_dive', '急降下', 2, 4, '剛');
+atk('bat_screech', '血の饗宴', 1, 2, '絶');
 
-atk('ghoul_scratch', '引っ掻き', 1, 0, '攻');
+atk('ghoul_scratch', '引っ掻き', 0.5, 0, '攻');
 atk('ghoul_claw', '腐爪', 1, 0, '爪');
-atk('ghoul_rend', '引き裂き', 1, 0, '剛');
-atk('ghoul_devour', '貪り喰う', 1, 3, '絶');
+atk('ghoul_rend', '引き裂き', 1, 2, '剛');
+atk('ghoul_devour', '貪り喰う', 2, 2, '絶');
 
 atk('dragon_swipe', '尾の一撃', 1, 0, '攻');
 atk('dragon_claw', '竜爪', 1, 2, '爪');
-atk('dragon_breath', '火炎の息', 1, 6, '剛');
-atk('dragon_inferno', '業火', 2, 3, '絶');
-atk('dragon_apocalypse', '終焉の炎', 2, 6, '滅');
+atk('dragon_breath', '火炎の息', 2, 4, '剛');
+atk('dragon_inferno', '業火', 3, 2, '絶');
+atk('dragon_apocalypse', '終焉の炎', 1, 4, '滅');
 
 
 // ---- 第1階層のボス・第2階層・第3階層の敵 ----
-atk('knight_slash', '錆びた大剣', 1, 1, '剣');
+atk('knight_slash', '錆びた大剣', 1, 0, '剣');
 atk('knight_bash', '盾打ち', 1, 1, '殴');
 defineSkill({ id: 'knight_guard', name: '塔盾を構える', icon: '守', effects: [{ type: 'block', amount: 8 }] });
-atk('knight_cleave', '断罪の一閃', 2, 0, '断');
+atk('knight_cleave', '断罪の一閃', 3, 0, '断');
 
 atk('merman_jab', '銛の突き', 1, 1, '銛');
-atk('merman_rush', '水流の突進', 1, 2, '流');
+atk('merman_rush', '水流の突進', 2, 4, '流');
 defineSkill({ id: 'merman_dive', name: '水に潜る', icon: '潜', effects: [{ type: 'block', amount: 7 }] });
-atk('merman_tide', '大渦', 2, 0, '渦');
+atk('merman_tide', '大渦', 1, 2, '渦');
 
-atk('garg_claw', '石の爪', 1, 1, '爪');
-atk('garg_swoop', '急襲', 1, 3, '襲');
+atk('garg_claw', '石の爪', 1, 0, '爪');
+atk('garg_swoop', '急襲', 1, 2, '襲');
 defineSkill({ id: 'garg_harden', name: '石化の構え', icon: '石', effects: [{ type: 'block', amount: 9 }] });
-atk('garg_crush', '岩砕き', 2, 1, '砕');
+atk('garg_crush', '岩砕き', 3, 2, '砕');
 
 atk('wraith_touch', '冷たい手', 1, 0, '冷');
 defineSkill({
   id: 'wraith_drain', name: '生気吸収', icon: '吸',
-  effects: [{ type: 'attack', mult: 1, add: 2 }, { type: 'heal', amount: 3 }],
+  effects: [{ type: 'attack', mult: 1, add: 0 }, { type: 'heal', amount: 3 }],
 });
-atk('wraith_curse', '呪いの囁き', 2, 0, '呪');
+atk('wraith_curse', '呪いの囁き', 3, 3, '呪');
 defineSkill({
   id: 'wraith_wail', name: '断末魔', icon: '叫',
-  effects: [{ type: 'attack', mult: 2, add: 2 }, { type: 'heal', amount: 3 }],
+  effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'heal', amount: 3 }],
 });
 
-atk('serpent_bite', '毒牙', 1, 1, '牙');
+atk('serpent_bite', '毒牙', 1, 0, '牙');
 atk('serpent_coil', '締めつけ', 1, 3, '締');
 defineSkill({ id: 'serpent_scale', name: '鱗の守り', icon: '鱗', effects: [{ type: 'block', amount: 8 }] });
-atk('serpent_tide', '津波', 2, 2, '波');
-atk('serpent_abyss', '深淵の咆哮', 2, 5, '淵');
+atk('serpent_tide', '津波', 3, 2, '波');
+atk('serpent_abyss', '深淵の咆哮', 1, 4, '淵');
 
-atk('flame_spark', '火の粉', 1, 2, '火');
+atk('flame_spark', '火の粉', 1, 0, '火');
 atk('flame_burst', '爆炎', 1, 2, '爆');
-atk('flame_inferno', '火炎旋風', 2, 0, '旋');
-atk('flame_nova', '紅蓮', 2, 2, '紅');
+atk('flame_inferno', '火炎旋風', 1, 2, '旋');
+atk('flame_nova', '紅蓮', 2, 4, '紅');
 
-atk('golem_punch', '岩の拳', 1, 3, '拳');
+atk('golem_punch', '岩の拳', 1, 0, '拳');
 defineSkill({ id: 'golem_armor', name: '溶岩の殻', icon: '殻', effects: [{ type: 'block', amount: 8 }] });
-atk('golem_slam', '地割れ', 1, 4, '割');
-atk('golem_eruption', '噴火', 2, 4, '噴');
+atk('golem_slam', '地割れ', 1, 3, '割');
+atk('golem_eruption', '噴火', 3, 2, '噴');
 
-atk('imp_stab', '三叉の突き', 1, 3, '叉');
-atk('imp_hex', '悪魔の取引', 1, 5, '契');
+atk('imp_stab', '三叉の突き', 1, 0, '叉');
+atk('imp_hex', '悪魔の取引', 3, 3, '契');
 defineSkill({
   id: 'imp_siphon', name: '魂の搾取', icon: '搾',
-  effects: [{ type: 'attack', mult: 1, add: 5 }, { type: 'heal', amount: 4 }],
+  effects: [{ type: 'attack', mult: 1, add: 0 }, { type: 'heal', amount: 4 }],
 });
-atk('imp_hellfire', '地獄の業火', 2, 3, '獄');
+atk('imp_hellfire', '地獄の業火', 1, 4, '獄');
 
 // 鋼鉄のゴーレム（ブロックを多用する敵）。壁で守りを固め、盾で殴り、ブロックを重ねる
 atk('ig_punch', '鉄の拳', 1, 1, '拳');
 defineSkill({ id: 'ig_wall', name: '鋼の壁', icon: '壁', effects: [{ type: 'block', amount: 8 }] });
 defineSkill({ id: 'ig_bash', name: '盾叩き', icon: '叩', effects: [{ type: 'attack', mult: 1, add: 3 }, { type: 'block', amount: 6 }] });
-defineSkill({ id: 'ig_crush', name: '鉄塊の一撃', icon: '塊', effects: [{ type: 'attack', mult: 1, add: 6 }, { type: 'block', amount: 5 }] });
+defineSkill({ id: 'ig_crush', name: '鉄塊の一撃', icon: '塊', effects: [{ type: 'attack', mult: 3, add: 3 }, { type: 'block', amount: 5 }] });
 
-// 敵のスキルのレア度: 強い技ほど高い（スロット表の色で技の格が分かる）
-assignRarity(['slime_melt', 'skel_slash', 'bat_drain', 'bat_dive', 'ghoul_rend', 'dragon_breath', 'knight_bash', 'merman_rush', 'garg_swoop', 'ig_bash', 'wraith_drain', 'serpent_coil', 'flame_burst', 'golem_slam', 'imp_hex'], 'rare');
-assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dragon_inferno', 'dragon_apocalypse', 'knight_cleave', 'merman_tide', 'garg_crush', 'wraith_curse', 'wraith_wail', 'serpent_tide', 'serpent_abyss', 'flame_inferno', 'flame_nova', 'golem_eruption', 'imp_siphon', 'imp_hellfire', 'ig_crush'], 'legend');
+// 21 の必殺技（敵の合計値がちょうど 21 で出る。攻撃 2 倍で、危険の一撃と同じくらいの重さ）
+atk('slime_deluge', '酸の奔流', 1, 2, '奔');
+atk('skel_execution', '処刑の一太刀', 1, 1, '処');
+atk('knight_judgement', '審判の剣', 1, 2, '審');
+atk('garg_fall', '落石の一撃', 1, 3, '落');
+defineSkill({ id: 'ig_quake', name: '鉄槌', icon: '槌', effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'block', amount: 5 }] });
+atk('golem_meteor', '溶岩流', 1, 4, '流');
+
+// 敵のスキルには、レア度を付けない（色分けしない）。危ない場所は「危険」（赤）、21 は「必殺」で示す。レア度の色は、プレイヤーが手に入れるスキルの価値だけを表す
+
+/**
+ * 敵の危険な合計値: 敵ごとに決まった合計値でだけ出る、一撃の重い技。それ以外の合計値の技は軽い。
+ * 敵の札は最後の1枚以外が見えているので、「この手は危ない → 防御」と読める（敵ごとの場所を覚えるほど勝てる）。
+ * 21 は危険にしない。21 は「必殺」（どの敵も攻撃 2 倍で、「BUST or DIE」の予告が出る。RuleSet.enemy21Multiplier）で、
+ * 21 の技は、2 倍したときに、危険の一撃と同じくらい（以上）になるようにしてある。
+ * スロット表では赤い印、一覧では「危険」の札で示す。
+ */
+export const FATAL_SKILLS: readonly SkillId[] = [
+  'slime_engulf', 'skel_cleave', 'bat_dive', 'ghoul_devour', 'knight_cleave',
+  'merman_rush', 'garg_crush', 'wraith_curse', 'ig_crush', 'serpent_tide',
+  'flame_nova', 'golem_eruption', 'imp_hex', 'dragon_breath', 'dragon_inferno',
+];
+for (const id of FATAL_SKILLS) getSkill(id).fatal = true;
 
 export const ENEMY_SLOTS = {
-  slime: slotsFromRanges([[14, 16, 'slime_acid'], [17, 19, 'slime_melt'], [20, 21, 'slime_engulf']]),
-  skeleton: slotsFromRanges([[15, 16, 'skel_guard'], [17, 19, 'skel_slash'], [20, 21, 'skel_cleave']]),
-  bat: slotsFromRanges([[13, 17, 'bat_bite'], [18, 19, 'bat_drain'], [20, 20, 'bat_dive'], [21, 21, 'bat_screech']]),
-  ghoul: slotsFromRanges([[12, 16, 'ghoul_claw'], [17, 19, 'ghoul_rend'], [20, 21, 'ghoul_devour']]),
-  knight: slotsFromRanges([[15, 16, 'knight_guard'], [17, 19, 'knight_bash'], [20, 21, 'knight_cleave']]),
-  merman: slotsFromRanges([[13, 15, 'merman_dive'], [16, 18, 'merman_rush'], [19, 21, 'merman_tide']]),
-  gargoyle: slotsFromRanges([[14, 16, 'garg_harden'], [17, 19, 'garg_swoop'], [20, 21, 'garg_crush']]),
-  wraith: slotsFromRanges([[14, 17, 'wraith_drain'], [18, 19, 'wraith_curse'], [20, 21, 'wraith_wail']]),
-  serpent: slotsFromRanges([[16, 17, 'serpent_scale'], [18, 19, 'serpent_coil'], [20, 20, 'serpent_tide'], [21, 21, 'serpent_abyss']]),
-  flame: slotsFromRanges([[15, 17, 'flame_burst'], [18, 19, 'flame_inferno'], [20, 21, 'flame_nova']]),
-  golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 19, 'golem_slam'], [20, 21, 'golem_eruption']]),
-  imp: slotsFromRanges([[15, 17, 'imp_hex'], [18, 19, 'imp_siphon'], [20, 21, 'imp_hellfire']]),
-  iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 21, 'ig_crush']]),
+  slime: slotsFromRanges([[14, 17, 'slime_acid'], [18, 19, 'slime_melt'], [20, 20, 'slime_engulf'], [21, 21, 'slime_deluge']]),
+  skeleton: slotsFromRanges([[15, 16, 'skel_guard'], [17, 18, 'skel_slash'], [19, 20, 'skel_cleave'], [21, 21, 'skel_execution']]),
+  bat: slotsFromRanges([[13, 14, 'bat_dive'], [15, 17, 'bat_bite'], [18, 19, 'bat_drain'], [20, 21, 'bat_screech']]),
+  ghoul: slotsFromRanges([[16, 17, 'ghoul_devour'], [18, 19, 'ghoul_claw'], [20, 21, 'ghoul_rend']]),
+  knight: slotsFromRanges([[17, 18, 'knight_guard'], [19, 19, 'knight_bash'], [20, 20, 'knight_cleave'], [21, 21, 'knight_judgement']]),
+  merman: slotsFromRanges([[15, 16, 'merman_rush'], [17, 18, 'merman_dive'], [19, 21, 'merman_tide']]),
+  gargoyle: slotsFromRanges([[16, 18, 'garg_harden'], [19, 19, 'garg_swoop'], [20, 20, 'garg_crush'], [21, 21, 'garg_fall']]),
+  wraith: slotsFromRanges([[16, 16, 'wraith_drain'], [17, 18, 'wraith_curse'], [19, 20, 'wraith_touch'], [21, 21, 'wraith_wail']]),
+  serpent: slotsFromRanges([[18, 18, 'serpent_scale'], [19, 19, 'serpent_coil'], [20, 20, 'serpent_tide'], [21, 21, 'serpent_abyss']]),
+  flame: slotsFromRanges([[17, 18, 'flame_burst'], [19, 20, 'flame_nova'], [21, 21, 'flame_burst']]),
+  golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 18, 'golem_slam'], [19, 20, 'golem_eruption'], [21, 21, 'golem_meteor']]),
+  imp: slotsFromRanges([[17, 18, 'imp_hex'], [19, 20, 'imp_siphon'], [21, 21, 'imp_hellfire']]),
+  iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 20, 'ig_crush'], [21, 21, 'ig_quake']]),
   dragon: slotsFromRanges([
-    [13, 17, 'dragon_claw'], [18, 19, 'dragon_breath'], [20, 20, 'dragon_inferno'], [21, 21, 'dragon_apocalypse'],
+    [18, 18, 'dragon_claw'], [19, 19, 'dragon_breath'], [20, 20, 'dragon_inferno'], [21, 21, 'dragon_apocalypse'],
   ]),
 } satisfies Record<string, SlotTable>;

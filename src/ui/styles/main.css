@@ -1517,3 +1517,58 @@ section { min-width: 0; }
 .title h1 .logo__genre { display: flex; align-self: stretch; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; letter-spacing: 0.32em; white-space: nowrap; color: var(--bone-dim); text-shadow: 0 2px 0 #000; }
 .logo__genre::before, .logo__genre::after { content: ''; flex: 0 1 34px; min-width: 8px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
 .logo__genre::after { transform: scaleX(-1); }
+
+/* ======== 敵の危険な合計値と、21 の必殺 ========
+ * 危険（敵ごとの、一撃の重い合計値）は静かに: 枠は普通のまま、数字と「危険」の文字を赤く、上に小さな赤い三角。
+ * 21 の必殺（攻撃 2 倍。危険より重い）は、いちばん目立たせる: 枠は普通のまま、下地を血の赤にして、内側がゆっくり脈打つ。一覧では行の下地を赤く、「必殺」の札も赤く塗る。
+ */
+:root { --fatal: #d8483a; --fatal-text: #ff9c8c; --die-hi: #6e1610; --die-lo: #2e0705; }
+.slot.slot--fatal .slot__val { color: var(--fatal-text); font-weight: 800; }
+.slot.slot--fatal::before { content: ''; position: absolute; top: -1px; left: 50%; z-index: 2; width: 8px; height: 5px; transform: translateX(-50%); background: var(--fatal); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.slot.slot--fatal:not(.slot--on) { opacity: 0.7; } /* 点灯していなくても、赤い数字が読めるように */
+.lslot--fatal .lslot__desc { color: var(--fatal-text); font-weight: 700; }
+.fatal-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: var(--fatal-text); border: 1px solid rgba(216, 72, 58, 0.6); border-radius: 8px; letter-spacing: 0.06em; vertical-align: middle; }
+.slot.slot--die { opacity: 1; color: #ffe2da; background: radial-gradient(circle at 50% 30%, var(--die-hi), var(--die-lo) 85%); animation: diePulse 2.4s ease-in-out infinite; } /* 枠は普通のまま、下地だけ赤 */
+.slot.slot--die .slot__val, .slot.slot--die .slot__key { color: #fff; font-weight: 800; }
+@keyframes diePulse { 50% { box-shadow: inset 0 0 8px rgba(255, 90, 70, 0.35); } }
+.slots--bust .slot.slot--die { opacity: 0.5; animation: none; }
+.lslot.lslot--die { background: linear-gradient(90deg, #4a100b, #1e0a08 80%); }
+.lslot--die .lslot__desc { color: #fff0ea; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .slot.slot--die { animation: none; } }
+
+/* ======== BUST or DIE の予告 ========
+ * 敵の手が 21 かバーストのとき、伏せ札がめくられるまで、敵の舞台の上に出す（21 なら攻撃 2 倍、バーストなら行動できない）。
+ */
+.omen { position: absolute; top: 6px; left: 0; right: 0; z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px;
+  background: linear-gradient(90deg, transparent, rgba(40, 6, 4, 0.88) 15%, rgba(40, 6, 4, 0.88) 85%, transparent); animation: omenPulse 1.6s ease-in-out infinite; }
+.omen__main { font-family: var(--font-display); font-size: 24px; font-weight: 800; letter-spacing: 0.12em; color: var(--logo-die); text-shadow: 0 0 14px var(--logo-die-glow), 0 2px 0 #000; line-height: 1; }
+.omen__main small { font-size: 13px; color: var(--bone-dim); letter-spacing: 0.1em; }
+.omen__sub { font-size: 12px; letter-spacing: 0.1em; color: var(--bone); text-shadow: 0 1px 0 #000; }
+@keyframes omenPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
+@media (prefers-reduced-motion: reduce) { .omen { animation: none; } }
+.die-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: #fff; background: #b8352b; border: 1px solid #ff6a5a; border-radius: 8px; white-space: nowrap; }
+
+/* ======== 敵の技: ブロックは青、回復は緑 ========
+ * プレイヤーのブロック（青い盾の光）・回復（緑の光）の演出と同じ色。危険（赤い数字）と 21 の必殺（血の赤）が優先。
+ */
+:root { --tone-block: #8cc4f5; --tone-block-line: #3d6f9f; --tone-block-bg: #0e1722; --tone-heal: #8ee0a0; --tone-heal-line: #3f7f52; --tone-heal-bg: #0d1a12; }
+.slot.slot--tone-block { border-color: var(--tone-block-line); background: var(--tone-block-bg); color: var(--tone-block); }
+.slot.slot--tone-heal { border-color: var(--tone-heal-line); background: var(--tone-heal-bg); color: var(--tone-heal); }
+.slot.slot--tone-block:not(.slot--on), .slot.slot--tone-heal:not(.slot--on) { opacity: 0.6; }
+.lslot.lslot--tone-block .medal { border-color: var(--tone-block-line); color: var(--tone-block); background: var(--tone-block-bg); }
+.lslot.lslot--tone-heal .medal { border-color: var(--tone-heal-line); color: var(--tone-heal); background: var(--tone-heal-bg); }
+.lslot--tone-block .lslot__desc { color: var(--tone-block); }
+.lslot--tone-heal .lslot__desc { color: var(--tone-heal); }
+/* 敵の技の一覧: 効果が長い（攻撃 + ブロック + 必殺の札）ときは、技の名前を潰さず、効果のほうを折り返す */
+.lslot--info .lslot__desc { white-space: normal; text-align: right; line-height: 1.3; }
+.lslot--info .lslot__desc .die-tag, .lslot--info .lslot__desc .fatal-tag { white-space: nowrap; }
+.lslot.lslot--info { grid-template-columns: 38px 28px minmax(6em, 1fr) fit-content(52%); }
+.lslot--info .lslot__name { white-space: normal; line-height: 1.3; }
+.lslot--info .fatal-tag { display: inline-block; white-space: nowrap; }
+
+/* 敵の技のアイコン: 攻撃はオレンジ（危険の赤い数字と見分けられる、黄色寄りの色）、21 の必殺は赤 */
+:root { --tone-attack: #f0a050; --tone-attack-line: #8a5a22; --die-icon: #ffb3a8; --die-medal: #ff6a5a; }
+.slot.slot--tone-attack .slot__icon { color: var(--tone-attack); }
+.lslot.lslot--tone-attack .medal { border-color: var(--tone-attack-line); color: var(--tone-attack); }
+.slot.slot--die .slot__icon { color: var(--die-icon); }
+.lslot.lslot--die .medal { border-color: var(--fatal); color: var(--die-medal); background: #2a0806; }
