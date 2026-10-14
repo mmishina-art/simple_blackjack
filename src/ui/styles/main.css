@@ -1057,8 +1057,8 @@ section { min-width: 0; }
 .lslot--blocked { opacity: 0.45; }
 
 /* ---- ショップ・ゴールド ---- */
-.tile--shop .tile__bg { stroke: #e0a040; }
-.tile--shop .tile__icon { fill: #e0a040; }
+.tile--shop .tile__bg { stroke: #4fb0d6; }
+.tile--shop .tile__icon { fill: #4fb0d6; }
 .shop { grid-template-rows: auto auto minmax(0, 1fr) auto; }
 .shop__gold { color: var(--bone); }
 .shop__gold strong { color: var(--gold); font-family: var(--font-display); font-size: 18px; }
@@ -1360,3 +1360,24 @@ section { min-width: 0; }
 .map-foot__giveup { flex: 0 0 36%; background: #14100b; color: var(--bone-dim); }
 .map-foot__giveup .btn__main { font-size: 14px; letter-spacing: 0.04em; white-space: nowrap; }
 .map-foot__main { flex: 1; }
+
+/* マップの敵の詳細シート */
+.monster-sheet { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
+.monster-sheet__top { display: flex; gap: 10px; align-items: center; }
+.monster-sheet__facts { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.monster-sheet__facts small { font-size: 12px; line-height: 1.5; color: var(--bone-dim); }
+.monster-sheet__drops { margin: 0; font-size: 12px; line-height: 1.5; color: var(--bone-dim); }
+.monster-sheet { flex: 1 1 auto; }
+.monster-sheet .enemy-info__list { overflow: visible; }
+.monster-sheet ~ .sheet__list { flex: none; overflow: visible; }
+.monster-sheet__drops .drops { margin-top: 4px; }
+.drop__pct { margin-left: 2px; color: var(--gold); font-weight: 700; }
+.drop .rar-badge { font-size: 9px; padding: 0 4px; }
+
+/* マップのマスの絵（宝・店・祠・宿屋）。色はマスの種類ごとの色（枠と同じ） */
+.tile__glyph { pointer-events: none; }
+.tile--chest .tile__glyph { color: var(--gold); }
+.tile--shop .tile__glyph { color: #4fb0d6; }
+.tile--shrine .tile__glyph { color: #8a6ab8; }
+.tile--inn .tile__glyph { color: var(--moss); }
+.tile--start .tile__glyph { color: var(--bone); }
