@@ -20,6 +20,12 @@ describe('地図画面の整理（HP・ゴールドは、画面の上端に出�
     expect(src).toContain('actions.append(giveUp, loadout)');
   });
 
+  it('「装備」ボタンは、文字だけ（「確認」の小さな文字はない）', () => {
+    const src = read('src/ui/MapView.ts');
+    expect(src).toContain('<span class="btn__main">装備</span>');
+    expect(src).not.toContain('btn__sub">確認');
+  });
+
   it('画面の上端の HP・ゴールドのカプセル（run-status）はなくなった。上端の余白は 28px', () => {
     for (const f of ['src/main.ts', 'src/ui/styles/main.css']) expect(read(f), f).not.toContain('run-status');
     expect(read('src/ui/styles/main.css')).toMatch(/--top-gap:\s*28px/);
