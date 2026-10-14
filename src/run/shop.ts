@@ -130,9 +130,12 @@ export function sellFromInventory(run: RunState, id: SkillId): number | null {
   return gold;
 }
 
-/** 祠のバージョンアップの代金: 強化先と今のスキルの買値の差（コモン→レア 40 G、レア→レジェンド 80 G）。強化先がなければ null。 */
+/** 祠のバージョンアップの代金（「＋」にする）: レア度ごと。会心の一撃の系統は、段階ごと（→ 覇王の一撃 40 G、→ 終焉の一撃 80 G）。 */
+export const PLUS_COST: Record<Rarity, number> = { common: 30, rare: 50, legend: 80 };
+export const ACE_UPGRADE_COST: Record<SkillId, number> = { ace_strike: 40, overlord_strike: 80 };
+
 export function upgradeCost(id: SkillId): number | null {
-  const to = getSkill(id).upgradesTo;
-  if (!to) return null;
-  return priceOfSkill(to) - priceOfSkill(id);
+  const sk = getSkill(id);
+  if (!sk.upgradesTo) return null;
+  return ACE_UPGRADE_COST[id] ?? PLUS_COST[rarityOfSkill(sk)];
 }

@@ -1,5 +1,5 @@
 import { ENEMY_LINEUP } from '../core/entities/enemies/catalog';
-import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
+import { ARMOR_POOL, baseSkillId, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
 import type { SkillId } from '../core/skills/Skill';
 import { RELIC_POOL } from '../relics/catalog';
 
@@ -182,7 +182,8 @@ export function finishRun(meta: MetaState, s: RunSummary): number {
 /** 最初から図鑑に載っているスキル（初期スロットのスキル）。 */
 export const STARTER_SKILLS: readonly SkillId[] = ['small_attack', 'herb', 'big_attack', 'ace_strike'];
 
-export function isSkillDiscovered(meta: MetaState, id: SkillId): boolean {
+export function isSkillDiscovered(meta: MetaState, rawId: SkillId): boolean {
+  const id = baseSkillId(rawId); // 「＋」のスキルは、もとのスキルとして数える
   return STARTER_SKILLS.includes(id) || meta.codex.skills.includes(id);
 }
 
@@ -202,7 +203,8 @@ export function discoverEnemy(meta: MetaState, id: string): boolean {
 }
 
 /** 図鑑に登録する。新規登録なら true。 */
-export function discoverSkill(meta: MetaState, id: SkillId): boolean {
+export function discoverSkill(meta: MetaState, rawId: SkillId): boolean {
+  const id = baseSkillId(rawId);
   if (isSkillDiscovered(meta, id)) return false;
   meta.codex.skills.push(id);
   return true;

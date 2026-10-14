@@ -1333,3 +1333,4 @@ section { min-width: 0; }
   .scene__caption { padding-top: 16px; }
   .scene__title { font-size: 17px; }
 }
+.pick__badge { white-space: nowrap; }

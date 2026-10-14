@@ -21,9 +21,7 @@ describe('レア度', () => {
     for (const set of [skills, relics]) {
       expect(new Set(set)).toEqual(new Set(['common', 'rare', 'legend']));
     }
-    expect(rarityOfSkill(getSkill('ace_strike'))).toBe('common');
-    expect(rarityOfSkill(getSkill('overlord_strike'))).toBe('rare');
-    expect(rarityOfSkill(getSkill('final_strike'))).toBe('legend');
+    for (const id of ['ace_strike', 'overlord_strike', 'final_strike']) expect(rarityOfSkill(getSkill(id)), id).toBe('legend'); // 会心の一撃の系統は、どの段階もレジェンド
     expect(RELIC_POOL.find((r) => r.id === 'breastplate')!.rarity).toBe('legend');
   });
 

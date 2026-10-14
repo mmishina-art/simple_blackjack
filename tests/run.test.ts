@@ -293,30 +293,29 @@ describe('祠: 入れ替えとバージョンアップ', () => {
     expect(c.length).toBe(3); // ほかのスキルが出る
   });
 
-  it('バージョンアップ: コモン→レア、レア→レジェンド。道具・固定スキルは不可（強化先のレア度が置けるスロットで）', () => {
+  it('バージョンアップ: スキルが「＋」になる（レア度は同じ）。＋はそれ以上強化できない。道具は不可。会心の一撃は別に育つ', () => {
     const run = createRun();
     run.slots = { ...WITH_BLOCKS };
     run.slots[18] = 'guard';
     expect(canUpgradeSlot(run, 18)).toBe(true); // 受け流し(コモン)
-    expect(upgradeSlot(run, 18)).toBe('bulwark');
-    expect(rarityOfSkill(getSkill('bulwark'))).toBe('rare');
-    expect(upgradeSlot(run, 18)).toBe('fortress');
-    expect(rarityOfSkill(getSkill('fortress'))).toBe('legend');
-    expect(upgradeSlot(run, 18)).toBeNull(); // レジェンドはこれ以上不可
+    expect(upgradeSlot(run, 18)).toBe('guard_plus');
+    expect(getSkill('guard_plus').name).toBe('受け流し＋');
+    expect(rarityOfSkill(getSkill('guard_plus'))).toBe('common'); // レア度は変わらない
+    expect(canUpgradeSlot(run, 18)).toBe(false); // ＋はこれ以上不可
+    expect(upgradeSlot(run, 18)).toBeNull();
     expect(canUpgradeSlot(run, 12)).toBe(false); // 薬草（道具）
     expect(canUpgradeSlot(run, 11)).toBe(false); // 固定（強化先がない）
     expect(canUpgradeSlot(run, 21)).toBe(true); // 固定でも、会心の一撃は覇王の一撃にできる
     expect(run.slots[12]).toBe('herb');
   });
 
-  it('強化先は必ず1つ上のレア度で、道具には強化先がない', () => {
-    const order = ['common', 'rare', 'legend'];
-    expect(order.indexOf(rarityOfSkill(getSkill('overlord_strike')))).toBe(order.indexOf(rarityOfSkill(getSkill('ace_strike'))) + 1);
+  it('強化先は同じレア度（会心の一撃の系統もレジェンドのまま）。道具には強化先がない', () => {
     for (const id of SKILL_POOL) {
       const to = getSkill(id).upgradesTo;
-      if (to) expect(order.indexOf(rarityOfSkill(getSkill(to)))).toBe(order.indexOf(rarityOfSkill(getSkill(id))) + 1);
-      else expect(rarityOfSkill(getSkill(id))).toBe('legend');
+      expect(to, id).toBe(`${id}_plus`);
+      expect(rarityOfSkill(getSkill(to!)), id).toBe(rarityOfSkill(getSkill(id)));
     }
+    for (const id of ['ace_strike', 'overlord_strike']) expect(rarityOfSkill(getSkill(getSkill(id).upgradesTo!))).toBe('legend');
     for (const id of ITEM_POOL) expect(getSkill(id).upgradesTo).toBeUndefined();
   });
 });
@@ -420,9 +419,9 @@ describe('レリックの効果', () => {
     for (const id of chain) expect(upgradeSlot(run, 21)).toBe(id);
     expect(run.slots[21]).toBe('final_strike');
     expect(canUpgradeSlot(run, 21)).toBe(false); // もう上はない
-    // レア度: 会心の一撃（コモン）→ 覇王の一撃（レア）→ 終焉の一撃（レジェンド）
-    expect(['ace_strike', ...chain].map((id) => rarityOfSkill(getSkill(id)))).toEqual(['common', 'rare', 'legend']);
-    // 代金: コモン→レア 40 G、レア→レジェンド 80 G
+    // レア度: どの段階もレジェンドのまま（名前と効果だけが変わる）
+    expect(['ace_strike', ...chain].map((id) => rarityOfSkill(getSkill(id)))).toEqual(['legend', 'legend', 'legend']);
+    // 代金: 覇王の一撃へ 40 G、終焉の一撃へ 80 G
     expect(['ace_strike', 'overlord_strike'].map((id) => upgradeCost(id))).toEqual([40, 80]);
     expect(swapSlots(run, 21, 20)).toBe(false); // 固定スロットは、動かせないまま
     expect(canUpgradeSlot(run, 11)).toBe(false); // 11以下（小攻撃）には強化先がない
@@ -515,17 +514,15 @@ describe('レア度ごとの、置けるスロットの制限（スキル・道�
     expect(swapSlots(run, 16, 19)).toBe(true);
   });
 
-  it('バージョンアップ: 強化先のレア度が置けないスロットでは、強化できない（先に入れ替える）', () => {
+  it('バージョンアップ: レア度は同じなので、置けるスロットのまま「＋」にできる（置けないスロットのスキルは、元から強化できない）', () => {
     const run = createRun();
-    run.slots[16] = 'big_attack'; // レア。強化先の渾身の一撃はレジェンド（18 以上）
-    expect(canUpgradeSlot(run, 16)).toBe(false);
-    expect(upgradeSlot(run, 16)).toBeNull();
-    run.slots[18] = 'big_attack';
-    expect(upgradeSlot(run, 18)).toBe('smash');
-    run.slots[13] = 'jab'; // コモン → レア（15 以上）
-    expect(canUpgradeSlot(run, 13)).toBe(false);
-    run.slots[15] = 'jab';
-    expect(canUpgradeSlot(run, 15)).toBe(true);
+    run.slots[16] = 'big_attack'; // レア（15 以上）
+    expect(canUpgradeSlot(run, 16)).toBe(true);
+    expect(upgradeSlot(run, 16)).toBe('big_attack_plus');
+    run.slots[18] = 'smash'; // レジェンド
+    expect(upgradeSlot(run, 18)).toBe('smash_plus');
+    run.slots[13] = 'jab'; // コモンは、どこでも
+    expect(canUpgradeSlot(run, 13)).toBe(true);
   });
 
   it('置ける場所の説明', () => {

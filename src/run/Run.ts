@@ -237,10 +237,10 @@ export function canUpgradeSlot(run: RunState, key: SlotKey): boolean {
   const id = run.slots[key];
   if (!id) return false;
   const to = getSkill(id).upgradesTo;
-  return !!to && canPlaceAt(getSkill(to), key); // 強化先のレア度が、そのスロットに置けること
+  return !!to && canPlaceAt(getSkill(to), key); // 強化先が、そのスロットに置けること（レア度は同じなので、ふつうは置ける）
 }
 
-/** 祠のバージョンアップ: スロットのスキルを1つ上のレア度のスキルに変える。 */
+/** 祠のバージョンアップ: スロットのスキルを、一段階強いスキル（「＋」。会心の一撃は次の段階）に変える。レア度は変わらない。 */
 export function upgradeSlot(run: RunState, key: SlotKey): SkillId | null {
   if (!canUpgradeSlot(run, key)) return null;
   const to = getSkill(run.slots[key]!).upgradesTo!;
