@@ -31,13 +31,13 @@ export function showSettings(root: HTMLElement, meta: MetaState, onClose: () => 
       title: '記録をすべて消す？',
       subtitle: '魂片・祭壇の強化・図鑑・戦績が、すべて消える。元に戻せない',
       options: [{
-        kind: 'reset', icon: '消', name: 'つぎへ（もう一度確認する）', detail: '音の設定は消えない',
+        kind: 'danger', icon: '消', name: 'つぎへ（もう一度確認する）', detail: '音の設定は消えない',
         onPick() {
           openSheet({
             title: '本当に消しますか？',
             subtitle: 'この操作は取り消せません',
             options: [{
-              kind: 'reset', icon: '消', name: 'すべて消す', detail: '最初の状態に戻る',
+              kind: 'danger', icon: '消', name: 'すべて消す', detail: '最初の状態に戻る',
               onPick() {
                 resetAllMeta(meta);
                 saveMeta(meta);

@@ -1201,7 +1201,7 @@ section { min-width: 0; }
 .compare__line--same { color: var(--bone-dim); }
 .compare__line { font-weight: 700; }
 
-/* ボタン: 決定=緑 / 売る・やめる=ふつう / やめる=控えめ */
+/* ボタン: 決定 / 売る・やめる=ふつう / やめる=控えめ（決定の色は、末尾の「全体の見た目のルール」で金にした） */
 .pick--confirm { border-color: #5fa070; background: linear-gradient(180deg, rgba(79, 122, 92, 0.34), rgba(40, 70, 52, 0.28)); }
 .pick--confirm .pick__text strong { color: #c8f0d2; }
 .pick--confirm .medal { border-color: #7fc08e; color: #bfe8c8; }
@@ -1385,3 +1385,26 @@ section { min-width: 0; }
 /* 装備画面: 合計値の見出しの幅をそろえる（「≤11」だけ幅が広く、丸数字がずれていた）。道具袋の行は、アイコンなし（名前の位置はほかの行にそろえる） */
 .lslot__lab { display: inline-block; min-width: 27px; }
 .lslot--noicon .lslot__name { grid-column: 3; }
+
+/* ======== 全体の見た目のルール（段階1） ========
+ * ボタンの色の役割: 進む・決める = 金（primary）/ ふつうの操作 = 灰青（btn--stand・btn--retry）/ 取り消せない・危険 = 赤（danger）。
+ * 戦闘の Hit（赤）・Stand（灰青）・Guard（緑青）は、戦闘だけの色で、この役割とは別。
+ * ポップアップは、ほかの画面と同じ茶と金。レア度は、一覧では色だけ（文字の札は、説明のポップアップだけ）。
+ */
+:root {
+  --primary-hi: #6e5320; --primary-lo: #2a1f0d; --primary-line: #d2ad55; --primary-text: #f6e6b8;
+  --danger-hi: #5e1a16; --danger-lo: #250a08; --danger-line: #c4483a; --danger-text: #ffd2ca;
+  --popup-hi: #211810; --popup-lo: #110c07; --popup-line: #6e5626;
+}
+.btn--primary { background: linear-gradient(180deg, var(--primary-hi), var(--primary-lo)); border-color: var(--primary-line); color: var(--primary-text); padding: 0 44px; }
+.btn--primary .btn__main { text-shadow: 0 1px 0 #000, 0 0 10px rgba(210, 173, 85, 0.35); }
+.title__start { padding: 0; }
+.sheet { background: linear-gradient(180deg, var(--popup-hi), var(--popup-lo)); border-color: var(--popup-line); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--ink), inset 0 1px 0 #3a2c18; }
+.sheet__head h2 { color: var(--primary-text); }
+.sheet__close { border-color: var(--gold-dim); color: var(--bone-dim); }
+.pick--confirm { border-color: var(--primary-line); background: linear-gradient(180deg, rgba(110, 83, 32, 0.55), rgba(42, 31, 13, 0.5)); }
+.pick--confirm .pick__text strong { color: var(--primary-text); }
+.pick--danger { border-color: var(--danger-line); background: linear-gradient(180deg, rgba(94, 26, 22, 0.6), rgba(37, 10, 8, 0.55)); padding-left: 16px; }
+.pick--danger .pick__text strong { color: var(--danger-text); }
+/* 上の行（‹ 戻る）がある選択画面は、ほかの画面と同じく上から詰める（真ん中に浮かせない） */
+.choice--bar { justify-content: flex-start; gap: 12px; }

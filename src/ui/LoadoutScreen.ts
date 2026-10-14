@@ -13,7 +13,7 @@ import { buildSlotRow, wrapIconAsButton } from './components/SlotRow';
 import { buildTopBar } from './components/TopBar';
 import { openSheet } from './components/SkillSheet';
 import { kindTag, medalKindClass } from './kind';
-import { rarityBadge, rarityClass } from './rarity';
+import { rarityClass, rarityNote } from './rarity';
 
 export interface LoadoutOptions {
   /** スキル獲得直後など、あらかじめ「セット待ち」にしておく持ち物のスキル。置いたら自動で閉じる。 */
@@ -73,7 +73,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const banner = document.createElement('div');
       banner.className = `armed ${rarityClass(rarityOfSkill(skill))}`;
       banner.innerHTML = `<span class="medal${medalKindClass(kindOfSkill(skill))}">${skill.icon}</span>
-        <span class="armed__text"><strong>${skill.name} ${kindTag(skill, true)} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}${placementNote(skill) ? `<br>${placementNote(skill)}` : ''}</span></span>`;
+        <span class="armed__text"><strong>${skill.name} ${kindTag(skill, true)} ${rarityNote(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}${placementNote(skill) ? `<br>${placementNote(skill)}` : ''}</span></span>`;
       screen.append(banner);
     }
 

@@ -40,7 +40,7 @@ export function showEnding(root: HTMLElement, summary: EndingSummary, onClose: (
   const body = document.createElement('div');
   body.className = 'ending__body';
   const next = document.createElement('button');
-  next.className = 'btn btn--retry ending__next';
+  next.className = 'btn btn--primary ending__next';
   const skip = document.createElement('button');
   skip.className = 'ending__skip';
   skip.textContent = '飛ばす';

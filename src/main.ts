@@ -47,8 +47,9 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, html = '
   return e;
 }
 
-function button(label: string, onClick: () => void): HTMLButtonElement {
-  const b = el('button', 'btn btn--retry', `<span class="btn__main">${label}</span>`);
+/** 結果画面などのボタン。primary = 先へ進む主な操作（金）、なし = ふつうの操作（灰青）。 */
+function button(label: string, onClick: () => void, primary = false): HTMLButtonElement {
+  const b = el('button', `btn ${primary ? 'btn--primary' : 'btn--retry'}`, `<span class="btn__main">${label}</span>`);
   b.addEventListener('click', () => {
     audio.sfx('click');
     onClick();
@@ -244,7 +245,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   const endButtons = (retry: string) => {
     const altar = button('魂の祭壇', () => { setStatus(false); showAltar(root, meta, showTitle); });
     altar.classList.replace('btn--retry', 'btn--stand');
-    return [altar, button(retry, restartRun)];
+    return [altar, button(retry, restartRun, true)];
   };
 
   if (!won) {
@@ -262,7 +263,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   box.append(el('p', 'result__line result__gold', `ゴールド +${gold}（所持 ${run.gold} G）`));
 
   if (tile.kind === 'boss' && !isFinalStage(run)) {
-    box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('次の階層へ', offerStageRelic));
+    box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('次の階層へ', offerStageRelic, true));
     return box;
   }
   if (tile.kind === 'boss') {
@@ -271,10 +272,10 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('エンディングへ', () => {
       setStatus(false);
       showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun || cheated }, showTitle);
-    }));
+    }, true));
     return box;
   }
-  box.append(button('次へ', () => offerSkillReward(tile.enemyId)));
+  box.append(button('次へ', () => offerSkillReward(tile.enemyId), true));
   return box;
 }
 
@@ -337,7 +338,7 @@ function showTitle(): void {
   renderMute();
   const h1 = el('h1', '', 'BLACKJACK<small>ROGUELIKE</small>');
   const sub = el('p', '', '二十一に近き者が先を制す。三つの階層を越え、竜の巣の主を討て。');
-  const start = el('button', 'btn btn--hit title__start', '<span class="btn__main">冒険を始める</span>');
+  const start = el('button', 'btn btn--primary title__start', '<span class="btn__main">冒険を始める</span>');
   start.addEventListener('click', () => {
     audio.unlock();
     audio.sfx('click');
@@ -366,7 +367,7 @@ function showTitle(): void {
       title: '素の状態で挑む？',
       subtitle: '祭壇の強化・図鑑の効果を使わずに始める。この冒険では魂片も図鑑も記録されない（いまの記録は消えない）',
       options: [{
-        kind: 'reset', icon: '素', name: '素の状態で始める', detail: 'HP 30・初期装備・鉄の盾で出発',
+        kind: 'confirm', icon: '素', name: '素の状態で始める', detail: 'HP 30・初期装備・鉄の盾で出発',
         onPick: startBareAdventure,
       }],
     });

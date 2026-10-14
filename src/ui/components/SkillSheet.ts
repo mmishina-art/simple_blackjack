@@ -2,7 +2,7 @@ import { audio } from '../../audio/AudioManager';
 import type { Rarity } from '../../core/rarity';
 import type { SkillKind } from '../../core/skills/Skill';
 import { kindTagOf, medalKindClass } from '../kind';
-import { rarityBadge, rarityClass } from '../rarity';
+import { rarityClass, rarityNote } from '../rarity';
 
 export interface SheetOption {
   icon: string;
@@ -15,8 +15,8 @@ export interface SheetOption {
   /** 補足（例: 「いまの○○は持ち物に戻る」）。 */
   note?: string;
   disabled?: boolean;
-  /** reset は「外す」「初期装備に戻す」のような操作の選択肢（スキルとは別の見た目）。 */
-  kind?: 'skill' | 'reset' | 'confirm';
+  /** reset は「外す」「初期装備に戻す」のような操作、confirm は決める・進む（金）、danger は取り消せない操作（赤）。どれもスキルとは別の見た目。 */
+  kind?: 'skill' | 'reset' | 'confirm' | 'danger';
   /** この選択肢が属する区分（「スキル」「道具」）。区分が変わるところに見出しが出る。 */
   section?: string;
   /** スキル・道具・防具の区分（メダルの形と札）。 */
@@ -88,16 +88,16 @@ export function openSheet(cfg: SheetConfig): () => void {
     }
     lastSection = opt.section ?? lastSection;
     const btn = document.createElement('button');
-    btn.className = `pick ${opt.kind === 'reset' ? 'pick--reset' : opt.kind === 'confirm' ? 'pick--confirm' : rarityClass(opt.rarity)}`;
+    btn.className = `pick ${opt.kind === 'reset' ? 'pick--reset' : opt.kind === 'confirm' ? 'pick--confirm' : opt.kind === 'danger' ? 'pick--danger' : rarityClass(opt.rarity)}`;
     btn.disabled = !!opt.disabled;
     // 決定・リセットのボタンには、アイコン（メダル）を付けない（意味がないため）。スキル・道具の選択肢だけ付ける
-    btn.innerHTML = `${opt.kind === 'confirm' || opt.kind === 'reset' ? '' : `<span class="medal${opt.skillKind ? medalKindClass(opt.skillKind) : ''}">${opt.icon}</span>`}
+    btn.innerHTML = `${opt.kind === 'confirm' || opt.kind === 'reset' || opt.kind === 'danger' ? '' : `<span class="medal${opt.skillKind ? medalKindClass(opt.skillKind) : ''}">${opt.icon}</span>`}
       <span class="pick__text">
         <strong>${opt.name}${opt.skillKind && opt.skillKind !== 'skill' ? ` ${kindTagOf(opt.skillKind)}` : ''}${opt.badge ? ` <em class="pick__badge">${opt.badge}</em>` : ''}</strong>
         <span class="pick__detail">${opt.detail}</span>
         ${opt.note ? `<span class="pick__note">${opt.note}</span>` : ''}
       </span>
-      ${opt.kind === 'reset' || opt.kind === 'confirm' ? '' : rarityBadge(opt.rarity)}`;
+      ${opt.kind === 'reset' || opt.kind === 'confirm' || opt.kind === 'danger' ? '' : rarityNote(opt.rarity)}`;
     btn.addEventListener('click', () => {
       if (opt.disabled) return;
       audio.sfx('pick');
