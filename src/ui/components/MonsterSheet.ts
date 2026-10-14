@@ -2,7 +2,9 @@ import { Entity } from '../../core/entities/Entity';
 import { getEnemy } from '../../core/entities/enemies/catalog';
 import { enemyLevel } from '../../core/entities/enemies/level';
 import { getSkill } from '../../core/skills/Skill';
-import { dropsOf } from '../../run/drops';
+import { dropChances, type RunState } from '../../run/Run';
+import { rarityBadge, rarityClass } from '../rarity';
+import { rarityOfSkill } from '../../core/skills/Skill';
 import { ENEMY_SPRITES } from './enemySprites';
 import { buildEnemySkillList } from './EnemyInfo';
 import { openSheet } from './SkillSheet';
@@ -11,7 +13,7 @@ import { openSheet } from './SkillSheet';
  * マップで敵のマスをタップしたときの詳細（姿・LV・HP・特性・技・落とし物）。
  * canGo のときは「進む」を出す（押すと onGo）。図鑑の発見状況には左右されない（マップに姿が見えているため）。
  */
-export function openMonsterSheet(enemyId: string, opts: { boss: boolean; canGo: boolean; onGo(): void }): void {
+export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: boolean; canGo: boolean; onGo(): void }): void {
   const def = getEnemy(enemyId);
   const enemy = new Entity('enemy', def.name, def.maxHp, { ...def.slots }, def.fallbackSkill, def.attack);
   const content = document.createElement('div');
@@ -35,10 +37,27 @@ export function openMonsterSheet(enemyId: string, opts: { boss: boolean; canGo: 
   }
   top.append(sprite, facts);
 
-  const drops = document.createElement('p');
+  const drops = document.createElement('div');
   drops.className = 'monster-sheet__drops';
-  const names = dropsOf(enemyId).map((id) => getSkill(id).name);
-  drops.textContent = opts.boss ? '落とし物: 階層を踏破すると、遺物をひとつ選べる' : `落とし物: ${names.length ? names.join('・') : 'なし'}`;
+  if (opts.boss) {
+    drops.textContent = '落とし物: 階層を踏破すると、遺物をひとつ選べる';
+  } else {
+    // 効果は伏せて、名前・レア度・落とし物のなかでの出やすさ（%）だけ見せる
+    const label = document.createElement('span');
+    label.className = 'drops__label';
+    label.textContent = '落とし物（出やすさ）';
+    const chips = document.createElement('div');
+    chips.className = 'drops';
+    for (const { id, percent } of dropChances(opts.run, enemyId)) {
+      const sk = getSkill(id);
+      const chip = document.createElement('span');
+      chip.className = `drop ${rarityClass(rarityOfSkill(sk))}`;
+      chip.innerHTML = `<span class="medal medal--sm">${sk.icon}</span><span class="drop__name"></span>${rarityBadge(rarityOfSkill(sk))}<b class="drop__pct">${percent}%</b>`;
+      chip.querySelector('.drop__name')!.textContent = sk.name;
+      chips.append(chip);
+    }
+    drops.append(label, chips);
+  }
 
   content.append(top, drops, buildEnemySkillList(enemy, def.ai.standOn));
 

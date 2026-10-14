@@ -2,6 +2,7 @@ import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { dropsOf } from './drops';
 import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
+import { RARITY_ORDER } from './loadout';
 import { pickWeighted, tierWeights } from '../core/rarity';
 import { canPlaceAt, getSkill, isArmor, rarityOfSkill, SLOT_KEYS, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
@@ -268,6 +269,22 @@ export function offerSkills(rng: Rng, run?: RunState, enemyId?: string): SkillId
   const fromTheme = themed.length > 0 ? pickWeighted(themed, Math.min(count - 1, themed.length), rng, w) : [];
   const rest = SKILL_POOL.filter((id) => !fromTheme.includes(id));
   return [...fromTheme, ...pickWeighted(rest, count - fromTheme.length, rng, w)];
+}
+
+/**
+ * 敵の落とし物のなかでの、出やすさの割合（%の整数。レア度の高い順、同じなら割合の高い順）。
+ * 落とし物からの抽選（offerSkills の fromTheme）と同じ重み（レア度の割合 × 図鑑のブースト）で、落とし物だけの中で割る。
+ */
+export function dropChances(run: RunState, enemyId: string): { id: SkillId; percent: number }[] {
+  const favored = new Set(run.favored ?? []);
+  const rarityOf = (id: SkillId) => rarityOfSkill(getSkill(id));
+  const weight = tierWeights(SKILL_POOL, rarityOf, run.stage);
+  const w = (id: SkillId): number => weight(id) * (favored.has(id) ? CODEX_BOOST : 1);
+  const themed = dropsOf(enemyId).filter((id) => SKILL_POOL.includes(id));
+  const total = themed.reduce((sum, id) => sum + w(id), 0);
+  return themed
+    .map((id) => ({ id, percent: total > 0 ? Math.round((w(id) / total) * 100) : 0 }))
+    .sort((a, b) => RARITY_ORDER[rarityOf(a.id)] - RARITY_ORDER[rarityOf(b.id)] || b.percent - a.percent);
 }
 
 /** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */

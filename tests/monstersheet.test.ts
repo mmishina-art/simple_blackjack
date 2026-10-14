@@ -15,7 +15,7 @@ describe('マップの敵の詳細', () => {
     expect(sheet).toContain("closeLabel: '閉じる'");
   });
   it('LV・HP・特性・技・落とし物を出す', () => {
-    for (const k of ['enemyLevel(def)', 'def.maxHp', 'def.trait', 'buildEnemySkillList', 'dropsOf(enemyId)']) expect(sheet).toContain(k);
+    for (const k of ['enemyLevel(def)', 'def.maxHp', 'def.trait', 'buildEnemySkillList', 'dropChances(opts.run, enemyId)']) expect(sheet).toContain(k);
   });
 });
 
@@ -29,5 +29,30 @@ describe('敵の技の一覧', () => {
   it('POW ではなく実際の攻撃値を出す', () => {
     expect(info).toContain('describeSkillShort(row.skill, enemy.attackAt(row.key))');
     expect(info).not.toContain('${row.text}');
+  });
+});
+
+import { createRun, dropChances } from '../src/run/Run';
+import { dropsOf } from '../src/run/drops';
+
+describe('落とし物の出やすさ', () => {
+  it('落とし物のなかでの割合になり、合計はおよそ 100%', () => {
+    const run = createRun();
+    const ch = dropChances(run, 'slime');
+    expect(ch.map((c) => c.id).sort()).toEqual([...dropsOf('slime')].sort());
+    const sum = ch.reduce((s, c) => s + c.percent, 0);
+    expect(Math.abs(sum - 100)).toBeLessThanOrEqual(3);
+  });
+  it('レア度が高いほど出にくく、図鑑のスキルは出やすい', () => {
+    const run = createRun();
+    const base = dropChances(run, 'slime');
+    run.favored = [base[base.length - 1].id];
+    const boosted = dropChances(run, 'slime').find((c) => c.id === base[base.length - 1].id)!;
+    expect(boosted.percent).toBeGreaterThan(base[base.length - 1].percent);
+  });
+  it('詳細シートは、名前とレア度と%だけで、効果は出さない', () => {
+    expect(sheet).toContain('dropChances(opts.run, enemyId)');
+    expect(sheet).toContain('rarityBadge(');
+    expect(sheet).not.toContain('describeSkill');
   });
 });

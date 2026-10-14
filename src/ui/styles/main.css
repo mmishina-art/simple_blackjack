@@ -1370,3 +1370,6 @@ section { min-width: 0; }
 .monster-sheet { flex: 1 1 auto; }
 .monster-sheet .enemy-info__list { overflow: visible; }
 .monster-sheet ~ .sheet__list { flex: none; overflow: visible; }
+.monster-sheet__drops .drops { margin-top: 4px; }
+.drop__pct { margin-left: 2px; color: var(--gold); font-weight: 700; }
+.drop .rar-badge { font-size: 9px; padding: 0 4px; }

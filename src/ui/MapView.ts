@@ -115,7 +115,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
       g.setAttribute('aria-label', enemyId ? `${name}の詳細${canMove ? '（進める）' : ''}` : `${name}へ進む`);
       const act = () => {
         audio.sfx('click');
-        if (enemyId) openMonsterSheet(enemyId, { boss: t.kind === 'boss', canGo: canMove, onGo: () => handlers.onMove(t.id) });
+        if (enemyId) openMonsterSheet(enemyId, { run, boss: t.kind === 'boss', canGo: canMove, onGo: () => handlers.onMove(t.id) });
         else handlers.onMove(t.id);
       };
       g.addEventListener('click', act);
