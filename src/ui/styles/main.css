@@ -1409,6 +1409,17 @@ section { min-width: 0; }
 /* 上の行（‹ 戻る）がある選択画面は、ほかの画面と同じく上から詰める（真ん中に浮かせない） */
 .choice--bar { justify-content: flex-start; gap: 12px; }
 
+/* 生成 AI で描いた敵の絵（画像）。SVG の絵と同じ枠に収める */
+.enemy-art { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.codex__item--unknown .codex__sprite img { filter: brightness(0) opacity(0.35); }
+
+/* 生成 AI で描いた背景・挿絵（画像）。SVG の絵と同じ枠に収める */
+.backdrop-art { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center bottom; user-select: none; }
+.enemy-stage .enemy-backdrop--image { filter: none !important; } /* 画像は階層ごとに描き分けてあるので、色を変えない */
+.ending__bg img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center bottom; }
+.scene__art .scene-art { display: block; width: 100%; height: clamp(96px, 19vh, 150px); object-fit: cover; object-position: center; user-select: none; }
+@media (max-height: 700px) { .scene__art .scene-art { height: 100px; } }
+.ending__bg.enemy-backdrop--image { filter: none; }
 /* ======== 段階2: 選ぶ画面の形をそろえる ========
  * スキル獲得・宝箱・踏破の褒美も、店・祠・宿屋と同じく、上に挿絵、その下に選択肢（上から詰める。真ん中に浮かせない）。
  * 祠の選択肢も、ほかの画面と同じ茶の札にする（色の系統は、左の帯とアイコンだけで見分ける）。

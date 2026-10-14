@@ -216,6 +216,11 @@ const chest = `
   <g fill="#fff6d0" class="sc-glow"><path d="M120 50 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2z"/><path d="M246 40 l1.6 5 l5 1.6 l-5 1.6 l-1.6 5 l-1.6 -5 l-5 -1.6 l5 -1.6z"/></g>
 </svg>`;
 
+/** 生成 AI（Gemini）で描いた挿絵（src/ui/art/scenes/<場面>.webp）。あれば SVG の代わりに使う。 */
+const SCENE_IMAGES: Partial<Record<string, string>> = Object.fromEntries(
+  Object.entries(import.meta.glob<string>('../art/scenes/*.webp', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.replace(/^.*\/([^/]+)\.webp$/, '$1'), u]),
+);
+
 export const SCENES: Record<SceneKind, string> = { shop, shrine, inn, reward, chest };
 
 /** 挿絵つきの見出し。`caption` はひとこと（商人・宿の主人のセリフなど）。aria-live で読み上げる。 */
@@ -224,7 +229,8 @@ export function buildScene(kind: SceneKind, title: string, caption = ''): HTMLEl
   fig.className = `scene scene--${kind}`;
   const art = document.createElement('div');
   art.className = 'scene__art';
-  art.innerHTML = SCENES[kind];
+  const img = SCENE_IMAGES[kind];
+  art.innerHTML = img ? `<img class="scene-art" src="${img}" alt="" draggable="false">` : SCENES[kind];
   const cap = document.createElement('figcaption');
   cap.className = 'scene__caption';
   const h = document.createElement('strong');

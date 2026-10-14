@@ -1,5 +1,5 @@
 import { audio } from '../audio/AudioManager';
-import { STAGE_BACKDROP, TITLE_ART } from './components/enemySprites';
+import { backdropHtml, titleArtHtml } from './components/art';
 
 export interface EndingSummary {
   /** 今回の冒険で得た魂片（素の状態の冒険では 0）。 */
@@ -36,7 +36,9 @@ export function showEnding(root: HTMLElement, summary: EndingSummary, onClose: (
   screen.className = 'ending';
   const back = document.createElement('div');
   back.className = 'ending__bg';
-  back.innerHTML = STAGE_BACKDROP;
+  const bd = backdropHtml(3);
+  back.innerHTML = bd.html;
+  if (bd.image) back.classList.add('enemy-backdrop--image');
   const body = document.createElement('div');
   body.className = 'ending__body';
   const next = document.createElement('button');
@@ -60,7 +62,7 @@ export function showEnding(root: HTMLElement, summary: EndingSummary, onClose: (
   const renderEnd = (): void => {
     const art = document.createElement('div');
     art.className = 'ending__art';
-    art.innerHTML = TITLE_ART;
+    art.innerHTML = titleArtHtml();
     const end = document.createElement('h1');
     end.className = 'ending__end';
     end.innerHTML = 'THE END<small>おつかれさまでした</small>';

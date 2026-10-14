@@ -34,9 +34,8 @@ npm run build       # tsc --noEmit && vite build → dist/
 - Lint(ESLint)は入れず、`tsc` の型チェックで代替している。
 - メタ進行(`src/meta/Meta.ts`)の `version` が `1` 以外のデータは、`loadMeta` が初期状態に戻す(保存の形を変えるときの移行処理がない)。保存の形を変えるときは、`version` を上げて、古い形を変換する処理を書く(キー名 `bj-meta-v1` は変えない)。
 - Google Fonts(外部)に依存している。初回アクセス後はキャッシュされるが、初回がオフラインだと代替フォントになる → フォントを同梱するか、許容する旨を明記する。
-- README に、画像・音・文章の出どころの記載がない。
 
-対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)、Dependabot(`.github/dependabot.yml`。npmは毎週、Actions は毎月)、バージョン表示(タイトル画面の下)、起動失敗時の復旧(`public/boot.js`)、バックアップ(`src/meta/backup.ts`)。
+対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)、Dependabot(`.github/dependabot.yml`。npmは毎週、Actions は毎月)、バージョン表示(タイトル画面の下)、起動失敗時の復旧(`public/boot.js`)、バックアップ(`src/meta/backup.ts`)、画像・音・文章の出どころ(README の末尾。敵の絵は Gemini で生成)。
 
 ## 共通ルール(PWA アプリ共通)
 

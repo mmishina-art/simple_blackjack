@@ -12,7 +12,7 @@ import {
 } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
-import { STAGE_BACKDROP, TITLE_ART } from './ui/components/enemySprites';
+import { backdropHtml, titleArtHtml } from './ui/components/art';
 import { createInstallEntry } from './ui/InstallGuide';
 import { POUCH_SIZE } from './run/loadout';
 import { showLoadout } from './ui/LoadoutScreen';
@@ -324,7 +324,8 @@ function showTitle(): void {
   setStatus(false);
   const screen = el('main', 'title');
   const art = el('div', 'enemy-stage title-stage');
-  art.append(el('div', 'enemy-backdrop', STAGE_BACKDROP), el('div', 'title-art', TITLE_ART));
+  const back = backdropHtml(1);
+  art.append(el('div', `enemy-backdrop${back.image ? ' enemy-backdrop--image' : ''}`, back.html), el('div', 'title-art', titleArtHtml()));
   // 音の切り替え（タイトルでも BGM が鳴るので、ここでも止められるようにする）
   const mute = el('button', 'mute title__mute', '♪');
   mute.setAttribute('aria-label', 'サウンドの切り替え');

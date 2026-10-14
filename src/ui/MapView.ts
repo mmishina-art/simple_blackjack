@@ -6,7 +6,7 @@ import { tileOf, TILE_LABEL, type TileDef, type TileKind } from '../map/StageMap
 import { stageRows } from '../map/stages';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { enemyLevel } from '../core/entities/enemies/level';
-import { ENEMY_SPRITES } from './components/enemySprites';
+import { enemyArtHref } from './components/enemyArt';
 import { TILE_ICONS } from './components/tileIcons';
 import { openMonsterSheet } from './components/MonsterSheet';
 
@@ -84,14 +84,14 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
     const g = svg('g', { transform: `translate(${x} ${y})` },
       `tile tile--${t.kind}${cleared ? ' tile--cleared' : ''}${here ? ' tile--here' : ''}${canMove ? ' tile--reach' : ''}`);
     g.append(svg('circle', { r }, 'tile__bg'));
-    const monster = t.enemyId ? ENEMY_SPRITES[t.enemyId] : undefined;
+    const monster = t.enemyId ? enemyArtHref(t.enemyId) : null;
     if (monster) {
       // 敵のマスには、出てくるモンスターの絵を出す（円の中に切り抜く）
       const clip = svg('clipPath', { id: `clip-${t.id}` });
       clip.append(svg('circle', { r: r - 2 }));
       g.append(clip);
       const w = r * 2.5;
-      const img = svg('image', { href: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(monster.trim())}`, x: -w / 2, y: (-w * 0.8) / 2, width: w, height: w * 0.8, 'clip-path': `url(#clip-${t.id})` }, 'tile__monster');
+      const img = svg('image', { href: monster, x: -w / 2, y: (-w * 0.8) / 2, width: w, height: w * 0.8, 'clip-path': `url(#clip-${t.id})` }, 'tile__monster');
       img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
       g.append(img);
     } else if (TILE_ICONS[t.kind]) {
