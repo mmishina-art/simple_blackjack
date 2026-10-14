@@ -28,12 +28,16 @@ describe('敵の絵（生成 AI の画像）', () => {
 });
 
 describe('敵以外の絵（タイトル・戦闘の舞台の背景・場面の挿絵）', () => {
-  it('src/ui/art に画像があれば画像、なければ手書きの SVG を使う', () => {
-    const title = titleArtHtml();
-    expect(title === TITLE_ART || title.startsWith('<img')).toBe(true);
+  it('タイトルの絵・階層ごとの背景 3 枚・挿絵 5 枚が画像になっている（1 枚 250KB 以下）', () => {
+    expect(titleArtHtml()).not.toBe(TITLE_ART);
+    expect(titleArtHtml().startsWith('<img')).toBe(true);
     for (const st of [1, 2, 3]) {
       const bd = backdropHtml(st);
-      expect(bd.image ? bd.html.startsWith('<img') : bd.html === STAGE_BACKDROP).toBe(true);
+      expect(bd.image, `stage${st}`).toBe(true);
+      expect(bd.html).not.toBe(STAGE_BACKDROP);
+    }
+    for (const f of ['title', 'stages/stage1', 'stages/stage2', 'stages/stage3', 'scenes/shop', 'scenes/shrine', 'scenes/inn', 'scenes/reward', 'scenes/chest']) {
+      expect(statSync(`src/ui/art/${f}.webp`).size, f).toBeLessThan(250_000);
     }
     expect(read('src/ui/components/scenes.ts')).toContain("import.meta.glob<string>('../art/scenes/*.webp'");
   });
