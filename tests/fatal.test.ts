@@ -14,11 +14,11 @@ const reachable = (def: (typeof ENEMY_LINEUP)[number]): [number, SkillId][] => {
 const damage = (def: (typeof ENEMY_LINEUP)[number], id: SkillId): number =>
   getSkill(id).effects.reduce((sum, e) => sum + (e.type === 'attack' ? attackValue(e, def.attack) + (def.attackBonus ?? 0) : 0), 0);
 
-describe('敵の必殺（危険な合計値）', () => {
-  it('どの敵も、止まりうる合計値のどこかに必殺がある', () => {
+describe('敵の危険な合計値', () => {
+  it('どの敵も、止まりうる合計値のどこかに危険がある', () => {
     for (const def of ENEMY_LINEUP) expect(reachable(def).some(([, id]) => getSkill(id).fatal), def.id).toBe(true);
   });
-  it('必殺は一撃が重く（10 以上）、必殺でない攻撃より強い', () => {
+  it('危険は一撃が重く（10 以上）、危険でない攻撃より強い（21 は 2 倍する前の値で比べる）', () => {
     for (const def of ENEMY_LINEUP) {
       const rows = reachable(def);
       const fatal = rows.filter(([, id]) => getSkill(id).fatal).map(([, id]) => damage(def, id));
@@ -27,20 +27,28 @@ describe('敵の必殺（危険な合計値）', () => {
       expect(Math.min(...fatal), def.id).toBeGreaterThan(Math.max(0, ...normal));
     }
   });
-  it('必殺の場所は敵ごとに違う（大蝙蝠は低い合計値で早く止まる）', () => {
+  it('危険の場所は敵ごとに違う（大蝙蝠は低い合計値で早く止まる）。21 は危険にしない', () => {
     const bat = ENEMY_LINEUP.find((d) => d.id === 'bat')!;
     expect((bat.ai as { standOn?: number }).standOn).toBe(13);
     expect(getSkill(bat.slots[13]!).fatal).toBe(true);
-    expect(getSkill(bat.slots[21]!).fatal).toBeFalsy();
+    for (const def of ENEMY_LINEUP) expect(getSkill(def.slots[21] ?? def.fallbackSkill).fatal, def.id).toBeFalsy();
   });
-  it('必殺のスキルは、どれも敵のスロットに置かれている', () => {
+  it('21 の必殺（2 倍）は、危険の一撃と同じか、それより重い', () => {
+    for (const def of ENEMY_LINEUP) {
+      const fatal = reachable(def).filter(([, id]) => getSkill(id).fatal).map(([, id]) => damage(def, id));
+      expect(damage(def, def.slots[21] ?? def.fallbackSkill) * 2, def.id).toBeGreaterThanOrEqual(Math.max(...fatal));
+    }
+  });
+  it('危険のスキルは、どれも敵のスロットに置かれている', () => {
     const used = new Set(ENEMY_LINEUP.flatMap((d) => Object.values(d.slots)));
     for (const id of FATAL_SKILLS) expect(used.has(id), id).toBe(true);
   });
-  it('画面: スロット表は赤い印（slot--fatal）、一覧は「必殺」の文字の札', () => {
+  it('画面: スロット表は赤い印（slot--fatal）、一覧は「危険」の文字の札。21 は「必殺」（2 倍した値）', () => {
     expect(readFileSync('src/ui/components/SlotStrip.ts', 'utf8')).toContain("skill?.fatal ? ' slot--fatal' : ''");
     const info = readFileSync('src/ui/components/EnemyInfo.ts', 'utf8');
-    expect(info).toContain('<em class="fatal-tag">必殺</em>');
+    expect(info).toContain('<em class="fatal-tag">危険</em>');
+    expect(info).toContain('<em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>');
+    expect(info).toContain('`攻撃 ${Number(n) * mult21}`'); // 21 の攻撃は 2 倍した値を出す
     const css = readFileSync('src/ui/styles/main.css', 'utf8');
     for (const k of ['.slot.slot--fatal {', '.slot.slot--fatal::before', '.lslot.lslot--fatal', '--fatal:']) expect(css, k).toContain(k);
   });

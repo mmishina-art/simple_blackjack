@@ -1518,8 +1518,8 @@ section { min-width: 0; }
 .logo__genre::before, .logo__genre::after { content: ''; flex: 0 1 34px; min-width: 8px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
 .logo__genre::after { transform: scaleX(-1); }
 
-/* ======== 敵の必殺（危険な合計値） ========
- * 敵ごとに決まった合計値でだけ出る、一撃の重い技。スロット表では赤い枠と上の赤い三角、一覧では赤い「必殺」の札。
+/* ======== 敵の危険な合計値 ========
+ * 敵ごとに決まった合計値でだけ出る、一撃の重い技。スロット表では赤い枠と上の赤い三角、一覧では赤い「危険」の札。21 は「必殺」の札（.die-tag）。
  */
 :root { --fatal: #d8483a; --fatal-bg: #2a0c0a; --fatal-glow: rgba(216, 72, 58, 0.55); }
 .slot.slot--fatal { border-color: var(--fatal); color: #ffb3a8; background: var(--fatal-bg); box-shadow: 0 0 6px var(--fatal-glow); }

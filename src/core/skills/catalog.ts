@@ -226,14 +226,14 @@ defineSkill({
 atk('wraith_curse', '呪いの囁き', 3, 3, '呪');
 defineSkill({
   id: 'wraith_wail', name: '断末魔', icon: '叫',
-  effects: [{ type: 'attack', mult: 1, add: 2 }, { type: 'heal', amount: 3 }],
+  effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'heal', amount: 3 }],
 });
 
 atk('serpent_bite', '毒牙', 1, 0, '牙');
 atk('serpent_coil', '締めつけ', 1, 3, '締');
 defineSkill({ id: 'serpent_scale', name: '鱗の守り', icon: '鱗', effects: [{ type: 'block', amount: 8 }] });
 atk('serpent_tide', '津波', 3, 2, '波');
-atk('serpent_abyss', '深淵の咆哮', 1, 3, '淵');
+atk('serpent_abyss', '深淵の咆哮', 1, 4, '淵');
 
 atk('flame_spark', '火の粉', 1, 0, '火');
 atk('flame_burst', '爆炎', 1, 2, '爆');
@@ -251,7 +251,7 @@ defineSkill({
   id: 'imp_siphon', name: '魂の搾取', icon: '搾',
   effects: [{ type: 'attack', mult: 1, add: 0 }, { type: 'heal', amount: 4 }],
 });
-atk('imp_hellfire', '地獄の業火', 1, 2, '獄');
+atk('imp_hellfire', '地獄の業火', 1, 4, '獄');
 
 // 鋼鉄のゴーレム（ブロックを多用する敵）。壁で守りを固め、盾で殴り、ブロックを重ねる
 atk('ig_punch', '鉄の拳', 1, 1, '拳');
@@ -259,15 +259,24 @@ defineSkill({ id: 'ig_wall', name: '鋼の壁', icon: '壁', effects: [{ type: '
 defineSkill({ id: 'ig_bash', name: '盾叩き', icon: '叩', effects: [{ type: 'attack', mult: 1, add: 3 }, { type: 'block', amount: 6 }] });
 defineSkill({ id: 'ig_crush', name: '鉄塊の一撃', icon: '塊', effects: [{ type: 'attack', mult: 3, add: 3 }, { type: 'block', amount: 5 }] });
 
+// 21 の必殺技（敵の合計値がちょうど 21 で出る。攻撃 2 倍で、危険の一撃と同じくらいの重さ）
+atk('slime_deluge', '酸の奔流', 1, 2, '奔');
+atk('skel_execution', '処刑の一太刀', 1, 1, '処');
+atk('knight_judgement', '審判の剣', 1, 2, '審');
+atk('garg_fall', '落石の一撃', 1, 3, '落');
+defineSkill({ id: 'ig_quake', name: '鉄槌', icon: '槌', effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'block', amount: 5 }] });
+atk('golem_meteor', '溶岩流', 1, 4, '流');
+
 // 敵のスキルのレア度: 強い技ほど高い（スロット表の色で技の格が分かる）
 assignRarity(['slime_melt', 'skel_slash', 'bat_drain', 'bat_dive', 'ghoul_rend', 'dragon_breath', 'knight_bash', 'merman_rush', 'garg_swoop', 'ig_bash', 'wraith_drain', 'serpent_coil', 'flame_burst', 'golem_slam', 'imp_hex'], 'rare');
-assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dragon_inferno', 'dragon_apocalypse', 'knight_cleave', 'merman_tide', 'garg_crush', 'wraith_curse', 'wraith_wail', 'serpent_tide', 'serpent_abyss', 'flame_inferno', 'flame_nova', 'golem_eruption', 'imp_siphon', 'imp_hellfire', 'ig_crush'], 'legend');
+assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dragon_inferno', 'dragon_apocalypse', 'knight_cleave', 'merman_tide', 'garg_crush', 'wraith_curse', 'wraith_wail', 'serpent_tide', 'serpent_abyss', 'flame_inferno', 'flame_nova', 'golem_eruption', 'imp_siphon', 'imp_hellfire', 'ig_crush', 'slime_deluge', 'skel_execution', 'knight_judgement', 'garg_fall', 'ig_quake', 'golem_meteor'], 'legend');
 
 /**
- * 敵の必殺（危険な合計値）: 敵ごとに決まった合計値でだけ出る、一撃の重い技。それ以外の合計値の技は軽い。
+ * 敵の危険な合計値: 敵ごとに決まった合計値でだけ出る、一撃の重い技。それ以外の合計値の技は軽い。
  * 敵の札は最後の1枚以外が見えているので、「この手は危ない → 防御」と読める（敵ごとの場所を覚えるほど勝てる）。
- * 21 は必殺にしない（21 はどの敵も攻撃 2 倍で、「BUST or DIE」の予告が出るため。RuleSet.enemy21Multiplier）。
- * スロット表では赤い印で示す。
+ * 21 は危険にしない。21 は「必殺」（どの敵も攻撃 2 倍で、「BUST or DIE」の予告が出る。RuleSet.enemy21Multiplier）で、
+ * 21 の技は、2 倍したときに、危険の一撃と同じくらい（以上）になるようにしてある。
+ * スロット表では赤い印、一覧では「危険」の札で示す。
  */
 export const FATAL_SKILLS: readonly SkillId[] = [
   'slime_engulf', 'skel_cleave', 'bat_dive', 'ghoul_devour', 'knight_cleave',
@@ -277,19 +286,19 @@ export const FATAL_SKILLS: readonly SkillId[] = [
 for (const id of FATAL_SKILLS) getSkill(id).fatal = true;
 
 export const ENEMY_SLOTS = {
-  slime: slotsFromRanges([[14, 17, 'slime_acid'], [18, 19, 'slime_melt'], [20, 20, 'slime_engulf'], [21, 21, 'slime_melt']]),
-  skeleton: slotsFromRanges([[15, 16, 'skel_guard'], [17, 18, 'skel_slash'], [19, 20, 'skel_cleave'], [21, 21, 'skel_slash']]),
+  slime: slotsFromRanges([[14, 17, 'slime_acid'], [18, 19, 'slime_melt'], [20, 20, 'slime_engulf'], [21, 21, 'slime_deluge']]),
+  skeleton: slotsFromRanges([[15, 16, 'skel_guard'], [17, 18, 'skel_slash'], [19, 20, 'skel_cleave'], [21, 21, 'skel_execution']]),
   bat: slotsFromRanges([[13, 14, 'bat_dive'], [15, 17, 'bat_bite'], [18, 19, 'bat_drain'], [20, 21, 'bat_screech']]),
   ghoul: slotsFromRanges([[16, 17, 'ghoul_devour'], [18, 19, 'ghoul_claw'], [20, 21, 'ghoul_rend']]),
-  knight: slotsFromRanges([[17, 18, 'knight_guard'], [19, 19, 'knight_bash'], [20, 20, 'knight_cleave'], [21, 21, 'knight_bash']]),
+  knight: slotsFromRanges([[17, 18, 'knight_guard'], [19, 19, 'knight_bash'], [20, 20, 'knight_cleave'], [21, 21, 'knight_judgement']]),
   merman: slotsFromRanges([[15, 16, 'merman_rush'], [17, 18, 'merman_dive'], [19, 21, 'merman_tide']]),
-  gargoyle: slotsFromRanges([[16, 18, 'garg_harden'], [19, 19, 'garg_swoop'], [20, 20, 'garg_crush'], [21, 21, 'garg_swoop']]),
-  wraith: slotsFromRanges([[16, 16, 'wraith_drain'], [17, 18, 'wraith_curse'], [19, 21, 'wraith_wail']]),
+  gargoyle: slotsFromRanges([[16, 18, 'garg_harden'], [19, 19, 'garg_swoop'], [20, 20, 'garg_crush'], [21, 21, 'garg_fall']]),
+  wraith: slotsFromRanges([[16, 16, 'wraith_drain'], [17, 18, 'wraith_curse'], [19, 20, 'wraith_touch'], [21, 21, 'wraith_wail']]),
   serpent: slotsFromRanges([[18, 18, 'serpent_scale'], [19, 19, 'serpent_coil'], [20, 20, 'serpent_tide'], [21, 21, 'serpent_abyss']]),
   flame: slotsFromRanges([[17, 18, 'flame_burst'], [19, 20, 'flame_nova'], [21, 21, 'flame_burst']]),
-  golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 18, 'golem_slam'], [19, 20, 'golem_eruption'], [21, 21, 'golem_slam']]),
+  golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 18, 'golem_slam'], [19, 20, 'golem_eruption'], [21, 21, 'golem_meteor']]),
   imp: slotsFromRanges([[17, 18, 'imp_hex'], [19, 20, 'imp_siphon'], [21, 21, 'imp_hellfire']]),
-  iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 20, 'ig_crush'], [21, 21, 'ig_bash']]),
+  iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 20, 'ig_crush'], [21, 21, 'ig_quake']]),
   dragon: slotsFromRanges([
     [18, 18, 'dragon_claw'], [19, 19, 'dragon_breath'], [20, 20, 'dragon_inferno'], [21, 21, 'dragon_apocalypse'],
   ]),

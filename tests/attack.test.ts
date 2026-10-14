@@ -368,7 +368,7 @@ describe('敵のスキル一覧（実数値つき）', () => {
     // 骸骨兵 POW4: 斬り下ろし POW = 4 / 兜割り POW×2+2 = 10
     expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 POW＝4');
     expect(rows.find((r) => r.key === 20)!.text).toBe('攻撃 POW×2+2＝10');
-    expect(rows.find((r) => r.key === 21)!.skill.id).toBe('skel_slash'); // 21 は必殺にしない（どの敵も 21 は攻撃 2 倍のため）
+    expect(rows.find((r) => r.key === 21)!.skill.id).toBe('skel_execution'); // 21 は危険ではなく必殺（攻撃 2 倍）の処刑の一太刀
   });
 
   it('敵は全員 POW を持ち、一覧が作れる', () => {
