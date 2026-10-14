@@ -29,6 +29,8 @@ export interface SlotRowOptions {
   picked?: boolean;
   /** セット待ちのスキルを置いたあとの、効果の短い表示。あれば「いま → あと」で出す。 */
   after?: string;
+  /** 確認のとき（行がボタンでないとき）、アイコンをタップして説明を出す。 */
+  onInfo?(): void;
   onTap?(): void;
 }
 
@@ -64,5 +66,19 @@ export function buildSlotRow(o: SlotRowOptions): HTMLElement {
     <span class="lslot__desc">${desc}</span>
     <span class="lslot__go" aria-hidden="true">${interactive ? '›' : ''}</span>`;
   if (interactive) row.addEventListener('click', o.onTap!);
+  if (o.onInfo && !interactive) wrapIconAsButton(row, `${o.skill ? o.skill.name : fallbackLabel(o.fallback)}の説明を見る`, o.onInfo);
   return row;
+}
+
+/** 行の丸いアイコンを、押せるボタンにする（見た目は同じ。タップできる範囲だけ広げる）。 */
+export function wrapIconAsButton(row: HTMLElement, label: string, onTap: () => void): void {
+  const medal = row.querySelector('.medal');
+  if (!medal) return;
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'lslot__icon';
+  b.setAttribute('aria-label', label);
+  b.addEventListener('click', (e) => { e.stopPropagation(); onTap(); });
+  medal.replaceWith(b);
+  b.append(medal);
 }

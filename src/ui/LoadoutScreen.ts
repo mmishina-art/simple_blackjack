@@ -8,7 +8,8 @@ import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { sellFromInventory, sellPrice } from '../run/shop';
 import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
 import { buildRelicRow, relicsByRarityDesc } from './components/relicMedal';
-import { buildSlotRow } from './components/SlotRow';
+import { openSkillInfo } from './components/SkillInfo';
+import { buildSlotRow, wrapIconAsButton } from './components/SlotRow';
 import { buildTopBar } from './components/TopBar';
 import { openSheet } from './components/SkillSheet';
 import { kindTag, medalKindClass } from './kind';
@@ -107,6 +108,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         target: !!armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key),
         blocked: !!armed && !isArmor(getSkill(armed)) && !canPlaceAt(getSkill(armed), key),
         after: armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key) ? previewSlot(run, key, armed).short : undefined,
+        onInfo: armed ? undefined : () => openSkillInfo(id ? getSkill(id) : getSkill(run.fallbackSkill), { atk: slotAttack(run.baseAttack, key), where: `${slotLabel(key)} のスロット（基本パワー ${slotAttack(run.baseAttack, key)}）` }),
         onTap: !armed ? undefined : () => {
           if (armed && isArmor(getSkill(armed))) return; // 防具は、下の防具の欄に装備する
           if (armed && !canPlaceAt(getSkill(armed), key)) return; // レア度の制限: ここには置けない
@@ -171,6 +173,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       <span class="lslot__name">${cur.name} ${kindTag(cur, true)}</span>
       <span class="lslot__desc">${describeSkillShort(cur, 0)}${target ? ` → <strong class="lslot__after">${describeSkillShort(getSkill(armed!), 0)}</strong>` : ''}</span>
       <span class="lslot__go" aria-hidden="true">${target ? '›' : ''}</span>`;
+    if (!target) wrapIconAsButton(row, `${cur.name}の説明を見る`, () => openSkillInfo(cur, { where: '防御スロット', note: '防御したラウンドに受けるダメージ（HP の減少）の上限' }));
     if (target) row.addEventListener('click', () => {
       if (armed && isArmor(getSkill(armed))) {
         const id = armed;
@@ -198,6 +201,13 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       ? (run.inventory.some((x, i) => !(x === armed && i === run.inventory.indexOf(x))) ? '中身は売られる' : '1 つだけ')
       : sk ? describeSkillBonus(sk) : '';
     row.innerHTML = `<span class="lslot__key">道具袋</span>${icon}<span class="lslot__name">${name}</span><span class="lslot__desc">${desc}</span><span class="lslot__go" aria-hidden="true">${(armed && !taking) || sk ? '›' : ''}</span>`;
+    const pouchIcon = row.querySelector('.medal');
+    if (sk && !armed && pouchIcon) {
+      pouchIcon.setAttribute('role', 'button');
+      pouchIcon.setAttribute('aria-label', `${sk.name}の説明を見る`);
+      pouchIcon.classList.add('lslot__icon-tap');
+      pouchIcon.addEventListener('click', (e) => { e.stopPropagation(); openSkillInfo(sk, { where: '道具袋' }); });
+    }
     row.addEventListener('click', () => {
       if (armed) return stashArmed();
       if (!id || !sk) return;
