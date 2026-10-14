@@ -51,7 +51,7 @@ describe('敵の危険な合計値', () => {
     expect(info).toContain('`攻撃 ${Number(n) * mult21}`'); // 21 の攻撃は 2 倍した値を出す
     const css = readFileSync('src/ui/styles/main.css', 'utf8');
     // 危険は静か（赤い数字と小さな三角だけ。枠は普通のまま）、21 の必殺は血の赤で塗って目立たせる
-    for (const k of ['.slot.slot--fatal .slot__val', '.slot.slot--fatal::before', '.lslot--fatal .lslot__desc', '.slot.slot--die {', '.lslot.lslot--die {', '--fatal:', '--die:']) expect(css, k).toContain(k);
+    for (const k of ['.slot.slot--fatal .slot__val', '.slot.slot--fatal::before', '.lslot--fatal .lslot__desc', '.slot.slot--die {', '.lslot.lslot--die {', '--fatal:', '--die-hi:']) expect(css, k).toContain(k);
     expect(css).not.toContain('.slot.slot--fatal {');
     expect(readFileSync('src/ui/components/SlotStrip.ts', 'utf8')).toContain("entity.id === 'enemy' && key === SLOT_MAX ? ' slot--die' : ''");
     expect(info).toContain("die ? ' lslot--die' : ''");
