@@ -5,11 +5,13 @@ import type { TileKind } from '../../map/StageMap';
  * 敵・ボスは敵の絵、スタートは文字を出すので、ここにはない。
  */
 export const TILE_ICONS: Partial<Record<TileKind, string>> = {
-  // 宝箱: 丸い蓋・帯・留め金
-  chest: `<path d="M-9 -1V-5.5C-9 -9 -5 -10 0 -10S9 -9 9 -5.5V-1Z" fill="currentColor" fill-opacity="0.22"/>
-    <rect x="-9" y="-1" width="18" height="10" rx="1" fill="currentColor" fill-opacity="0.12"/>
-    <path d="M-9 -1H9M-3.5 -9.6V9M3.5 -9.6V9"/>
-    <rect x="-2" y="-3.2" width="4" height="5" rx="0.8" fill="currentColor"/>`,
+  // 宝箱: 蓋が開いて金貨があふれ、宝石の留め金と輝きがある豪華な箱
+  chest: `<path d="M-9 -1L-7.2 -8H7.2L9 -1Z" fill="currentColor" fill-opacity="0.22"/>
+    <circle cx="-4.2" cy="-2" r="2.3" fill="currentColor"/><circle cx="0" cy="-3.4" r="2.6" fill="currentColor"/><circle cx="4.2" cy="-2" r="2.3" fill="currentColor"/>
+    <rect x="-9.5" y="0" width="19" height="10" rx="1.2" fill="currentColor" fill-opacity="0.2"/>
+    <path d="M-9.5 3H9.5M-5.5 0V10M5.5 0V10"/>
+    <path d="M0 1.6L3 5L0 8.4L-3 5Z" fill="currentColor"/>
+    <path d="M-11 -9V-5M-13 -7H-9M10.5 -11V-8M9 -9.5H12" stroke-width="1.2"/>`,
   // 店: 縞の日よけのある露店（日よけ・柱・台・商品）
   shop: `<path d="M-10 -4L-8 -10H8L10 -4Z" fill="currentColor" fill-opacity="0.25"/>
     <path d="M-10 -4Q-7.5 -1 -5 -4Q-2.5 -1 0 -4Q2.5 -1 5 -4Q7.5 -1 10 -4"/>
