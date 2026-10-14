@@ -33,7 +33,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,webmanifest}'], // webp = 敵の絵（src/ui/art/enemies）
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,mp3,webmanifest}'], // webp = 絵（src/ui/art）、mp3 = 効果音（src/audio/sfx）
         // Google Fonts は初回アクセス後にキャッシュし、オフラインでも表示できるようにする
         runtimeCaching: [
           {
