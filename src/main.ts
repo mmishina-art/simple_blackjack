@@ -110,6 +110,7 @@ function showMapScreen(message = ''): void {
   showMap(root, run, {
     onMove: (id) => resolveTile(moveTo(run, id)),
     onLoadout: () => showLoadout(root, run, { onClose: (msg) => showMapScreen(msg ?? message) }),
+    onGiveUp: () => { leaveBattle(); showTitle(); }, // 魂片は入らない（endRun を呼ばない）
   }, message);
 }
 
