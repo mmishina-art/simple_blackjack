@@ -1261,3 +1261,75 @@ section { min-width: 0; }
 .swap__warn { margin: 0; padding: 8px 10px; border: 1px solid #d0453a; border-radius: 3px; background: #3a1512; color: #ffb4ab; font-size: 13px; line-height: 1.5; }
 .drag-ghost { position: fixed; z-index: 1000; pointer-events: none; margin: 0; opacity: 0.92; transform: scale(1.03); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6); }
 .topbar__back:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ---- 場所の挿絵（お店・祠・宿屋）と、場所ごとの色 ---- */
+:root {
+  --shop-accent: #d9a04a; --shop-bg: #1a1208;
+  --shrine-accent: #7f98f0; --shrine-bg: #0f1226;
+  --inn-accent: #e58a50; --inn-bg: #20120a;
+  --tone-a: #6fa8dc; --tone-b: #e0b04a; --tone-c: #b58ae0; --tone-d: #8a8f94;
+}
+.scene { margin: 0; position: relative; border: 1px solid var(--scene-accent, var(--gold-dim)); border-radius: 4px; overflow: hidden; background: var(--ink);
+  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px var(--scene-accent, var(--gold-dim)), 0 6px 16px rgba(0, 0, 0, 0.65); }
+.scene--shop { --scene-accent: var(--shop-accent); }
+.scene--shrine { --scene-accent: var(--shrine-accent); }
+.scene--inn { --scene-accent: var(--inn-accent); }
+.scene__art { display: block; line-height: 0; }
+.scene__art svg { display: block; width: 100%; height: clamp(96px, 19vh, 150px); }
+.scene__caption { position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: 2px; padding: 22px 14px 8px; text-align: left;
+  background: linear-gradient(180deg, transparent, rgba(7, 5, 4, 0.88) 60%); }
+.scene__title { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.25em; color: var(--scene-accent); text-shadow: 0 2px 0 #000; }
+.scene__line { font-size: 13px; line-height: 1.45; color: var(--bone); letter-spacing: 0.04em; text-shadow: 0 1px 2px #000; min-height: 1.45em; }
+.sc-glow { animation: scGlow 3.2s ease-in-out infinite; transform-origin: center; }
+.sc-flame { animation: scFlame 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes scGlow { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+@keyframes scFlame { 0%, 100% { transform: scaleY(1) scaleX(1); } 50% { transform: scaleY(1.07) scaleX(0.95); } }
+@media (prefers-reduced-motion: reduce) { .sc-glow, .sc-flame { animation: none; } .inn__fill { transition: none !important; } }
+
+/* 祠: 石板のメニュー。行ごとに色の系統が違う */
+.choice--shrine { background: radial-gradient(120% 60% at 50% 0%, var(--shrine-bg), transparent 70%); }
+.choice--shrine .choice__head { text-align: left; }
+.choice--shrine .choice__card { background: linear-gradient(180deg, #232845, #151831); border-color: #3a4170; border-left: 4px solid var(--tone, var(--shrine-accent));
+  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #2a3058, 0 4px 12px rgba(0, 0, 0, 0.6); }
+.choice--shrine .choice__card .medal { --tone-ring: var(--tone, var(--shrine-accent)); width: 40px; height: 40px; font-size: 20px; color: var(--tone, var(--shrine-accent));
+  background: radial-gradient(circle at 35% 30%, #2a3058, #0f1226); box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px var(--tone, var(--shrine-accent)), 0 0 10px color-mix(in srgb, var(--tone, var(--shrine-accent)) 45%, transparent); }
+.choice--shrine .choice__text strong { color: var(--tone, var(--shrine-accent)); }
+.choice__card--tone-a { --tone: var(--tone-a); } .choice__card--tone-b { --tone: var(--tone-b); }
+.choice__card--tone-c { --tone: var(--tone-c); } .choice__card--tone-d { --tone: var(--tone-d); }
+.choice--shrine .choice__text span { font-size: 13px; color: #c3c8e8; }
+.choice--shrine, .choice--shop, .choice--inn { gap: 14px; }
+
+/* 宿屋: 暖かい色。HP が回復していくメーター */
+.inn { background: radial-gradient(120% 60% at 50% 0%, var(--inn-bg), transparent 70%); }
+.inn .choice__head { text-align: left; }
+.inn__rest { padding: 14px 16px; border: 1px solid #5a3420; border-radius: 4px; background: linear-gradient(180deg, #2a180f, #1a0f09); box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px #5a3420; text-align: center; }
+.inn__label { margin: 0 0 10px; color: var(--inn-accent); letter-spacing: 0.3em; font-size: 14px; }
+.inn__bar { height: 16px; border: 1px solid #5a3420; border-radius: 8px; background: #120a06; overflow: hidden; }
+.inn__fill { height: 100%; background: linear-gradient(90deg, #b8352b, #e58a50, #f0d78c); border-radius: 8px; transition: width 1.4s cubic-bezier(0.22, 0.7, 0.3, 1); }
+.inn__nums { margin: 10px 0 0; color: var(--bone); font-size: 15px; letter-spacing: 0.06em; }
+.inn__nums b { color: var(--bone); font-size: 18px; } .inn__nums .inn__after { color: #f0d78c; }
+.inn__nums em { margin-left: 6px; font-style: normal; color: var(--moss); font-weight: 800; }
+
+/* お店: 札つきの品物。所持金は財布 */
+.shop { background: radial-gradient(120% 40% at 50% 0%, var(--shop-bg), transparent 80%); grid-template-rows: auto auto minmax(0, 1fr); }
+.shop .loadout__head { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.shop__gold { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; margin: 0; padding: 4px 12px 4px 8px; border: 1px solid #6b4a1f; border-radius: 14px; background: #1c130a; color: var(--bone); }
+.shop__coin { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff0b0, #e0b04a 55%, #7a5a1c); box-shadow: inset 0 0 0 1px #3a2a0c; }
+.shop .loadout__kind { color: var(--shop-accent); border-bottom: 1px solid #4a3418; letter-spacing: 0.25em; }
+.shop__row { border-left: 3px solid var(--rar, var(--shop-accent)); }
+.shop__price { padding: 4px 8px; min-width: 62px; align-items: center; border: 1px dashed #6b4a1f; border-radius: 3px; background: #1c130a; }
+.shop__price b { color: #f0d78c; }
+
+/* 高さの低い画面（iPhone SE など）: 祠のメニューを詰めて、1 画面に収める（戦闘画面の 720px の指定とは別の高さ） */
+@media (max-height: 700px) {
+  .choice--shrine, .choice--shop, .choice--inn { padding-top: max(var(--safe-top), calc(env(safe-area-inset-top) + 12px)); padding-bottom: calc(env(safe-area-inset-bottom) + 10px); gap: 8px; }
+  .choice--shrine .scene__art svg, .inn .scene__art svg { height: 100px; }
+  .choice--shrine .choice__list { gap: 8px; }
+  .choice--shrine .choice__card { padding: 8px 12px; gap: 10px; }
+  .choice--shrine .choice__card .medal { width: 34px; height: 34px; font-size: 17px; }
+  .choice--shrine .choice__text { gap: 2px; }
+  .choice--shrine .choice__text strong { font-size: 16px; }
+  .choice--shrine .choice__text span { font-size: 12px; line-height: 1.4; }
+  .scene__caption { padding-top: 16px; }
+  .scene__title { font-size: 17px; }
+}

@@ -21,6 +21,7 @@ import { openSheet } from './ui/components/SkillSheet';
 import { addGold, generateShop, rewardGold, MAX_GOLD, type ShopOffer } from './run/shop';
 import { isDebug } from './debug';
 import { showShop } from './ui/ShopScreen';
+import { showInn } from './ui/InnScreen';
 import { showShrine } from './ui/ShrineScreen';
 import { showSettings } from './ui/SettingsScreen';
 import { showEnding } from './ui/EndingScreen';
@@ -155,14 +156,10 @@ function resolveTile(tile: TileDef): void {
       });
     }
     case 'inn': {
-      const healed = useInn(run);
+      const before = run.hp;
+      useInn(run);
       markCleared(run, tile.id);
-      return showNotice(root, {
-        heading: '宿屋',
-        text: healed > 0 ? `ひと晩休んだ。HP が ${healed} 回復した。` : 'ひと晩休んだが、傷はなかった。',
-        button: '出発する',
-        onClose: () => showMapScreen(),
-      });
+      return showInn(root, { before, after: run.hp, max: run.maxHp, onClose: () => showMapScreen() });
     }
     case 'shrine': {
       return showShrine(root, run, {
