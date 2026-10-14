@@ -57,7 +57,8 @@ export class SlotStrip {
       const skill = id ? getSkill(id) : null;
       // 11以下と21は特殊スロット（金）。ほかはスキルのレア度に合わせる（空きはコモン）
       const look = slotLook(key, skill);
-      cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
+      // 敵の必殺（危険な合計値）は、赤い枠と上の赤い三角で示す（説明の文字にも「必殺」）
+      cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${skill?.fatal ? ' slot--fatal' : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
       cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;
       const val = document.createElement('span');
       val.className = 'slot__val';
@@ -69,7 +70,7 @@ export class SlotStrip {
       }
       cell.append(val);
       cell.title = skill
-        ? `${skill.name}（${describeSkill(skill, entity.attackAt(key))}）`
+        ? `${skill.fatal ? '必殺: ' : ''}${skill.name}（${describeSkill(skill, entity.attackAt(key))}）`
         : `${fallbackLabel(fallback)}（空きスロット・${describeSkill(fallback, entity.attackAt(key))}）`;
     }
 

@@ -1517,3 +1517,16 @@ section { min-width: 0; }
 .title h1 .logo__genre { display: flex; align-self: stretch; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; letter-spacing: 0.32em; white-space: nowrap; color: var(--bone-dim); text-shadow: 0 2px 0 #000; }
 .logo__genre::before, .logo__genre::after { content: ''; flex: 0 1 34px; min-width: 8px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
 .logo__genre::after { transform: scaleX(-1); }
+
+/* ======== 敵の必殺（危険な合計値） ========
+ * 敵ごとに決まった合計値でだけ出る、一撃の重い技。スロット表では赤い枠と上の赤い三角、一覧では赤い「必殺」の札。
+ */
+:root { --fatal: #d8483a; --fatal-bg: #2a0c0a; --fatal-glow: rgba(216, 72, 58, 0.55); }
+.slot.slot--fatal { border-color: var(--fatal); color: #ffb3a8; background: var(--fatal-bg); box-shadow: 0 0 6px var(--fatal-glow); }
+.slot.slot--fatal::before { content: ''; position: absolute; top: -1px; left: 50%; z-index: 2; width: 8px; height: 5px; transform: translateX(-50%); background: var(--fatal); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.slot--fatal.slot--active { box-shadow: 0 0 10px var(--fatal-glow); }
+.slot.slot--fatal:not(.slot--on) { opacity: 0.8; } /* 点灯していなくても、危ない場所は見えるように */
+.slots--bust .slot.slot--fatal { opacity: 0.4; }
+.lslot.lslot--fatal { border-color: var(--fatal); background: linear-gradient(90deg, var(--fatal-bg), #17110b 70%); }
+.lslot--fatal .lslot__desc { color: #ffb3a8; font-weight: 700; }
+.fatal-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: #ffd2ca; background: rgba(216, 72, 58, 0.25); border: 1px solid var(--fatal); border-radius: 8px; letter-spacing: 0.06em; vertical-align: middle; }

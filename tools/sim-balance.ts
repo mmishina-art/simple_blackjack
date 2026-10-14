@@ -1,9 +1,10 @@
 // 全体バランスのシミュレーション: 1回の冒険（地図・戦闘・報酬・宿屋・祠・宝箱）を、そこそこ賢いボットで通しで遊ぶ。
 // 使い方: npx vite-node tools/sim-balance.ts [回数=600] [バースト許容率=0.45]
 // 環境変数: PATH_MODE=random（道をランダムに。省略時は宝箱・祠・宿屋を優先）/ PLAYER_HP / ENEMY_SCALE / START_ARMOR / HERB / HERB_SLOT / RELIC / RELIC_STAGE（N 階層の頭からそのレリックを持つ。省略時は最初から） / DEF_MODE=boss
-// ボットは「次のカードのバースト確率が許容率未満なら Hit」「HP が敵の LV 以下なら防御」「回復スキルのスロットで HP が半分以下なら Stand」。実際の人間は、敵の札を見て判断できるので、これより上がる想定。
+// ボットは「次のカードのバースト確率が許容率未満なら Hit」「HP が敵の LV 以下、または敵の札から必殺の確率が FATAL_RISK 以上なら防御」「回復スキルのスロットで HP が半分以下なら Stand」。実際の人間は、敵の札を見て判断できるので、これより上がる想定。
 import { BattleMachine } from '../src/core/battle/BattleMachine';
 import { drawOdds } from '../src/core/cards/odds';
+import { Hand } from '../src/core/cards/Hand';
 import { enemyLevel } from '../src/core/entities/enemies/level';
 import { slotAttack } from '../src/core/skills/catalog';
 import { attackValue, canPlaceAt, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
@@ -16,6 +17,27 @@ import { advanceStage, armorCap, canUpgradeSlot, createRun, isFinalStage, enemyO
 const N = Number(process.argv[2] ?? 600);
 const RISK = Number(process.argv[3] ?? 0.45);
 const SMART_PATH = process.env.PATH_MODE !== 'random';
+/** 敵の必殺の確率がこれ以上なら防御する（FATAL_RISK=1 で、敵の札を読まない昔のボット）。 */
+const FATAL_RISK = Number(process.env.FATAL_RISK ?? 0.4);
+
+/**
+ * 敵の見えている札から、敵の最終の合計値が必殺のスロットに入る確率。
+ * 伏せ札は「まだ見えていないカード」のどれか。敵は見えている札で standOn 未満だったので引いた、と考え、
+ * 引いたあとに standOn 以上（バースト含む）になるカードだけを数える。
+ */
+function fatalChance(m: BattleMachine, standOn: number): number {
+  const { enemy, deck, rules } = m.ctx;
+  const visible = enemy.hand.cards.filter((c) => !enemy.hand.isFaceDown(c));
+  const unseen = [...deck.contents, ...enemy.hand.cards.filter((c) => enemy.hand.isFaceDown(c))];
+  let n = 0, fatal = 0;
+  for (const c of unseen) {
+    const t = Hand.totalOf([...visible, c], rules);
+    if (t < standOn) continue;
+    n++;
+    if (t <= rules.bustLimit && getSkill(enemy.slots[t] ?? enemy.fallbackSkill).fatal) fatal++;
+  }
+  return n === 0 ? 0 : fatal / n;
+}
 
 /** そのスロットに置いたときの価値（ざっくり）。 */
 function slotValue(id: SkillId | undefined, key: number, run: RunState, hpRatio: number): number {
@@ -128,7 +150,9 @@ const stageReached: Record<number, number> = {};
             let act: 'hit' | 'stand' | 'surrender';
             const cap = player.armorCap ?? rules.defendCap;
             const dm = process.env.DEF_MODE === 'boss' && def.id === 'dragon' && total <= 17 && player.hp <= 24 && player.hp > cap;
-            if (dm || (player.hp <= lv && player.hp > cap && total < 18)) act = 'surrender';
+            const standOn = (def.ai as { standOn?: number }).standOn ?? 17;
+            const pf = fatalChance(m, standOn);
+            if (dm || (player.hp <= lv && player.hp > cap && total < 18) || (pf >= FATAL_RISK && player.hp > cap && total < 20)) act = 'surrender';
             else if (heals && player.hp <= player.maxHp * 0.5 && total >= 12) act = 'stand';
             else if (total <= 11) act = 'hit';
             else if (total >= 20) act = 'stand';

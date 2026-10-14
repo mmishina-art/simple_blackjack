@@ -31,6 +31,8 @@ export interface SkillDef {
   damageCap?: number;
   /** 祠のバージョンアップで変わる先（コモン→レア、レア→レジェンド）。ないスキル・道具は強化できない。 */
   upgradesTo?: SkillId;
+  /** 敵の必殺（危険な合計値でだけ出る、一撃の重い技）。スロット表で赤い印を付ける。 */
+  fatal?: boolean;
 }
 
 /** 合計値スロット。キー 11 は「11以下」を表す。 */

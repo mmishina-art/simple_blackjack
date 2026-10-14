@@ -33,10 +33,12 @@ export function buildEnemySkillList(enemy: Entity, standOn = 0): HTMLElement {
   for (const row of describeSlotTable(enemy).filter((r) => r.key >= standOn)) {
     const el = document.createElement('div');
     const look = slotLook(row.key, row.isFallback ? null : row.skill);
-    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}`;
+    const fatal = !row.isFallback && row.skill.fatal;
+    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}${fatal ? ' lslot--fatal' : ''}`;
+    // 必殺（危険な合計値）は、赤い印と「必殺」の文字で示す（色だけに頼らない）
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>
-      <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}</span>
+      <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}${fatal ? ' <em class="fatal-tag">必殺</em>' : ''}</span>
       <span class="lslot__desc">${describeSkillShort(row.skill, enemy.attackAt(row.key))}</span>`;
     list.append(el);
   }
