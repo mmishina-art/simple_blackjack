@@ -128,7 +128,16 @@ export class AudioManager {
       this.bgmGain.connect(lowpass).connect(this.master);
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.gain.value = 0.6;
-      this.sfxGain.connect(this.master);
+      // 効果音は、少しこもらせて（高い音を落とす）、石の地下室のような短い残響を足す（ダークファンタジーの重く暗い音）
+      const sfxTone = this.ctx.createBiquadFilter();
+      sfxTone.type = 'lowpass';
+      sfxTone.frequency.value = 4200;
+      this.sfxGain.connect(sfxTone).connect(this.master);
+      const reverb = this.ctx.createConvolver();
+      reverb.buffer = this.makeImpulse(1.4);
+      const wet = this.ctx.createGain();
+      wet.gain.value = 0.28;
+      sfxTone.connect(reverb).connect(wet).connect(this.master);
       this.noiseBuf = this.makeNoise();
     }
     void this.ctx.resume().catch(noop);
@@ -141,77 +150,95 @@ export class AudioManager {
     if (ctx.state !== 'running') void ctx.resume().catch(noop);
     const t = ctx.currentTime + delaySec;
     switch (name) {
+      // 効果音は、ダークファンタジーに合わせた、重く暗い音（低い響き・金属・鐘。明るい長調のメロディや、ピコピコした矩形波は使わない）
       case 'click':
-        this.tone(660, t, 0.06, 'square', 0.25, 880);
+        // ボタン: 低くこもった、木を叩く音
+        this.tone(190, t, 0.08, 'sine', 0.38, 110);
+        this.noise(t, 0.04, 900, 0.16);
+        break;
+      case 'pick':
+        // 選ぶ: 石を置くような低い音と、暗い鐘の小さな余韻
+        this.tone(147, t, 0.14, 'sine', 0.34, 98);
+        this.bell(587.33, t + 0.02, 0.4, 0.07);
         break;
       case 'deal': {
-        // カードを置く・配る音: 軽くて落ち着いた、紙がすべる小さな音。毎回ほんの少し高さを変える（同じ音が続かないように）
+        // カードを置く・配る音: 紙がすべる小さな音（少し低め）。毎回ほんの少し高さを変える（同じ音が続かないように）
         const r = 0.9 + Math.random() * 0.2;
-        this.noise(t, 0.08, 2600 * r, 0.32, undefined, 0.012);
-        this.tone(1500 * r, t + 0.015, 0.04, 'sine', 0.07, 1000 * r);
+        this.noise(t, 0.09, 1800 * r, 0.3, undefined, 0.012);
+        this.tone(900 * r, t + 0.015, 0.05, 'sine', 0.06, 600 * r);
         break;
       }
       case 'flip': {
-        // 伏せカードをめくる音: 「しゅっ」と上がる紙の音。置く音より少し長く、明るい
-        this.sweepNoise(t, 0.16, 1400, 4600, 0.4, 0.03);
-        this.tone(900, t + 0.1, 0.07, 'sine', 0.08, 1300);
+        // 伏せカードをめくる音: 「しゅっ」と上がる紙の音
+        this.sweepNoise(t, 0.18, 900, 2600, 0.36, 0.03);
+        this.tone(600, t + 0.1, 0.07, 'sine', 0.07, 820);
         break;
       }
       case 'attack':
-        this.noise(t, 0.18, 1800, 0.5);
-        this.tone(520, t, 0.22, 'sawtooth', 0.35, 90);
+        // 攻撃: 刃が空を切る音（帯域が下がる）と、重い一撃、鈍い金属の響き
+        this.sweepNoise(t, 0.22, 2600, 700, 0.5, 0.02);
+        this.tone(150, t + 0.06, 0.3, 'triangle', 0.45, 48);
+        this.bell(330, t + 0.06, 0.3, 0.07);
         break;
       case 'damage':
-        this.noise(t, 0.25, 700, 0.6);
-        this.tone(180, t, 0.3, 'sawtooth', 0.4, 50);
+        // ダメージを受ける: 体に響く、低く重い衝撃（ざらついた低音を少し重ねる）
+        this.noise(t, 0.3, 320, 0.75);
+        this.tone(95, t, 0.42, 'sine', 0.6, 34);
+        this.tone(70, t, 0.26, 'sawtooth', 0.14, 40);
         break;
       case 'bust':
-        [392, 330, 262, 196].forEach((f, i) => this.tone(f, t + i * 0.09, 0.14, 'square', 0.22));
+        // バースト: 不吉に下がる音（半音と三全音で落ちる）と、最後の低い響き
+        [233.08, 220, 174.61, 116.54].forEach((f, i) => this.tone(f, t + i * 0.11, 0.22, 'triangle', 0.3));
+        this.tone(58.27, t + 0.33, 0.7, 'sine', 0.4);
         break;
       case 'push':
-        this.tone(440, t, 0.1, 'triangle', 0.3);
-        this.tone(440, t + 0.14, 0.1, 'triangle', 0.3);
+        // 引き分け: 中身のない、低い 2 つのノック
+        this.tone(196, t, 0.14, 'sine', 0.34, 150);
+        this.noise(t, 0.05, 600, 0.12);
+        this.tone(196, t + 0.18, 0.14, 'sine', 0.34, 150);
+        this.noise(t + 0.18, 0.05, 600, 0.12);
         break;
       case 'blackjack':
-        [523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, t + i * 0.07, 0.18, 'triangle', 0.3));
+        // ブラックジャック: 低い鐘が鳴り、暗い短調の和音が上へ積み上がる
+        this.bell(110, t, 1.4, 0.32);
+        [220, 261.63, 329.63, 440, 523.25].forEach((f, i) => this.chime(f, t + 0.06 + i * 0.08, 0.9, 0.16));
         break;
       case 'victory':
-        [523, 659, 784, 659, 784, 1047].forEach((f, i) =>
-          this.tone(f, t + i * 0.13, i === 5 ? 0.7 : 0.16, 'square', 0.22),
-        );
+        // 勝利: 重い銅鑼（どら）のような鐘と、ゆっくり広がる和音（最後だけ長調にして、暗いまま「終わった」と分かるように）
+        this.bell(73.42, t, 2.2, 0.34);
+        this.sweepNoise(t, 0.9, 200, 900, 0.08, 0.3);
+        [146.83, 174.61, 220].forEach((f) => this.chime(f, t + 0.15, 0.9, 0.12));
+        [146.83, 185, 220, 293.66].forEach((f) => this.chime(f, t + 0.85, 1.6, 0.13));
         break;
       case 'block':
-        // ブロックを得る: 盾を構える。低いどっしりした響きの上に、澄んだ金属の余韻が上へ立ち上がる
-        this.tone(190, t, 0.16, 'sine', 0.42, 95);
-        this.bell(1175, t + 0.01, 0.42, 0.2);
-        this.bell(1760, t + 0.07, 0.3, 0.1);
-        this.sweepNoise(t, 0.12, 900, 3200, 0.07, 0.02);
+        // ブロックを得る: 盾を構える。低いどっしりした響きの上に、暗い金属の余韻が上へ立ち上がる
+        this.tone(130, t, 0.24, 'sine', 0.46, 70);
+        this.bell(1046.5, t + 0.02, 0.5, 0.1);
+        this.bell(523.25, t + 0.04, 0.4, 0.12);
+        this.sweepNoise(t, 0.2, 500, 1600, 0.07, 0.03);
         break;
       case 'break':
-        // 会心の一撃がブロックを破壊した: ガラスが割れるような、高い破片の音と、低い衝撃
-        this.noise(t, 0.07, 5200, 0.4);
-        this.tone(1900, t, 0.18, 'sine', 0.25, 500);
-        this.bell(1400, t + 0.02, 0.25, 0.14);
-        this.tone(140, t, 0.12, 'sine', 0.35, 70);
+        // 会心の一撃がブロックを破壊した: 割れる破片の音と、深い衝撃
+        this.noise(t, 0.09, 4200, 0.36);
+        this.tone(1500, t, 0.2, 'sine', 0.2, 300);
+        this.bell(1100, t + 0.02, 0.3, 0.1);
+        this.tone(80, t, 0.36, 'sine', 0.5, 40);
         break;
       case 'guard':
-        // ブロックが攻撃を防いだ: 短く硬い「ガキン」（ブロックを得る音とは別。鋭く、余韻は短い）
-        this.noise(t, 0.05, 3400, 0.38);
-        this.bell(780, t, 0.16, 0.22);
-        this.tone(120, t, 0.09, 'sine', 0.3, 70);
+        // ブロックが攻撃を防いだ: 短く硬い、鈍い金属の「ガキン」（ブロックを得る音とは別。余韻は短い）
+        this.noise(t, 0.05, 2200, 0.36);
+        this.bell(520, t, 0.2, 0.22);
+        this.tone(95, t, 0.12, 'sine', 0.42, 55);
         break;
       case 'heal':
-        // 回復: やさしく上がる鈴の4音（ドミソド）が重なって、ゆっくり消える。あたたかい低音と、最後にきらめき
-        [523.25, 659.25, 784, 1046.5].forEach((f, i) => this.chime(f, t + i * 0.075, i === 3 ? 0.8 : 0.5, 0.2 + i * 0.02));
-        this.tone(261.63, t, 0.9, 'sine', 0.1);
-        this.tone(2093, t + 0.3, 0.18, 'triangle', 0.05);
-        break;
-      case 'pick':
-        this.tone(440, t, 0.08, 'square', 0.2);
-        this.tone(880, t + 0.07, 0.18, 'triangle', 0.3);
+        // 回復: 暗い短調（ラドミラ）の鈴が、静かに上へ重なって消える。下に低い持続音
+        [220, 261.63, 329.63, 440].forEach((f, i) => this.chime(f, t + i * 0.09, i === 3 ? 1.0 : 0.6, 0.16 + i * 0.02));
+        this.tone(110, t, 1.0, 'sine', 0.12);
         break;
       case 'defeat':
-        [392, 349, 311, 262].forEach((f, i) => this.tone(f, t + i * 0.28, 0.5, 'triangle', 0.35));
+        // 敗北: ゆっくり沈んでいく低い 4 音と、長く消えていく最低音
+        [196, 174.61, 155.56, 130.81].forEach((f, i) => this.tone(f, t + i * 0.34, 0.6, 'triangle', 0.32));
+        this.tone(65.41, t + 1.1, 2.0, 'sine', 0.42);
         break;
     }
   }
@@ -308,6 +335,16 @@ export class AudioManager {
     src.connect(filter).connect(g).connect(dest ?? this.sfxGain);
     src.start(start);
     src.stop(start + dur + 0.05);
+  }
+
+  /** 残響（石の部屋）: 指数的に消えていくノイズの響き。 */
+  private makeImpulse(sec: number): AudioBuffer {
+    const ctx = this.ctx!;
+    const len = Math.max(1, Math.floor(ctx.sampleRate * sec));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+    return buf;
   }
 
   private makeNoise(): AudioBuffer {

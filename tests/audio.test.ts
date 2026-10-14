@@ -1,5 +1,6 @@
 // 音を始めるタイミング（ボタンを押したとき）と、スリープ明けに音が出ない問題のテスト。
 // ブラウザの AudioContext は無いので、最小限の偽物で、状態の遷移（suspended / interrupted / running）だけを確かめる。
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioManager } from '../src/audio/AudioManager';
 
@@ -30,6 +31,7 @@ class FakeContext {
   createBiquadFilter = () => { const n = node(); this.filters.push(n); return n; };
   createOscillator = () => { const n = node(); this.oscs.push(n); return n; };
   createBufferSource = node;
+  createConvolver = node;
   createBuffer = () => ({ getChannelData: () => new Float32Array(8) });
   constructor() { FakeContext.instances.push(this); }
 }
@@ -241,11 +243,11 @@ describe('ブロック・回復の効果音', () => {
     return { oscs, filters, swept };
   };
 
-  it('回復: sine と triangle だけの、やさしい4音（ドミソド）が順に上がる', () => {
+  it('回復: sine だけの、暗い短調の4音（ラドミラ）が順に上がる', () => {
     const { oscs } = play('heal');
     for (const o of oscs) expect(['sine', 'triangle']).toContain(o.type);
-    // 基音の開始時刻（ド の1オクターブ上の倍音も 1046.5 なので、いちばん遅い開始を、その音の基音とみなす）
-    const rising = [523.25, 659.25, 784, 1046.5].map((f) => Math.max(...oscs.filter((o) => o.freq === f).map((o) => o.at)));
+    // 基音の開始時刻（ラ の1オクターブ上の倍音も 440 なので、いちばん遅い開始を、その音の基音とみなす）
+    const rising = [220, 261.63, 329.63, 440].map((f) => Math.max(...oscs.filter((o) => o.freq === f).map((o) => o.at)));
     expect(rising).toEqual([...rising].sort((a, b) => a - b));
     expect(new Set(rising).size).toBe(4);
   });
@@ -265,5 +267,25 @@ describe('ブロック・回復の効果音', () => {
     expect(block.swept).toBe(true);
     expect(guard.oscs.some((o) => o.freq < 150)).toBe(true); // 低いどすっ
     expect(guard.oscs.length).not.toBe(block.oscs.length);
+  });
+});
+
+describe('効果音の雰囲気（ダークファンタジーの重く暗い音）', () => {
+  const ALL = ['click', 'pick', 'deal', 'flip', 'attack', 'damage', 'guard', 'block', 'break', 'heal', 'push', 'bust', 'blackjack', 'victory', 'defeat'] as const;
+  it('ピコピコした矩形波（square）は、どの効果音にも使わない', () => {
+    for (const name of ALL) {
+      const a = new AudioManager();
+      a.unlock();
+      ctxOf().state = 'running';
+      const c = ctxOf();
+      const o0 = c.oscs.length;
+      a.sfx(name);
+      for (const o of c.oscs.slice(o0)) expect(o.type, name).not.toBe('square');
+    }
+  });
+  it('効果音には、少しこもらせるフィルターと、石の部屋の残響（convolver）を通す', () => {
+    const src = readFileSync('src/audio/AudioManager.ts', 'utf8');
+    expect(src).toContain('createConvolver()');
+    expect(src).toContain('this.makeImpulse(');
   });
 });
