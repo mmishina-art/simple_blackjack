@@ -50,9 +50,10 @@ describe('落とし物の出やすさ', () => {
     const boosted = dropChances(run, 'slime').find((c) => c.id === base[base.length - 1].id)!;
     expect(boosted.percent).toBeGreaterThan(base[base.length - 1].percent);
   });
-  it('詳細シートは、名前とレア度と%だけで、効果は出さない', () => {
+  it('詳細シートは、名前とレア度（色）と%だけで、効果は出さない', () => {
     expect(sheet).toContain('dropChances(opts.run, enemyId)');
-    expect(sheet).toContain('rarityBadge(');
+    expect(sheet).toContain('rarityClass(rarityOfSkill(sk))');
+    expect(sheet).not.toContain('rarityBadge');
     expect(sheet).not.toContain('describeSkill');
   });
 });
