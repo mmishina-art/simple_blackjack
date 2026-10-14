@@ -14,7 +14,7 @@ describe('地図画面の「タイトルへ」（冒険をあきらめる）', (
 
   it('あきらめたときは、魂片が入らず、冒険の回数にも数えない（endRun・finishRun を呼ばない）', () => {
     const main = read('src/main.ts');
-    const line = main.split('\n').find((l) => l.includes('onGiveUp'))!;
+    const line = main.split('\n').find((l) => l.includes('onGiveUp'))!.split('//')[0]; // コメントは見ない
     expect(line).toContain('showTitle()');
     expect(line).not.toMatch(/endRun|finishRun/);
   });
