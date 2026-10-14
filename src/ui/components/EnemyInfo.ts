@@ -14,6 +14,17 @@ export function buildEnemyInfo(enemy: Entity, def: EnemyDef, playerHp: number, o
   const head = document.createElement('div');
   head.className = 'enemy-info__head';
   head.innerHTML = `<h2>${enemy.name}の技</h2><p>LV ${lv}　HP ${enemy.maxHp}<br>1回の攻撃で平均 ${lv} ダメージ（あなたの HP ${playerHp} なら、約 ${hitsToDefeat(playerHp, lv)} 回で倒れる）${def.trait ? `<br>特性: ${def.trait}` : ''}</p>`;
+  const list = buildEnemySkillList(enemy);
+  const close = document.createElement('button');
+  close.className = 'btn btn--retry enemy-info__close';
+  close.innerHTML = '<span class="btn__main">閉じる</span>';
+  close.addEventListener('click', onClose);
+  sheet.append(head, list, close);
+  return sheet;
+}
+
+/** 敵の全スロットのスキル（実数値つき）の一覧。戦闘中の「技」シートと、マップの敵の詳細で使う。 */
+export function buildEnemySkillList(enemy: Entity): HTMLElement {
   const list = document.createElement('div');
   list.className = 'enemy-info__list';
   for (const row of describeSlotTable(enemy)) {
@@ -26,10 +37,5 @@ export function buildEnemyInfo(enemy: Entity, def: EnemyDef, playerHp: number, o
       <span class="lslot__desc">${row.text}</span>`;
     list.append(el);
   }
-  const close = document.createElement('button');
-  close.className = 'btn btn--retry enemy-info__close';
-  close.innerHTML = '<span class="btn__main">閉じる</span>';
-  close.addEventListener('click', onClose);
-  sheet.append(head, list, close);
-  return sheet;
+  return list;
 }
