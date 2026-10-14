@@ -10,7 +10,7 @@ import { HpBar } from './components/HpBar';
 import { buildEnemyInfo } from './components/EnemyInfo';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
-import { rarityClass } from './rarity';
+import { relicMedal } from './components/relicMedal';
 import { previewAllSlots } from '../core/skills/preview';
 import { SLOT_KEYS } from '../core/skills/Skill';
 import { calloutOf } from './callout';
@@ -243,11 +243,7 @@ export class BattleView {
     const relics = document.createElement('span');
     relics.className = 'status-strip__relics';
     for (const r of this.run.relics) {
-      const chip = document.createElement('span');
-      chip.className = `medal medal--sm ${rarityClass(r.rarity)}`;
-      chip.textContent = r.icon;
-      chip.title = `${r.name}: ${r.description}`;
-      relics.append(chip);
+      relics.append(relicMedal(r, this.run.slots));
     }
     return relics;
   }

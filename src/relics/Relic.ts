@@ -2,6 +2,7 @@ import type { Rarity } from '../core/rarity';
 import type { EventBus } from '../core/events/EventBus';
 import type { Entity } from '../core/entities/Entity';
 import type { RuleSet } from '../core/rules/RuleSet';
+import type { SlotTable } from '../core/skills/Skill';
 
 /** レリックが触れるバトルの世界。 */
 export interface RelicEnv {
@@ -25,5 +26,13 @@ export interface Relic {
   readonly rarity?: Rarity;
   /** 封印が解けて付け替え可能になる固定スロット（11以下・21）。 */
   readonly unlocksSlots?: readonly number[];
+  /**
+   * いま効果が出ているか（条件つきのレリックだけ。省略時は、常に出ている）。出ていないときは、画面でグレーに表示する。
+   * 判断に使えるのは、スロットの中身だけ（戦闘中の状況は含めない）。
+   */
+  isActive?(slots: SlotTable): boolean;
   apply(env: RelicEnv): void;
 }
+
+/** そのレリックの効果が、いま出ているか。 */
+export const relicActive = (relic: Relic, slots: SlotTable): boolean => relic.isActive?.(slots) ?? true;

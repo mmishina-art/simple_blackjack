@@ -1334,3 +1334,6 @@ section { min-width: 0; }
   .scene__title { font-size: 17px; }
 }
 .pick__badge { white-space: nowrap; }
+
+/* 条件つきのレリックで、いまは効果が出ていないもの: グレー + 点線の枠 */
+.medal--idle { filter: grayscale(1) brightness(0.7); opacity: 0.75; border-style: dashed; }
