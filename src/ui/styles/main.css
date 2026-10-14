@@ -1505,3 +1505,15 @@ section { min-width: 0; }
 .choice--shrine .choice__card { background: var(--rivets), var(--plate); border-left: 4px solid var(--tone, var(--shrine-accent)); }
 .shop__row, .codex__item { background: linear-gradient(180deg, #221f1b, #141210); box-shadow: inset 0 1px 0 rgba(255, 236, 200, 0.08); }
 .shop__row { border-left: 3px solid var(--rar, #2e2922); }
+
+/* ======== 題名のロゴ「BUST or DIE」 ========
+ * BUST は金、DIE は血の赤、or は小さく。下に、ジャンルの英字を、両側の細い線で挟む。
+ */
+:root { --logo-die: #c4483a; --logo-die-glow: rgba(196, 72, 58, 0.45); }
+.title h1.logo { align-self: stretch; display: flex; flex-direction: column; align-items: center; line-height: 1; letter-spacing: 0.1em; }
+.logo__main { font-size: 42px; white-space: nowrap; }
+.logo__or { font-size: 20px; font-weight: 600; color: var(--bone-dim); text-shadow: 0 2px 0 #000; vertical-align: middle; letter-spacing: 0.1em; }
+.logo__die { color: var(--logo-die); text-shadow: 0 0 20px var(--logo-die-glow), 0 3px 0 #000; }
+.title h1 .logo__genre { display: flex; align-self: stretch; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; letter-spacing: 0.32em; white-space: nowrap; color: var(--bone-dim); text-shadow: 0 2px 0 #000; }
+.logo__genre::before, .logo__genre::after { content: ''; flex: 0 1 34px; min-width: 8px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+.logo__genre::after { transform: scaleX(-1); }

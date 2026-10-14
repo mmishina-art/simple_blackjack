@@ -340,7 +340,8 @@ function showTitle(): void {
     renderMute();
   });
   renderMute();
-  const h1 = el('h1', '', 'BLACKJACK<small>ROGUELIKE</small>');
+  // 題名「Bust or Die」（バーストか、死か）。下の小さな英字は、どんなゲームかの説明（ジャンル）
+  const h1 = el('h1', 'logo', '<span class="logo__main">BUST <span class="logo__or">or</span> <span class="logo__die">DIE</span></span><small class="logo__genre">BLACKJACK ROGUELIKE</small>');
   const sub = el('p', '', '二十一に近き者が先を制す。三つの階層を越え、竜の巣の主を討て。');
   const start = el('button', 'btn btn--primary title__start', '<span class="btn__main">冒険を始める</span>');
   start.addEventListener('click', () => {

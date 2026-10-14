@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working in this repository.
 
 ## Project
 
-Blackjack Roguelike(`simple_blackjack`): ブラックジャック × ローグライクの対戦型 RPG の PWA。スマホ縦画面。Vite + TypeScript + vite-plugin-pwa。ゲームのルールと仕様は `README.md` を参照(スキル、ブロック、POW、レリック、メタ進行など)。**ルールを変えたら README も更新する。** ユーザー向けの文言は日本語。
+Bust or Die(旧名 Blackjack Roguelike。リポジトリ名 `simple_blackjack`・保存キー・バックアップの `app` 名・キャッシュ名は、記録を残すため旧名のまま): ブラックジャック × ローグライクの対戦型 RPG の PWA。スマホ縦画面。Vite + TypeScript + vite-plugin-pwa。ゲームのルールと仕様は `README.md` を参照(スキル、ブロック、POW、レリック、メタ進行など)。**ルールを変えたら README も更新する。** ユーザー向けの文言は日本語。
 
 ## Running / Testing
 

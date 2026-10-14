@@ -15,8 +15,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['icons/icon.svg'],
       manifest: {
-        name: 'Blackjack Roguelike',
-        short_name: 'BJ Rogue',
+        name: 'Bust or Die',
+        short_name: 'Bust or Die',
         description: 'ブラックジャック×ローグライクの対戦型RPG',
         lang: 'ja',
         display: 'standalone',
