@@ -40,7 +40,7 @@ export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: b
   const drops = document.createElement('div');
   drops.className = 'monster-sheet__drops';
   if (opts.boss) {
-    drops.textContent = '落とし物: 階層を踏破すると、遺物をひとつ選べる';
+    drops.textContent = '落とし物: 階層を踏破すると、遺物を3つから1つ選べる';
   } else {
     // 効果は伏せて、名前と、落とし物のなかでの出やすさ（%）だけ見せる。レア度は色（枠・アイコン）で示す
     const label = document.createElement('span');
