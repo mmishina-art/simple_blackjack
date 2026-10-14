@@ -1,4 +1,5 @@
 import { audio } from '../audio/AudioManager';
+import { openSheet } from './components/SkillSheet';
 import { relicButton } from './components/relicMedal';
 import { isCleared, reachableTiles, type RunState } from '../run/Run';
 import { tileOf, TILE_LABEL, type TileDef, type TileKind } from '../map/StageMap';
@@ -23,6 +24,8 @@ const ICON: Record<TileKind, string> = { start: '始', empty: '', enemy: '敵', 
 export interface MapHandlers {
   onMove(tileId: string): void;
   onLoadout(): void;
+  /** 冒険をあきらめて、タイトルに戻る（確認のあと）。魂片は入らない。 */
+  onGiveUp(): void;
 }
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}, cls = ''): SVGElementTagNameMap[K] {
@@ -42,6 +45,20 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   hud.className = 'map-hud';
   hud.innerHTML = `<div class="map-hud__row"><strong>第${run.stage}階層　${run.map.name}</strong></div>
     <div class="map-hud__bar"><div class="map-hud__fill" style="width:${Math.max(0, (run.hp / run.maxHp) * 100)}%"></div></div>`;
+  const giveUp = document.createElement('button');
+  giveUp.type = 'button';
+  giveUp.className = 'map-hud__giveup';
+  giveUp.innerHTML = '<span aria-hidden="true">‹</span> タイトルへ';
+  giveUp.setAttribute('aria-label', 'タイトルへ戻る（冒険をあきらめる）');
+  giveUp.addEventListener('click', () => {
+    audio.sfx('click');
+    openSheet({
+      title: '冒険をあきらめる？',
+      subtitle: 'この冒険は終わる。魂片は入らない（途中の記録は残らない）',
+      options: [{ kind: 'confirm', icon: '去', name: 'あきらめて、タイトルへ', detail: '魂片は入らず、冒険は最初からになる', onPick: () => handlers.onGiveUp() }],
+    });
+  });
+  hud.querySelector('.map-hud__row')?.append(giveUp);
   const relics = document.createElement('div');
   relics.className = 'map-hud__relics';
   if (run.relics.length === 0) relics.textContent = '遺物なし';
