@@ -267,9 +267,7 @@ atk('garg_fall', '落石の一撃', 1, 3, '落');
 defineSkill({ id: 'ig_quake', name: '鉄槌', icon: '槌', effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'block', amount: 5 }] });
 atk('golem_meteor', '溶岩流', 1, 4, '流');
 
-// 敵のスキルのレア度: 強い技ほど高い（スロット表の色で技の格が分かる）
-assignRarity(['slime_melt', 'skel_slash', 'bat_drain', 'bat_dive', 'ghoul_rend', 'dragon_breath', 'knight_bash', 'merman_rush', 'garg_swoop', 'ig_bash', 'wraith_drain', 'serpent_coil', 'flame_burst', 'golem_slam', 'imp_hex'], 'rare');
-assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dragon_inferno', 'dragon_apocalypse', 'knight_cleave', 'merman_tide', 'garg_crush', 'wraith_curse', 'wraith_wail', 'serpent_tide', 'serpent_abyss', 'flame_inferno', 'flame_nova', 'golem_eruption', 'imp_siphon', 'imp_hellfire', 'ig_crush', 'slime_deluge', 'skel_execution', 'knight_judgement', 'garg_fall', 'ig_quake', 'golem_meteor'], 'legend');
+// 敵のスキルには、レア度を付けない（色分けしない）。危ない場所は「危険」（赤）、21 は「必殺」で示す。レア度の色は、プレイヤーが手に入れるスキルの価値だけを表す
 
 /**
  * 敵の危険な合計値: 敵ごとに決まった合計値でだけ出る、一撃の重い技。それ以外の合計値の技は軽い。
