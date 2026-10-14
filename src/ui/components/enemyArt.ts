@@ -1,3 +1,5 @@
+import bat from '../art/enemies/bat.webp';
+import skeleton from '../art/enemies/skeleton.webp';
 import slime from '../art/enemies/slime.webp';
 import { ENEMY_SPRITES } from './enemySprites';
 
@@ -5,7 +7,7 @@ import { ENEMY_SPRITES } from './enemySprites';
  * 生成 AI（Gemini）で描いた敵の絵（src/ui/art/enemies/<敵の ID>.webp。tools/enemy-art.py で背景を透明にして縮めたもの）。
  * ここにない敵は、手書きの SVG（ENEMY_SPRITES）を使う。届いた順に、ここへ足していく。
  */
-export const ENEMY_IMAGES: Partial<Record<string, string>> = { slime };
+export const ENEMY_IMAGES: Partial<Record<string, string>> = { slime, skeleton, bat };
 
 /** 敵の絵の HTML（画像があれば <img>、なければ SVG）。label を渡すと、読み上げ用の名前を付ける。 */
 export function enemyArtHtml(id: string, label = ''): string {
