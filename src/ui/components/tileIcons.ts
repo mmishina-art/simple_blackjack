@@ -22,9 +22,11 @@ export const TILE_ICONS: Partial<Record<TileKind, string>> = {
   shrine: `<path d="M-11 -2L0 -10L11 -2Z" fill="currentColor" fill-opacity="0.22"/>
     <path d="M-7 -2V9M7 -2V9M-9.5 9H9.5"/>
     <path d="M0 6.5C-2.6 5 -2.2 2 0 0C2.2 2 2.6 5 0 6.5Z" fill="currentColor"/>`,
-  // 宿屋: 寝台と枕、上に月
-  inn: `<path d="M-10 -1V9M10 3V9M-10 4H10"/>
-    <rect x="-10" y="-1" width="20" height="5" rx="1" fill="currentColor" fill-opacity="0.18"/>
-    <rect x="-8.2" y="0.2" width="5" height="2.6" rx="1.2" fill="currentColor"/>
-    <path d="M6 -9.5A4 4 0 1 0 9.5 -4.4A3.6 3.6 0 0 1 6 -9.5Z" fill="currentColor"/>`,
+  // 宿屋: 枕と毛布のある寝台と、眠りの「Z」
+  inn: `<rect x="-10.5" y="-4" width="3" height="14" rx="0.8" fill="currentColor" fill-opacity="0.35"/>
+    <rect x="7.5" y="2" width="3" height="8" rx="0.8" fill="currentColor" fill-opacity="0.35"/>
+    <rect x="-7.5" y="3" width="15" height="3.4" rx="0.6" fill="currentColor" fill-opacity="0.2"/>
+    <rect x="-6.6" y="-0.6" width="6" height="3.4" rx="1.6" fill="currentColor"/>
+    <path d="M-0.6 1.2H7.5V3H-0.6Z" fill="currentColor" fill-opacity="0.55"/>
+    <path d="M2 -9.5H6.2L2 -5.2H6.2M7.4 -10.6H9.8L7.4 -8.2H9.8" stroke-width="1.3"/>`,
 };
