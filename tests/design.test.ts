@@ -29,3 +29,24 @@ describe('全体の見た目のルール（段階1）', () => {
     expect(read('src/ui/rarity.ts')).toContain('class="sr-only"');
   });
 });
+
+describe('全体の見た目のルール（段階2）', () => {
+  it('スキル獲得・宝箱・踏破の褒美も、上に挿絵（店・祠・宿屋と同じ形）', () => {
+    const main = read('src/main.ts');
+    expect(main).toContain("scene: { kind: 'reward'");
+    expect(main).toContain("scene: { kind: 'chest', line");
+    expect(main).toContain("scene: { kind: 'chest', title: '踏破の褒美'");
+    expect(read('src/ui/styles/main.css')).toContain('.choice:has(.scene) { justify-content: flex-start;');
+  });
+});
+
+describe('レリックのメダルは六角形', () => {
+  it('所持・図鑑・ショップ・宝箱の遺物に medal--relic を付ける', () => {
+    expect(read('src/ui/components/relicMedal.ts')).toContain('medal--relic');
+    expect(read('src/ui/MetaScreens.ts')).toContain('medal--relic');
+    expect(read('src/ui/ShopScreen.ts')).toContain('medal--relic');
+    expect(read('src/ui/ChoiceScreen.ts')).toContain("opt.relic ? ' medal--relic' : ''");
+    expect(read('src/main.ts')).toContain('relics.map((r) => ({ ...r, relic: true }))');
+    expect(read('src/ui/styles/main.css')).toContain('--hex: polygon(');
+  });
+});

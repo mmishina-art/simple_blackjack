@@ -135,7 +135,8 @@ function resolveTile(tile: TileDef): void {
       return showChoiceScreen(root, {
         heading: '宝箱',
         sub: '遺物をひとつ選べ',
-        options: relics,
+        scene: { kind: 'chest', line: '遺物をひとつ選べ。' },
+        options: relics.map((r) => ({ ...r, relic: true })),
         onPick(i) {
           run.relics.push(relics[i]);
           showMapScreen(`「${relics[i].name}」を手に入れた。`);
@@ -292,7 +293,8 @@ function offerStageRelic(): void {
   showChoiceScreen(root, {
     heading: '階層を踏破した',
     sub: '遺物をひとつ選べ',
-    options: relics,
+    scene: { kind: 'chest', title: '踏破の褒美', line: '遺物をひとつ選べ。' },
+    options: relics.map((r) => ({ ...r, relic: true })),
     onPick(i) {
       run.relics.push(relics[i]);
       enter();
@@ -307,6 +309,7 @@ function offerSkillReward(enemyId?: string): void {
   showChoiceScreen(root, {
     heading: 'スキル獲得',
     sub: `${dropFrom ? `${dropFrom}の落とし物。` : ''}ひとつ選んで装備する`,
+    scene: { kind: 'reward', line: `${dropFrom ? `${dropFrom}の落とし物。` : ''}ひとつ選んで装備する。` },
     options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
     onPick(i) {
       run.inventory.push(ids[i]);

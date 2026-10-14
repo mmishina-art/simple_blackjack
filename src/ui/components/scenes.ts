@@ -1,8 +1,8 @@
 /**
  * 場所ごとの挿絵（インライン SVG）。敵のスプライトと同じ、ペン画の線の揺らぎ（feDisplacementMap）と
- * 陰影で描いた、横長の場面。お店・祠・宿屋の画面の上に置く。外部の画像は使わない（自作）。
+ * 陰影で描いた、横長の場面。お店・祠・宿屋・スキル獲得・宝箱（遺物）の画面の上に置く。外部の画像は使わない（自作）。
  */
-export type SceneKind = 'shop' | 'shrine' | 'inn';
+export type SceneKind = 'shop' | 'shrine' | 'inn' | 'reward' | 'chest';
 
 const INK = (p: string) => `<filter id="${p}ink" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3"/></filter>`;
 const HATCH = (p: string, c: string) => `<pattern id="${p}hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><line x1="0" y1="0" x2="0" y2="5" stroke="${c}" stroke-width="1.2" opacity=".55"/></pattern>`;
@@ -138,7 +138,85 @@ const inn = `
 </svg>`;
 
 /** 挿絵の SVG（テストが、参照先の id がそろっているかを確かめる）。 */
-export const SCENES: Record<SceneKind, string> = { shop, shrine, inn };
+
+/** スキル獲得: 書見台に開いた古い書。ページから光る文字が浮かび、左右に蝋燭。 */
+const reward = `
+<svg viewBox="0 0 360 140" preserveAspectRatio="xMidYMid slice" role="img" aria-label="書見台の上に開いた古い書。ページから光る文字が浮かび上がり、左右で蝋燭が燃えている" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    ${INK('rw')}${HATCH('rw', '#060403')}
+    <linearGradient id="rwBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e0b14"/><stop offset="1" stop-color="#2a1d14"/></linearGradient>
+    <radialGradient id="rwGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f2e2a8" stop-opacity=".95"/><stop offset=".45" stop-color="#c9a24a" stop-opacity=".4"/><stop offset="1" stop-color="#c9a24a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="rwCandle" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffd27a" stop-opacity=".9"/><stop offset="1" stop-color="#e8962a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="360" height="140" fill="url(#rwBg)"/>
+  <circle cx="180" cy="64" r="70" fill="url(#rwGlow)" class="sc-glow"/>
+  <g filter="url(#rwink)">
+    <!-- 石の床 -->
+    <path d="M0 116 Q180 106 360 116 L360 140 L0 140z" fill="#1c140e" stroke="#060403" stroke-width="2"/>
+    <!-- 書見台 -->
+    <path d="M166 116 L172 92 L188 92 L194 116z" fill="#4a2e18" stroke="#060403" stroke-width="2.2"/>
+    <rect x="150" y="112" width="60" height="8" fill="#3a2414" stroke="#060403" stroke-width="2"/>
+    <path d="M128 92 L180 80 L232 92 L224 98 L180 88 L136 98z" fill="#5c3a1e" stroke="#060403" stroke-width="2.2"/>
+    <!-- 開いた書 -->
+    <path d="M132 86 Q156 70 180 80 Q204 70 228 86 L228 90 Q204 76 180 86 Q156 76 132 90z" fill="#d8c79c" stroke="#060403" stroke-width="2.2"/>
+    <path d="M132 86 Q156 70 180 80 L180 86 Q156 76 132 90z" fill="url(#rwhatch)"/>
+    <g stroke="#7a6440" stroke-width="1.2"><path d="M144 82 q12-6 28-2"/><path d="M146 86 q12-6 26-2"/><path d="M188 80 q16-4 28 2"/><path d="M188 84 q14-4 26 2"/></g>
+    <!-- 蝋燭 -->
+    <rect x="60" y="88" width="12" height="28" fill="#d8c79c" stroke="#060403" stroke-width="2"/><rect x="54" y="114" width="24" height="6" fill="#5a4630" stroke="#060403" stroke-width="2"/>
+    <rect x="288" y="92" width="12" height="24" fill="#d8c79c" stroke="#060403" stroke-width="2"/><rect x="282" y="114" width="24" height="6" fill="#5a4630" stroke="#060403" stroke-width="2"/>
+  </g>
+  <circle cx="66" cy="80" r="22" fill="url(#rwCandle)" class="sc-glow"/><circle cx="294" cy="84" r="22" fill="url(#rwCandle)" class="sc-glow"/>
+  <g filter="url(#rwink)" class="sc-flame"><path d="M66 88 q-6-8 0-16 q6 8 0 16z" fill="#ffe2a0" stroke="#060403" stroke-width="1.4"/><path d="M294 92 q-6-8 0-16 q6 8 0 16z" fill="#ffe2a0" stroke="#060403" stroke-width="1.4"/></g>
+  <!-- 浮かぶ光る文字 -->
+  <g fill="none" stroke="#f6e6b8" stroke-width="2" stroke-linecap="round" class="sc-glow">
+    <path d="M160 58 h10 M165 52 v12"/><path d="M182 44 l6 6 l-6 6 l-6 -6z"/><path d="M198 60 q6-8 12 0"/><circle cx="174" cy="32" r="3"/><path d="M150 40 l4 4 M154 40 l-4 4"/>
+  </g>
+</svg>`;
+
+/** 宝箱: 石の床に、蓋の開いた宝箱。中から金の光があふれ、まわりに金貨。 */
+const chest = `
+<svg viewBox="0 0 360 140" preserveAspectRatio="xMidYMid slice" role="img" aria-label="蓋の開いた宝箱。中から金色の光があふれ、まわりに金貨が散らばっている" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    ${INK('ch')}${HATCH('ch', '#060403')}
+    <linearGradient id="chBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0a08"/><stop offset="1" stop-color="#2e2010"/></linearGradient>
+    <radialGradient id="chGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff0b0" stop-opacity="1"/><stop offset=".4" stop-color="#e0b04a" stop-opacity=".5"/><stop offset="1" stop-color="#e0b04a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="chWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4a22"/><stop offset="1" stop-color="#3a2210"/></linearGradient>
+  </defs>
+  <rect width="360" height="140" fill="url(#chBg)"/>
+  <!-- 石の壁の目地 -->
+  <g stroke="#060403" stroke-width="1.5" opacity=".6" fill="none"><path d="M0 30 H360 M0 60 H360 M0 90 H360"/><path d="M40 0 V30 M120 0 V30 M200 0 V30 M280 0 V30 M80 30 V60 M160 30 V60 M240 30 V60 M320 30 V60 M40 60 V90 M120 60 V90 M280 60 V90"/></g>
+  <circle cx="180" cy="66" r="80" fill="url(#chGlow)" class="sc-glow"/>
+  <!-- 光の筋 -->
+  <g fill="#f6dc8a" opacity=".18" class="sc-glow"><path d="M180 76 L120 0 H140z"/><path d="M180 76 L222 0 H240z"/><path d="M180 76 L262 0 H272z"/><path d="M180 76 L90 0 H98z"/></g>
+  <g filter="url(#chink)">
+    <path d="M0 118 Q180 108 360 118 L360 140 L0 140z" fill="#1e150c" stroke="#060403" stroke-width="2"/>
+    <!-- 斜めから見た宝箱。蓋は、奥のふちを軸に後ろへ大きく開いている（内側の赤い布と、蓋の丸い横の板が見える） -->
+    <!-- 蓋の内側 -->
+    <path d="M150 76 L230 76 L246 36 L166 36z" fill="#6a1f1f" stroke="#060403" stroke-width="2.4"/>
+    <path d="M150 76 L230 76 L246 36 L166 36z" fill="url(#chhatch)" opacity=".6"/>
+    <path d="M158 72 L226 72 L239 40 L170 40z" fill="none" stroke="#c9a24a" stroke-width="1.6" opacity=".8"/>
+    <!-- 蓋の横の板（丸い形が、後ろへふくらむ） -->
+    <path d="M230 76 Q270 70 258 40 Q254 34 246 36z" fill="url(#chWood)" stroke="#060403" stroke-width="2.4"/>
+    <path d="M230 76 Q270 70 258 40 Q254 34 246 36" fill="none" stroke="#c9a24a" stroke-width="3"/>
+    <!-- 箱の口（中は暗い）と、あふれる金貨 -->
+    <path d="M132 88 L150 76 H230 L212 88z" fill="#140b05" stroke="#060403" stroke-width="2.2"/>
+    <path d="M136 88 Q146 70 160 78 Q172 66 186 76 Q198 66 210 77 Q222 70 226 80 L212 88z" fill="#e8bd52" stroke="#060403" stroke-width="2"/>
+    <g fill="#f6dc8a" stroke="#060403" stroke-width="1.2"><circle cx="160" cy="80" r="3"/><circle cx="186" cy="74" r="3"/><circle cx="208" cy="80" r="3"/></g>
+    <!-- 箱の横の面 -->
+    <path d="M212 88 L230 76 V110 L212 122z" fill="#3a2210" stroke="#060403" stroke-width="2.4"/>
+    <path d="M212 100 L230 88" stroke="#c9a24a" stroke-width="3"/>
+    <!-- 箱の前の面 -->
+    <rect x="132" y="88" width="80" height="34" rx="2" fill="url(#chWood)" stroke="#060403" stroke-width="2.4"/>
+    <rect x="132" y="88" width="80" height="34" rx="2" fill="url(#chhatch)"/>
+    <path d="M132 100 H212 M154 88 V122 M190 88 V122" stroke="#c9a24a" stroke-width="4"/>
+    <path d="M172 94 l7 8 l-7 8 l-7 -8z" fill="#7fb6e8" stroke="#060403" stroke-width="2"/>
+    <!-- 散らばった金貨 -->
+    <g fill="#e8bd52" stroke="#060403" stroke-width="1.6"><ellipse cx="112" cy="120" rx="7" ry="3.5"/><ellipse cx="124" cy="126" rx="6" ry="3"/><ellipse cx="246" cy="122" rx="7" ry="3.5"/><ellipse cx="262" cy="127" rx="6" ry="3"/><ellipse cx="236" cy="130" rx="5" ry="2.5"/></g>
+  </g>
+  <g fill="#fff6d0" class="sc-glow"><path d="M120 50 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2z"/><path d="M246 40 l1.6 5 l5 1.6 l-5 1.6 l-1.6 5 l-1.6 -5 l-5 -1.6 l5 -1.6z"/></g>
+</svg>`;
+
+export const SCENES: Record<SceneKind, string> = { shop, shrine, inn, reward, chest };
 
 /** 挿絵つきの見出し。`caption` はひとこと（商人・宿の主人のセリフなど）。aria-live で読み上げる。 */
 export function buildScene(kind: SceneKind, title: string, caption = ''): HTMLElement {
