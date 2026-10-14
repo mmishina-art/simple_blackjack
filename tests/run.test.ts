@@ -396,7 +396,7 @@ describe('レリックの効果', () => {
 
   it('堅牢の盾: 獲得するブロック +3', async () => {
     const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], relics: [SturdyShield], stopAt: ['CheckDeath'], playerSlots: WITH_BLOCKS });
-    expect(m.ctx.player.block).toBe(6 + 3 - 3); // 身構え 6 + 3、敵の酸 3
+    expect(m.ctx.player.block).toBe(6 + 3 - 1); // 受け流し 6 + 3、敵 14 の酸の飛沫 POW3×0.5 = 1
   });
 
   it('命の蝋燭: 戦闘開始時にHP+2', () => {
@@ -447,7 +447,7 @@ describe('敵の特性', () => {
 
   it('骸骨兵: 骨の鎧（受けるダメージ -2）', async () => {
     const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemy: enemy('skeleton') });
-    expect(m.ctx.enemy.hp).toBe(20 - 13); // 大攻撃15 - 骨の鎧2
+    expect(m.ctx.enemy.hp).toBe(enemy('skeleton').maxHp - 13); // 大攻撃15 - 骨の鎧2（敵 18 は斬り下ろしで、ブロック なし）
   });
 
   it('大蝙蝠: 同値なら必ず敵が先攻', async () => {
@@ -457,13 +457,13 @@ describe('敵の特性', () => {
 
   it('屍食鬼: HPを削るたびHP+2', async () => {
     const m = await playRound({ player: ['9', '8'], enemyHand: ['K', 'K'], enemy: enemy('ghoul'), enemyHp: 15 });
-    expect(m.ctx.player.hp).toBe(60 - 7); // 貪り喰う POW4+3 = 7（17 は未設定でブロック なし）
+    expect(m.ctx.player.hp).toBe(60 - 6); // 20: 引き裂き POW4+2 = 6（17 は未設定でブロック なし）
     expect(m.ctx.enemy.hp).toBe(15 + 2 - 7); // HP を削って +2 回復、そのあと後攻の通常攻撃（17 は POW 7）
   });
 
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon'), playerSlots: WITH_BLOCKS });
-    expect(m.ctx.player.hp).toBe(60 - (18 - 11)); // 業火 POW6×2+3 + 息吹3 = 18。後攻の身構え ブロック 11 が先に付与される
+    expect(m.ctx.player.hp).toBe(60 - (23 - 11)); // 20: 業火 POW6×3+2 + 息吹3 = 23。後攻の身構え ブロック 11 が先に付与される
   });
 });
 

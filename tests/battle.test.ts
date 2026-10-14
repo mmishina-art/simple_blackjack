@@ -14,10 +14,11 @@ import { noWait, playRound, WITH_BLOCKS } from './helpers';
 
 // スライムの技の実数値（バランス調整で変わっても、テストの前提が崩れないように、定義から求める）
 const slimeHit = (id: string): number => attackValue(getSkill(id).effects[0] as never, Slime.attack);
-const MELT = slimeHit('slime_melt');   // 17〜19 で発動
-const ACID = slimeHit('slime_acid');   // 14〜16 で発動
+const MELT = slimeHit('slime_melt');   // 18〜19 で発動
+const ACID = slimeHit('slime_acid');   // 14〜17 で発動
+const ENGULF = slimeHit('slime_engulf'); // 20〜21 で発動
 const BUST = Math.floor(MELT * 1.5);   // バーストしたプレイヤーが受ける量
-// 黒竜の火炎の息（18・19）。防具の上限（5）を超える一撃として使う
+// 黒竜の火炎の息（19）。防具の上限（5）を超える一撃として使う
 const BREATH = attackValue(getSkill('dragon_breath').effects[0] as never, BlackDragon.attack) + (BlackDragon.attackBonus ?? 0);
 
 /** 入力待ちのたびに policy で入力を自動送信して最後まで走らせる。 */
@@ -131,7 +132,7 @@ describe('BattleMachine の進行', () => {
     ['K', 'K'].forEach((r) => m.ctx.player.hand.add(makeCard(r as never, 'S')));
     ['9', '9'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as never, 'H')));
     await m.runFrom('Initiative', ['Deal']);
-    expect(m.ctx.enemy.hp).toBe(16); // プレイヤーのスキルは不発
+    expect(m.ctx.enemy.hp).toBe(Slime.maxHp); // プレイヤーのスキルは不発
   });
 });
 
@@ -329,7 +330,7 @@ describe('敵先行のラウンド（敵の手札が先に確定し、最後の1
 
 describe('ラウンドの行動順', () => {
   it('合計値が大きい方が先攻: 先攻の攻撃 → 後攻の攻撃', async () => {
-    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'] }); // 20 vs 18
+    const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemyHp: 16 }); // 20 vs 18（先攻で倒しきらない HP）
     expect(m.ctx.turn).toMatchObject({ mode: 'sequential', first: 'player', second: 'enemy' });
     expect(m.ctx.enemy.hp).toBe(1);   // 16 - 大攻撃（20 は POW 10: POW+5 = 15）
     expect(m.ctx.player.hp).toBe(60 - MELT); // 溶解
@@ -345,7 +346,7 @@ describe('ラウンドの行動順', () => {
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] }); // 25 vs 18
     expect(m.ctx.turn).toMatchObject({ mode: 'bustSkip', first: 'enemy', second: null });
     expect(m.ctx.player.hp).toBe(60 - BUST);  // 溶解 ×1.5
-    expect(m.ctx.enemy.hp).toBe(16);        // プレイヤーは行動不能
+    expect(m.ctx.enemy.hp).toBe(Slime.maxHp); // プレイヤーは行動不能
   });
 
   it('敵がバースト: 敵のスキルは発動せず、受けるダメージが1.5倍。プレイヤーは通常どおり行動する', async () => {
@@ -357,7 +358,7 @@ describe('ラウンドの行動順', () => {
   it('両者バースト: 誰も行動しない', async () => {
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['K', 'Q', '4'] });
     expect(m.ctx.player.hp).toBe(60);
-    expect(m.ctx.enemy.hp).toBe(16);
+    expect(m.ctx.enemy.hp).toBe(Slime.maxHp);
   });
 
   it('スロット21は会心の一撃（POW×1.5）。ブラックジャック（初手21）でも特別な効果はない', async () => {
@@ -375,7 +376,7 @@ describe('ラウンドの行動順', () => {
 
 describe('行動の演出: 効果は1つずつ、間をあけて見せる', () => {
   /** 指定した手札でラウンドの後半を実行し、待った時間（ms）の並びと、発火した通知を記録する。 */
-  async function run(opts: { player: Rank[]; enemy: Rank[]; slots?: SlotTable; playerHp?: number }) {
+  async function run(opts: { player: Rank[]; enemy: Rank[]; slots?: SlotTable; playerHp?: number; enemyHp?: number }) {
     const waits: number[] = [];
     const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: async (ms) => { waits.push(ms); }, playerSlots: opts.slots, playerHp: opts.playerHp });
     const seen: string[] = [];
@@ -385,12 +386,13 @@ describe('行動の演出: 効果は1つずつ、間をあけて見せる', () =
     m.bus.on('onDamageDealt', ({ defender }) => { seen.push(`hit:${defender.id}`); });
     opts.player.forEach((r) => m.ctx.player.hand.add(makeCard(r, 'S')));
     opts.enemy.forEach((r) => m.ctx.enemy.hand.add(makeCard(r, 'H')));
+    if (opts.enemyHp !== undefined) m.ctx.enemy.hp = opts.enemyHp;
     await m.runFrom('Initiative', ['Deal']);
     return { waits, seen, m };
   }
 
   it('先攻・後攻の攻撃は、それぞれ間をあける（宣言 → 攻撃 → 攻撃）', async () => {
-    const { waits, seen } = await run({ player: ['K', 'K'], enemy: ['9', '9'] }); // 20 vs 18
+    const { waits, seen } = await run({ player: ['K', 'K'], enemy: ['9', '9'], enemyHp: 40 }); // 20 vs 18（先攻の大攻撃で倒れない HP）
     expect(waits).toEqual([PACE.initiative, PACE.declare, PACE.attack, PACE.attack]);
     expect(seen).toEqual(['skill:player:big_attack', 'skill:enemy:slime_melt', 'hit:enemy', 'hit:player']);
   });
@@ -443,8 +445,9 @@ describe('バーストのペナルティ（受けるダメージ 1.5倍）', () 
     expect(tie.logs.some((l) => l.includes('バースト'))).toBe(false);
   });
 
-  it('端数は切り捨てる（通常攻撃 3 → 4）', async () => {
-    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['3', '4'] }); // 敵 7: ぬめる体当たり 3
+  it('端数は切り捨てる（溶解 3 → 4）', async () => {
+    expect(MELT).toBe(3); // 前提: 奇数なので ×1.5 で端数が出る
+    const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['9', '9'] }); // 敵 18: 溶解 3 × 1.5 = 4.5
     expect(m.ctx.player.hp).toBe(60 - 4);
   });
 
@@ -463,7 +466,7 @@ describe('バーストのペナルティ（受けるダメージ 1.5倍）', () 
   it('両者バーストなら誰も行動しないので、倍率の出番はない', async () => {
     const m = await playRound({ player: ['K', 'Q', '5'], enemyHand: ['K', 'Q', '4'] });
     expect(m.ctx.player.hp).toBe(60);
-    expect(m.ctx.enemy.hp).toBe(16);
+    expect(m.ctx.enemy.hp).toBe(Slime.maxHp);
     expect(m.logs.some((l) => l.includes('バースト ×'))).toBe(false);
   });
 
@@ -519,7 +522,7 @@ describe('ブロックとサレンダー', () => {
     expect(m.ctx.enemy.block).toBe(4);
   });
 
-  const dragon = { enemy: BlackDragon, enemyHand: ['9', '9'] as Rank[], from: 'Surrender' as const }; // 竜 18: 火炎の息
+  const dragon = { enemy: BlackDragon, enemyHand: ['K', '9'] as Rank[], from: 'Surrender' as const }; // 竜 19: 火炎の息
   it('防御: 受けるダメージが防具の上限に抑えられる（既定 5）。自分のスキルは不発で、ブロックは得ない', async () => {
     const m = await playRound({ player: ['K', '5'], ...dragon });
     expect(m.ctx.turn?.mode).toBe('defend');
@@ -559,32 +562,35 @@ describe('ブロックとサレンダー', () => {
 
 describe('ブロックの持ち越し', () => {
   it('ブロックは戦闘中ラウンドをまたいで残り、次のラウンドの攻撃も吸収する', async () => {
-    const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], stopAt: ['Deal'], playerSlots: WITH_BLOCKS }); // 15 vs 14: 盾6, 敵の酸
+    // 防具の上限は 99（上限で止まらないようにして、持ち越しブロックの吸収だけを見る）
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['6', '8'], stopAt: ['Deal'], playerSlots: WITH_BLOCKS, playerArmorCap: 99 }); // 15 vs 14: 盾6, 敵の酸
     const carried = 6 - ACID;
     expect(m.ctx.player.block).toBe(carried);
-    // 次のラウンド: プレイヤーが防御（上限 5）、敵の溶解
+    // 次のラウンド: プレイヤーが防御、敵の飲み込み（持ち越しブロックより大きい）
     m.ctx.player.hand.clear();
     m.ctx.enemy.hand.clear();
     ['K', '5'].forEach((r) => m.ctx.player.hand.add(makeCard(r as never, 'S')));
-    ['9', '9'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as never, 'H')));
+    ['K', 'K'].forEach((r) => m.ctx.enemy.hand.add(makeCard(r as never, 'H')));
     await m.runFrom('Surrender', ['Deal']);
+    expect(ENGULF).toBeGreaterThan(carried);
     expect(m.ctx.player.block).toBe(0);
-    expect(m.ctx.player.hp).toBe(60 - Math.max(0, MELT - carried)); // 持ち越しブロックが吸収 → 残りが HP に通る（上限 5 以内）
+    expect(m.ctx.player.hp).toBe(60 - (ENGULF - carried)); // 持ち越しブロックが吸収 → 残りが HP に通る
   });
 });
 
 describe('ブロックは後攻でも最初に付与される', () => {
   it('後攻の受け流しが、先攻の攻撃より前に入って攻撃を受け止める', async () => {
-    // 敵 17（溶解8）が先攻、プレイヤー 15（受け流し ブロック 6）が後攻
-    const m = await playRound({ player: ['7', '8'], enemyHand: ['K', '7'], playerSlots: WITH_BLOCKS });
+    // 敵 18（溶解3）が先攻、プレイヤー 15（受け流し ブロック 6）が後攻
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['9', '9'], playerSlots: WITH_BLOCKS });
     expect(m.ctx.turn).toMatchObject({ first: 'enemy', second: 'player' });
     expect(m.ctx.player.hp).toBe(60); // 溶解 - ブロック6（後攻でも先に付与）
     expect(m.ctx.player.block).toBe(6 - MELT);
   });
 
   it('先攻が後攻を倒しても、そのブロックは先に付与されている（攻撃はブロック 後に計算）', async () => {
-    const m = await playRound({ player: ['7', '8'], enemyHand: ['K', '7'], playerHp: 8, playerSlots: WITH_BLOCKS });
-    expect(m.ctx.player.hp).toBe(8);
+    // 敵 18（溶解3）が先攻。ブロックがなければ HP 3 のプレイヤーは倒れる
+    const m = await playRound({ player: ['7', '8'], enemyHand: ['9', '9'], playerHp: MELT, playerSlots: WITH_BLOCKS });
+    expect(m.ctx.player.hp).toBe(MELT);
     expect(m.ctx.winner).toBeNull();
   });
 

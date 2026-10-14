@@ -341,13 +341,13 @@ describe('スロット表の各マスの効果', () => {
 
   it('レリックで変わった効果が出る（砥石 POW+1: 大攻撃 11）。敵のスロットも同じ', () => {
     expect(badges(machine({ relics: [Whetstone] }), 'player')[20]).toBe('16'); // POW 10 + 1 = 11、POW+5
-    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '3', 20: '6' }); // スライム POW3: 溶解 POW / 飲み込み POW×2
+    expect(badges(machine(), 'enemy')).toMatchObject({ 17: '1', 18: '3', 20: '10' }); // スライム POW3: 酸の飛沫 POW×0.5 / 溶解 POW / 飲み込み POW×2+4
   });
 
   it('相手がバーストしているときは 1.5倍、伏せカードがあるうちは等倍', () => {
     const m = machine();
     give(m, 'player', ['K', 'Q', '5']); // バースト
-    expect(badges(m, 'enemy')[17]).toBe('4'); // 3 × 1.5
+    expect(badges(m, 'enemy')[18]).toBe('4'); // 溶解 3 × 1.5（切り捨て）
     const n = machine();
     give(n, 'enemy', ['K', 'Q']);
     n.ctx.enemy.hand.add(makeCard('5', 'S'), { faceDown: true });
@@ -365,9 +365,9 @@ describe('敵のスキル一覧（実数値つき）', () => {
     const r15 = rows.find((r) => r.key === 15)!;
     expect(r15).toMatchObject({ isFallback: false });
     expect(r15.skill.id).toBe('skel_guard');
-    // 骸骨兵 POW4: 斬り下ろし POW = 4 / 兜割り POW+3 = 7
+    // 骸骨兵 POW4: 斬り下ろし POW = 4 / 兜割り POW×2+2 = 10
     expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 POW＝4');
-    expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 POW+3＝7');
+    expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 POW×2+2＝10');
   });
 
   it('敵は全員 POW を持ち、一覧が作れる', () => {

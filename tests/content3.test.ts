@@ -150,9 +150,13 @@ describe('レリック（効果）', () => {
 
   it('棘の鎧: HP を削られたとき、その 20%（最低 1）を敵にも与える', async () => {
     const m = await playRound({ player: ['K', '7'], enemyHand: ['K', 'K'], enemy: enemy('knight'), relics: [ThornMail], enemyHp: 30 });
-    // 騎士 20: 断罪の一閃 POW4×2 = 8 → HP -8 → 棘 floor(1.6)=1（最低 1）、そのあと後攻の通常攻撃 7
-    expect(m.ctx.player.hp).toBe(60 - 8);
-    expect(m.ctx.enemy.hp).toBe(30 - 1 - 7);
+    // 騎士 20: 断罪の一閃 POW4×3 = 12 → HP -12 → 棘 floor(2.4)=2、そのあと後攻の通常攻撃 7
+    expect(m.ctx.player.hp).toBe(60 - 12);
+    expect(m.ctx.enemy.hp).toBe(30 - 2 - 7);
+    const low = await playRound({ player: ['6', '7'], enemyHand: ['8', '8'], enemy: enemy('knight'), relics: [ThornMail], enemyHp: 30 });
+    // 騎士 16（未設定）: 錆びた大剣 POW4 = 4 → HP -4 → 棘 floor(0.8)=0 → 最低 1、そのあと後攻の通常攻撃（13 は POW 3）
+    expect(low.ctx.player.hp).toBe(60 - 4);
+    expect(low.ctx.enemy.hp).toBe(30 - 1 - 3);
   });
 
   it('凱旋の杯（レジェンド）: 敵に勝つたび、最大 HP +1（現在の HP も +1）', async () => {
@@ -262,15 +266,16 @@ describe('第1〜3階層の敵の特性', () => {
   it('ガーゴイル・溶岩ゴーレム: 受けるダメージ -3（最低 1）', async () => {
     for (const id of ['gargoyle', 'golem']) {
       const e = enemy(id);
-      const m = await playRound({ player: ['K', 'K'], enemyHand: ['9', '9'], enemy: e, enemyHp: 60 });
+      // 敵 19（ガーゴイル: 急襲 / 溶岩ゴーレム: 噴火）はどちらも攻撃なので、敵のブロックが混ざらない
+      const m = await playRound({ player: ['K', 'K'], enemyHand: ['K', '9'], enemy: e, enemyHp: 60 });
       expect(60 - m.ctx.enemy.hp, id).toBe(15 - 3);
     }
   });
 
   it('炎の精霊: 攻撃ダメージ +2。業火の悪魔: 同値なら必ず先攻', async () => {
     const flame = await playRound({ player: ['K', '7'], enemyHand: ['K', 'K'], enemy: enemy('flame') });
-    // 20: 紅蓮 POW5×2+2 = 12、燃焼 +2 = 14（17 は未設定でブロック なし）
-    expect(flame.ctx.player.hp).toBe(60 - 14);
+    // 20: 紅蓮 POW5×2+4 = 14、燃焼 +2 = 16（17 は未設定でブロック なし）
+    expect(flame.ctx.player.hp).toBe(60 - 16);
     const imp = await playRound({ player: ['K', 'Q'], enemyHand: ['K', 'K'], enemy: enemy('imp') });
     expect(imp.ctx.turn).toMatchObject({ mode: 'sequential', first: 'enemy', second: 'player' });
   });
