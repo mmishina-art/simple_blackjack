@@ -157,7 +157,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   });
   const loadout = document.createElement('button');
   loadout.className = 'btn btn--stand map-foot__btn map-foot__main';
-  loadout.innerHTML = '<span class="btn__main">装備</span><span class="btn__sub">確認</span>';
+  loadout.innerHTML = '<span class="btn__main">装備</span>';
   loadout.addEventListener('click', () => {
     audio.sfx('click');
     handlers.onLoadout();
