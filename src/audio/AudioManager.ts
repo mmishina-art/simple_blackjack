@@ -12,6 +12,8 @@ const SFX_FILES: Partial<Record<string, string>> = Object.fromEntries(
 );
 /** 効果音ファイルの音量（ファイルは大きめに作られているので、合成音と同じくらいに下げる）。 */
 const FILE_GAIN = 0.45;
+/** 頻繁に鳴る軽い音（タップ・配る・めくる・選ぶ）は、戦闘の音より小さくする（ファイルはどれも同じ大きさで作られている）。 */
+const FILE_VOLUME: Partial<Record<SfxName, number>> = { click: 0.55, deal: 0.4, flip: 0.55, pick: 0.7, push: 0.8 };
 
 // A ハーモニックマイナー（Am - F - Dm - E）。小節ごとのベース音とアルペジオ（Hz）
 const BASS = [110.0, 87.31, 73.42, 82.41];
@@ -169,7 +171,7 @@ export class AudioManager {
     const file = this.buffers[name];
     if (file) {
       // 配る音は、毎回ほんの少し高さを変える（同じ音が続かないように）
-      this.playBuffer(file, t, name === 'deal' ? 0.94 + Math.random() * 0.12 : 1);
+      this.playBuffer(file, t, name === 'deal' ? 0.94 + Math.random() * 0.12 : 1, FILE_VOLUME[name] ?? 1);
       return;
     }
     switch (name) {
@@ -380,11 +382,14 @@ export class AudioManager {
     }
   }
 
-  private playBuffer(buf: AudioBuffer, start: number, rate: number): void {
-    const src = this.ctx!.createBufferSource();
+  private playBuffer(buf: AudioBuffer, start: number, rate: number, volume: number): void {
+    const ctx = this.ctx!;
+    const src = ctx.createBufferSource();
     src.buffer = buf;
     src.playbackRate.value = rate;
-    src.connect(this.fileGain);
+    const g = ctx.createGain();
+    g.gain.value = volume;
+    src.connect(g).connect(this.fileGain);
     src.start(start);
   }
 
