@@ -40,7 +40,7 @@ export function buildEnemySkillList(enemy: Entity, standOn = 0): HTMLElement {
     const die = row.key === SLOT_MAX && row.skill.effects.some((e) => e.type === 'attack');
     const short = describeSkillShort(row.skill, enemy.attackAt(row.key));
     const desc = die ? `${short.replace(/攻撃 (\d+)/, (_, n: string) => `攻撃 ${Number(n) * mult21}`)} <em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>` : short;
-    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}${fatal ? ' lslot--fatal' : ''}`;
+    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}${fatal ? ' lslot--fatal' : ''}${die ? ' lslot--die' : ''}`;
     // 危険な合計値は、赤い印と「危険」の文字で示す（色だけに頼らない）。21 は「必殺」（攻撃 2 倍）
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>

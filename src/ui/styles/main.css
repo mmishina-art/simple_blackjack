@@ -1518,18 +1518,23 @@ section { min-width: 0; }
 .logo__genre::before, .logo__genre::after { content: ''; flex: 0 1 34px; min-width: 8px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
 .logo__genre::after { transform: scaleX(-1); }
 
-/* ======== 敵の危険な合計値 ========
- * 敵ごとに決まった合計値でだけ出る、一撃の重い技。スロット表では赤い枠と上の赤い三角、一覧では赤い「危険」の札。21 は「必殺」の札（.die-tag）。
+/* ======== 敵の危険な合計値と、21 の必殺 ========
+ * 危険（敵ごとの、一撃の重い合計値）は静かに: 枠は普通のまま、数字と「危険」の文字を赤く、上に小さな赤い三角。
+ * 21 の必殺（攻撃 2 倍。危険より重い）は、いちばん目立たせる: 血の赤で塗り、ゆっくり脈打つ光。一覧では行ごと赤く、「必殺」の札も赤く塗る。
  */
-:root { --fatal: #d8483a; --fatal-bg: #2a0c0a; --fatal-glow: rgba(216, 72, 58, 0.55); }
-.slot.slot--fatal { border-color: var(--fatal); color: #ffb3a8; background: var(--fatal-bg); box-shadow: 0 0 6px var(--fatal-glow); }
+:root { --fatal: #d8483a; --fatal-text: #ff9c8c; --die: #ff5a46; --die-hi: #8a1a12; --die-lo: #3a0806; --die-glow: rgba(255, 70, 50, 0.75); }
+.slot.slot--fatal .slot__val { color: var(--fatal-text); font-weight: 800; }
 .slot.slot--fatal::before { content: ''; position: absolute; top: -1px; left: 50%; z-index: 2; width: 8px; height: 5px; transform: translateX(-50%); background: var(--fatal); clip-path: polygon(0 0, 100% 0, 50% 100%); }
-.slot--fatal.slot--active { box-shadow: 0 0 10px var(--fatal-glow); }
-.slot.slot--fatal:not(.slot--on) { opacity: 0.8; } /* 点灯していなくても、危ない場所は見えるように */
-.slots--bust .slot.slot--fatal { opacity: 0.4; }
-.lslot.lslot--fatal { border-color: var(--fatal); background: linear-gradient(90deg, var(--fatal-bg), #17110b 70%); }
-.lslot--fatal .lslot__desc { color: #ffb3a8; font-weight: 700; }
-.fatal-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: #ffd2ca; background: rgba(216, 72, 58, 0.25); border: 1px solid var(--fatal); border-radius: 8px; letter-spacing: 0.06em; vertical-align: middle; }
+.slot.slot--fatal:not(.slot--on) { opacity: 0.7; } /* 点灯していなくても、赤い数字が読めるように */
+.lslot--fatal .lslot__desc { color: var(--fatal-text); font-weight: 700; }
+.fatal-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: var(--fatal-text); border: 1px solid rgba(216, 72, 58, 0.6); border-radius: 8px; letter-spacing: 0.06em; vertical-align: middle; }
+.slot.slot--die { opacity: 1; border-color: var(--die); color: #fff0ea; background: radial-gradient(circle at 50% 30%, var(--die-hi), var(--die-lo) 80%); box-shadow: 0 0 10px var(--die-glow), inset 0 0 6px rgba(0, 0, 0, 0.6); animation: diePulse 1.4s ease-in-out infinite; }
+.slot.slot--die .slot__val, .slot.slot--die .slot__key { color: #fff; font-weight: 800; }
+@keyframes diePulse { 50% { box-shadow: 0 0 16px rgba(255, 70, 50, 0.95), inset 0 0 6px rgba(0, 0, 0, 0.6); } }
+.slots--bust .slot.slot--die { opacity: 0.5; animation: none; }
+.lslot.lslot--die { border-color: var(--fatal); background: linear-gradient(90deg, #5a0f0a, #24080a 75%); box-shadow: 0 0 12px rgba(216, 72, 58, 0.45); }
+.lslot--die .lslot__desc { color: #fff0ea; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .slot.slot--die { animation: none; } }
 
 /* ======== BUST or DIE の予告 ========
  * 敵の手が 21 かバーストのとき、伏せ札がめくられるまで、敵の舞台の上に出す（21 なら攻撃 2 倍、バーストなら行動できない）。
@@ -1541,4 +1546,4 @@ section { min-width: 0; }
 .omen__sub { font-size: 12px; letter-spacing: 0.1em; color: var(--bone); text-shadow: 0 1px 0 #000; }
 @keyframes omenPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
 @media (prefers-reduced-motion: reduce) { .omen { animation: none; } }
-.die-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 5px; margin-left: 4px; color: var(--logo-die); border: 1px solid var(--logo-die); border-radius: 8px; white-space: nowrap; }
+.die-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: #fff; background: #b8352b; border: 1px solid #ff6a5a; border-radius: 8px; white-space: nowrap; }

@@ -57,8 +57,8 @@ export class SlotStrip {
       const skill = id ? getSkill(id) : null;
       // 11以下と21は特殊スロット（金）。ほかはスキルのレア度に合わせる（空きはコモン）
       const look = slotLook(key, skill);
-      // 敵の危険な合計値は、赤い枠と上の赤い三角で示す（説明の文字にも「危険」）
-      cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${skill?.fatal ? ' slot--fatal' : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
+      // 敵の危険な合計値は、赤い数字と上の小さな赤い三角（説明の文字にも「危険」）。敵の 21 は必殺（血の赤で塗る）
+      cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${skill?.fatal ? ' slot--fatal' : ''}${entity.id === 'enemy' && key === SLOT_MAX ? ' slot--die' : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
       cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;
       const val = document.createElement('span');
       val.className = 'slot__val';
