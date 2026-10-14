@@ -289,3 +289,19 @@ describe('効果音の雰囲気（ダークファンタジーの重く暗い音�
     expect(src).toContain('this.makeImpulse(');
   });
 });
+
+describe('生成 AI で作った効果音ファイル', () => {
+  const src = readFileSync('src/audio/AudioManager.ts', 'utf8');
+  it('src/audio/sfx/<名前>.mp3 を置くだけで使い、ないものは合成音で鳴らす', () => {
+    expect(src).toContain("import.meta.glob<string>('./sfx/*.mp3'");
+    expect(src).toContain('const file = this.buffers[name];');
+    expect(src).toContain('this.loadSfxFiles(this.ctx);');
+  });
+  it('ファイルも Web Audio で鳴らす（音量・オン/オフは合成音と同じ経路）', () => {
+    expect(src).toContain('ctx.decodeAudioData(data)');
+    expect(src).toContain('this.fileGain.connect(this.master);');
+  });
+  it('mp3 は Service Worker の precache に入る（オフラインでも鳴る）', () => {
+    expect(readFileSync('vite.config.ts', 'utf8')).toMatch(/globPatterns: \['\*\*\/\*\.\{[^}]*mp3/);
+  });
+});

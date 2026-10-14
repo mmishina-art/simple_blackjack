@@ -3,6 +3,16 @@ export type SfxName =
 
 const STORAGE_KEY = 'bj-muted';
 
+/**
+ * 生成 AI で作った効果音（src/audio/sfx/<名前>.mp3。tools/sfx.sh で WAV から変換）。置くだけで使われ、ないものは合成音で鳴らす。
+ * ファイルも Web Audio（decodeAudioData）で鳴らすので、音量・オン/オフ・スリープ明けの扱いは合成音と同じ。
+ */
+const SFX_FILES: Partial<Record<string, string>> = Object.fromEntries(
+  Object.entries(import.meta.glob<string>('./sfx/*.mp3', { eager: true, query: '?url', import: 'default' })).map(([p, u]) => [p.replace(/^.*\/([^/]+)\.mp3$/, '$1'), u]),
+);
+/** 効果音ファイルの音量（ファイルは大きめに作られているので、合成音と同じくらいに下げる）。 */
+const FILE_GAIN = 0.45;
+
 // A ハーモニックマイナー（Am - F - Dm - E）。小節ごとのベース音とアルペジオ（Hz）
 const BASS = [110.0, 87.31, 73.42, 82.41];
 const ARP: number[][] = [
@@ -29,6 +39,9 @@ export class AudioManager {
   private bgmGain!: GainNode;
   private sfxGain!: GainNode;
   private noiseBuf: AudioBuffer | null = null;
+  /** 読み込んだ効果音ファイル（AudioContext を作り直したら、読み直す）。 */
+  private buffers: Partial<Record<SfxName, AudioBuffer>> = {};
+  private fileGain!: GainNode;
   private timer: number | null = null;
   private nextTime = 0;
   private step = 0;
@@ -139,6 +152,10 @@ export class AudioManager {
       wet.gain.value = 0.28;
       sfxTone.connect(reverb).connect(wet).connect(this.master);
       this.noiseBuf = this.makeNoise();
+      this.fileGain = this.ctx.createGain();
+      this.fileGain.gain.value = FILE_GAIN;
+      this.fileGain.connect(this.master);
+      this.loadSfxFiles(this.ctx);
     }
     void this.ctx.resume().catch(noop);
     this.startBgm();
@@ -149,6 +166,12 @@ export class AudioManager {
     if (!ctx || this._muted) return;
     if (ctx.state !== 'running') void ctx.resume().catch(noop);
     const t = ctx.currentTime + delaySec;
+    const file = this.buffers[name];
+    if (file) {
+      // 配る音は、毎回ほんの少し高さを変える（同じ音が続かないように）
+      this.playBuffer(file, t, name === 'deal' ? 0.94 + Math.random() * 0.12 : 1);
+      return;
+    }
     switch (name) {
       // 効果音は、ダークファンタジーに合わせた、重く暗い音（低い響き・金属・鐘。明るい長調のメロディや、ピコピコした矩形波は使わない）
       case 'click':
@@ -339,6 +362,30 @@ export class AudioManager {
     src.connect(filter).connect(g).connect(dest ?? this.sfxGain);
     src.start(start);
     src.stop(start + dur + 0.05);
+  }
+
+  /** 効果音ファイルを読み込む（失敗しても、合成音で鳴るだけ）。 */
+  private loadSfxFiles(ctx: AudioContext): void {
+    this.buffers = {};
+    if (typeof fetch !== 'function' || typeof ctx.decodeAudioData !== 'function') return;
+    for (const [name, url] of Object.entries(SFX_FILES)) {
+      if (!url) continue;
+      fetch(url)
+        .then((r) => r.arrayBuffer())
+        .then((data) => ctx.decodeAudioData(data))
+        .then((buf) => {
+          if (this.ctx === ctx) this.buffers[name as SfxName] = buf;
+        })
+        .catch(noop);
+    }
+  }
+
+  private playBuffer(buf: AudioBuffer, start: number, rate: number): void {
+    const src = this.ctx!.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.value = rate;
+    src.connect(this.fileGain);
+    src.start(start);
   }
 
   /** 残響（石の部屋）: 指数的に消えていくノイズの響き。 */
