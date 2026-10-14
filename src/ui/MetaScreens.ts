@@ -161,7 +161,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
         const known = enemyKnown(id);
         const drops = dropsOf(id);
         const dropHtml = id === bossId
-          ? '<span class="drops__note">階層を踏破すると、遺物をひとつ選べる</span>'
+          ? '<span class="drops__note">階層を踏破すると、遺物を3つから1つ選べる</span>'
           : drops.length === 0 ? '<span class="drops__note">なし</span>'
             : drops.map((sid) => {
               const sk = getSkill(sid);
