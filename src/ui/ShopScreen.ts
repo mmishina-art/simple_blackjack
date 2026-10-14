@@ -3,6 +3,7 @@ import { describeSkillBonus, getSkill, kindOfSkill, placementNote, rarityOfSkill
 import { inventoryEntries } from '../run/loadout';
 import { buyOffer, sellFromInventory, sellPrice, type ShopOffer } from '../run/shop';
 import { RELIC_POOL } from '../relics/catalog';
+import { buildScene } from './components/scenes';
 import { buildTopBar } from './components/TopBar';
 import { kindTag, medalKindClass } from './kind';
 import { rarityBadge, rarityClass } from './rarity';
@@ -27,7 +28,11 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
 
     const head = document.createElement('header');
     head.className = 'loadout__head';
-    head.innerHTML = `<p class="shop__gold">所持金 <strong>${run.gold}</strong> G</p>`;
+    const scene = buildScene('shop', '旅の商人', note || '「いらっしゃい。ゆっくり見ていきな」');
+    const purse = document.createElement('p');
+    purse.className = 'shop__gold';
+    purse.innerHTML = `<span class="shop__coin" aria-hidden="true"></span>所持金 <strong>${run.gold}</strong> G`;
+    head.append(scene, purse);
     screen.append(buildTopBar('ショップ', opts.onLeave, '出る'), head);
 
     const list = document.createElement('div');
@@ -89,12 +94,6 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
         });
     }
     screen.append(list);
-
-    const msg = document.createElement('p');
-    msg.className = 'shop__note';
-    msg.setAttribute('aria-live', 'polite');
-    msg.textContent = note;
-    screen.append(msg);
 
     root.replaceChildren(screen);
   };

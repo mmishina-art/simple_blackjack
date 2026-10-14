@@ -24,15 +24,16 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
   /** バージョンアップの候補（最大 3 つ。21 の会心の一撃系は、レジェンドになるまで必ず入る）。強化先のレア度の制限で置けないものは、理由つきで選べなくして出す。 */
   const upgradeCandidates = shrineUpgradeChoices(run, opts.rng);
 
-  const choices: { icon: string; name: string; description: string; run(): void }[] = [];
-  choices.push({ icon: '替', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（祠でできることは1つだけ。1 つでも入れ替えたら、祠を出る）', run: () => showSwapScreen(root, run, { onClose: (swapped) => (swapped ? opts.onDone('祠でスキルや道具を入れ替えた。') : show()) }) });
-  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを1つ上のレア度に変える（候補は最大 3 つ。会心の一撃系は必ず入る。コモン→レア 40 G、レア→レジェンド 80 G）', run: pickUpgrade });
-  choices.push({ icon: '祈', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
-  choices.push({ icon: '去', name: '立ち去る', description: '何もしない（また来られる）', run: opts.onLeave });
+  const choices: { icon: string; name: string; description: string; tone: 'a' | 'b' | 'c' | 'd'; run(): void }[] = [];
+  choices.push({ icon: '替', tone: 'a', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（祠でできることは1つだけ。1 つでも入れ替えたら、祠を出る）', run: () => showSwapScreen(root, run, { onClose: (swapped) => (swapped ? opts.onDone('祠でスキルや道具を入れ替えた。') : show()) }) });
+  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', tone: 'b', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを1つ上のレア度に変える（候補は最大 3 つ。会心の一撃系は必ず入る。コモン→レア 40 G、レア→レジェンド 80 G）', run: pickUpgrade });
+  choices.push({ icon: '祈', tone: 'c', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
+  choices.push({ icon: '去', tone: 'd', name: '立ち去る', description: '何もしない（また来られる）', run: opts.onLeave });
 
   const show = (): void => showChoiceScreen(root, {
     heading: '祠', sub: 'ひとつだけ選べ',
-    options: choices.map(({ icon, name, description }) => ({ icon, name, description })),
+    scene: { kind: 'shrine', line: 'ひとつだけ選べ。' },
+    options: choices.map(({ icon, name, description, tone }) => ({ icon, name, description, tone })),
     onPick: (i) => choices[i].run(),
   });
 
