@@ -5,8 +5,8 @@ import { SCENES } from '../src/ui/components/scenes';
 const css = readFileSync('src/ui/styles/main.css', 'utf8');
 
 describe('場所の挿絵（お店・祠・宿屋）', () => {
-  it('3 つの場面があり、読み上げ用の説明（aria-label）がある', () => {
-    expect(Object.keys(SCENES).sort()).toEqual(['inn', 'shop', 'shrine']);
+  it('5 つの場面（お店・祠・宿屋・スキル獲得・宝箱）があり、読み上げ用の説明（aria-label）がある', () => {
+    expect(Object.keys(SCENES).sort()).toEqual(['chest', 'inn', 'reward', 'shop', 'shrine']);
     for (const [kind, svg] of Object.entries(SCENES)) {
       expect(svg, kind).toMatch(/role="img"/);
       expect(svg, kind).toMatch(/aria-label="[^"]{10,}"/);

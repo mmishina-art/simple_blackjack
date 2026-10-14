@@ -118,7 +118,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
     const known = relicKnown(r.id);
     rGrid.append(el('div', `codex__item ${known ? rarityClass(r.rarity) : 'codex__item--unknown'}`,
       known
-        ? `<span class="medal medal--sm">${r.icon}</span><span>${r.name} ${rarityNote(r.rarity)}<small>${r.description}</small></span>`
+        ? `<span class="medal medal--sm medal--relic">${r.icon}</span><span>${r.name} ${rarityNote(r.rarity)}<small>${r.description}</small></span>`
         : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
   }
   relics.append(rGrid);

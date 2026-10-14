@@ -17,6 +17,8 @@ export interface ChoiceOption {
   kind?: SkillKind;
   /** 色の系統（祠の「入れ替え」「バージョンアップ」…を見分ける）。CSS の `.choice__card--tone-a`〜`d`。 */
   tone?: 'a' | 'b' | 'c' | 'd';
+  /** レリック（遺物）なら、六角形のメダル（スキルの丸と見分ける）。 */
+  relic?: boolean;
 }
 
 export interface ChoiceScreenConfig {
@@ -50,7 +52,7 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
     const btn = document.createElement('button');
     btn.className = `choice__card ${rarityClass(opt.rarity)}${opt.tone ? ` choice__card--tone-${opt.tone}` : ''}`;
     btn.disabled = true;
-    btn.innerHTML = `<span class="medal${opt.kind ? medalKindClass(opt.kind) : ''}">${opt.icon}</span>
+    btn.innerHTML = `<span class="medal${opt.kind ? medalKindClass(opt.kind) : ''}${opt.relic ? ' medal--relic' : ''}">${opt.icon}</span>
       <span class="choice__text"><strong>${opt.name}${opt.tag ? ` <em class="kind-tag kind-tag--${opt.kind ?? 'skill'}">${opt.tag}</em>` : ''}</strong><span>${opt.description}</span></span>
       ${opt.rarity ? rarityNote(opt.rarity) : ''}`;
     btn.addEventListener('click', () => {
