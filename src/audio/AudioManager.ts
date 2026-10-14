@@ -175,10 +175,14 @@ export class AudioManager {
         break;
       }
       case 'attack':
-        // 攻撃: 刃が空を切る音（帯域が下がる）と、重い一撃、鈍い金属の響き
-        this.sweepNoise(t, 0.22, 2600, 700, 0.5, 0.02);
-        this.tone(150, t + 0.06, 0.3, 'triangle', 0.45, 48);
-        this.bell(330, t + 0.06, 0.3, 0.07);
+        // 敵にダメージを与えた: 刃が空を切り、肉を断つ鈍い衝撃と、骨のきしむ割れ音。うめくように下がる低い声で、痛みを出す
+        this.sweepNoise(t, 0.12, 2600, 900, 0.36, 0.015);
+        this.noise(t + 0.07, 0.09, 1200, 0.62);
+        this.noise(t + 0.075, 0.035, 3600, 0.3);
+        this.noise(t + 0.11, 0.03, 2800, 0.18);
+        this.tone(115, t + 0.07, 0.32, 'sine', 0.5, 42);
+        this.tone(190, t + 0.1, 0.34, 'sawtooth', 0.16, 85);
+        this.tone(140, t + 0.12, 0.3, 'triangle', 0.14, 70);
         break;
       case 'damage':
         // ダメージを受ける: 体に響く、低く重い衝撃（ざらついた低音を少し重ねる）
