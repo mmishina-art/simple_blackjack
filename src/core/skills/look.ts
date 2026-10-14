@@ -19,3 +19,14 @@ export function slotLook(key: SlotKey, skill: SkillDef | null | undefined): Slot
   const tone = key === SLOT_MIN ? 'steel' : key === SLOT_MAX ? 'gold' : null;
   return { special: tone !== null, tone, rarity: skill ? rarityOfSkill(skill) : 'common' };
 }
+
+/**
+ * 敵の技の色分け（効果の種類）: ブロックを含む技 = 'block'（青）、回復を含む技 = 'heal'（緑）、攻撃だけ = null。
+ * 危険（赤い数字）と 21 の必殺（血の赤）は、こちらより優先する（呼ぶ側で外す）。
+ */
+export function effectTone(skill: SkillDef | null | undefined): 'block' | 'heal' | null {
+  if (!skill) return null;
+  if (skill.effects.some((e) => e.type === 'block')) return 'block';
+  if (skill.effects.some((e) => e.type === 'heal')) return 'heal';
+  return null;
+}

@@ -1547,3 +1547,21 @@ section { min-width: 0; }
 @keyframes omenPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
 @media (prefers-reduced-motion: reduce) { .omen { animation: none; } }
 .die-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: #fff; background: #b8352b; border: 1px solid #ff6a5a; border-radius: 8px; white-space: nowrap; }
+
+/* ======== 敵の技: ブロックは青、回復は緑 ========
+ * プレイヤーのブロック（青い盾の光）・回復（緑の光）の演出と同じ色。危険（赤い数字）と 21 の必殺（血の赤）が優先。
+ */
+:root { --tone-block: #8cc4f5; --tone-block-line: #3d6f9f; --tone-block-bg: #0e1722; --tone-heal: #8ee0a0; --tone-heal-line: #3f7f52; --tone-heal-bg: #0d1a12; }
+.slot.slot--tone-block { border-color: var(--tone-block-line); background: var(--tone-block-bg); color: var(--tone-block); }
+.slot.slot--tone-heal { border-color: var(--tone-heal-line); background: var(--tone-heal-bg); color: var(--tone-heal); }
+.slot.slot--tone-block:not(.slot--on), .slot.slot--tone-heal:not(.slot--on) { opacity: 0.6; }
+.lslot.lslot--tone-block .medal { border-color: var(--tone-block-line); color: var(--tone-block); background: var(--tone-block-bg); }
+.lslot.lslot--tone-heal .medal { border-color: var(--tone-heal-line); color: var(--tone-heal); background: var(--tone-heal-bg); }
+.lslot--tone-block .lslot__desc { color: var(--tone-block); }
+.lslot--tone-heal .lslot__desc { color: var(--tone-heal); }
+/* 敵の技の一覧: 効果が長い（攻撃 + ブロック + 必殺の札）ときは、技の名前を潰さず、効果のほうを折り返す */
+.lslot--info .lslot__desc { white-space: normal; text-align: right; line-height: 1.3; }
+.lslot--info .lslot__desc .die-tag, .lslot--info .lslot__desc .fatal-tag { white-space: nowrap; }
+.lslot.lslot--info { grid-template-columns: 38px 28px minmax(6em, 1fr) fit-content(52%); }
+.lslot--info .lslot__name { white-space: normal; line-height: 1.3; }
+.lslot--info .fatal-tag { display: inline-block; white-space: nowrap; }
