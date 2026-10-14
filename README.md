@@ -1,6 +1,8 @@
-# Blackjack Roguelike (MVP / Phase 1)
+# Bust or Die — ブラックジャック × ローグライク (MVP / Phase 1)
 
 ブラックジャック×ローグライクの対戦型RPG。スマホ縦画面・PWA。
+
+題名の「Bust or Die」は「バースト（21超え）か、死か」。タイトル画面のロゴは、BUST を金、DIE を血の赤にして、下にジャンル（BLACKJACK ROGUELIKE）を添える。旧名は Blackjack Roguelike（リポジトリ名・保存キー・バックアップの `app` 名・キャッシュ名は、記録を残すため旧名のまま）。
 
 ## 遊び方
 

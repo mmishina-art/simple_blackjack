@@ -62,3 +62,18 @@ describe('枠とボタン: 鉄と鋲', () => {
     expect(root).not.toContain('--iron-shadow');
   });
 });
+
+describe('題名「Bust or Die」', () => {
+  it('タイトルのロゴ・アプリの名前・タブの題が新しい名前', () => {
+    expect(read('src/main.ts')).toContain('<span class="logo__die">DIE</span>');
+    expect(read('src/main.ts')).toContain('BLACKJACK ROGUELIKE');
+    expect(read('index.html')).toContain('<title>Bust or Die</title>');
+    const vite = read('vite.config.ts');
+    expect(vite).toContain("name: 'Bust or Die'");
+    expect(vite).toContain("short_name: 'Bust or Die'");
+  });
+  it('記録を残すため、保存キーとバックアップの app 名は旧名のまま', () => {
+    expect(read('src/meta/Meta.ts')).toContain('bj-meta-v1');
+    expect(read('src/meta/backup.ts')).not.toContain('bust-or-die');
+  });
+});
