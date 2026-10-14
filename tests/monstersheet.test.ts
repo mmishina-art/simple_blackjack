@@ -61,8 +61,8 @@ describe('落とし物の出やすさ', () => {
 describe('マップのマスの絵', () => {
   const icons = readFileSync('src/ui/components/tileIcons.ts', 'utf8');
   it('宝・店・祠・宿屋に絵があり、マップが使う', () => {
-    for (const k of ['chest', 'shop', 'shrine', 'inn']) expect(icons).toContain(`${k}:`);
+    for (const k of ['start', 'chest', 'shop', 'shrine', 'inn']) expect(icons).toContain(`${k}:`);
     expect(map).toContain('TILE_ICONS[t.kind]');
-    expect(map).toContain("chest: '', inn: '', shrine: '', boss: '王', shop: ''");
+    expect(map).toContain("start: '', empty: '', enemy: '敵', chest: '', inn: '', shrine: '', boss: '王', shop: ''");
   });
 });

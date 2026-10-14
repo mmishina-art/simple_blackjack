@@ -21,8 +21,8 @@ const boardHeight = (rows: number): number => (rows <= FIT_ROWS ? 640 : PAD * 2 
 const ROW_Y = (row: number, rows: number): number =>
   rows <= FIT_ROWS ? 586 - row * ((586 - 64) / Math.max(1, rows - 1)) : boardHeight(rows) - PAD - row * ROW_STEP;
 
-/** 絵のないマスの文字（宝・店・祠・宿屋は tileIcons の絵）。 */
-const ICON: Record<TileKind, string> = { start: '始', empty: '', enemy: '敵', chest: '', inn: '', shrine: '', boss: '王', shop: '' };
+/** 絵のないマスの文字（スタート・宝・店・祠・宿屋は tileIcons の絵）。 */
+const ICON: Record<TileKind, string> = { start: '', empty: '', enemy: '敵', chest: '', inn: '', shrine: '', boss: '王', shop: '' };
 
 export interface MapHandlers {
   onMove(tileId: string): void;

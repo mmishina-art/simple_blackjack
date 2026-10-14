@@ -1380,3 +1380,4 @@ section { min-width: 0; }
 .tile--shop .tile__glyph { color: #4fb0d6; }
 .tile--shrine .tile__glyph { color: #8a6ab8; }
 .tile--inn .tile__glyph { color: var(--moss); }
+.tile--start .tile__glyph { color: var(--bone); }

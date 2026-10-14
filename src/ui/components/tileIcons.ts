@@ -2,9 +2,12 @@ import type { TileKind } from '../../map/StageMap';
 
 /**
  * マップのマスに出す絵（宝箱・店・祠・宿屋）。-12〜12 の座標で描いた線画で、色は `currentColor`（CSS の `color`）。
- * 敵・ボスは敵の絵、スタートは文字を出すので、ここにはない。
+ * 敵・ボスは敵の絵を出すので、ここにはない。
  */
 export const TILE_ICONS: Partial<Record<TileKind, string>> = {
+  // スタート: 旗（柱と、なびく旗と、台）
+  start: `<path d="M-4 -10.5V10M-8 10H0"/>
+    <path d="M-4 -9.5H8.5L5.2 -5.2L8.5 -0.8H-4Z" fill="currentColor" fill-opacity="0.35"/>`,
   // 宝箱: 蓋が開いて金貨があふれ、宝石の留め金と輝きがある豪華な箱
   chest: `<path d="M-9 -1L-7.2 -8H7.2L9 -1Z" fill="currentColor" fill-opacity="0.22"/>
     <circle cx="-4.2" cy="-2" r="2.3" fill="currentColor"/><circle cx="0" cy="-3.4" r="2.6" fill="currentColor"/><circle cx="4.2" cy="-2" r="2.3" fill="currentColor"/>
