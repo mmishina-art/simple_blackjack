@@ -44,7 +44,7 @@ export class SlotStrip {
    * totalHidden: 手札が伏せられていて合計値が分からない（敵の行動前）。
    * effects: スロットごとの効果の予測（レリック・特性・相手のバーストを反映）。
    */
-  update(entity: Entity, rules: RuleSet, callout?: Callout | null, totalHidden = false, effects?: ReadonlyMap<SlotKey, readonly PreviewPart[]>): void {
+  update(entity: Entity, rules: RuleSet, callout?: Callout | null, totalHidden = false, effects?: ReadonlyMap<SlotKey, readonly PreviewPart[]>, hiddenNote = '最後の1枚が伏せられている（合計は不明）'): void {
     const size = entity.hand.size;
     const total = entity.hand.total(rules);
     const known = size > 0 && !totalHidden;
@@ -80,7 +80,7 @@ export class SlotStrip {
       this.calloutKey = '';
     };
     if (size === 0) text('');
-    else if (totalHidden) text('最後の1枚が伏せられている（合計は不明）');
+    else if (totalHidden) text(hiddenNote);
     else if (bust) text(`バースト！ ${bustPenaltyText(rules, entity)}`);
     else if (callout) this.renderCallout(callout);
     else {

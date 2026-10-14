@@ -78,6 +78,7 @@ export class BattleMachine {
       round: 0,
       turn: null,
       playerSurrendered: false,
+      bustOrDie: false,
       plan: {},
       winner: null,
       debugWin: false,

@@ -199,7 +199,7 @@ atk('dragon_swipe', '尾の一撃', 1, 0, '攻');
 atk('dragon_claw', '竜爪', 1, 2, '爪');
 atk('dragon_breath', '火炎の息', 2, 4, '剛');
 atk('dragon_inferno', '業火', 3, 2, '絶');
-atk('dragon_apocalypse', '終焉の炎', 4, 0, '滅');
+atk('dragon_apocalypse', '終焉の炎', 1, 4, '滅');
 
 
 // ---- 第1階層のボス・第2階層・第3階層の敵 ----
@@ -233,7 +233,7 @@ atk('serpent_bite', '毒牙', 1, 0, '牙');
 atk('serpent_coil', '締めつけ', 1, 3, '締');
 defineSkill({ id: 'serpent_scale', name: '鱗の守り', icon: '鱗', effects: [{ type: 'block', amount: 8 }] });
 atk('serpent_tide', '津波', 3, 2, '波');
-atk('serpent_abyss', '深淵の咆哮', 4, 2, '淵');
+atk('serpent_abyss', '深淵の咆哮', 1, 3, '淵');
 
 atk('flame_spark', '火の粉', 1, 0, '火');
 atk('flame_burst', '爆炎', 1, 2, '爆');
@@ -251,7 +251,7 @@ defineSkill({
   id: 'imp_siphon', name: '魂の搾取', icon: '搾',
   effects: [{ type: 'attack', mult: 1, add: 0 }, { type: 'heal', amount: 4 }],
 });
-atk('imp_hellfire', '地獄の業火', 2, 0, '獄');
+atk('imp_hellfire', '地獄の業火', 1, 2, '獄');
 
 // 鋼鉄のゴーレム（ブロックを多用する敵）。壁で守りを固め、盾で殴り、ブロックを重ねる
 atk('ig_punch', '鉄の拳', 1, 1, '拳');
@@ -266,29 +266,30 @@ assignRarity(['slime_engulf', 'skel_cleave', 'bat_screech', 'ghoul_devour', 'dra
 /**
  * 敵の必殺（危険な合計値）: 敵ごとに決まった合計値でだけ出る、一撃の重い技。それ以外の合計値の技は軽い。
  * 敵の札は最後の1枚以外が見えているので、「この手は危ない → 防御」と読める（敵ごとの場所を覚えるほど勝てる）。
+ * 21 は必殺にしない（21 はどの敵も攻撃 2 倍で、「BUST or DIE」の予告が出るため。RuleSet.enemy21Multiplier）。
  * スロット表では赤い印で示す。
  */
 export const FATAL_SKILLS: readonly SkillId[] = [
   'slime_engulf', 'skel_cleave', 'bat_dive', 'ghoul_devour', 'knight_cleave',
-  'merman_rush', 'garg_crush', 'wraith_curse', 'ig_crush', 'serpent_tide', 'serpent_abyss',
-  'flame_nova', 'golem_eruption', 'imp_hex', 'dragon_breath', 'dragon_inferno', 'dragon_apocalypse',
+  'merman_rush', 'garg_crush', 'wraith_curse', 'ig_crush', 'serpent_tide',
+  'flame_nova', 'golem_eruption', 'imp_hex', 'dragon_breath', 'dragon_inferno',
 ];
 for (const id of FATAL_SKILLS) getSkill(id).fatal = true;
 
 export const ENEMY_SLOTS = {
-  slime: slotsFromRanges([[14, 17, 'slime_acid'], [18, 19, 'slime_melt'], [20, 21, 'slime_engulf']]),
-  skeleton: slotsFromRanges([[15, 16, 'skel_guard'], [17, 18, 'skel_slash'], [19, 21, 'skel_cleave']]),
+  slime: slotsFromRanges([[14, 17, 'slime_acid'], [18, 19, 'slime_melt'], [20, 20, 'slime_engulf'], [21, 21, 'slime_melt']]),
+  skeleton: slotsFromRanges([[15, 16, 'skel_guard'], [17, 18, 'skel_slash'], [19, 20, 'skel_cleave'], [21, 21, 'skel_slash']]),
   bat: slotsFromRanges([[13, 14, 'bat_dive'], [15, 17, 'bat_bite'], [18, 19, 'bat_drain'], [20, 21, 'bat_screech']]),
   ghoul: slotsFromRanges([[16, 17, 'ghoul_devour'], [18, 19, 'ghoul_claw'], [20, 21, 'ghoul_rend']]),
-  knight: slotsFromRanges([[17, 18, 'knight_guard'], [19, 19, 'knight_bash'], [20, 21, 'knight_cleave']]),
+  knight: slotsFromRanges([[17, 18, 'knight_guard'], [19, 19, 'knight_bash'], [20, 20, 'knight_cleave'], [21, 21, 'knight_bash']]),
   merman: slotsFromRanges([[15, 16, 'merman_rush'], [17, 18, 'merman_dive'], [19, 21, 'merman_tide']]),
-  gargoyle: slotsFromRanges([[16, 18, 'garg_harden'], [19, 19, 'garg_swoop'], [20, 21, 'garg_crush']]),
+  gargoyle: slotsFromRanges([[16, 18, 'garg_harden'], [19, 19, 'garg_swoop'], [20, 20, 'garg_crush'], [21, 21, 'garg_swoop']]),
   wraith: slotsFromRanges([[16, 16, 'wraith_drain'], [17, 18, 'wraith_curse'], [19, 21, 'wraith_wail']]),
   serpent: slotsFromRanges([[18, 18, 'serpent_scale'], [19, 19, 'serpent_coil'], [20, 20, 'serpent_tide'], [21, 21, 'serpent_abyss']]),
-  flame: slotsFromRanges([[17, 18, 'flame_burst'], [19, 21, 'flame_nova']]),
-  golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 18, 'golem_slam'], [19, 21, 'golem_eruption']]),
+  flame: slotsFromRanges([[17, 18, 'flame_burst'], [19, 20, 'flame_nova'], [21, 21, 'flame_burst']]),
+  golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 18, 'golem_slam'], [19, 20, 'golem_eruption'], [21, 21, 'golem_slam']]),
   imp: slotsFromRanges([[17, 18, 'imp_hex'], [19, 20, 'imp_siphon'], [21, 21, 'imp_hellfire']]),
-  iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 21, 'ig_crush']]),
+  iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 20, 'ig_crush'], [21, 21, 'ig_bash']]),
   dragon: slotsFromRanges([
     [18, 18, 'dragon_claw'], [19, 19, 'dragon_breath'], [20, 20, 'dragon_inferno'], [21, 21, 'dragon_apocalypse'],
   ]),

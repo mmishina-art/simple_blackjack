@@ -1,6 +1,7 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { EnemyDef } from '../../core/entities/enemies/EnemyDef';
-import { BASIC_ICON, describeSkillShort, fallbackLabel } from '../../core/skills/Skill';
+import { createRuleSet } from '../../core/rules/RuleSet';
+import { BASIC_ICON, describeSkillShort, fallbackLabel, SLOT_MAX } from '../../core/skills/Skill';
 import { slotLook } from '../../core/skills/look';
 import { describeSlotTable } from '../../core/skills/table';
 import { enemyLevel, hitsToDefeat } from '../../core/entities/enemies/level';
@@ -39,7 +40,7 @@ export function buildEnemySkillList(enemy: Entity, standOn = 0): HTMLElement {
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>
       <span class="lslot__name">${row.isFallback ? fallbackLabel(row.skill) : row.skill.name}${fatal ? ' <em class="fatal-tag">必殺</em>' : ''}</span>
-      <span class="lslot__desc">${describeSkillShort(row.skill, enemy.attackAt(row.key))}</span>`;
+      <span class="lslot__desc">${describeSkillShort(row.skill, enemy.attackAt(row.key))}${row.key === SLOT_MAX && row.skill.effects.some((e) => e.type === 'attack') ? ` <em class="die-tag">21で攻撃×${createRuleSet().enemy21Multiplier}</em>` : ''}</span>`;
     list.append(el);
   }
   return list;

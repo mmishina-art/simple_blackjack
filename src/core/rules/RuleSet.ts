@@ -17,6 +17,8 @@ export interface RuleSet {
   reshuffleThreshold: number;
   /** バーストした側が、相手の攻撃から受けるダメージの倍率（小数点以下は切り捨て。ブロックが先に吸収する）。 */
   bustDamageMultiplier: number;
+  /** 敵の合計値がちょうど 21 のときの、敵の攻撃ダメージの倍率（「BUST or DIE」の DIE）。 */
+  enemy21Multiplier: number;
 }
 
 export function createRuleSet(overrides: Partial<RuleSet> = {}): RuleSet {
@@ -28,6 +30,7 @@ export function createRuleSet(overrides: Partial<RuleSet> = {}): RuleSet {
     aceBonus: 10,
     reshuffleThreshold: 15,
     bustDamageMultiplier: 1.5,
+    enemy21Multiplier: 2,
     ...overrides,
   };
 }

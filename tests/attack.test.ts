@@ -367,7 +367,8 @@ describe('敵のスキル一覧（実数値つき）', () => {
     expect(r15.skill.id).toBe('skel_guard');
     // 骸骨兵 POW4: 斬り下ろし POW = 4 / 兜割り POW×2+2 = 10
     expect(rows.find((r) => r.key === 18)!.text).toBe('攻撃 POW＝4');
-    expect(rows.find((r) => r.key === 21)!.text).toBe('攻撃 POW×2+2＝10');
+    expect(rows.find((r) => r.key === 20)!.text).toBe('攻撃 POW×2+2＝10');
+    expect(rows.find((r) => r.key === 21)!.skill.id).toBe('skel_slash'); // 21 は必殺にしない（どの敵も 21 は攻撃 2 倍のため）
   });
 
   it('敵は全員 POW を持ち、一覧が作れる', () => {
