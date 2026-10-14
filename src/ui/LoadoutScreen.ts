@@ -47,7 +47,9 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
     const head = document.createElement('header');
     head.className = 'loadout__head';
-    head.innerHTML = `<p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : tab === 'relics' ? 'いま持っているレリック（レア度の高い順）' : 'いまの装備の確認（道具袋の中身は、タップで置く・売る）'}</p>`;
+    // 説明文は、置き先を選ぶとき・レリックのタブのときだけ。スキルの確認の画面（ふだん）は、説明なし
+    const hint = armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : tab === 'relics' ? 'いま持っているレリック（レア度の高い順）' : '';
+    if (hint) head.innerHTML = `<p class="loadout__hint">${hint}</p>`;
     if (!armed) {
       const tabs = document.createElement('div');
       tabs.className = 'codex-tabs loadout__tabs';
@@ -194,20 +196,12 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     const sk = id ? getSkill(id) : null;
     const row = document.createElement('button');
     const taking = !!armed && armedMode === 'pouch';
-    row.className = `lslot lslot--set lslot--pouch lslot--tap${armed && !taking ? ' lslot--target' : ''}`;
-    const icon = sk ? `<span class="medal medal--sm ${rarityClass(rarityOfSkill(sk))}${medalKindClass(kindOfSkill(sk))}">${sk.icon}</span>` : '<span class="medal medal--sm medal--empty">袋</span>';
+    row.className = `lslot lslot--set lslot--pouch lslot--noicon lslot--tap${armed && !taking ? ' lslot--target' : ''}`;
     const name = taking ? '取り出し中' : armed ? '袋に入れる' : sk ? `${sk.name} ${kindTag(sk)}` : '空き';
     const desc = taking ? 'やめると袋にもどる' : armed
       ? (run.inventory.some((x, i) => !(x === armed && i === run.inventory.indexOf(x))) ? '中身は売られる' : '1 つだけ')
       : sk ? describeSkillBonus(sk) : '';
-    row.innerHTML = `<span class="lslot__key">道具袋</span>${icon}<span class="lslot__name">${name}</span><span class="lslot__desc">${desc}</span><span class="lslot__go" aria-hidden="true">${(armed && !taking) || sk ? '›' : ''}</span>`;
-    const pouchIcon = row.querySelector('.medal');
-    if (sk && !armed && pouchIcon) {
-      pouchIcon.setAttribute('role', 'button');
-      pouchIcon.setAttribute('aria-label', `${sk.name}の説明を見る`);
-      pouchIcon.classList.add('lslot__icon-tap');
-      pouchIcon.addEventListener('click', (e) => { e.stopPropagation(); openSkillInfo(sk, { where: '道具袋' }); });
-    }
+    row.innerHTML = `<span class="lslot__key">道具袋</span><span class="lslot__name">${name}</span><span class="lslot__desc">${desc}</span><span class="lslot__go" aria-hidden="true">${(armed && !taking) || sk ? '›' : ''}</span>`;
     row.addEventListener('click', () => {
       if (armed) return stashArmed();
       if (!id || !sk) return;
