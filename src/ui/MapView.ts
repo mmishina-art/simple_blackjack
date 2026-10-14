@@ -1,5 +1,5 @@
 import { audio } from '../audio/AudioManager';
-import { rarityClass } from './rarity';
+import { relicMedal } from './components/relicMedal';
 import { isCleared, reachableTiles, type RunState } from '../run/Run';
 import { tileOf, TILE_LABEL, type TileDef, type TileKind } from '../map/StageMap';
 import { stageRows } from '../map/stages';
@@ -46,11 +46,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   relics.className = 'map-hud__relics';
   if (run.relics.length === 0) relics.textContent = '遺物なし';
   for (const r of run.relics) {
-    const m = document.createElement('span');
-    m.className = `medal medal--sm ${rarityClass(r.rarity)}`;
-    m.textContent = r.icon;
-    m.title = `${r.name}: ${r.description}`;
-    relics.append(m);
+    relics.append(relicMedal(r, run.slots));
   }
   hud.append(relics);
 

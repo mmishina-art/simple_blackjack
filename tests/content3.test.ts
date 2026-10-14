@@ -5,6 +5,7 @@ import { ALL_POOL, ARMOR_POOL, ITEM_POOL, SKILL_POOL, slotAttack } from '../src/
 import { attackValue, describeSkill, getSkill, hasAttack, rarityOfSkill, supportValue, type SkillDef } from '../src/core/skills/Skill';
 import { CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, computeShards, SHARD_CLEAR_BONUS, SHARD_STAGE_BONUS } from '../src/meta/Meta';
 import { DEFAULT_PLAYER_SLOTS } from '../src/core/skills/catalog';
+import { relicActive } from '../src/relics/Relic';
 import { ArtisanTools, CounterStance, DefenderCharm, FullRing, LuckyDice, NoBustPenalty, RELIC_POOL, ThornMail, TriumphCup, Unyielding } from '../src/relics/catalog';
 import { noWait, playRound } from './helpers';
 
@@ -277,5 +278,25 @@ describe('第1〜3階層の敵の特性', () => {
   it('全員の LV と魂片: 階層が進むほど敵が強く、踏破した階層の分の魂片が増える', () => {
     expect(computeShards({ maxRow: 24, enemiesDefeated: 20, cleared: true, stagesCleared: 2 })).toBe(24 * 2 + 20 * 4 + 2 * SHARD_STAGE_BONUS + SHARD_CLEAR_BONUS);
     expect(computeShards({ maxRow: 5, enemiesDefeated: 2, cleared: false })).toBe(5 * 2 + 2 * 4);
+  });
+});
+
+describe('条件つきのレリックの表示（満杯の指輪）', () => {
+  const full = { 12: 'jab', 13: 'jab', 14: 'jab', 15: 'herb', 16: 'jab', 17: 'jab', 18: 'jab', 19: 'jab', 20: 'big_attack' };
+
+  it('満杯の指輪は、12〜20 がすべて埋まっているときだけ「効果が出ている」。条件のないレリックは、常に出ている', () => {
+    expect(relicActive(FullRing, full)).toBe(true);
+    const { 17: _gap, ...gap } = full;
+    expect(relicActive(FullRing, gap)).toBe(false);
+    expect(relicActive(FullRing, { 21: 'ace_strike' })).toBe(false);
+    for (const r of RELIC_POOL.filter((x) => x !== FullRing)) expect(relicActive(r, {}), r.id).toBe(true);
+  });
+
+  it('効果が出ていないあいだは、メダリオンがグレー（点線の枠）。説明にも「いまは効果なし」と出る', async () => {
+    const css = (await import('node:fs')).readFileSync('src/ui/styles/main.css', 'utf8');
+    expect(css).toMatch(/\.medal--idle \{[^}]*grayscale\(1\)[^}]*border-style: dashed/);
+    const src = (await import('node:fs')).readFileSync('src/ui/components/relicMedal.ts', 'utf8');
+    expect(src).toContain('medal--idle');
+    expect(src).toContain('いまは効果なし');
   });
 });

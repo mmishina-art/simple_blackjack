@@ -113,9 +113,10 @@ const FULL_RING_SLOTS = [12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 export const FullRing: Relic = {
   id: 'fullring', rarity: 'rare', name: '満杯の指輪', icon: '満',
-  description: '12〜20 のスロットがすべて埋まっていると、基本パワー（POW）+3',
+  description: '12〜20 のスロットがすべて埋まっていると、基本パワー（POW）+3（埋まっていないときは、グレーで表示）',
+  isActive: (slots) => FULL_RING_SLOTS.every((k) => slots[k]),
   apply({ player }) {
-    if (FULL_RING_SLOTS.every((k) => player.slots[k])) player.attack += 3;
+    if (FullRing.isActive!(player.slots)) player.attack += 3;
   },
 };
 
