@@ -40,25 +40,14 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   const screen = document.createElement('main');
   screen.className = 'map-screen';
 
-  // 上部: HP と所持レリック
+  // 上部（枠なしの細い帯）: 1 行目 = 階層名（左）とゴールド（右）/ 2 行目 = HP バー（数字つき）/ 3 行目 = 所持レリック
   const hud = document.createElement('section');
   hud.className = 'map-hud';
-  hud.innerHTML = `<div class="map-hud__row"><strong>第${run.stage}階層　${run.map.name}</strong></div>
-    <div class="map-hud__bar"><div class="map-hud__fill" style="width:${Math.max(0, (run.hp / run.maxHp) * 100)}%"></div></div>`;
-  const giveUp = document.createElement('button');
-  giveUp.type = 'button';
-  giveUp.className = 'map-hud__giveup';
-  giveUp.innerHTML = '<span aria-hidden="true">‹</span> タイトルへ';
-  giveUp.setAttribute('aria-label', 'タイトルへ戻る（冒険をあきらめる）');
-  giveUp.addEventListener('click', () => {
-    audio.sfx('click');
-    openSheet({
-      title: '冒険をあきらめる？',
-      subtitle: 'この冒険は終わる。魂片は入らない（途中の記録は残らない）',
-      options: [{ kind: 'confirm', icon: '去', name: 'あきらめて、タイトルへ', detail: '魂片は入らず、冒険は最初からになる', onPick: () => handlers.onGiveUp() }],
-    });
-  });
-  hud.querySelector('.map-hud__row')?.append(giveUp);
+  const pct = Math.max(0, Math.min(100, (run.hp / run.maxHp) * 100));
+  hud.innerHTML = `<div class="map-hud__row"><span class="map-hud__stage"><b>第${run.stage}階層</b>${run.map.name}</span>
+      <span class="map-hud__gold" aria-label="所持金 ${run.gold} ゴールド"><span class="map-hud__coin" aria-hidden="true"></span><b>${run.gold}</b> G</span></div>
+    <div class="map-hud__hp${run.hp <= run.maxHp * 0.3 ? ' map-hud__hp--low' : ''}" role="img" aria-label="HP ${run.hp} / ${run.maxHp}"><div class="map-hud__fill" style="width:${pct}%"></div>
+      <div class="map-hud__hptext" aria-hidden="true"><span>HP</span><span><b>${Math.max(0, run.hp)}</b> / ${run.maxHp}</span></div></div>`;
   const relics = document.createElement('div');
   relics.className = 'map-hud__relics';
   if (run.relics.length === 0) relics.textContent = '遺物なし';
@@ -144,20 +133,37 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   boardWrap.className = `map-board-wrap${tall ? ' map-board-wrap--tall' : ''}`;
   boardWrap.append(board);
 
-  // 下部: メッセージと操作
+  // 下部: メッセージ（枠なしの 1 行）と、操作のボタン（メッセージとは別の行）
   const foot = document.createElement('section');
   foot.className = 'map-foot';
   const msg = document.createElement('p');
   msg.className = 'map-foot__msg';
+  msg.setAttribute('aria-live', 'polite');
   msg.textContent = message || (reachable.size > 1 ? '分かれ道だ。進む先を選べ。' : '光っているマスへ進め。');
+  const actions = document.createElement('div');
+  actions.className = 'map-foot__actions';
+  const giveUp = document.createElement('button');
+  giveUp.type = 'button';
+  giveUp.className = 'btn map-foot__btn map-foot__giveup';
+  giveUp.innerHTML = '<span class="btn__main">‹ タイトルへ</span>';
+  giveUp.setAttribute('aria-label', 'タイトルへ戻る（冒険をあきらめる）');
+  giveUp.addEventListener('click', () => {
+    audio.sfx('click');
+    openSheet({
+      title: '冒険をあきらめる？',
+      subtitle: 'この冒険は終わる。魂片は入らない（途中の記録は残らない）',
+      options: [{ kind: 'confirm', icon: '去', name: 'あきらめて、タイトルへ', detail: '魂片は入らず、冒険は最初からになる', onPick: () => handlers.onGiveUp() }],
+    });
+  });
   const loadout = document.createElement('button');
-  loadout.className = 'btn btn--stand map-foot__btn';
+  loadout.className = 'btn btn--stand map-foot__btn map-foot__main';
   loadout.innerHTML = '<span class="btn__main">装備</span><span class="btn__sub">確認</span>';
   loadout.addEventListener('click', () => {
     audio.sfx('click');
     handlers.onLoadout();
   });
-  foot.append(msg, loadout);
+  actions.append(giveUp, loadout);
+  foot.append(msg, actions);
 
   screen.append(hud, boardWrap, foot);
   root.replaceChildren(screen);
