@@ -57,8 +57,8 @@ export class SlotStrip {
       const skill = id ? getSkill(id) : null;
       // 11以下と21は特殊スロット（金）。ほかはスキルのレア度に合わせる（空きはコモン）
       const look = slotLook(key, skill);
-      // 敵の技: ブロックは青、回復は緑（危険・21 の必殺の赤を優先する）
-      const tone = entity.id === 'enemy' && key !== SLOT_MAX && !skill?.fatal ? effectTone(skill) : null;
+      // 敵の技の役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 の必殺は赤（slot--die）
+      const tone = entity.id === 'enemy' && key !== SLOT_MAX ? effectTone(skill) ?? 'attack' : null;
       // 敵の危険な合計値は、赤い数字と上の小さな赤い三角（説明の文字にも「危険」）。敵の 21 は必殺（血の赤で塗る）
       cell.className = `slot ${look.special ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(look.rarity)}`}${skill?.fatal ? ' slot--fatal' : ''}${entity.id === 'enemy' && key === SLOT_MAX ? ' slot--die' : ''}${tone ? ` slot--tone-${tone}` : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
       cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;

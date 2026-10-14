@@ -1565,3 +1565,10 @@ section { min-width: 0; }
 .lslot.lslot--info { grid-template-columns: 38px 28px minmax(6em, 1fr) fit-content(52%); }
 .lslot--info .lslot__name { white-space: normal; line-height: 1.3; }
 .lslot--info .fatal-tag { display: inline-block; white-space: nowrap; }
+
+/* 敵の技のアイコン: 攻撃はオレンジ（危険の赤い数字と見分けられる、黄色寄りの色）、21 の必殺は赤 */
+:root { --tone-attack: #f0a050; --tone-attack-line: #8a5a22; --die-icon: #ffb3a8; --die-medal: #ff6a5a; }
+.slot.slot--tone-attack .slot__icon { color: var(--tone-attack); }
+.lslot.lslot--tone-attack .medal { border-color: var(--tone-attack-line); color: var(--tone-attack); }
+.slot.slot--die .slot__icon { color: var(--die-icon); }
+.lslot.lslot--die .medal { border-color: var(--fatal); color: var(--die-medal); background: #2a0806; }

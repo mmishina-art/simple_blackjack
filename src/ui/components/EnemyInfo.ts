@@ -38,8 +38,8 @@ export function buildEnemySkillList(enemy: Entity, standOn = 0): HTMLElement {
     // 21 は必殺: 攻撃は 2 倍した値を出し、「必殺」の札を添える（危険の一撃と比べやすいように）
     const mult21 = createRuleSet().enemy21Multiplier;
     const die = row.key === SLOT_MAX && row.skill.effects.some((e) => e.type === 'attack');
-    // ブロックの技は青、回復の技は緑（危険・必殺の赤を優先する）
-    const tone = !fatal && !die && !row.isFallback ? effectTone(row.skill) : null;
+    // 役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 の必殺は赤（lslot--die）
+    const tone = !die ? effectTone(row.skill) ?? 'attack' : null;
     const short = describeSkillShort(row.skill, enemy.attackAt(row.key));
     const desc = die ? `${short.replace(/攻撃 (\d+)/, (_, n: string) => `攻撃 ${Number(n) * mult21}`)} <em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>` : short;
     el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}${fatal ? ' lslot--fatal' : ''}${die ? ' lslot--die' : ''}${tone ? ` lslot--tone-${tone}` : ''}`;

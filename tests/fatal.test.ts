@@ -58,7 +58,7 @@ describe('敵の危険な合計値', () => {
   });
 });
 
-describe('敵の技: ブロックは青、回復は緑', () => {
+describe('敵の技の役割の色: 攻撃はオレンジ、ブロックは青、回復は緑、21 の必殺は赤', () => {
   it('効果の種類で色を決める（ブロックを含む = 青、回復を含む = 緑、攻撃だけ = なし）', async () => {
     const { effectTone } = await import('../src/core/skills/look');
     expect(effectTone(getSkill('skel_guard'))).toBe('block');
@@ -66,11 +66,11 @@ describe('敵の技: ブロックは青、回復は緑', () => {
     expect(effectTone(getSkill('bat_drain'))).toBe('heal'); // 攻撃 + 回復
     expect(effectTone(getSkill('skel_slash'))).toBeNull();
   });
-  it('スロット表と一覧に色を付ける。危険・21 の必殺の赤を優先する', () => {
+  it('スロット表と一覧に色を付ける（攻撃はオレンジのアイコン、21 の必殺は赤）', () => {
     const strip = readFileSync('src/ui/components/SlotStrip.ts', 'utf8');
-    expect(strip).toContain("entity.id === 'enemy' && key !== SLOT_MAX && !skill?.fatal ? effectTone(skill) : null");
-    expect(readFileSync('src/ui/components/EnemyInfo.ts', 'utf8')).toContain('!fatal && !die && !row.isFallback ? effectTone(row.skill) : null');
+    expect(strip).toContain("entity.id === 'enemy' && key !== SLOT_MAX ? effectTone(skill) ?? 'attack' : null");
+    expect(readFileSync('src/ui/components/EnemyInfo.ts', 'utf8')).toContain("!die ? effectTone(row.skill) ?? 'attack' : null");
     const css = readFileSync('src/ui/styles/main.css', 'utf8');
-    for (const k of ['.slot.slot--tone-block {', '.slot.slot--tone-heal {', '.lslot--tone-block .lslot__desc', '.lslot--tone-heal .lslot__desc']) expect(css, k).toContain(k);
+    for (const k of ['.slot.slot--tone-block {', '.slot.slot--tone-heal {', '.lslot--tone-block .lslot__desc', '.lslot--tone-heal .lslot__desc', '.slot.slot--tone-attack .slot__icon', '.lslot.lslot--die .medal', '--tone-attack:']) expect(css, k).toContain(k);
   });
 });
