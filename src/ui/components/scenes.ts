@@ -187,20 +187,23 @@ const chest = `
   <g stroke="#060403" stroke-width="1.5" opacity=".6" fill="none"><path d="M0 30 H360 M0 60 H360 M0 90 H360"/><path d="M40 0 V30 M120 0 V30 M200 0 V30 M280 0 V30 M80 30 V60 M160 30 V60 M240 30 V60 M320 30 V60 M40 60 V90 M120 60 V90 M280 60 V90"/></g>
   <circle cx="180" cy="66" r="80" fill="url(#chGlow)" class="sc-glow"/>
   <!-- 光の筋 -->
-  <g fill="#f6dc8a" opacity=".22" class="sc-glow"><path d="M180 70 L130 0 H150z"/><path d="M180 70 L200 0 H222z"/><path d="M180 70 L250 0 H262z"/><path d="M180 70 L96 0 H104z"/></g>
+  <g fill="#f6dc8a" opacity=".18" class="sc-glow"><path d="M180 76 L120 0 H140z"/><path d="M180 76 L222 0 H240z"/><path d="M180 76 L262 0 H272z"/><path d="M180 76 L90 0 H98z"/></g>
   <g filter="url(#chink)">
     <path d="M0 118 Q180 108 360 118 L360 140 L0 140z" fill="#1e150c" stroke="#060403" stroke-width="2"/>
-    <!-- 開いた蓋 -->
-    <path d="M136 74 L142 40 Q180 26 218 40 L224 74z" fill="url(#chWood)" stroke="#060403" stroke-width="2.4"/>
-    <path d="M136 74 L142 40 Q180 26 218 40 L224 74z" fill="url(#chhatch)"/>
-    <path d="M160 72 L163 36 M197 36 L200 72" stroke="#c9a24a" stroke-width="4"/>
-    <!-- 中の金貨 -->
-    <path d="M138 80 Q150 64 166 72 Q180 60 196 72 Q210 64 222 80z" fill="#e8bd52" stroke="#060403" stroke-width="2"/>
-    <!-- 箱 -->
-    <rect x="134" y="78" width="92" height="40" rx="3" fill="url(#chWood)" stroke="#060403" stroke-width="2.4"/>
-    <rect x="134" y="78" width="92" height="40" rx="3" fill="url(#chhatch)"/>
-    <path d="M134 90 H226 M160 78 V118 M200 78 V118" stroke="#c9a24a" stroke-width="4"/>
-    <path d="M180 86 l7 8 l-7 8 l-7 -8z" fill="#7fb6e8" stroke="#060403" stroke-width="2"/>
+    <!-- 開いた蓋（箱の奥のふちを軸に、後ろへ倒れている。見えているのは蓋の内側） -->
+    <path d="M144 72 L150 36 Q180 24 210 36 L216 72z" fill="#3a2210" stroke="#060403" stroke-width="2.4"/>
+    <path d="M144 72 L150 36 Q180 24 210 36 L216 72z" fill="url(#chhatch)"/>
+    <path d="M164 72 L167 31 M193 31 L196 72" stroke="#a8843a" stroke-width="3.4"/>
+    <path d="M150 36 Q180 24 210 36" fill="none" stroke="#c9a24a" stroke-width="3"/>
+    <!-- 箱の口（上から少し見える）と、あふれる金貨 -->
+    <path d="M134 84 L144 72 H216 L226 84z" fill="#1a0f06" stroke="#060403" stroke-width="2.2"/>
+    <path d="M138 84 Q146 66 160 74 Q170 62 182 72 Q194 62 204 73 Q216 66 222 84z" fill="#e8bd52" stroke="#060403" stroke-width="2"/>
+    <g fill="#f6dc8a" stroke="#060403" stroke-width="1.2"><circle cx="158" cy="76" r="3"/><circle cx="184" cy="70" r="3"/><circle cx="206" cy="77" r="3"/></g>
+    <!-- 箱の前面 -->
+    <rect x="134" y="84" width="92" height="36" rx="3" fill="url(#chWood)" stroke="#060403" stroke-width="2.4"/>
+    <rect x="134" y="84" width="92" height="36" rx="3" fill="url(#chhatch)"/>
+    <path d="M134 94 H226 M160 84 V120 M200 84 V120" stroke="#c9a24a" stroke-width="4"/>
+    <path d="M180 90 l7 8 l-7 8 l-7 -8z" fill="#7fb6e8" stroke="#060403" stroke-width="2"/>
     <!-- 散らばった金貨 -->
     <g fill="#e8bd52" stroke="#060403" stroke-width="1.6"><ellipse cx="112" cy="120" rx="7" ry="3.5"/><ellipse cx="124" cy="126" rx="6" ry="3"/><ellipse cx="246" cy="122" rx="7" ry="3.5"/><ellipse cx="262" cy="127" rx="6" ry="3"/><ellipse cx="236" cy="130" rx="5" ry="2.5"/></g>
   </g>
