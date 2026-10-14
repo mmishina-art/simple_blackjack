@@ -1,7 +1,11 @@
 """
-生成 AI で描いた敵の絵を、ゲームで使う形に変える（src/ui/art/enemies/<id>.webp）。
-  python3 tools/enemy-art.py <元の画像> <敵の ID> [しきい値]
-- 背景の黒のうち、画像の外側からつながっている部分だけを透明にする（体の中の暗い所は残す）。
+生成 AI で描いた絵を、ゲームで使う形に変える（WebP）。名前で、置き場所と処理が決まる:
+  python3 tools/art.py <元の画像> <名前> [しきい値]
+  - 敵の ID（slime など）      → src/ui/art/enemies/<ID>.webp   … 背景を透明に、横 800
+  - title                      → src/ui/art/title.webp          … 背景を透明に、横 900
+  - stage1〜stage3            → src/ui/art/stages/<名前>.webp  … そのまま（不透明）、横 1280
+  - scene_shop など（scene_*） → src/ui/art/scenes/<shop など>.webp … そのまま（不透明）、横 1200
+- 透明にするとき: 背景の黒のうち、画像の外側からつながっている部分だけを透明にする（体の中の暗い所は残す）。
   翼の陰影などの暗い所へ、細いすき間から入り込まないよう、背景の候補を一度細らせてから外側とつながる所を探し、
   そのあと元の太さに戻す（すき間が CHANNEL ピクセルより細いところは、背景として扱わない）。
 - 横 800 ピクセルに縮め、WebP（品質 82）で保存する。Pillow（pip install pillow）が必要。
@@ -28,8 +32,25 @@ def flood_from_border(mask: Image.Image) -> Image.Image:
                 q.append((nx, ny))
     return Image.frombytes('L', (w, h), bytes(out))
 
-def main(src: str, enemy_id: str, threshold: int = 10) -> None:
+def target(name: str) -> tuple[str, int, bool]:
+    """(保存先, 横の大きさ, 背景を透明にするか)"""
+    if name == 'title':
+        return 'src/ui/art/title.webp', 900, True
+    if name.startswith('stage'):
+        return f'src/ui/art/stages/{name}.webp', 1280, False
+    if name.startswith('scene_'):
+        return f'src/ui/art/scenes/{name[len("scene_"):]}.webp', 1200, False
+    return f'src/ui/art/enemies/{name}.webp', 800, True
+
+def main(src: str, name: str, threshold: int = 10) -> None:
+    dest, width, cutout = target(name)
     im = Image.open(src).convert('RGB')
+    w, h = im.size
+    if not cutout:
+        out = im.resize((width, round(width * h / w)), Image.LANCZOS)
+        out.save(dest, quality=80)
+        print(dest, out.size)
+        return
     # 背景の候補: いちばん明るい色の成分が、しきい値以下（ほぼ黒）
     r, g, b = im.split()
     brightest = ImageChops.lighter(ImageChops.lighter(r, g), b)
@@ -40,9 +61,7 @@ def main(src: str, enemy_id: str, threshold: int = 10) -> None:
     alpha = ImageChops.invert(bg).filter(ImageFilter.GaussianBlur(1.2))
     out = im.convert('RGBA')
     out.putalpha(alpha)
-    w, h = im.size
-    out = out.resize((800, round(800 * h / w)), Image.LANCZOS)
-    dest = f'src/ui/art/enemies/{enemy_id}.webp'
+    out = out.resize((width, round(width * h / w)), Image.LANCZOS)
     out.save(dest, quality=82)
     print(dest, out.size)
 

@@ -242,7 +242,8 @@ bus.on('onBlockGained', (p) => ({ ...p, amount: p.amount + 3 }));               
 ## 敵の絵
 
 - 敵の絵は、**生成 AI（Google Gemini）で描いた画像**（ペン画・銅版画の線に、暗い色を付けた画風）に置き換えた（14 体すべて）。プロンプトは `docs/enemy-art-prompts.md`。画像のない敵を足したときは、手書きの SVG（`src/ui/components/enemySprites.ts`）が出る。
-- 画像は `src/ui/art/enemies/<敵の ID>.webp`。画像は、オーナーの Google ドライブの「blackjack-enemies」フォルダ（ファイル名 = 敵の ID）から取り込む。`python3 tools/enemy-art.py <元の画像> <敵の ID>` で、外側の黒い背景を透明にして（翼の陰影などへ細いすき間から入り込まないようにしてある）、横 800 ピクセルの WebP にする。そのあと `src/ui/components/enemyArt.ts` の `ENEMY_IMAGES` に足すと、戦闘・マップ・敵の詳細・図鑑に出る。
+- 画像は `src/ui/art/enemies/<敵の ID>.webp`。画像は、オーナーの Google ドライブの「blackjack-enemies」フォルダ（ファイル名 = 敵の ID）から取り込む。`python3 tools/art.py <元の画像> <敵の ID>` で、外側の黒い背景を透明にして（翼の陰影などへ細いすき間から入り込まないようにしてある）、横 800 ピクセルの WebP にする。フォルダに置くだけで（`import.meta.glob`）、戦闘・マップ・敵の詳細・図鑑に出る。
+- **タイトルの絵・戦闘の舞台の背景（階層ごと 3 枚）・場面の挿絵（店・祠・宿屋・スキル獲得・宝箱）**も、同じ画風の生成画像に順に置き換える（プロンプトは同じファイル）。`python3 tools/art.py <元の画像> <名前>` の名前で置き場所が決まる（`title` / `stage1`〜`stage3` / `scene_shop` など）。届いていない絵は、手書きの SVG のまま。
 - 画像はアプリに入れて配信し、Service Worker の precache にも入る（オフラインでも出る）。
 
 ## 画像・音・文章の出どころ
