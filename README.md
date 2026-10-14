@@ -241,7 +241,7 @@ bus.on('onBlockGained', (p) => ({ ...p, amount: p.amount + 3 }));               
 
 ## 敵の絵
 
-- 敵の絵は、**生成 AI（Google Gemini）で描いた画像**に順に置き換えている（いまはスライム）。まだ届いていない敵は、手書きの SVG（`src/ui/components/enemySprites.ts`）のまま。
+- 敵の絵は、**生成 AI（Google Gemini）で描いた画像**（ペン画・銅版画の線に、暗い色を付けた画風）に順に置き換えている（いまはスライム）。プロンプトは `docs/enemy-art-prompts.md`。まだ届いていない敵は、手書きの SVG（`src/ui/components/enemySprites.ts`）のまま。
 - 画像は `src/ui/art/enemies/<敵の ID>.webp`。届いた画像は `python3 tools/enemy-art.py <元の画像> <敵の ID>` で、外側の黒い背景を透明にして、横 800 ピクセルの WebP にする。そのあと `src/ui/components/enemyArt.ts` の `ENEMY_IMAGES` に足すと、戦闘・マップ・敵の詳細・図鑑に出る。
 - 画像はアプリに入れて配信し、Service Worker の precache にも入る（オフラインでも出る）。
 
