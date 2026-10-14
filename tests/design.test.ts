@@ -39,3 +39,14 @@ describe('全体の見た目のルール（段階2）', () => {
     expect(read('src/ui/styles/main.css')).toContain('.choice:has(.scene) { justify-content: flex-start;');
   });
 });
+
+describe('レリックのメダルは六角形', () => {
+  it('所持・図鑑・ショップ・宝箱の遺物に medal--relic を付ける', () => {
+    expect(read('src/ui/components/relicMedal.ts')).toContain('medal--relic');
+    expect(read('src/ui/MetaScreens.ts')).toContain('medal--relic');
+    expect(read('src/ui/ShopScreen.ts')).toContain('medal--relic');
+    expect(read('src/ui/ChoiceScreen.ts')).toContain("opt.relic ? ' medal--relic' : ''");
+    expect(read('src/main.ts')).toContain('relics.map((r) => ({ ...r, relic: true }))');
+    expect(read('src/ui/styles/main.css')).toContain('--hex: polygon(');
+  });
+});

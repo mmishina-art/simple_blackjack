@@ -68,7 +68,7 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
           () => { if (buyOffer(run, offer)) { audio.sfx('pick'); opts.onBought(offer); } });
       } else {
         const relic = RELIC_POOL.find((r) => r.id === offer.id)!;
-        row(`${rarityClass(relic.rarity ?? 'common')}${offer.sold ? ' shop__row--sold' : ''}`, relic.icon, rarityClass(relic.rarity ?? 'common'),
+        row(`${rarityClass(relic.rarity ?? 'common')}${offer.sold ? ' shop__row--sold' : ''}`, relic.icon, `${rarityClass(relic.rarity ?? 'common')} medal--relic`,
           `${relic.name} <em class="kind-tag">遺物</em> ${rarityNote(relic.rarity ?? 'common')}`, relic.description,
           offer.price, offer.sold ? '売り切れ' : run.gold < offer.price ? 'G不足' : '買う', !offer.sold && run.gold >= offer.price,
           () => { if (buyOffer(run, offer)) { audio.sfx('pick'); note = `「${relic.name}」を買った。`; render(); } });

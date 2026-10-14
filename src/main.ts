@@ -136,7 +136,7 @@ function resolveTile(tile: TileDef): void {
         heading: '宝箱',
         sub: '遺物をひとつ選べ',
         scene: { kind: 'chest', line: '遺物をひとつ選べ。' },
-        options: relics,
+        options: relics.map((r) => ({ ...r, relic: true })),
         onPick(i) {
           run.relics.push(relics[i]);
           showMapScreen(`「${relics[i].name}」を手に入れた。`);
@@ -294,7 +294,7 @@ function offerStageRelic(): void {
     heading: '階層を踏破した',
     sub: '遺物をひとつ選べ',
     scene: { kind: 'chest', title: '踏破の褒美', line: '遺物をひとつ選べ。' },
-    options: relics,
+    options: relics.map((r) => ({ ...r, relic: true })),
     onPick(i) {
       run.relics.push(relics[i]);
       enter();

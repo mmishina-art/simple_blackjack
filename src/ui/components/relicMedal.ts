@@ -10,7 +10,7 @@ import { rarityClass, rarityNote } from '../rarity';
 export function relicMedal(r: Relic, slots: SlotTable): HTMLElement {
   const active = relicActive(r, slots);
   const m = document.createElement('span');
-  m.className = `medal medal--sm ${rarityClass(r.rarity)}${active ? '' : ' medal--idle'}`;
+  m.className = `medal medal--sm medal--relic ${rarityClass(r.rarity)}${active ? '' : ' medal--idle'}`;
   m.textContent = r.icon;
   const note = active ? '' : '（いまは効果なし）';
   m.title = `${r.name}${note}: ${r.description}`;

@@ -1425,3 +1425,17 @@ section { min-width: 0; }
   .choice--reward .scene__art svg, .choice--chest .scene__art svg { height: 100px; }
   .choice--reward .choice__card, .choice--chest .choice__card { padding: 10px 12px; }
 }
+
+/* レリック（遺物）のメダル: 六角形（宝石の形）。スキルの丸・道具の角丸・防具の盾と、形で見分ける。
+ * 枠は ::before（レア度の色の六角形）、中は ::after（暗い六角形）。効果が出ていないとき（medal--idle）は、枠が点線になる */
+.medal--relic { position: relative; isolation: isolate; border: 0; border-radius: 0; background: none; box-shadow: none; --hex: polygon(50% 2%, 93% 26%, 93% 74%, 50% 98%, 7% 74%, 7% 26%); }
+.medal--relic::before, .medal--relic::after { content: ''; position: absolute; z-index: -1; clip-path: var(--hex); }
+.medal--relic::before { inset: 0; background: var(--rar, var(--gold)); }
+.medal--relic::after { inset: 2px; background: radial-gradient(circle at 35% 30%, #3a2c18, #120d08); }
+.medal--sm.medal--relic::after { inset: 1.5px; }
+.medal--relic.medal--idle::before { background: repeating-conic-gradient(from 0deg, var(--rar, var(--gold)) 0 12deg, transparent 12deg 24deg); }
+/* 六角形には四角い影が出ないよう、光は形に沿う drop-shadow にする（レア・レジェンドの光） */
+.medal.medal--relic, .medal.medal--relic.rar-rare, .medal.medal--relic.rar-legend { box-shadow: none; animation: none; filter: drop-shadow(0 0 4px var(--rar-glow, transparent)); }
+.medal.medal--relic.medal--idle { filter: grayscale(1) brightness(0.7); }
+.medal.medal--relic, .medal.medal--relic.rar-rare, .medal.medal--relic.rar-legend, .medal.medal--relic.medal--idle { background: none; border: 0; border-radius: 0; }
+.medal--relic.rar-legend::after { background: radial-gradient(circle at 35% 30%, #5a3a10, #1a0e04); }
