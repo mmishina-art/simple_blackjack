@@ -1,7 +1,7 @@
 import { relicActive, type Relic } from '../../relics/Relic';
 import type { SlotTable } from '../../core/skills/Skill';
 import { openRelicSheet } from './RelicSheet';
-import { rarityBadge, rarityClass } from '../rarity';
+import { rarityClass, rarityNote } from '../rarity';
 
 /**
  * 所持レリックのメダリオン。条件つきのレリック（満杯の指輪など）は、効果が出ていないあいだ、
@@ -43,7 +43,7 @@ export function buildRelicRow(r: Relic, slots: SlotTable): HTMLElement {
   row.append(relicMedal(r, slots));
   const text = document.createElement('span');
   text.className = 'relic-row__text';
-  text.innerHTML = `<strong>${r.name} ${rarityBadge(r.rarity)}${active ? '' : ' <em class="relic-row__idle">いまは効果なし</em>'}</strong><small>${r.description}</small>`;
+  text.innerHTML = `<strong>${r.name} ${rarityNote(r.rarity)}${active ? '' : ' <em class="relic-row__idle">いまは効果なし</em>'}</strong><small>${r.description}</small>`;
   row.append(text);
   return row;
 }

@@ -3,7 +3,8 @@ import type { Rarity } from '../core/rarity';
 import type { SkillKind } from '../core/skills/Skill';
 import { medalKindClass } from './kind';
 import { buildScene, type SceneKind } from './components/scenes';
-import { rarityBadge, rarityClass } from './rarity';
+import { buildTopBar } from './components/TopBar';
+import { rarityClass, rarityNote } from './rarity';
 
 export interface ChoiceOption {
   rarity?: Rarity;
@@ -20,17 +21,19 @@ export interface ChoiceOption {
 
 export interface ChoiceScreenConfig {
   /** 場所の挿絵とひとこと（あれば、見出しの代わりに挿絵つきの見出しを出す）。 */
-  scene?: { kind: SceneKind; line?: string };
+  scene?: { kind: SceneKind; line?: string; /** 挿絵の中の名前（省略時は heading）。 */ title?: string };
   heading: string;
   sub: string;
   options: ChoiceOption[];
   onPick(index: number): void;
+  /** あれば、左上に「‹ 戻る」を出す（ほかの画面と同じ上の行。見出しは heading）。 */
+  onBack?(): void;
 }
 
 /** 報酬やレベルアップの選択画面。誤タップを避けるため、表示直後は少しだけ押せない。 */
 export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): void {
   const screen = document.createElement('main');
-  screen.className = `choice${cfg.scene ? ` choice--${cfg.scene.kind}` : ''}`;
+  screen.className = `choice${cfg.scene ? ` choice--${cfg.scene.kind}` : ''}${cfg.onBack ? ' choice--bar' : ''}`;
 
   const head = document.createElement('header');
   head.className = 'choice__head';
@@ -38,7 +41,7 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
   h.textContent = cfg.heading;
   const sub = document.createElement('p');
   sub.textContent = cfg.sub;
-  if (cfg.scene) head.append(buildScene(cfg.scene.kind, cfg.heading, cfg.scene.line ?? cfg.sub));
+  if (cfg.scene) head.append(buildScene(cfg.scene.kind, cfg.scene.title ?? cfg.heading, cfg.scene.line ?? cfg.sub));
   else head.append(h, sub);
 
   const list = document.createElement('div');
@@ -49,7 +52,7 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
     btn.disabled = true;
     btn.innerHTML = `<span class="medal${opt.kind ? medalKindClass(opt.kind) : ''}">${opt.icon}</span>
       <span class="choice__text"><strong>${opt.name}${opt.tag ? ` <em class="kind-tag kind-tag--${opt.kind ?? 'skill'}">${opt.tag}</em>` : ''}</strong><span>${opt.description}</span></span>
-      ${opt.rarity ? rarityBadge(opt.rarity) : ''}`;
+      ${opt.rarity ? rarityNote(opt.rarity) : ''}`;
     btn.addEventListener('click', () => {
       audio.sfx('pick');
       cfg.onPick(i);
@@ -57,6 +60,7 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
     return btn;
   });
   list.append(...buttons);
+  if (cfg.onBack) screen.append(buildTopBar(cfg.heading, cfg.onBack));
   screen.append(head, list);
   root.replaceChildren(screen);
   window.setTimeout(() => buttons.forEach((b) => (b.disabled = false)), 450);
@@ -82,7 +86,7 @@ export function showNotice(root: HTMLElement, cfg: NoticeConfig): void {
   p.textContent = cfg.text;
   head.append(h, p);
   const btn = document.createElement('button');
-  btn.className = 'btn btn--retry';
+  btn.className = 'btn btn--primary';
   btn.innerHTML = `<span class="btn__main">${cfg.button}</span>`;
   btn.disabled = true;
   btn.addEventListener('click', () => {

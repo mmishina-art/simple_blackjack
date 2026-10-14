@@ -18,7 +18,7 @@ import {
 } from '../meta/Meta';
 import { RELIC_POOL } from '../relics/catalog';
 import { createBackupSection } from './BackupSection';
-import { rarityBadge, rarityClass } from './rarity';
+import { rarityClass, rarityNote } from './rarity';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, html = ''): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -98,7 +98,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
       const skill = getSkill(id);
       grid.append(el('div', `codex__item ${known ? rarityClass(rarityOfSkill(skill)) : 'codex__item--unknown'}`,
         known
-          ? `<span class="medal medal--sm${medalKindClass(kindOfSkill(skill))}">${skill.icon}</span><span>${skill.name} ${kindTag(skill)} ${rarityBadge(rarityOfSkill(skill))}<small>${describeSkill(skill)}</small></span>`
+          ? `<span class="medal medal--sm${medalKindClass(kindOfSkill(skill))}">${skill.icon}</span><span>${skill.name} ${kindTag(skill)} ${rarityNote(rarityOfSkill(skill))}<small>${describeSkill(skill)}</small></span>`
           : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
     }
     box.append(grid);
@@ -118,7 +118,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
     const known = relicKnown(r.id);
     rGrid.append(el('div', `codex__item ${known ? rarityClass(r.rarity) : 'codex__item--unknown'}`,
       known
-        ? `<span class="medal medal--sm">${r.icon}</span><span>${r.name} ${rarityBadge(r.rarity)}<small>${r.description}</small></span>`
+        ? `<span class="medal medal--sm">${r.icon}</span><span>${r.name} ${rarityNote(r.rarity)}<small>${r.description}</small></span>`
         : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
   }
   relics.append(rGrid);

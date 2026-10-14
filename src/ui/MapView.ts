@@ -164,7 +164,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
     openSheet({
       title: '冒険をあきらめる？',
       subtitle: 'この冒険は終わる。魂片は入らない（途中の記録は残らない）',
-      options: [{ kind: 'confirm', icon: '去', name: 'あきらめて、タイトルへ', detail: '魂片は入らず、冒険は最初からになる', onPick: () => handlers.onGiveUp() }],
+      options: [{ kind: 'danger', icon: '去', name: 'あきらめて、タイトルへ', detail: '魂片は入らず、冒険は最初からになる', onPick: () => handlers.onGiveUp() }],
     });
   });
   const loadout = document.createElement('button');

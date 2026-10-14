@@ -12,7 +12,7 @@ export interface ShrineOptions {
   rng: Rng;
   /** 祠で何かが起きた（マスを済みにする）。message はマップ画面に出す。 */
   onDone(message: string): void;
-  /** 何もせず立ち去る（マスは済みにしない）。 */
+  /** 何もせず戻る（左上の「‹ 戻る」。マスは済みにしない）。 */
   onLeave(): void;
 }
 
@@ -28,11 +28,11 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
   choices.push({ icon: '替', tone: 'a', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（祠でできることは1つだけ。1 つでも入れ替えたら、祠を出る）', run: () => showSwapScreen(root, run, { onClose: (swapped) => (swapped ? opts.onDone('祠でスキルや道具を入れ替えた。') : show()) }) });
   if (upgradeCandidates.length > 0) choices.push({ icon: '昇', tone: 'b', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを一段階強くする（名前に＋が付く。候補は最大 3 つ。会心の一撃系は必ず入る）', run: pickUpgrade });
   choices.push({ icon: '祈', tone: 'c', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
-  choices.push({ icon: '去', tone: 'd', name: '立ち去る', description: '何もしない（また来られる）', run: opts.onLeave });
 
   const show = (): void => showChoiceScreen(root, {
     heading: '祠', sub: 'ひとつだけ選べ',
-    scene: { kind: 'shrine', line: 'ひとつだけ選べ。' },
+    scene: { kind: 'shrine', title: '月夜の祠', line: 'ひとつだけ選べ。' },
+    onBack: opts.onLeave, // 何もせず戻る（マスは済みにならない。また来られる）
     options: choices.map(({ icon, name, description, tone }) => ({ icon, name, description, tone })),
     onPick: (i) => choices[i].run(),
   });

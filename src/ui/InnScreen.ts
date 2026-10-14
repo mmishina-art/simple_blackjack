@@ -26,7 +26,7 @@ export function showInn(root: HTMLElement, cfg: InnConfig): void {
     <p class="inn__nums">HP <b>${cfg.before}</b> <span aria-hidden="true">→</span> <b class="inn__after">${cfg.after}</b> / ${cfg.max}${healed > 0 ? `<em> +${healed}</em>` : ''}</p>`;
 
   const btn = document.createElement('button');
-  btn.className = 'btn btn--retry';
+  btn.className = 'btn btn--primary';
   btn.innerHTML = '<span class="btn__main">出発する</span>';
   btn.disabled = true;
   btn.addEventListener('click', () => { audio.sfx('click'); cfg.onClose(); });

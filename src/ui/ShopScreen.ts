@@ -6,7 +6,7 @@ import { RELIC_POOL } from '../relics/catalog';
 import { buildScene } from './components/scenes';
 import { buildTopBar } from './components/TopBar';
 import { kindTag, medalKindClass } from './kind';
-import { rarityBadge, rarityClass } from './rarity';
+import { rarityClass, rarityNote } from './rarity';
 import type { RunState } from '../run/Run';
 
 export interface ShopOptions {
@@ -33,7 +33,7 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
     purse.className = 'shop__gold';
     purse.innerHTML = `<span class="shop__coin" aria-hidden="true"></span>所持金 <strong>${run.gold}</strong> G`;
     head.append(scene, purse);
-    screen.append(buildTopBar('ショップ', opts.onLeave, '出る'), head);
+    screen.append(buildTopBar('ショップ', opts.onLeave), head);
 
     const list = document.createElement('div');
     list.className = 'loadout__inv shop__list';
@@ -62,14 +62,14 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
         const kind = kindOfSkill(sk);
         const where = placementNote(sk);
         row(`${rarityClass(rarityOfSkill(sk))}${offer.sold ? ' shop__row--sold' : ''}`, sk.icon, `${rarityClass(rarityOfSkill(sk))}${medalKindClass(kind)}`,
-          `${sk.name} ${kindTag(sk)} ${rarityBadge(rarityOfSkill(sk))}`,
+          `${sk.name} ${kindTag(sk)} ${rarityNote(rarityOfSkill(sk))}`,
           `${describeSkillBonus(sk)}${where ? `（${where}）` : ''}`,
           offer.price, offer.sold ? '売り切れ' : run.gold < offer.price ? 'G不足' : '買う', !offer.sold && run.gold >= offer.price,
           () => { if (buyOffer(run, offer)) { audio.sfx('pick'); opts.onBought(offer); } });
       } else {
         const relic = RELIC_POOL.find((r) => r.id === offer.id)!;
         row(`${rarityClass(relic.rarity ?? 'common')}${offer.sold ? ' shop__row--sold' : ''}`, relic.icon, rarityClass(relic.rarity ?? 'common'),
-          `${relic.name} <em class="kind-tag">遺物</em> ${rarityBadge(relic.rarity ?? 'common')}`, relic.description,
+          `${relic.name} <em class="kind-tag">遺物</em> ${rarityNote(relic.rarity ?? 'common')}`, relic.description,
           offer.price, offer.sold ? '売り切れ' : run.gold < offer.price ? 'G不足' : '買う', !offer.sold && run.gold >= offer.price,
           () => { if (buyOffer(run, offer)) { audio.sfx('pick'); note = `「${relic.name}」を買った。`; render(); } });
       }
