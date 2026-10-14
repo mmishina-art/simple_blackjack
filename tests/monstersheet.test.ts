@@ -18,3 +18,16 @@ describe('マップの敵の詳細', () => {
     for (const k of ['enemyLevel(def)', 'def.maxHp', 'def.trait', 'buildEnemySkillList', 'dropsOf(enemyId)']) expect(sheet).toContain(k);
   });
 });
+
+describe('敵の技の一覧', () => {
+  const info = readFileSync('src/ui/components/EnemyInfo.ts', 'utf8');
+  it('standOn 未満の合計（実質選ばれない数字）の行は出さない', () => {
+    expect(info).toContain('filter((r) => r.key >= standOn)');
+    expect(info).toContain('buildEnemySkillList(enemy, def.ai.standOn)');
+    expect(sheet).toContain('buildEnemySkillList(enemy, def.ai.standOn)');
+  });
+  it('POW ではなく実際の攻撃値を出す', () => {
+    expect(info).toContain('describeSkillShort(row.skill, enemy.attackAt(row.key))');
+    expect(info).not.toContain('${row.text}');
+  });
+});

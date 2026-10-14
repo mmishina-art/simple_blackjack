@@ -40,7 +40,7 @@ export function openMonsterSheet(enemyId: string, opts: { boss: boolean; canGo: 
   const names = dropsOf(enemyId).map((id) => getSkill(id).name);
   drops.textContent = opts.boss ? '落とし物: 階層を踏破すると、遺物をひとつ選べる' : `落とし物: ${names.length ? names.join('・') : 'なし'}`;
 
-  content.append(top, drops, buildEnemySkillList(enemy));
+  content.append(top, drops, buildEnemySkillList(enemy, def.ai.standOn));
 
   openSheet({
     title: opts.boss ? `${def.name}（ボス）` : def.name,
