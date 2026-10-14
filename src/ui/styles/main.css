@@ -1355,3 +1355,10 @@ section { min-width: 0; }
 .relic-btn::before { content: ''; position: absolute; inset: -10px -4px; }
 .relic-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 50%; }
 .relic-btn:active .medal { filter: brightness(1.4); }
+
+/* 装備画面: スキルのアイコンをタップすると説明が出る（見た目は同じ。タップできる範囲だけ広げる） */
+.lslot__icon { position: relative; flex: none; padding: 0; margin: 0; border: 0; background: none; line-height: 0; cursor: pointer; }
+.lslot__icon::before { content: ''; position: absolute; inset: -10px -8px; }
+.lslot__icon:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 50%; }
+.lslot__icon-tap { position: relative; cursor: pointer; }
+.lslot__icon-tap::before { content: ''; position: absolute; inset: -10px -8px; }
