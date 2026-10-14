@@ -1373,3 +1373,10 @@ section { min-width: 0; }
 .monster-sheet__drops .drops { margin-top: 4px; }
 .drop__pct { margin-left: 2px; color: var(--gold); font-weight: 700; }
 .drop .rar-badge { font-size: 9px; padding: 0 4px; }
+
+/* マップのマスの絵（宝・店・祠・宿屋）。色はマスの種類ごとの色（枠と同じ） */
+.tile__glyph { pointer-events: none; }
+.tile--chest .tile__glyph { color: var(--gold); }
+.tile--shop .tile__glyph { color: #e0a040; }
+.tile--shrine .tile__glyph { color: #8a6ab8; }
+.tile--inn .tile__glyph { color: var(--moss); }

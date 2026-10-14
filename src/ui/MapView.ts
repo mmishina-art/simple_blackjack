@@ -7,6 +7,7 @@ import { stageRows } from '../map/stages';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { enemyLevel } from '../core/entities/enemies/level';
 import { ENEMY_SPRITES } from './components/enemySprites';
+import { TILE_ICONS } from './components/tileIcons';
 import { openMonsterSheet } from './components/MonsterSheet';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -20,7 +21,8 @@ const boardHeight = (rows: number): number => (rows <= FIT_ROWS ? 640 : PAD * 2 
 const ROW_Y = (row: number, rows: number): number =>
   rows <= FIT_ROWS ? 586 - row * ((586 - 64) / Math.max(1, rows - 1)) : boardHeight(rows) - PAD - row * ROW_STEP;
 
-const ICON: Record<TileKind, string> = { start: '始', empty: '', enemy: '敵', chest: '宝', inn: '宿', shrine: '祠', boss: '王', shop: '店' };
+/** 絵のないマスの文字（宝・店・祠・宿屋は tileIcons の絵）。 */
+const ICON: Record<TileKind, string> = { start: '始', empty: '', enemy: '敵', chest: '', inn: '', shrine: '', boss: '王', shop: '' };
 
 export interface MapHandlers {
   onMove(tileId: string): void;
@@ -92,6 +94,11 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
       const img = svg('image', { href: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(monster.trim())}`, x: -w / 2, y: (-w * 0.8) / 2, width: w, height: w * 0.8, 'clip-path': `url(#clip-${t.id})` }, 'tile__monster');
       img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
       g.append(img);
+    } else if (TILE_ICONS[t.kind]) {
+      // 宝・店・祠・宿屋は、種類ごとの絵（線画。色は CSS の color）
+      const glyph = svg('g', { transform: 'scale(1.1)', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' }, 'tile__glyph');
+      glyph.innerHTML = TILE_ICONS[t.kind]!;
+      g.append(glyph);
     } else {
       const icon = svg('text', { y: 1 }, 'tile__icon');
       icon.textContent = ICON[t.kind];
