@@ -32,6 +32,8 @@ export interface SheetConfig {
   /** 見出しと選択肢の間に出す、好きな内容（ビフォーアフターの比較など）。 */
   content?: HTMLElement;
   options: SheetOption[];
+  /** 閉じるボタンの文言（省略時は「やめる」。説明を見せるだけのときは「閉じる」）。 */
+  closeLabel?: string;
   /** 選択肢が1つもないときの文言。 */
   empty?: string;
   onClose?(): void;
@@ -116,7 +118,7 @@ export function openSheet(cfg: SheetConfig): () => void {
 
   const foot = document.createElement('button');
   foot.className = 'sheet__close';
-  foot.textContent = 'やめる';
+  foot.textContent = cfg.closeLabel ?? 'やめる';
   foot.addEventListener('click', () => {
     audio.sfx('click');
     close();

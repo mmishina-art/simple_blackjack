@@ -7,6 +7,7 @@ import { previewSlot } from '../run/effective';
 import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { sellFromInventory, sellPrice } from '../run/shop';
 import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
+import { buildRelicRow, relicsByRarityDesc } from './components/relicMedal';
 import { buildSlotRow } from './components/SlotRow';
 import { buildTopBar } from './components/TopBar';
 import { openSheet } from './components/SkillSheet';
@@ -37,6 +38,7 @@ export interface LoadoutOptions {
 export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptions): void {
   let armed: SkillId | null = opts.armed && run.inventory.includes(opts.armed) ? opts.armed : null;
   let armedMode = opts.mode ?? 'reward';
+  let tab: 'skills' | 'relics' = 'skills'; // 確認のときだけ、レリックのタブを切り替えられる
 
   const render = (): void => {
     const screen = document.createElement('main');
@@ -44,7 +46,22 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
 
     const head = document.createElement('header');
     head.className = 'loadout__head';
-    head.innerHTML = `<p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : 'いまの装備の確認（道具袋の中身は、タップで置く・売る）'}</p>`;
+    head.innerHTML = `<p class="loadout__hint">${armed ? (isArmor(getSkill(armed)) ? '防具の欄をタップして装備' : placementNote(getSkill(armed)) ? `置きたいスロットをタップ（${placementNote(getSkill(armed))}）` : '置きたいスロットをタップ') : tab === 'relics' ? 'いま持っているレリック（レア度の高い順）' : 'いまの装備の確認（道具袋の中身は、タップで置く・売る）'}</p>`;
+    if (!armed) {
+      const tabs = document.createElement('div');
+      tabs.className = 'codex-tabs loadout__tabs';
+      tabs.setAttribute('role', 'group');
+      tabs.setAttribute('aria-label', '表示の切り替え');
+      for (const t of ['skills', 'relics'] as const) {
+        const b = document.createElement('button');
+        b.className = `codex-tabs__btn${t === tab ? ' is-on' : ''}`;
+        b.textContent = t === 'skills' ? 'スキル' : `レリック（${run.relics.length}）`;
+        b.setAttribute('aria-pressed', String(t === tab));
+        b.addEventListener('click', () => { if (t === tab) return; audio.sfx('click'); tab = t; render(); });
+        tabs.append(b);
+      }
+      head.append(tabs);
+    }
     // 上の左の「戻る」は全画面で同じ位置。置き先を決めるまで閉じられないセット待ちのときだけ、戻るボタンは出さない
     screen.append(buildTopBar('装備', armed ? undefined : () => opts.onClose()), head);
 
@@ -55,6 +72,22 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       banner.innerHTML = `<span class="medal${medalKindClass(kindOfSkill(skill))}">${skill.icon}</span>
         <span class="armed__text"><strong>${skill.name} ${kindTag(skill, true)} ${rarityBadge(rarityOfSkill(skill))}</strong><span>${describeSkillBonus(skill)}${placementNote(skill) ? `<br>${placementNote(skill)}` : ''}</span></span>`;
       screen.append(banner);
+    }
+
+    // レリックのタブ: いま持っているレリックの一覧（名前・レア度・効果）
+    if (!armed && tab === 'relics') {
+      const list = document.createElement('div');
+      list.className = 'loadout__relics';
+      if (run.relics.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'shop__empty';
+        p.textContent = 'レリックは、まだ持っていない（宝箱・ショップ・階層の踏破で手に入る）';
+        list.append(p);
+      }
+      for (const r of relicsByRarityDesc(run.relics)) list.append(buildRelicRow(r, run.slots));
+      screen.append(list);
+      root.replaceChildren(screen);
+      return;
     }
 
     // スロット一覧
