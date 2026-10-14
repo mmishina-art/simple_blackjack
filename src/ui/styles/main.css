@@ -1450,3 +1450,58 @@ section { min-width: 0; }
 .medal.medal--relic.medal--idle { filter: grayscale(1) brightness(0.7); }
 .medal.medal--relic, .medal.medal--relic.rar-rare, .medal.medal--relic.rar-legend, .medal.medal--relic.medal--idle { background: none; border: 0; border-radius: 0; }
 .medal--relic.rar-legend::after { background: radial-gradient(circle at 35% 30%, #5a3a10, #1a0e04); }
+
+/* ======== 枠とボタン: 鉄と鋲 ========
+ * 絵（石と骨の地下墓所）に合わせ、窓・札・ボタンを黒い鉄板にする。四隅に鋲、上のふちを明るく・下を暗くして厚みを出す。
+ * 役割の色（金=主要 / 赤=危険 / 灰青=ふつう / 緑青=防御）は、鉄板の色（--plate）と内側の線（--plate-edge）で残す。
+ * レア度は、左のふちの色の線と、外の光で示す。
+ */
+:root {
+  --iron-hi: #2a2622; --iron-lo: #151311; --iron-edge: #3a332a; --iron-line: #000; --iron-shine: rgba(255, 236, 200, 0.14);
+  --iron-btn-hi: #3d3830; --iron-btn-mid: #1c1916; --iron-btn-lo: #100e0c; --iron-btn-edge: #4d4538;
+  --iron-gold-hi: #7a5f2a; --iron-gold-mid: #3a2a10; --iron-gold-lo: #22180a;
+  --iron-red-hi: #6a1c17; --iron-red-mid: #2c0a08; --iron-red-lo: #1a0605; --iron-red-edge: #8a2a22;
+  --iron-slate-hi: #3a4246; --iron-slate-mid: #191d20; --iron-slate-lo: #0f1214; --iron-slate-edge: #4a565c;
+  --iron-teal-hi: #2b5a52; --iron-teal-mid: #12302b; --iron-teal-lo: #0b1c19; --iron-teal-edge: #4f8a7e;
+  --rivet-head: #a89670; --rivet-rim: #4a4030;
+  --rivet: radial-gradient(circle, var(--rivet-head) 0 2px, var(--rivet-rim) 2.8px, rgba(0, 0, 0, 0.85) 3.6px, transparent 4.4px);
+  --rivets: var(--rivet) 4px 4px / 11px 11px no-repeat, var(--rivet) calc(100% - 4px) 4px / 11px 11px no-repeat,
+    var(--rivet) 4px calc(100% - 4px) / 11px 11px no-repeat, var(--rivet) calc(100% - 4px) calc(100% - 4px) / 11px 11px no-repeat;
+}
+.enemy-area, .player-area, .choice__card, .sheet, .loadout__inv,
+.btn, .pick, .sheet__close, .codex-tabs__btn, .topbar__back {
+  --plate: linear-gradient(180deg, var(--iron-hi), var(--iron-lo));
+  /* 影は、要素ごとの --plate-edge・--rar-glow を使うので、:root ではなくここで決める */
+  --iron-shadow: inset 0 1px 0 var(--iron-shine), inset 0 -2px 0 rgba(0, 0, 0, 0.6), inset 0 0 0 2px var(--plate-edge, var(--iron-edge)),
+    inset 0 0 0 3px var(--ink), 0 3px 10px rgba(0, 0, 0, 0.75), 0 0 12px var(--rar-glow, transparent);
+  --iron-btn-shadow: inset 0 1px 0 rgba(255, 236, 200, 0.28), inset 0 -3px 0 rgba(0, 0, 0, 0.55), inset 0 0 0 2px var(--plate-edge),
+    0 3px 0 #000, 0 6px 12px rgba(0, 0, 0, 0.6), 0 0 12px var(--rar-glow, transparent);
+  background: var(--rivets), var(--plate);
+  border: 1px solid var(--iron-line); border-radius: 2px;
+  box-shadow: var(--iron-shadow);
+}
+.enemy-area::before, .enemy-area::after, .player-area::before, .player-area::after { display: none; }
+.sheet { animation: popIn 0.18s ease-out; }
+/* ボタンは、パネルより明るい鉄板。下に影の段をつけて、押せる厚みを出す */
+.btn, .pick, .sheet__close, .codex-tabs__btn, .topbar__back {
+  --plate: linear-gradient(180deg, var(--iron-btn-hi), var(--iron-btn-mid) 55%, var(--iron-btn-lo));
+  --plate-edge: var(--iron-btn-edge);
+  color: var(--bone);
+  box-shadow: var(--iron-btn-shadow);
+}
+.choice__card, .pick { border-left: 3px solid var(--rar, var(--iron-line)); }
+.choice__card.rar-legend, .pick.rar-legend { --plate: linear-gradient(180deg, #3a2610, #1a1008); animation: none; }
+/* 上のほうのレア度の指定（.choice__card.rar-rare など）は詳しい指定なので、同じ詳しさで鉄板に戻す */
+.choice__card.rar-rare, .choice__card.rar-legend { background: var(--rivets), var(--plate); box-shadow: var(--iron-shadow); }
+.pick.rar-rare, .pick.rar-legend, .codex-tabs__btn.is-on { background: var(--rivets), var(--plate); box-shadow: var(--iron-btn-shadow); border-color: var(--iron-line); }
+.pick.rar-rare, .pick.rar-legend { border-left-color: var(--rar); }
+.btn--primary, .pick--confirm, .codex-tabs__btn.is-on {
+  --plate: linear-gradient(180deg, var(--iron-gold-hi), var(--iron-gold-mid) 60%, var(--iron-gold-lo)); --plate-edge: var(--gold); color: var(--primary-text);
+}
+.btn--hit, .pick--danger { --plate: linear-gradient(180deg, var(--iron-red-hi), var(--iron-red-mid) 60%, var(--iron-red-lo)); --plate-edge: var(--iron-red-edge); }
+.btn--stand, .btn--retry, .topbar__back { --plate: linear-gradient(180deg, var(--iron-slate-hi), var(--iron-slate-mid) 60%, var(--iron-slate-lo)); --plate-edge: var(--iron-slate-edge); }
+.btn--surrender { --plate: linear-gradient(180deg, var(--iron-teal-hi), var(--iron-teal-mid) 60%, var(--iron-teal-lo)); --plate-edge: var(--iron-teal-edge); color: #d6f0ea; }
+.pick--reset { border-style: dashed; border-color: #6b5f4a; }
+.choice--shrine .choice__card { background: var(--rivets), var(--plate); border-left: 4px solid var(--tone, var(--shrine-accent)); }
+.shop__row, .codex__item { background: linear-gradient(180deg, #221f1b, #141210); box-shadow: inset 0 1px 0 rgba(255, 236, 200, 0.08); }
+.shop__row { border-left: 3px solid var(--rar, #2e2922); }

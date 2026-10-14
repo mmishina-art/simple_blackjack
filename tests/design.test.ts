@@ -50,3 +50,15 @@ describe('レリックのメダルは六角形', () => {
     expect(read('src/ui/styles/main.css')).toContain('--hex: polygon(');
   });
 });
+
+describe('枠とボタン: 鉄と鋲', () => {
+  it('窓・札・ボタンは鋲つきの鉄板。役割の色は --plate で残す', () => {
+    const css = read('src/ui/styles/main.css');
+    const block = css.slice(css.indexOf('枠とボタン: 鉄と鋲'));
+    expect(block).toContain('background: var(--rivets), var(--plate);');
+    for (const k of ['.btn--primary, .pick--confirm', '.btn--hit, .pick--danger', '.btn--stand', '.btn--surrender']) expect(block, k).toContain(k);
+    // 影は要素ごとの --plate-edge を使うので、:root で決めない（決めると、すべて同じ色になる）
+    const root = block.slice(block.indexOf(':root {'), block.indexOf('}', block.indexOf(':root {')));
+    expect(root).not.toContain('--iron-shadow');
+  });
+});
