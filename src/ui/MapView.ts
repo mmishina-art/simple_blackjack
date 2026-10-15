@@ -10,6 +10,7 @@ import { enemyArtHref } from './components/enemyArt';
 import { TILE_ICONS } from './components/tileIcons';
 import { openMonsterSheet } from './components/MonsterSheet';
 import { mapBackdropHtml } from './components/art';
+import { moneyBagSvg } from './components/moneyBag';
 import { isDebug } from '../debug';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -50,7 +51,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   hud.className = 'map-hud';
   const pct = Math.max(0, Math.min(100, (run.hp / run.maxHp) * 100));
   hud.innerHTML = `<div class="map-hud__row"><span class="map-hud__stage"><b>第${run.stage}階層</b>${run.map.name}</span>
-      <span class="map-hud__gold" aria-label="所持金 ${run.gold} ゴールド"><span class="map-hud__coin" aria-hidden="true"></span><b>${run.gold}</b> G</span></div>
+      <span class="map-hud__gold" aria-label="所持金 ${run.gold} ゴールド"><span class="map-hud__moneybag" aria-hidden="true">${moneyBagSvg()}</span><b>${run.gold}</b> G</span></div>
     <div class="map-hud__hp${run.hp <= run.maxHp * 0.3 ? ' map-hud__hp--low' : ''}" role="img" aria-label="HP ${run.hp} / ${run.maxHp}"><div class="map-hud__fill" style="width:${pct}%"></div>
       <div class="map-hud__hptext" aria-hidden="true"><span>HP</span><span><b>${Math.max(0, run.hp)}</b> / ${run.maxHp}</span></div></div>`;
   const relics = document.createElement('div');

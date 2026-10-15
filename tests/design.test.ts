@@ -90,4 +90,15 @@ describe('お金（ゴールド）の選択肢はドル袋の絵', () => {
     expect(css).toContain('.choice__card--gold {');
     expect(read('src/ui/components/moneyBag.ts')).toContain('class="moneybag-svg"');
   });
+  it('地図のHUDやショップ画面の所持金アイコンも丸コインではなくドル袋（moneyBagSvg）で表示する', () => {
+    const map = read('src/ui/MapView.ts');
+    expect(map).toContain('map-hud__moneybag');
+    expect(map).toContain('moneyBagSvg()');
+    const shop = read('src/ui/ShopScreen.ts');
+    expect(shop).toContain('shop__moneybag');
+    expect(shop).toContain('moneyBagSvg()');
+    const css = read('src/ui/styles/main.css');
+    expect(css).toContain('.map-hud__moneybag {');
+    expect(css).toContain('.shop__moneybag {');
+  });
 });

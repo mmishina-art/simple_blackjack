@@ -5,6 +5,7 @@ import { buyOffer, sellFromInventory, sellPrice, type ShopOffer } from '../run/s
 import { RELIC_POOL } from '../relics/catalog';
 import { buildScene } from './components/scenes';
 import { buildTopBar } from './components/TopBar';
+import { moneyBagSvg } from './components/moneyBag';
 import { kindTag, medalKindClass } from './kind';
 import { rarityClass, rarityNote } from './rarity';
 import type { RunState } from '../run/Run';
@@ -31,7 +32,7 @@ export function showShop(root: HTMLElement, run: RunState, opts: ShopOptions): v
     const scene = buildScene('shop', '旅の商人', note || '「いらっしゃい。ゆっくり見ていきな」');
     const purse = document.createElement('p');
     purse.className = 'shop__gold';
-    purse.innerHTML = `<span class="shop__coin" aria-hidden="true"></span>所持金 <strong>${run.gold}</strong> G`;
+    purse.innerHTML = `<span class="shop__moneybag" aria-hidden="true">${moneyBagSvg()}</span>所持金 <strong>${run.gold}</strong> G`;
     head.append(scene, purse);
     screen.append(buildTopBar('ショップ', opts.onLeave), head);
 
