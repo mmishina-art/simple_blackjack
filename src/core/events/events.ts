@@ -16,6 +16,8 @@ export interface BattleEvents {
   /** カードを引いた直後（手札に加わる前）。card の差し替え・書き換えが可能。 */
   onCardDrawn: { entity: Entity; card: Card };
   onStand: { entity: Entity };
+  /** 敵が引き終えた手札が 21 かバースト（BUST or DIE の予告）。どちらなのかは伏せたまま。 */
+  onBustOrDie: { enemy: Entity };
   /** バーストした直後。 */
   onBust: { entity: Entity };
   /** 行動順の決定直後。turn を書き換えて、先攻・後攻を改変できる。 */

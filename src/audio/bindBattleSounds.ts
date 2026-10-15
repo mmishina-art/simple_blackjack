@@ -24,6 +24,8 @@ export function bindBattleSounds(machine: BattleMachine, audio: AudioManager): (
     bus.on('onBlockApplied', () => audio.sfx('block')),
     bus.on('onHealApplied', () => audio.sfx('heal')),
     bus.on('onCardsRevealed', () => audio.sfx('flip')),
+    // BUST or DIE の予告が出た（敵の手が 21 かバースト）
+    bus.on('onBustOrDie', () => audio.sfx('omen')),
     bus.on('onBattleEnd', ({ winner }) => audio.sfx(winner.id === 'player' ? 'victory' : 'defeat', 0.7)),
   ];
   return () => offs.forEach((off) => off());

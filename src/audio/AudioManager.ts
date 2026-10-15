@@ -1,5 +1,5 @@
 export type SfxName =
-  | 'click' | 'deal' | 'flip' | 'block' | 'break' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick';
+  | 'click' | 'deal' | 'flip' | 'block' | 'break' | 'attack' | 'damage' | 'bust' | 'push' | 'blackjack' | 'victory' | 'defeat' | 'guard' | 'heal' | 'pick' | 'omen';
 
 const STORAGE_KEY = 'bj-muted';
 
@@ -263,6 +263,16 @@ export class AudioManager {
         // 回復: 暗い短調（ラドミラ）の鈴が、静かに上へ重なって消える。下に低い持続音
         [220, 261.63, 329.63, 440].forEach((f, i) => this.chime(f, t + i * 0.09, i === 3 ? 1.0 : 0.6, 0.16 + i * 0.02));
         this.tone(110, t, 1.0, 'sine', 0.12);
+        break;
+      case 'omen':
+        // BUST or DIE の予告: 低い弔いの鐘がひとつ鳴り、心臓の鼓動のような重い低音が 2 回。上で三全音（不協和）がかすかに鳴る
+        this.bell(55, t, 1.6, 0.34);
+        this.tone(62, t + 0.05, 0.16, 'sine', 0.55, 40);
+        this.tone(62, t + 0.33, 0.2, 'sine', 0.5, 38);
+        this.noise(t + 0.05, 0.06, 260, 0.22);
+        this.noise(t + 0.33, 0.06, 240, 0.2);
+        this.chime(311.13, t + 0.1, 0.9, 0.07);
+        this.chime(440, t + 0.12, 0.9, 0.06);
         break;
       case 'defeat':
         // 敗北: ゆっくり沈んでいく低い 4 音と、長く消えていく最低音
