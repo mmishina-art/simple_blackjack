@@ -50,11 +50,15 @@ describe('敵の危険な合計値', () => {
     expect(info).toContain('<em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>');
     expect(info).toContain('`攻撃 ${Number(n) * mult21}`'); // 21 の攻撃は 2 倍した値を出す
     const css = readFileSync('src/ui/styles/main.css', 'utf8');
-    // 危険スロットは下地ごと血の赤色で塗り、敵の 21 はレジェンド色枠
+    // 危険スロットは下地ごと血の赤色で塗り、敵の 21 は赤い下地 + レジェンド色枠
     for (const k of ['.slot.slot--fatal {', '.slot.slot--fatal .slot__val', '.slot.slot--fatal::before', '.lslot--fatal .lslot__desc', '--fatal:', '--die-hi:']) expect(css, k).toContain(k);
     const strip = readFileSync('src/ui/components/SlotStrip.ts', 'utf8');
     expect(strip).toContain("isEnemy21 ? 'legend'");
     expect(info).toContain("is21 ? 'legend'");
+    // 敵の 21（必殺）は、危険と同じ赤い下地 + レジェンドの金の枠（危険より上）
+    expect(strip).toContain("isEnemy21 && skill?.effects.some((e) => e.type === 'attack') ? ' slot--die' : ''");
+    expect(info).toContain("die ? ' lslot--die' : ''");
+    for (const k of ['.slot.slot--die {', '.lslot.lslot--die { background', 'border-left: 3px solid var(--rar)']) expect(css, k).toContain(k);
   });
 });
 
