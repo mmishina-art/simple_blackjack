@@ -21,7 +21,7 @@ npm run build       # tsc --noEmit && vite build → dist/
 ## PWA
 
 - `vite.config.ts` の `VitePWA`(`registerType: 'prompt'`)が Service Worker を自動生成する。ファイル一覧の手動更新は不要。新しい版は待機し、`src/ui/UpdateBanner.ts` の「更新」ボタンで切り替える(戦闘の途中で勝手に切り替えない)。
-- Google Fonts は初回アクセス後にキャッシュする(`runtimeCaching`)。
+- フォント（Cinzel, Shippori Mincho B1）は WOFF2 形式でプロジェクト内に同梱し（`src/ui/fonts/`）、Service Worker が precache するため完全オフラインで動作する。
 - 配色は「暗い固定」(`theme_color` `#0a0806`)。
 - **iPhone の画面の上端**: ホーム画面アプリで、ステータスバーの下に内容が入り込むと、iOS がそこをぼかして文字が読みにくくなる(`simple_chess` と同じ症状)。そのため `index.html` で `apple-mobile-web-app-status-bar-style` を `black`(不透明。`black-translucent` にしない)にし、`main.css` の `--safe-top`(安全領域 + `--top-gap` 28px)を、各画面の上端の余白に使う。**画面の最上部(この余白の中)には、文字を置かない**(以前あった「HP・ゴールドのカプセル」は、iPhone Air の実機で、ここにあってぼやけたので廃止した。余白の下の文字は、ぼやけなかった)。上端の余白を足すときは `env(safe-area-inset-top)` だけにせず `--safe-top` を使う(`tests/pwa.test.ts` が確認する)。小さい画面(iPhone SE)でタイトル・地図・戦闘がはみ出さないことを、画面で確認する。
 - **戦闘画面は、短い画面で詰めて1画面に収める**(Hit / Stand のボタンが画面の外に出ると押せない)。`main.css` の末尾に、高さ 850px 以下・720px 以下で `.battle` の中だけを詰める指定がある(`tests/layout.test.ts` が確認する)。詰めた分の高さは、残りの高さを使う敵の舞台(`.enemy-stage`。`contain: size` で、中の絵の大きさを最低の高さに数えない)に回る。**戦闘ログ欄は常時は出さない**(`BattleLog`: 読み上げ用の `aria-live` の見えない領域と、「記録」ボタンのシート。行動順は `turnBanner` の帯、ダメージの内訳は数字の下。`tests/layout.test.ts` が確認する)。手札が5枚以上のときは `HandView` が `.hand--many` を付け、カードを重ねて1行に収める。**上のほうにある `@media (max-height)` は、あとに書かれた通常の指定に上書きされて効かない箇所がある**ので、画面を詰めるときは詳しい指定(`.battle .xxx`)で書く。戦闘画面の高さが変わる変更をしたら、375×667(iPhone SE)、375×647(SE のホーム画面アプリ)、390×797 + 下の安全領域 34px(ノッチのある iPhone のホーム画面アプリ)で、敵の舞台が潰れず、下のボタンが見えることを画面で確認する。装備画面（旧・編成画面）も同じ考えで、高さ 750px 以下で `.loadout` の中だけを詰める指定がある(スキル獲得直後の「置くスキルのバナー付き」の画面が、約 695px の高さまで収まる。iPhone SE の 667px のような、さらに低い画面は対象外)。
@@ -34,9 +34,8 @@ npm run build       # tsc --noEmit && vite build → dist/
 
 - Lint(ESLint)は入れず、`tsc` の型チェックで代替している。
 - メタ進行(`src/meta/Meta.ts`)の `version` が `1` 以外のデータは、`loadMeta` が初期状態に戻す(保存の形を変えるときの移行処理がない)。保存の形を変えるときは、`version` を上げて、古い形を変換する処理を書く(キー名 `bj-meta-v1` は変えない)。
-- Google Fonts(外部)に依存している。初回アクセス後はキャッシュされるが、初回がオフラインだと代替フォントになる → フォントを同梱するか、許容する旨を明記する。
 
-対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)、Dependabot(`.github/dependabot.yml`。npmは毎週、Actions は毎月)、バージョン表示(タイトル画面の下)、起動失敗時の復旧(`public/boot.js`)、バックアップ(`src/meta/backup.ts`)、画像・音・文章の出どころ(README の末尾。敵の絵は Gemini で生成)。
+対応済み: 更新ボタン方式(`registerType: 'prompt'`)、ピンチ拡大の許可、専用の maskable アイコン、PR 時のテスト(`test.yml`)、インストール方法の説明(タイトル画面)、デフォルトブランチを `main` に変更(公開は `main` への push のみ)、Dependabot(`.github/dependabot.yml`。npmは毎週、Actions は毎月)、バージョン表示(タイトル画面の下)、起動失敗時の復旧(`public/boot.js`)、バックアップ(`src/meta/backup.ts`)、画像・音・文章の出どころ(README の末尾。敵の絵は Gemini で生成)、フォント同梱（Cinzel / Shippori Mincho B1 の WOFF2 同梱による完全オフライン化）。
 
 ## 共通ルール(PWA アプリ共通)
 

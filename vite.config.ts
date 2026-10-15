@@ -33,15 +33,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webp,mp3,webmanifest}'], // webp = 絵（src/ui/art）、mp3 = 効果音（src/audio/sfx）
-        // Google Fonts は初回アクセス後にキャッシュし、オフラインでも表示できるようにする
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 } },
-          },
-        ],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,mp3,woff2,webmanifest}'], // webp = 絵（src/ui/art）、mp3 = 効果音（src/audio/sfx）、woff2 = フォント（src/ui/fonts）
       },
     }),
   ],

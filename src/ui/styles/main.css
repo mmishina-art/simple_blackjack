@@ -1,3 +1,40 @@
+/* ローカルフォント（完全オフライン・PWA 同梱） */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/cinzel-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../fonts/cinzel-800.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Shippori Mincho B1';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/shippori-mincho-b1-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Shippori Mincho B1';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/shippori-mincho-b1-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Shippori Mincho B1';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../fonts/shippori-mincho-b1-800.woff2') format('woff2');
+}
+
 /* ダークファンタジー調: 古い羊皮紙・黒インク・錆びた金・乾いた血。挿絵本のような質感を CSS/SVG だけで表現する */
 :root {
   /* iPhone の画面の上端は、システムがぼかす帯がある。文字がその帯に入らないよう、安全領域の上に余白を足す（simple_chess と同じ） */
