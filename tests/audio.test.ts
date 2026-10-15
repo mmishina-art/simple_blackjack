@@ -313,4 +313,13 @@ describe('BUST or DIE の予告の効果音', () => {
     expect(readFileSync('src/audio/AudioManager.ts', 'utf8')).toContain("case 'omen':");
     expect(readFileSync('docs/sfx-prompts.md', 'utf8')).toContain('sfx_omen.wav');
   });
+
+  it('src/audio/sfx/omen.mp3 が配置され、全16種の効果音ファイルが揃っている', () => {
+    const ALL = ['click', 'deal', 'flip', 'block', 'break', 'attack', 'damage', 'bust', 'push', 'blackjack', 'victory', 'defeat', 'guard', 'heal', 'pick', 'omen'] as const;
+    const { existsSync } = require('node:fs') as typeof import('node:fs');
+    for (const name of ALL) {
+      expect(existsSync(`src/audio/sfx/${name}.mp3`)).toBe(true);
+    }
+  });
 });
+
