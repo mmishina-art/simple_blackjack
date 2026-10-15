@@ -8,7 +8,7 @@ const read = (p: string) => readFileSync(p, 'utf8');
 
 describe('敵の絵（生成 AI の画像）', () => {
   it('届いた敵の画像があり、ENEMY_IMAGES に登録されている（1 枚 200KB 以下）', () => {
-    for (const id of ['slime', 'skeleton', 'bat', 'ghoul', 'knight', 'merman', 'gargoyle', 'wraith', 'iron_golem', 'serpent', 'flame', 'golem', 'imp', 'dragon']) {
+    for (const id of ['slime', 'skeleton', 'bat', 'ghoul', 'knight', 'merman', 'gargoyle', 'wraith', 'iron_golem', 'drowned_knight', 'serpent', 'flame', 'golem', 'imp', 'magma_serpent', 'dragon']) {
       expect(statSync(`src/ui/art/enemies/${id}.webp`).size, id).toBeLessThan(200_000);
       expect(ENEMY_IMAGES[id], id).toBeTruthy();
     }

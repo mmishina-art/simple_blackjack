@@ -236,13 +236,16 @@ describe('第1〜3階層の敵の特性', () => {
     return m;
   };
 
-  it('墓守の騎士: 戦闘開始時にブロック 6', () => {
+  it('墓守の騎士: 戦闘開始時にブロック 6。水没した騎士: 戦闘開始時にブロック 8', () => {
     const m = env('knight');
     m.bus.emit('onBattleStart', { player: m.ctx.player, enemy: m.ctx.enemy });
     expect(m.ctx.enemy.block).toBe(6);
+    const dk = env('drowned_knight');
+    dk.bus.emit('onBattleStart', { player: dk.ctx.player, enemy: dk.ctx.enemy });
+    expect(dk.ctx.enemy.block).toBe(8);
   });
 
-  it('沼の魚人・深淵の海蛇: ラウンドの初めに HP が回復する（最大 HP まで）', () => {
+  it('沼の魚人・深淵の海蛇・溶岩の大蛇: ラウンドの初めに HP が回復する（最大 HP まで）', () => {
     const m = env('merman');
     m.ctx.enemy.hp = 10;
     m.bus.emit('onRoundStart', { round: 1 });
@@ -251,6 +254,10 @@ describe('第1〜3階層の敵の特性', () => {
     s.ctx.enemy.hp = s.ctx.enemy.maxHp;
     s.bus.emit('onRoundStart', { round: 1 });
     expect(s.ctx.enemy.hp).toBe(s.ctx.enemy.maxHp);
+    const ms = env('magma_serpent');
+    ms.ctx.enemy.hp = 20;
+    ms.bus.emit('onRoundStart', { round: 1 });
+    expect(ms.ctx.enemy.hp).toBe(23);
   });
 
   it('亡霊: ラウンドの初めに、あなたのブロックが 2 減る（0 未満にはならない）', () => {

@@ -22,8 +22,8 @@ describe('スロット表に出すスロット（敵の個性）', () => {
     const lefts = Object.fromEntries(ENEMY_LINEUP.map((e) => [e.id, gaugeKeys(e.ai.standOn)[0]]));
     expect(lefts).toEqual({
       slime: 14, skeleton: 15, bat: 13, ghoul: 16, knight: 17,
-      merman: 15, gargoyle: 16, wraith: 16, iron_golem: 15, serpent: 18,
-      flame: 17, golem: 15, imp: 17, dragon: 18,
+      merman: 15, gargoyle: 16, wraith: 16, iron_golem: 15, drowned_knight: 17, serpent: 18,
+      flame: 17, golem: 15, imp: 17, magma_serpent: 18, dragon: 18,
     }); // おおむね弱い敵ほど低い合計で止まり、強い敵ほど高い合計まで引く（大蝙蝠は 13 で止まり、低い合計の急降下で襲う）
     expect(new DealerAI(15).standOn).toBe(15);
   });

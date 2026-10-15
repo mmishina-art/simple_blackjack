@@ -16,11 +16,13 @@ export const ENEMY_DROPS: Record<string, readonly SkillId[]> = {
   gargoyle: ['shield', 'bulwark', 'heavy', 'chop', 'pierce_stab'],           // 石の肌: 守りと重い一撃
   wraith: ['drain', 'pierce_stab', 'mend', 'holy_light', 'twin_strike'],     // 霊: 貫く・吸う
   iron_golem: ['pierce_stab', 'heavy', 'smash', 'bulwark', 'shield_bash'],   // 鋼のブロック: 貫く・重い一撃
+  drowned_knight: ['slash', 'bulwark', 'heavy', 'pierce_stab', 'twin_strike'], // 水没した騎士: 守りと重撃・連撃
   // 第3階層
   serpent: ['twin_strike', 'berserk', 'drain', 'impale', 'flurry'],          // 深淵の海蛇: 連撃・再生
   flame: ['berserk', 'rampage', 'chop', 'heavy', 'twin_strike'],             // 炎: 荒々しい攻撃
   golem: ['shield_bash', 'bulwark', 'heavy', 'smash', 'fortress'],           // 溶岩の巨体: 守りと一撃
   imp: ['drain', 'impale', 'siphon', 'berserk', 'pierce_stab'],              // 悪魔: 吸魂・貫く
+  magma_serpent: ['twin_strike', 'berserk', 'rampage', 'impale', 'flurry'], // 溶岩の大蛇: 荒々しい連撃・貫通
 };
 
 /** 敵の落とし物の候補（なければ空）。 */
