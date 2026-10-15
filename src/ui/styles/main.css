@@ -1586,7 +1586,7 @@ section { min-width: 0; }
 /* ======== BUST or DIE の予告 ========
  * 敵の手が 21 かバーストのとき、伏せ札がめくられるまで、敵の舞台の上に出す（21 なら攻撃 2 倍、バーストなら行動できない）。
  */
-.omen { position: absolute; top: 6px; left: 0; right: 0; z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px;
+.omen { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); z-index: 6; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 8px;
   background: linear-gradient(90deg, transparent, rgba(40, 6, 4, 0.88) 15%, rgba(40, 6, 4, 0.88) 85%, transparent); animation: omenPulse 1.6s ease-in-out infinite; }
 .omen__main { font-family: var(--font-display); font-size: 24px; font-weight: 800; letter-spacing: 0.12em; color: var(--logo-die); text-shadow: 0 0 14px var(--logo-die-glow), 0 2px 0 #000; line-height: 1; }
 .omen__main small { font-size: 13px; color: var(--bone-dim); letter-spacing: 0.1em; }
