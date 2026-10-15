@@ -56,6 +56,7 @@ describe('BUST or DIE の予告', () => {
     expect(view).toContain('BUST <small>or</small> DIE');
     expect(view).not.toMatch(/21 の確率/);
     expect(readFileSync('src/ui/styles/main.css', 'utf8')).toContain('.omen {');
+    expect(readFileSync('src/ui/styles/main.css', 'utf8')).toMatch(/\.omen\s*\{[^}]*top:\s*50%/);
     expect(readFileSync('src/ui/components/EnemyInfo.ts', 'utf8')).toContain('die-tag');
   });
 });
