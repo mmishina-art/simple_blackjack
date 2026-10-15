@@ -89,6 +89,15 @@ export function moveTo(run: RunState, id: string): TileDef {
   return target;
 }
 
+/** デバッグ用: 隣接制限を無視して指定マスへ直接ワープ移動する。 */
+export function debugMoveTo(run: RunState, id: string): TileDef {
+  const target = run.map.tiles[id];
+  if (!target) throw new Error(`Tile ${id} not found in stage ${run.stage}`);
+  run.position = id;
+  run.stats.maxRow = Math.max(run.stats.maxRow, stageRowOffset(run.stage) + target.row);
+  return target;
+}
+
 export function markCleared(run: RunState, id: string): void {
   if (!isCleared(run, id)) run.cleared.push(id);
 }
