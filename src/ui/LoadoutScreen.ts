@@ -6,7 +6,7 @@ import { stashInPouch } from '../run/loadout';
 import { previewSlot } from '../run/effective';
 import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { sellFromInventory, sellPrice } from '../run/shop';
-import { equipArmor, equipSkill, isSlotLocked, type RunState } from '../run/Run';
+import { canMergeAt, equipArmor, equipSkill, isSlotLocked, mergeSkill, type RunState } from '../run/Run';
 import { buildRelicRow, relicsByRarityDesc } from './components/relicMedal';
 import { openSkillInfo } from './components/SkillInfo';
 import { buildSlotRow, wrapIconAsButton } from './components/SlotRow';
@@ -100,6 +100,8 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
     for (const key of SLOT_KEYS) {
       const id = run.slots[key];
       const locked = isSlotLocked(run, key);
+      // 同じスキルが入っているスロットは、合成して「＋」にできる
+      const merge = !!armed && canMergeAt(run, key, armed);
       slotList.append(buildSlotRow({
         key,
         skill: id ? getSkill(id) : null,
@@ -109,12 +111,21 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         effective: effective.get(key),
         target: !!armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key),
         blocked: !!armed && !isArmor(getSkill(armed)) && !canPlaceAt(getSkill(armed), key),
-        after: armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key) ? previewSlot(run, key, armed).short : undefined,
+        after: merge ? `合成 ${previewSlot(run, key, getSkill(armed!).upgradesTo!).short}` : armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key) ? previewSlot(run, key, armed).short : undefined,
         onInfo: armed ? undefined : () => openSkillInfo(id ? getSkill(id) : getSkill(run.fallbackSkill), { atk: slotAttack(run.baseAttack, key), where: `${slotLabel(key)} のスロット（基本パワー ${slotAttack(run.baseAttack, key)}）` }),
         onTap: !armed ? undefined : () => {
           if (armed && isArmor(getSkill(armed))) return; // 防具は、下の防具の欄に装備する
           if (armed && !canPlaceAt(getSkill(armed), key)) return; // レア度の制限: ここには置けない
-          if (armed) {
+          if (armed && merge) {
+            const id = armed;
+            confirmMerge(key, id, () => {
+              const to = mergeSkill(run, key, id);
+              if (to) {
+                audio.sfx('pick');
+                opts.onClose(`「${getSkill(id).name}」を合成して「${getSkill(to).name}」にした（${slotLabel(key)}）。`);
+              }
+            });
+          } else if (armed) {
             const skill = getSkill(armed);
             confirmPlace(key, armed, () => {
               if (equipSkill(run, key, skill.id)) {
@@ -246,6 +257,18 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       subtitle: '防御スロットは上書きのみ',
       content: buildArmorCompare(cur, next),
       options: [{ kind: 'confirm', icon: '装', name: '装備する', detail: `${cur.name} → ${next.name}`, onPick: done }],
+    });
+  };
+
+  /** 合成の確認: 同じスキル 2 つを合わせて「＋」にする。いまと合成後を並べて見せる。 */
+  const confirmMerge = (key: number, id: SkillId, done: () => void): void => {
+    const before = previewSlot(run, key, id);
+    const after = previewSlot(run, key, getSkill(id).upgradesTo!);
+    openSheet({
+      title: `「${before.name}」を合成する？`,
+      subtitle: `同じスキル 2 つを合わせて「${after.name}」にする（${slotLabel(key)}）`,
+      content: buildSlotCompare(before, after, true),
+      options: [{ kind: 'confirm', icon: '合', name: '合成する', detail: `${before.short} → ${after.short}`, onPick: done }],
     });
   };
 

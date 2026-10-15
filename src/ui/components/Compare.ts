@@ -48,13 +48,16 @@ function wrap(before: HTMLElement, after: HTMLElement, lines: string[], note?: s
   return box;
 }
 
-/** スロットにセットするときの、ビフォー（いま）とアフター（セット後）の比較。数値はレリックの補正後。 */
-export function buildSlotCompare(before: SlotPreview, after: SlotPreview): HTMLElement {
+/**
+ * スロットにセットするときの、ビフォー（いま）とアフター（セット後）の比較。数値はレリックの補正後。
+ * merge: 同じスキルの合成（「合成後」と出し、上書きで失われる、の注意は出さない）。
+ */
+export function buildSlotCompare(before: SlotPreview, after: SlotPreview, merge = false): HTMLElement {
   const tagOf = (p: SlotPreview): string => (p.id ? kindTag(getSkill(p.id)) : '');
-  const note = before.id ? `「${before.name}」は失われる（上書き。道具袋には戻らない）` : undefined;
+  const note = merge ? '手に入れた 1 つを使って、スロットのスキルが＋になる' : before.id ? `「${before.name}」は失われる（上書き。道具袋には戻らない）` : undefined;
   return wrap(
     side('いま', before.name, before.icon, before.id ? medalKindClass(before.kind) : ' medal--basic', tagOf(before), before.short),
-    side('セット後', after.name, after.icon, after.id ? medalKindClass(after.kind) : ' medal--basic', tagOf(after), after.short, true),
+    side(merge ? '合成後' : 'セット後', after.name, after.icon, after.id ? medalKindClass(after.kind) : ' medal--basic', tagOf(after), after.short, true),
     diffLines(before.totals, after.totals),
     note,
   );

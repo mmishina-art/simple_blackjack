@@ -14,7 +14,7 @@ import {
 } from '../src/relics/catalog';
 import {
   createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
-  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot, placementViolations, shrineUpgradeChoices,
+  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot, placementViolations, shrineUpgradeChoices, canMergeAt, mergeSkill, hasMergeTarget,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
 import { upgradeCost } from '../src/run/shop';
@@ -277,20 +277,42 @@ describe('祠: 入れ替えとバージョンアップ', () => {
     expect(run.inventory).toEqual([]);
   });
 
-  it('祠のバージョンアップの候補は最大 3 つ。21 の会心の一撃系は、レジェンドになるまで必ず入る', () => {
-    for (let seed = 1; seed <= 30; seed++) {
-      const run = createRun();
-      run.slots = { ...WITH_BLOCKS };
-      Object.assign(run.slots, { 12: 'jab', 13: 'slash', 14: 'guard', 15: 'big_attack', 16: 'slash' });
-      const c = shrineUpgradeChoices(run, seededRng(seed));
-      expect(c.length).toBeLessThanOrEqual(3);
-      expect(c).toContain(21);
-    }
+  it('祠のバージョンアップの候補は、21 の会心の一撃の系統だけ。終焉の一撃まで育ったら、候補はない', () => {
     const run = createRun();
-    Object.assign(run.slots, { 12: 'jab', 13: 'slash', 14: 'guard', 15: 'big_attack', 21: 'final_strike' }); // 21 はレジェンド
-    const c = shrineUpgradeChoices(run, seededRng(1));
-    expect(c).not.toContain(21);
-    expect(c.length).toBe(3); // ほかのスキルが出る
+    run.slots = { ...WITH_BLOCKS };
+    Object.assign(run.slots, { 12: 'jab', 13: 'slash', 14: 'guard', 15: 'big_attack', 16: 'slash' }); // ほかのスキルは候補に出ない（＋は合成で作る）
+    expect(shrineUpgradeChoices(run, seededRng(1))).toEqual([21]);
+    run.slots[21] = 'overlord_strike';
+    expect(shrineUpgradeChoices(run, seededRng(1))).toEqual([21]);
+    run.slots[21] = 'final_strike';
+    expect(shrineUpgradeChoices(run, seededRng(1))).toEqual([]);
+  });
+
+  it('合成: 手に入れたスキルと同じスキルのスロットで、2 つを合わせて「＋」にする（手持ちの 1 つを使う）', () => {
+    const run = createRun();
+    run.slots = { ...WITH_BLOCKS, 16: 'slash' };
+    run.inventory = ['slash'];
+    expect(hasMergeTarget(run, 'slash')).toBe(true);
+    expect(canMergeAt(run, 16, 'slash')).toBe(true);
+    expect(canMergeAt(run, 15, 'slash')).toBe(false); // 違うスキルのスロット
+    expect(mergeSkill(run, 16, 'slash')).toBe('slash_plus');
+    expect(run.slots[16]).toBe('slash_plus');
+    expect(run.inventory).toEqual([]);
+    // ＋はそれ以上合成しない。手持ちがなければ合成できない
+    run.inventory = ['slash'];
+    expect(canMergeAt(run, 16, 'slash')).toBe(false);
+    expect(hasMergeTarget(run, 'slash')).toBe(false);
+    run.slots[17] = 'slash';
+    run.inventory = [];
+    expect(canMergeAt(run, 17, 'slash')).toBe(false);
+  });
+  it('道具・会心の一撃は合成できない', () => {
+    const run = createRun();
+    run.slots = { ...WITH_BLOCKS, 12: 'herb' };
+    run.inventory = ['herb', 'ace_strike'];
+    expect(canMergeAt(run, 12, 'herb')).toBe(false);
+    expect(canMergeAt(run, 21, 'ace_strike')).toBe(false);
+    expect(hasMergeTarget(run, 'herb')).toBe(false);
   });
 
   it('バージョンアップ: スキルが「＋」になる（レア度は同じ）。＋はそれ以上強化できない。道具は不可。会心の一撃は別に育つ', () => {
@@ -590,5 +612,16 @@ describe('祠の入れ替え（スロット・道具袋・防具の間で、何�
     expect(canSwapSpots(run, { kind: 'armor' }, { kind: 'pouch' })).toBe(false); // 防御スロットを空にできない
     run.inventory = ['herb'];
     expect(canSwapSpots(run, { kind: 'armor' }, { kind: 'pouch' })).toBe(false); // 防具の場所に道具は置けない
+  });
+});
+
+describe('合成の画面', () => {
+  it('置く画面で、同じスキルのスロットは「合成」になり、確認では「合成後」と出す（上書きの注意は出さない）', async () => {
+    const { readFileSync } = await import('node:fs');
+    const screen = readFileSync('src/ui/LoadoutScreen.ts', 'utf8');
+    expect(screen).toContain('const merge = !!armed && canMergeAt(run, key, armed);');
+    expect(screen).toContain('content: buildSlotCompare(before, after, true),');
+    expect(readFileSync('src/ui/components/Compare.ts', 'utf8')).toContain("side(merge ? '合成後' : 'セット後'");
+    expect(readFileSync('src/main.ts', 'utf8')).toContain("hasMergeTarget(run, id) ? '・装備中と合成で＋' : ''");
   });
 });

@@ -1,7 +1,7 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { dropsOf } from './drops';
-import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
+import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, isPlusSkill, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
 import { RARITY_ORDER } from './loadout';
 import { pickWeighted, tierWeights } from '../core/rarity';
 import { canPlaceAt, getSkill, isArmor, rarityOfSkill, SLOT_KEYS, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
@@ -222,15 +222,40 @@ export function swapSpots(run: RunState, a: Spot, b: Spot, opts: { tentative?: b
 export const SHRINE_UPGRADE_CHOICES = 3;
 
 /**
- * 祠のバージョンアップで選べるスロット（最大 3 つ）。21 の会心の一撃系は、レジェンドになるまで必ず入れる。
- * 残りは、強化先があるスロットからランダムに選ぶ。21 がレジェンドに達したら、ほかのスキルだけが出る。
+ * 祠のバージョンアップで選べるスロット: 21 の会心の一撃の系統だけ（会心の一撃 → 覇王の一撃 → 終焉の一撃）。
+ * ほかのスキルの「＋」は、祠ではなく、同じスキルの合成で作る（canMergeAt / mergeSkill）。終焉の一撃まで育ったら、候補はない。
  */
-export function shrineUpgradeChoices(run: RunState, rng: Rng, max = SHRINE_UPGRADE_CHOICES): SlotKey[] {
-  const upgradable = SLOT_KEYS.filter((k) => { const id = run.slots[k]; return !!id && !!getSkill(id).upgradesTo; });
-  const must = upgradable.filter((k) => k === 21);
-  const others = upgradable.filter((k) => k !== 21);
-  for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(rng.next() * (i + 1)); [others[i], others[j]] = [others[j], others[i]]; }
-  return [...must, ...others.slice(0, max - must.length)].sort((a, b) => a - b);
+export function shrineUpgradeChoices(run: RunState, _rng?: Rng, max = SHRINE_UPGRADE_CHOICES): SlotKey[] {
+  return SLOT_KEYS.filter((k) => {
+    const id = run.slots[k];
+    const to = id ? getSkill(id).upgradesTo : undefined;
+    return !!to && !isPlusSkill(to);
+  }).slice(0, max);
+}
+
+/**
+ * 合成: 手に入れたスキル（報酬・ショップ・道具袋から出したもの）と同じスキルが、そのスロットにある。
+ * 2 つを合わせて、スロットのスキルを「＋」にできる（＋は 1 段階だけ。道具・防具・会心の一撃は合成できない）。
+ */
+export function canMergeAt(run: RunState, key: SlotKey, id: SkillId): boolean {
+  if (run.slots[key] !== id || isSlotLocked(run, key) || !run.inventory.includes(id)) return false;
+  const to = getSkill(id).upgradesTo;
+  return !!to && isPlusSkill(to);
+}
+
+/** 合成する: 手持ちの 1 つを使って、スロットのスキルを「＋」にする。合成できなければ null。 */
+export function mergeSkill(run: RunState, key: SlotKey, id: SkillId): SkillId | null {
+  if (!canMergeAt(run, key, id)) return null;
+  run.inventory.splice(run.inventory.indexOf(id), 1);
+  const to = getSkill(id).upgradesTo!;
+  run.slots[key] = to;
+  return to;
+}
+
+/** そのスキルを手に入れたら、合成できるスロットがあるか（報酬の選択肢に「合成で＋」と出す）。 */
+export function hasMergeTarget(run: RunState, id: SkillId): boolean {
+  const to = getSkill(id).upgradesTo;
+  return !!to && isPlusSkill(to) && SLOT_KEYS.some((k) => run.slots[k] === id && !isSlotLocked(run, k));
 }
 
 /** バージョンアップできるスロットか（スキルが入っていて、強化先がある。道具は強化先がない）。固定スロット（21 の会心の一撃）も、バージョンアップだけはできる。 */
