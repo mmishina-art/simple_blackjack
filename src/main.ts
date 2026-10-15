@@ -325,7 +325,7 @@ function offerSkillReward(enemyId?: string, offered?: string[]): void {
     scene: { kind: 'reward', title: 'ごほうび', line: `${dropFrom ? `${dropFrom}の落とし物。` : ''}スキルか、ゴールドか。ひとつ選べ。` },
     options: [
       ...ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}${hasMergeTarget(run, id) ? '・装備中と合成で＋' : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
-      ...(gold > 0 ? [{ icon: '金', name: `ゴールド +${gold} G`, description: `スキルの代わりに、ゴールドを受け取る（所持 ${run.gold} G）`, tone: 'b' as const }] : []),
+      ...(gold > 0 ? [{ gold: true, icon: '金', name: `ゴールド +${gold} G`, description: `スキルの代わりに、ゴールドを受け取る（所持 ${run.gold} G）`, tone: 'b' as const }] : []),
     ],
     onPick(i) {
       if (i >= ids.length) {

@@ -77,3 +77,17 @@ describe('題名「Bust or Die」', () => {
     expect(read('src/meta/backup.ts')).not.toContain('bust-or-die');
   });
 });
+
+describe('お金（ゴールド）の選択肢はドル袋の絵', () => {
+  it('スキルの丸メダルと区別するため、丸枠（.medal）ではなくドル袋の絵（.choice__moneybag / moneybag-svg）で描画する', () => {
+    expect(read('src/main.ts')).toContain('gold: true');
+    const choice = read('src/ui/ChoiceScreen.ts');
+    expect(choice).toContain('opt.gold');
+    expect(choice).toContain('choice__moneybag');
+    expect(choice).toContain('moneyBagSvg');
+    const css = read('src/ui/styles/main.css');
+    expect(css).toContain('.choice__moneybag {');
+    expect(css).toContain('.choice__card--gold {');
+    expect(read('src/ui/components/moneyBag.ts')).toContain('class="moneybag-svg"');
+  });
+});
