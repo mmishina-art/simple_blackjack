@@ -25,7 +25,10 @@ export class EnemyActionState implements BattleState {
     ctx.log(`${enemy.name}は${enemy.hand.size}枚で手札を決めた`);
     // 手札が 21 かバーストなら、どちらかは伏せたまま予告する（21 なら攻撃 2 倍、バーストなら行動できない）
     ctx.bustOrDie = isBustOrDie(enemy, rules);
-    if (ctx.bustOrDie) ctx.log(`BUST or DIE ── ${enemy.name}の手は 21 か、バーストか`);
+    if (ctx.bustOrDie) {
+      ctx.log(`BUST or DIE ── ${enemy.name}の手は 21 か、バーストか`);
+      ctx.bus.emit('onBustOrDie', { enemy });
+    }
     if (!enemy.hand.isBust(rules)) ctx.bus.emit('onStand', { entity: enemy });
     await ctx.wait(PACE.settle);
     return 'PlayerDeal';

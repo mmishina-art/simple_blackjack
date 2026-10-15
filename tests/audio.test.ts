@@ -271,7 +271,7 @@ describe('ブロック・回復の効果音', () => {
 });
 
 describe('効果音の雰囲気（ダークファンタジーの重く暗い音）', () => {
-  const ALL = ['click', 'pick', 'deal', 'flip', 'attack', 'damage', 'guard', 'block', 'break', 'heal', 'push', 'bust', 'blackjack', 'victory', 'defeat'] as const;
+  const ALL = ['click', 'pick', 'deal', 'flip', 'attack', 'damage', 'guard', 'block', 'break', 'heal', 'push', 'bust', 'blackjack', 'victory', 'defeat', 'omen'] as const;
   it('ピコピコした矩形波（square）は、どの効果音にも使わない', () => {
     for (const name of ALL) {
       const a = new AudioManager();
@@ -303,5 +303,14 @@ describe('生成 AI で作った効果音ファイル', () => {
   });
   it('mp3 は Service Worker の precache に入る（オフラインでも鳴る）', () => {
     expect(readFileSync('vite.config.ts', 'utf8')).toMatch(/globPatterns: \['\*\*\/\*\.\{[^}]*mp3/);
+  });
+});
+
+describe('BUST or DIE の予告の効果音', () => {
+  it('予告が出たとき（onBustOrDie）に omen を鳴らす。ファイルがなければ合成音', () => {
+    expect(readFileSync('src/audio/bindBattleSounds.ts', 'utf8')).toContain("bus.on('onBustOrDie', () => audio.sfx('omen'))");
+    expect(readFileSync('src/core/battle/states/EnemyActionState.ts', 'utf8')).toContain("ctx.bus.emit('onBustOrDie', { enemy });");
+    expect(readFileSync('src/audio/AudioManager.ts', 'utf8')).toContain("case 'omen':");
+    expect(readFileSync('docs/sfx-prompts.md', 'utf8')).toContain('sfx_omen.wav');
   });
 });

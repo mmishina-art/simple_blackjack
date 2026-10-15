@@ -87,6 +87,11 @@ An ominous failure sting: a few low notes falling in a dissonant, unsettling way
 A dark triumphant sting: a deep church bell toll with a minor-key chord of bell tones rising upward. Powerful but grim. Length about 0.9 seconds.
 ```
 
+**BUST or DIE の予告（`sfx_omen.wav`、0.9〜1.2 秒）**: 敵の手が 21 かバーストか。弔いの鐘と、張り詰めた鼓動
+```
+An ominous warning sting before a life-or-death gamble: a single deep funeral bell toll, two heavy heartbeat thumps underneath, and a faint dissonant tritone shimmer above. Tense and foreboding, not loud or explosive. Length about 1 second.
+```
+
 **勝利（`sfx_victory.wav`、1.5〜2 秒）**: 重い銅鑼と、最後だけ長調で終わる和音
 ```
 A grim victory sting after defeating a monster: a heavy gong-like bell, then a slow swelling chord that resolves to a major chord at the end. Dark, solemn, and conclusive, not cheerful. Length about 1.8 seconds.
