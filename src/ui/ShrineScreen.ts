@@ -18,15 +18,15 @@ export interface ShrineOptions {
 
 /**
  * 祠。できることは**1 つだけ**: 入れ替え（スロット・道具袋を好きなだけ。1 つでも入れ替えたら祠を出る）・
- * バージョンアップ（候補は最大 3 つ。レア度は変えずに、スキルを一段階強くして「＋」にする。道具は不可）・祈り（ランダムな効果）。選んだら祠は済みになり、出る。
+ * バージョンアップ（21 の会心の一撃の系統だけを育てる）・祈り（ランダムな効果）。選んだら祠は済みになり、出る。
  */
 export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions): void {
-  /** バージョンアップの候補（最大 3 つ。21 の会心の一撃系は、レジェンドになるまで必ず入る）。強化先のレア度の制限で置けないものは、理由つきで選べなくして出す。 */
+  /** バージョンアップの候補（21 の会心の一撃の系統だけ。終焉の一撃まで育ったら、なし）。 */
   const upgradeCandidates = shrineUpgradeChoices(run, opts.rng);
 
   const choices: { icon: string; name: string; description: string; tone: 'a' | 'b' | 'c' | 'd'; run(): void }[] = [];
   choices.push({ icon: '替', tone: 'a', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（祠でできることは1つだけ。1 つでも入れ替えたら、祠を出る）', run: () => showSwapScreen(root, run, { onClose: (swapped) => (swapped ? opts.onDone('祠でスキルや道具を入れ替えた。') : show()) }) });
-  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', tone: 'b', name: 'バージョンアップ', description: 'ゴールドを払って、スキルを一段階強くする（名前に＋が付く。候補は最大 3 つ。会心の一撃系は必ず入る）', run: pickUpgrade });
+  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', tone: 'b', name: 'バージョンアップ', description: 'ゴールドを払って、21 の会心の一撃を育てる（会心の一撃 → 覇王の一撃 → 終焉の一撃。ほかのスキルの＋は、同じスキルの合成で作る）', run: pickUpgrade });
   choices.push({ icon: '祈', tone: 'c', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
 
   const show = (): void => showChoiceScreen(root, {
@@ -39,7 +39,7 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
 
   function pickUpgrade(): void {
     openSheet({
-      title: 'バージョンアップ', subtitle: `強くするスキルを選ぶ（所持 ${run.gold} G）`,
+      title: 'バージョンアップ', subtitle: `会心の一撃を育てる（所持 ${run.gold} G）`,
       options: upgradeCandidates.map((k) => {
         const from = getSkill(run.slots[k]!);
         const to = getSkill(from.upgradesTo!);

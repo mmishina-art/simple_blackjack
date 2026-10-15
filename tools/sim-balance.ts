@@ -12,7 +12,7 @@ import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
 import { upgradeCost, buyOffer, rewardGold, generateShop, sellFromInventory } from '../src/run/shop';
 import { emptyMeta } from '../src/meta/Meta';
-import { advanceStage, armorCap, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, shrineUpgradeChoices, upgradeSlot, type RunState } from '../src/run/Run';
+import { advanceStage, armorCap, canMergeAt, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, shrineUpgradeChoices, upgradeSlot, mergeSkill, type RunState } from '../src/run/Run';
 
 const N = Number(process.argv[2] ?? 600);
 const RISK = Number(process.argv[3] ?? 0.45);
@@ -73,11 +73,17 @@ function rewardScore(id: SkillId, run: RunState): number {
   if (isArmor(sk)) return (sk.damageCap ?? 9) < armorCap(run) ? 40 + (armorCap(run) - sk.damageCap!) * 10 : -1;
   let best = 0;
   for (const k of Object.keys(WEIGHT).map(Number)) if (canPlaceAt(sk, k)) best = Math.max(best, WEIGHT[k] * (slotValue(id, k, run, 0.5) - slotValue(run.slots[k], k, run, 0.5)));
+  // 合成: 同じスキルが装備にあれば、＋にしたときの伸びを価値にする
+  const plus = sk.upgradesTo;
+  if (plus && plus.endsWith('_plus') && !process.env.NO_MERGE) for (const k of Object.keys(WEIGHT).map(Number)) if (run.slots[k] === id) best = Math.max(best, WEIGHT[k] * (slotValue(plus, k, run, 0.5) - slotValue(id, k, run, 0.5)));
   return best;
 }
 
 function place(run: RunState, id: SkillId): void {
   const sk = getSkill(id);
+  // 同じスキルが装備にあれば、合成して＋にする（ふつうは置き換えより得）
+  const mk = Object.keys(WEIGHT).map(Number).find((k) => canMergeAt(run, k, id));
+  if (mk !== undefined && !process.env.NO_MERGE) { mergeSkill(run, mk, id); return; }
   if (isArmor(sk)) { if (rewardScore(id, run) > 0) equipArmor(run, id); return; }
   let bestK = -1, bestG = 0;
   for (const k of Object.keys(WEIGHT).map(Number)) {

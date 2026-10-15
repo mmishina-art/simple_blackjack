@@ -8,7 +8,7 @@ import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
 import {
-  advanceStage, armorCap, STAGE_CLEAR_MAX_HP, createRun, enemyOfTile, isCleared, isFinalStage, markCleared, moveTo, offerRelics, offerSkills, type RunState,
+  advanceStage, armorCap, STAGE_CLEAR_MAX_HP, createRun, enemyOfTile, hasMergeTarget, isCleared, isFinalStage, markCleared, moveTo, offerRelics, offerSkills, type RunState,
 } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
@@ -310,7 +310,7 @@ function offerSkillReward(enemyId?: string): void {
     heading: 'スキル獲得',
     sub: `${dropFrom ? `${dropFrom}の落とし物。` : ''}ひとつ選んで装備する`,
     scene: { kind: 'reward', line: `${dropFrom ? `${dropFrom}の落とし物。` : ''}ひとつ選んで装備する。` },
-    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
+    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}${hasMergeTarget(run, id) ? '・装備中と合成で＋' : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
     onPick(i) {
       run.inventory.push(ids[i]);
       syncCodex();
