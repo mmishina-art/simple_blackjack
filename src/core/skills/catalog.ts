@@ -267,6 +267,19 @@ atk('garg_fall', '落石の一撃', 1, 3, '落');
 defineSkill({ id: 'ig_quake', name: '鉄槌', icon: '槌', effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'block', amount: 5 }] });
 atk('golem_meteor', '溶岩流', 1, 4, '流');
 
+// 中ボス用スキル（前階ボスの色違い・強化）
+atk('drowned_slash', '水没した大剣', 1, 0, '剣');
+atk('drowned_bash', '浸水の盾打ち', 1, 2, '殴');
+defineSkill({ id: 'drowned_guard', name: '水没の塔盾', icon: '守', effects: [{ type: 'block', amount: 10 }] });
+atk('drowned_cleave', '深海の断罪', 3, 1, '断');
+atk('drowned_judgement', '底無き審判', 1, 3, '審');
+
+atk('magma_bite', '溶岩の牙', 1, 0, '牙');
+atk('magma_coil', '灼熱の締めつけ', 1, 4, '締');
+defineSkill({ id: 'magma_scale', name: '溶岩の鱗', icon: '鱗', effects: [{ type: 'block', amount: 10 }] });
+atk('magma_eruption', 'マグマの大津波', 3, 3, '波');
+atk('magma_roar', '紅蓮の咆哮', 1, 5, '咆');
+
 // 敵のスキルには、レア度を付けない（色分けしない）。危ない場所は「危険」（赤）、21 は「必殺」で示す。レア度の色は、プレイヤーが手に入れるスキルの価値だけを表す
 
 /**
@@ -280,6 +293,7 @@ export const FATAL_SKILLS: readonly SkillId[] = [
   'slime_engulf', 'skel_cleave', 'bat_dive', 'ghoul_devour', 'knight_cleave',
   'merman_rush', 'garg_crush', 'wraith_curse', 'ig_crush', 'serpent_tide',
   'flame_nova', 'golem_eruption', 'imp_hex', 'dragon_breath', 'dragon_inferno',
+  'drowned_cleave', 'magma_eruption',
 ];
 for (const id of FATAL_SKILLS) getSkill(id).fatal = true;
 
@@ -292,11 +306,13 @@ export const ENEMY_SLOTS = {
   merman: slotsFromRanges([[15, 16, 'merman_rush'], [17, 18, 'merman_dive'], [19, 21, 'merman_tide']]),
   gargoyle: slotsFromRanges([[16, 18, 'garg_harden'], [19, 19, 'garg_swoop'], [20, 20, 'garg_crush'], [21, 21, 'garg_fall']]),
   wraith: slotsFromRanges([[16, 16, 'wraith_drain'], [17, 18, 'wraith_curse'], [19, 20, 'wraith_touch'], [21, 21, 'wraith_wail']]),
+  drowned_knight: slotsFromRanges([[17, 18, 'drowned_guard'], [19, 19, 'drowned_bash'], [20, 20, 'drowned_cleave'], [21, 21, 'drowned_judgement']]),
   serpent: slotsFromRanges([[18, 18, 'serpent_scale'], [19, 19, 'serpent_coil'], [20, 20, 'serpent_tide'], [21, 21, 'serpent_abyss']]),
   flame: slotsFromRanges([[17, 18, 'flame_burst'], [19, 20, 'flame_nova'], [21, 21, 'flame_burst']]),
   golem: slotsFromRanges([[15, 16, 'golem_armor'], [17, 18, 'golem_slam'], [19, 20, 'golem_eruption'], [21, 21, 'golem_meteor']]),
   imp: slotsFromRanges([[17, 18, 'imp_hex'], [19, 20, 'imp_siphon'], [21, 21, 'imp_hellfire']]),
   iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 20, 'ig_crush'], [21, 21, 'ig_quake']]),
+  magma_serpent: slotsFromRanges([[18, 18, 'magma_scale'], [19, 19, 'magma_coil'], [20, 20, 'magma_eruption'], [21, 21, 'magma_roar']]),
   dragon: slotsFromRanges([
     [18, 18, 'dragon_claw'], [19, 19, 'dragon_breath'], [20, 20, 'dragon_inferno'], [21, 21, 'dragon_apocalypse'],
   ]),

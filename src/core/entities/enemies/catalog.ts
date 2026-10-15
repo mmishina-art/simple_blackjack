@@ -134,6 +134,13 @@ export const GraveKnight: EnemyDef = {
   trait: '重装（戦闘開始時にブロック 6）', relics: [IronClad],
 };
 
+const DrownedArmor: Relic = {
+  id: 'drowned_armor', name: '水没の重装', icon: '甲', description: '戦闘開始時にブロック 8',
+  apply({ bus, enemy }) {
+    bus.on('onBattleStart', () => { enemy.block += 8; });
+  },
+};
+
 // ---- 第2階層: 沈んだ大聖堂 ----
 export const Merman: EnemyDef = {
   id: 'merman', name: '沼の魚人', maxHp: 26, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.merman, fallbackSkill: 'merman_jab',
@@ -153,6 +160,11 @@ export const Wraith: EnemyDef = {
 export const IronGolem: EnemyDef = {
   id: 'iron_golem', name: '鋼鉄のゴーレム', maxHp: 32, attack: 4, ai: new DealerAI(15), slots: ENEMY_SLOTS.iron_golem, fallbackSkill: 'ig_punch',
   trait: '鋼の守り（ラウンドの初めにブロック +2、上限 14）。ブロックを無視する攻撃や、一撃の重いスキルが効く', relics: [SteelGuard],
+};
+
+export const DrownedKnight: EnemyDef = {
+  id: 'drowned_knight', name: '水没した騎士', maxHp: 38, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.drowned_knight, fallbackSkill: 'drowned_slash',
+  trait: '水没の重装（戦闘開始時にブロック 8）', relics: [DrownedArmor],
 };
 
 export const Serpent: EnemyDef = {
@@ -176,11 +188,16 @@ export const Imp: EnemyDef = {
   trait: '悪魔の取引（同値なら必ず先攻）', relics: [Contract],
 };
 
+export const MagmaSerpent: EnemyDef = {
+  id: 'magma_serpent', name: '溶岩の大蛇', maxHp: 60, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.magma_serpent, fallbackSkill: 'magma_bite',
+  trait: '溶岩再生（ラウンドの初めに HP +3）', relics: [{ ...Regeneration(3), id: 'magma_regen', name: '溶岩再生', description: 'ラウンドの初めに HP +3' }],
+};
+
 /** 冒険の敵の一覧（階層ごとの並びは、各階層のマップが決める）。 */
 export const ENEMY_LINEUP: readonly EnemyDef[] = [
   Slime, Skeleton, GiantBat, Ghoul, GraveKnight,
-  Merman, Gargoyle, Wraith, IronGolem, Serpent,
-  FlameSpirit, LavaGolem, Imp, BlackDragon,
+  Merman, Gargoyle, Wraith, IronGolem, DrownedKnight, Serpent,
+  FlameSpirit, LavaGolem, Imp, MagmaSerpent, BlackDragon,
 ];
 
 export function getEnemy(id: string): EnemyDef {

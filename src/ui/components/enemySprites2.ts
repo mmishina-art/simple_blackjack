@@ -258,4 +258,16 @@ const ironGolem = `
   <ellipse cx="100" cy="38" rx="26" ry="8" fill="#7fd8ff" opacity=".2"/>
 </svg>`;
 
-export const NEW_ENEMY_SPRITES: Record<string, string> = { knight, merman, gargoyle, wraith, serpent, flame, golem, imp, iron_golem: ironGolem };
+export const NEW_ENEMY_SPRITES: Record<string, string> = {
+  knight,
+  merman,
+  gargoyle,
+  wraith,
+  serpent,
+  flame,
+  golem,
+  imp,
+  iron_golem: ironGolem,
+  drowned_knight: knight.replace('墓守の騎士', '水没した騎士'),
+  magma_serpent: serpent.replace('深淵の海蛇', '溶岩の大蛇'),
+};
