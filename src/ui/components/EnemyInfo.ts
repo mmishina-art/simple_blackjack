@@ -39,11 +39,11 @@ export function buildEnemySkillList(enemy: Entity, standOn = 0): HTMLElement {
     const rarity = is21 ? 'legend' : look.rarity;
     const mult21 = createRuleSet().enemy21Multiplier;
     const die = is21 && row.skill.effects.some((e) => e.type === 'attack');
-    // 役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 はレジェンド色枠
+    // 役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 は金の枠 + 赤い下地（必殺）
     const tone = !is21 && !fatal ? effectTone(row.skill) ?? 'attack' : null;
     const short = describeSkillShort(row.skill, enemy.attackAt(row.key));
     const desc = die ? `${short.replace(/攻撃 (\d+)/, (_, n: string) => `攻撃 ${Number(n) * mult21}`)} <em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>` : short;
-    el.className = `lslot lslot--info lslot--set ${rarityClass(rarity)}${fatal ? ' lslot--fatal' : ''}${tone ? ` lslot--tone-${tone}` : ''}`;
+    el.className = `lslot lslot--info lslot--set ${rarityClass(rarity)}${fatal ? ' lslot--fatal' : ''}${die ? ' lslot--die' : ''}${tone ? ` lslot--tone-${tone}` : ''}`;
     // 危険な合計値は、赤い印と「危険」の文字で示す（色だけに頼らない）。21 は「必殺」（攻撃 2 倍）
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>
