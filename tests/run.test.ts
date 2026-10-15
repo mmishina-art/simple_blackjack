@@ -625,3 +625,20 @@ describe('合成の画面', () => {
     expect(readFileSync('src/main.ts', 'utf8')).toContain("hasMergeTarget(run, id) ? '・装備中と合成で＋' : ''");
   });
 });
+
+describe('ごほうびのスキルを置く画面', () => {
+  it('「売る」を出さない（道具袋から出したとき・ショップで買ったときは、これまでどおり）', async () => {
+    const { readFileSync } = await import('node:fs');
+    const screen = readFileSync('src/ui/LoadoutScreen.ts', 'utf8');
+    expect(screen).not.toContain("} else {\n        actions.append(mk('btn--retry', '売る'");
+    expect(screen).toContain("actions.append(mk('btn--stand', 'やめる', '袋にもどす'"); // 道具袋から出したとき
+    expect(screen).toContain("'買うのをやめる'"); // ショップで買ったとき
+  });
+  it('すでに＋のスロットには、同じスキルは置けない', async () => {
+    const { readFileSync } = await import('node:fs');
+    const screen = readFileSync('src/ui/LoadoutScreen.ts', 'utf8');
+    expect(screen).toContain('const plusHere = !!armed && !!id && id === getSkill(armed).upgradesTo && isPlusSkill(id);');
+    expect(screen).toContain('if (plusHere) return;');
+    expect(screen).toContain("tag: plusHere ? '＋なので置けない' : undefined,");
+  });
+});
