@@ -45,6 +45,14 @@ export function enemyGold(def: EnemyDef, boss = false): number {
   return Math.round((enemyLevel(def) * 4 + 14) * (boss ? 2.5 : 1));
 }
 
+/** 敵を倒した報酬で、スキルの代わりにゴールドを選んだときの倍率（スキルをあきらめる分の見返り）。 */
+export const REWARD_GOLD_CHOICE_RATE = 2;
+
+/** 敵を倒した報酬で、ゴールドを選んだときの額（ふつうの敵。ボスは遺物の報酬で、ゴールドは自動で入る）。 */
+export function rewardGoldChoice(run: RunState, def: EnemyDef): number {
+  return rewardGold(run, def) * REWARD_GOLD_CHOICE_RATE;
+}
+
 /** 実際に得るゴールド: 敵ごとの量に、祭壇の「商人の心得」の割合を掛ける。 */
 export function rewardGold(run: RunState, def: EnemyDef, boss = false): number {
   return Math.round(enemyGold(def, boss) * (1 + run.bonus.goldRate));
