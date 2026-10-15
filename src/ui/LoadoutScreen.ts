@@ -3,6 +3,7 @@ import { slotAttack } from '../core/skills/catalog';
 import { canPlaceAt, describeSkill, describeSkillBonus, describeSkillShort, placementNote, getSkill, isArmor, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SkillId } from '../core/skills/Skill';
 import { effectiveSlotSkills } from '../run/effective';
 import { stashInPouch } from '../run/loadout';
+import { isPlusSkill } from '../core/skills/catalog';
 import { previewSlot } from '../run/effective';
 import { buildArmorCompare, buildSlotCompare } from './components/Compare';
 import { sellFromInventory, sellPrice } from '../run/shop';
@@ -104,6 +105,8 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       const locked = isSlotLocked(run, key);
       // 同じスキルが入っているスロットは、合成して「＋」にできる
       const merge = !!armed && canMergeAt(run, key, armed);
+      // すでに＋になっているスロットには、同じスキル（＋になる前のもの）は置けない（置くと弱くなるため）
+      const plusHere = !!armed && !!id && id === getSkill(armed).upgradesTo && isPlusSkill(id);
       slotList.append(buildSlotRow({
         key,
         skill: id ? getSkill(id) : null,
@@ -111,13 +114,15 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         atk: slotAttack(run.baseAttack, key),
         locked,
         effective: effective.get(key),
-        target: !!armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key),
-        blocked: !!armed && !isArmor(getSkill(armed)) && !canPlaceAt(getSkill(armed), key),
-        after: merge ? `合成 ${previewSlot(run, key, getSkill(armed!).upgradesTo!).short}` : armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key) ? previewSlot(run, key, armed).short : undefined,
+        target: !!armed && !isArmor(getSkill(armed)) && !locked && !plusHere && canPlaceAt(getSkill(armed), key),
+        tag: plusHere ? '＋なので置けない' : undefined,
+        blocked: !!armed && !isArmor(getSkill(armed)) && (plusHere || !canPlaceAt(getSkill(armed), key)),
+        after: plusHere ? undefined : merge ? `合成 ${previewSlot(run, key, getSkill(armed!).upgradesTo!).short}` : armed && !isArmor(getSkill(armed)) && !locked && canPlaceAt(getSkill(armed), key) ? previewSlot(run, key, armed).short : undefined,
         onInfo: armed ? undefined : () => openSkillInfo(id ? getSkill(id) : getSkill(run.fallbackSkill), { atk: slotAttack(run.baseAttack, key), where: `${slotLabel(key)} のスロット（基本パワー ${slotAttack(run.baseAttack, key)}）` }),
         onTap: !armed ? undefined : () => {
           if (armed && isArmor(getSkill(armed))) return; // 防具は、下の防具の欄に装備する
           if (armed && !canPlaceAt(getSkill(armed), key)) return; // レア度の制限: ここには置けない
+          if (plusHere) return; // ＋のスロットには、同じスキルは置けない
           if (armed && merge) {
             const id = armed;
             confirmMerge(key, id, () => {
@@ -168,11 +173,10 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
         actions.append(mk('btn--stand', 'やめる', '袋にもどす', () => opts.onClose()), mk('btn--retry', '売る', `+${sellPrice(id)} G`, sellIt));
       } else if (mode === 'shop') {
         actions.append(mk('btn--retry', '買うのをやめる', '全額返金', () => { opts.undo?.(); opts.onClose(); }));
-      } else {
-        actions.append(mk('btn--retry', '売る', `+${sellPrice(id)} G`, sellIt));
       }
+      // ごほうび・祈りで得たスキルには「売る」を出さない（敵のごほうびは、戻ってゴールドを選べる。いらなければ道具袋へ）
     }
-    if (armed) screen.append(actions);
+    if (armed && actions.childElementCount > 0) screen.append(actions);
     root.replaceChildren(screen);
   };
 
