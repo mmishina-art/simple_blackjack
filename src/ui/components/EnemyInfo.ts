@@ -35,14 +35,15 @@ export function buildEnemySkillList(enemy: Entity, standOn = 0): HTMLElement {
     const el = document.createElement('div');
     const look = slotLook(row.key, row.isFallback ? null : row.skill);
     const fatal = !row.isFallback && row.skill.fatal;
-    // 21 は必殺: 攻撃は 2 倍した値を出し、「必殺」の札を添える（危険の一撃と比べやすいように）
+    const is21 = row.key === SLOT_MAX;
+    const rarity = is21 ? 'legend' : look.rarity;
     const mult21 = createRuleSet().enemy21Multiplier;
-    const die = row.key === SLOT_MAX && row.skill.effects.some((e) => e.type === 'attack');
-    // 役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 の必殺は赤（lslot--die）
-    const tone = !die ? effectTone(row.skill) ?? 'attack' : null;
+    const die = is21 && row.skill.effects.some((e) => e.type === 'attack');
+    // 役割の色: 攻撃はオレンジ（アイコンだけ）、ブロックは青、回復は緑。21 はレジェンド色枠
+    const tone = !is21 && !fatal ? effectTone(row.skill) ?? 'attack' : null;
     const short = describeSkillShort(row.skill, enemy.attackAt(row.key));
     const desc = die ? `${short.replace(/攻撃 (\d+)/, (_, n: string) => `攻撃 ${Number(n) * mult21}`)} <em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>` : short;
-    el.className = `lslot lslot--info lslot--set ${rarityClass(look.rarity)}${look.special ? ` lslot--special lslot--${look.tone}` : ''}${fatal ? ' lslot--fatal' : ''}${die ? ' lslot--die' : ''}${tone ? ` lslot--tone-${tone}` : ''}`;
+    el.className = `lslot lslot--info lslot--set ${rarityClass(rarity)}${fatal ? ' lslot--fatal' : ''}${tone ? ` lslot--tone-${tone}` : ''}`;
     // 危険な合計値は、赤い印と「危険」の文字で示す（色だけに頼らない）。21 は「必殺」（攻撃 2 倍）
     el.innerHTML = `<span class="lslot__key">${row.label}</span>
       <span class="medal medal--sm">${row.isFallback ? BASIC_ICON : row.skill.icon}</span>
