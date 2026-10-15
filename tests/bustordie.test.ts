@@ -14,8 +14,8 @@ const withHand = (id: 'player' | 'enemy', ...ranks: Rank[]) => {
   ranks.forEach((r) => e.hand.add(makeCard(r, 'S')));
   return e;
 };
-// スライムの 21 は必殺の酸の奔流（POW3 + 2 = 5）。2 倍で 10
-const DELUGE = 5;
+// スライムの 21 は必殺の酸の奔流（POW3 + 3 = 6）。2 倍で 12
+const DELUGE = 6;
 
 describe('BUST or DIE: 敵の 21 は攻撃 2 倍', () => {
   it('倍率は RuleSet の enemy21Multiplier（既定 2）。敵の 21 だけで、プレイヤーの 21 や敵の 20 には掛からない', () => {
@@ -24,7 +24,7 @@ describe('BUST or DIE: 敵の 21 は攻撃 2 倍', () => {
     expect(damageDealtMultiplier(withHand('enemy'), 20, rules)).toBe(1);
     expect(damageDealtMultiplier(withHand('player'), 21, rules)).toBe(1);
   });
-  it('戦闘: 敵 21（酸の奔流 5）が先攻 → 2 倍の 10 ダメージ。倍率 1 なら 5', async () => {
+  it('戦闘: 敵 21（酸の奔流 6）が先攻 → 2 倍の 12 ダメージ。倍率 1 なら 6', async () => {
     expect(getSkill(Slime.slots[21]!).id).toBe('slime_deluge');
     const m = await playRound({ player: ['K', '6'], enemyHand: ['K', 'A'], playerMaxHp: 60, playerHp: 60, enemyHp: 40 });
     expect(m.ctx.player.hp).toBe(60 - DELUGE * 2);

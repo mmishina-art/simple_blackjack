@@ -188,7 +188,7 @@ defineSkill({
   effects: [{ type: 'attack', mult: 1, add: 0 }, { type: 'heal', amount: 3 }],
 });
 atk('bat_dive', '急降下', 2, 4, '剛');
-atk('bat_screech', '血の饗宴', 1, 2, '絶');
+atk('bat_screech', '血の饗宴', 1, 3, '絶');
 
 atk('ghoul_scratch', '引っ掻き', 0.5, 0, '攻');
 atk('ghoul_claw', '腐爪', 1, 0, '爪');
@@ -211,7 +211,7 @@ atk('knight_cleave', '断罪の一閃', 3, 0, '断');
 atk('merman_jab', '銛の突き', 1, 1, '銛');
 atk('merman_rush', '水流の突進', 2, 4, '流');
 defineSkill({ id: 'merman_dive', name: '水に潜る', icon: '潜', effects: [{ type: 'block', amount: 7 }] });
-atk('merman_tide', '大渦', 1, 2, '渦');
+atk('merman_tide', '大渦', 1, 3, '渦');
 
 atk('garg_claw', '石の爪', 1, 0, '爪');
 atk('garg_swoop', '急襲', 1, 2, '襲');
@@ -251,7 +251,7 @@ defineSkill({
   id: 'imp_siphon', name: '魂の搾取', icon: '搾',
   effects: [{ type: 'attack', mult: 1, add: 0 }, { type: 'heal', amount: 4 }],
 });
-atk('imp_hellfire', '地獄の業火', 1, 4, '獄');
+atk('imp_hellfire', '地獄の業火', 1, 5, '獄');
 
 // 鋼鉄のゴーレム（ブロックを多用する敵）。壁で守りを固め、盾で殴り、ブロックを重ねる
 atk('ig_punch', '鉄の拳', 1, 1, '拳');
@@ -260,10 +260,10 @@ defineSkill({ id: 'ig_bash', name: '盾叩き', icon: '叩', effects: [{ type: '
 defineSkill({ id: 'ig_crush', name: '鉄塊の一撃', icon: '塊', effects: [{ type: 'attack', mult: 3, add: 3 }, { type: 'block', amount: 5 }] });
 
 // 21 の必殺技（敵の合計値がちょうど 21 で出る。攻撃 2 倍で、危険の一撃と同じくらいの重さ）
-atk('slime_deluge', '酸の奔流', 1, 2, '奔');
-atk('skel_execution', '処刑の一太刀', 1, 1, '処');
-atk('knight_judgement', '審判の剣', 1, 2, '審');
-atk('garg_fall', '落石の一撃', 1, 3, '落');
+atk('slime_deluge', '酸の奔流', 1, 3, '奔');
+atk('skel_execution', '処刑の一太刀', 1, 2, '処');
+atk('knight_judgement', '審判の剣', 1, 3, '審');
+atk('garg_fall', '落石の一撃', 1, 4, '落');
 defineSkill({ id: 'ig_quake', name: '鉄槌', icon: '槌', effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'block', amount: 5 }] });
 atk('golem_meteor', '溶岩流', 1, 4, '流');
 

@@ -33,10 +33,10 @@ describe('敵の危険な合計値', () => {
     expect(getSkill(bat.slots[13]!).fatal).toBe(true);
     for (const def of ENEMY_LINEUP) expect(getSkill(def.slots[21] ?? def.fallbackSkill).fatal, def.id).toBeFalsy();
   });
-  it('21 の必殺（2 倍）は、危険の一撃と同じか、それより重い', () => {
+  it('21 の必殺（2 倍）は、危険の一撃より重い', () => {
     for (const def of ENEMY_LINEUP) {
       const fatal = reachable(def).filter(([, id]) => getSkill(id).fatal).map(([, id]) => damage(def, id));
-      expect(damage(def, def.slots[21] ?? def.fallbackSkill) * 2, def.id).toBeGreaterThanOrEqual(Math.max(...fatal));
+      expect(damage(def, def.slots[21] ?? def.fallbackSkill) * 2, def.id).toBeGreaterThan(Math.max(...fatal));
     }
   });
   it('危険のスキルは、どれも敵のスロットに置かれている', () => {
