@@ -50,15 +50,15 @@ describe('敵の危険な合計値', () => {
     expect(info).toContain('<em class="die-tag" title="21 は攻撃 ${mult21} 倍">必殺</em>');
     expect(info).toContain('`攻撃 ${Number(n) * mult21}`'); // 21 の攻撃は 2 倍した値を出す
     const css = readFileSync('src/ui/styles/main.css', 'utf8');
-    // 危険は静か（赤い数字と小さな三角だけ。枠は普通のまま）、21 の必殺は血の赤で塗って目立たせる
-    for (const k of ['.slot.slot--fatal .slot__val', '.slot.slot--fatal::before', '.lslot--fatal .lslot__desc', '.slot.slot--die {', '.lslot.lslot--die {', '--fatal:', '--die-hi:']) expect(css, k).toContain(k);
-    expect(css).not.toContain('.slot.slot--fatal {');
-    expect(readFileSync('src/ui/components/SlotStrip.ts', 'utf8')).toContain("entity.id === 'enemy' && key === SLOT_MAX ? ' slot--die' : ''");
-    expect(info).toContain("die ? ' lslot--die' : ''");
+    // 危険スロットは下地ごと血の赤色で塗り、敵の 21 はレジェンド色枠
+    for (const k of ['.slot.slot--fatal {', '.slot.slot--fatal .slot__val', '.slot.slot--fatal::before', '.lslot--fatal .lslot__desc', '--fatal:', '--die-hi:']) expect(css, k).toContain(k);
+    const strip = readFileSync('src/ui/components/SlotStrip.ts', 'utf8');
+    expect(strip).toContain("isEnemy21 ? 'legend'");
+    expect(info).toContain("is21 ? 'legend'");
   });
 });
 
-describe('敵の技の役割の色: 攻撃はオレンジ、ブロックは青、回復は緑、21 の必殺は赤', () => {
+describe('敵の技の役割の色: 攻撃はオレンジ、ブロックは青、回復は緑、21 はレジェンド色枠', () => {
   it('効果の種類で色を決める（ブロックを含む = 青、回復を含む = 緑、攻撃だけ = なし）', async () => {
     const { effectTone } = await import('../src/core/skills/look');
     expect(effectTone(getSkill('skel_guard'))).toBe('block');
@@ -66,11 +66,11 @@ describe('敵の技の役割の色: 攻撃はオレンジ、ブロックは青�
     expect(effectTone(getSkill('bat_drain'))).toBe('heal'); // 攻撃 + 回復
     expect(effectTone(getSkill('skel_slash'))).toBeNull();
   });
-  it('スロット表と一覧に色を付ける（攻撃はオレンジのアイコン、21 の必殺は赤）', () => {
+  it('スロット表と一覧に色を付ける（攻撃はオレンジのアイコン、危険スロットは赤色）', () => {
     const strip = readFileSync('src/ui/components/SlotStrip.ts', 'utf8');
-    expect(strip).toContain("entity.id === 'enemy' && key !== SLOT_MAX ? effectTone(skill) ?? 'attack' : null");
-    expect(readFileSync('src/ui/components/EnemyInfo.ts', 'utf8')).toContain("!die ? effectTone(row.skill) ?? 'attack' : null");
+    expect(strip).toContain("isEnemy && !isEnemy21 && !skill?.fatal ? effectTone(skill) ?? 'attack' : null");
+    expect(readFileSync('src/ui/components/EnemyInfo.ts', 'utf8')).toContain("!is21 && !fatal ? effectTone(row.skill) ?? 'attack' : null");
     const css = readFileSync('src/ui/styles/main.css', 'utf8');
-    for (const k of ['.slot.slot--tone-block {', '.slot.slot--tone-heal {', '.lslot--tone-block .lslot__desc', '.lslot--tone-heal .lslot__desc', '.slot.slot--tone-attack .slot__icon', '.lslot.lslot--die .medal', '--tone-attack:']) expect(css, k).toContain(k);
+    for (const k of ['.slot.slot--tone-block {', '.slot.slot--tone-heal {', '.lslot--tone-block .lslot__desc', '.lslot--tone-heal .lslot__desc', '.slot.slot--tone-attack .slot__icon', '--tone-attack:']) expect(css, k).toContain(k);
   });
 });
