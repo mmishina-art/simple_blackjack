@@ -152,3 +152,22 @@ describe('デバッグ: すぐに勝つ', () => {
     expect(m.ctx.player.hp).toBeGreaterThan(0);
   });
 });
+
+describe('敵のごほうび: スキルかゴールドの二択', () => {
+  it('ゴールドを選ぶと、ふつうの額の 2 倍', async () => {
+    const { rewardGold, rewardGoldChoice, REWARD_GOLD_CHOICE_RATE } = await import('../src/run/shop');
+    const { createRun } = await import('../src/run/Run');
+    const { getEnemy } = await import('../src/core/entities/enemies/catalog');
+    const run = createRun();
+    expect(REWARD_GOLD_CHOICE_RATE).toBe(2);
+    expect(rewardGoldChoice(run, getEnemy('slime'))).toBe(rewardGold(run, getEnemy('slime')) * 2);
+  });
+  it('ふつうの敵ではゴールドが自動で入らず、ごほうびの画面にゴールドの選択肢がある。確定前は戻れる', async () => {
+    const { readFileSync } = await import('node:fs');
+    const main = readFileSync('src/main.ts', 'utf8');
+    expect(main).toContain("if (tile.kind === 'boss') {\n    const gold = rewardGold(run, enemyOfTile(tile), true);");
+    expect(main).toContain('const gold = def ? rewardGoldChoice(run, def) : 0;');
+    expect(main).toContain('offerSkillReward(enemyId, ids);'); // 戻ると、同じ候補の画面に戻る
+    expect(readFileSync('src/ui/LoadoutScreen.ts', 'utf8')).toContain("opts.onBack && armedMode === 'reward'");
+  });
+});

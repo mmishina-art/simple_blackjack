@@ -10,7 +10,7 @@ import { slotAttack } from '../src/core/skills/catalog';
 import { attackValue, canPlaceAt, getSkill, isArmor, slotKeyOf, supportValue, type SkillId } from '../src/core/skills/Skill';
 import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
-import { upgradeCost, buyOffer, rewardGold, generateShop, sellFromInventory } from '../src/run/shop';
+import { upgradeCost, buyOffer, rewardGold, rewardGoldChoice, generateShop, sellFromInventory } from '../src/run/shop';
 import { emptyMeta } from '../src/meta/Meta';
 import { advanceStage, armorCap, canMergeAt, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, shrineUpgradeChoices, upgradeSlot, mergeSkill, type RunState } from '../src/run/Run';
 
@@ -116,7 +116,7 @@ if (ESS.some((x) => x !== 1)) {
     }
   }
 }
-const stat = { runs: 0, clears: 0, battles: 0, won: 0, rounds: 0, hpLost: 0, defends: 0, decisions: 0, herbs: 0 };
+const stat = { goldPicks: 0, runs: 0, clears: 0, battles: 0, won: 0, rounds: 0, hpLost: 0, defends: 0, decisions: 0, herbs: 0 };
 const perEnemy: Record<string, { n: number; w: number; hp: number; rounds: number }> = {};
 const deaths: Record<string, number> = {};
 const reach: Record<string, number> = {};
@@ -194,12 +194,13 @@ const stageReached: Record<number, number> = {};
         pe.w++; stat.won++;
         run.hp = m.ctx.player.hp;
         run.maxHp = m.ctx.player.maxHp; // 凱旋の杯で増えた最大 HP を引き継ぐ
-        if (!process.env.NO_GOLD) run.gold += rewardGold(run, def, tile.kind === 'boss');
+        // ゴールドが自動で入るのはボスだけ。ふつうの敵は、スキルかゴールド（2 倍）の二択: 良いスキルがなければゴールドを取る
+        if (!process.env.NO_GOLD && tile.kind === 'boss') run.gold += rewardGold(run, def, true);
         if (tile.kind === 'enemy') {
           const offer = offerSkills(rng, run, def.id);
           const best = [...offer].sort((a, b) => rewardScore(b, run) - rewardScore(a, run))[0];
-          run.inventory.push(best);
-          place(run, best);
+          if (rewardScore(best, run) <= Number(process.env.GOLD_PICK ?? 20)) { if (!process.env.NO_GOLD) run.gold += rewardGoldChoice(run, def); stat.goldPicks++; }
+          else { run.inventory.push(best); place(run, best); }
         }
       } else if (tile.kind === 'shop' && !process.env.NO_GOLD) {
         // 持ち物の余りを売り、遺物 → 効果の大きい順に買う
@@ -232,7 +233,7 @@ const stageReached: Record<number, number> = {};
     if (dead) deaths[`${run.stage}-${dead}`] = (deaths[`${run.stage}-${dead}`] ?? 0) + 1;
   }
   const f = (x: number, d = 1) => x.toFixed(d);
-  console.log(`risk ${RISK} N ${N} | クリア ${f(100 * stat.clears / N, 0)}% | 1戦の勝率 ${f(100 * stat.won / stat.battles, 0)}% | 1戦 ${f(stat.rounds / stat.battles)}R・自HP減 ${f(stat.hpLost / stat.battles)} | 防御 ${f(100 * stat.defends / stat.decisions, 1)}%`);
+  console.log(`risk ${RISK} N ${N} | クリア ${f(100 * stat.clears / N, 0)}% | 1戦の勝率 ${f(100 * stat.won / stat.battles, 0)}% | 1戦 ${f(stat.rounds / stat.battles)}R・自HP減 ${f(stat.hpLost / stat.battles)} | 防御 ${f(100 * stat.defends / stat.decisions, 1)}% | ゴールドを選んだ ${f(100 * stat.goldPicks / Math.max(1, stat.won), 0)}%`);
   for (const [id, p] of Object.entries(perEnemy)) console.log(`  ${id.padEnd(9)} 戦${String(p.n).padStart(5)} 勝率 ${f(100 * p.w / p.n, 0).padStart(3)}%  1戦 ${f(p.rounds / p.n)}R  自HP減 ${f(p.hp / p.n)}`);
   console.log('  階層に到達:', [2, 3].map((n) => `第${n}階層 ${f(100 * (stageReached[n] ?? 0) / N, 0)}%`).join(' '));
   console.log('  死亡位置:', Object.entries(deaths).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}:${f(100 * v / N, 0)}%`).join(' '));

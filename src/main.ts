@@ -18,7 +18,7 @@ import { POUCH_SIZE } from './run/loadout';
 import { showLoadout } from './ui/LoadoutScreen';
 import { showMap } from './ui/MapView';
 import { openSheet } from './ui/components/SkillSheet';
-import { addGold, generateShop, rewardGold, MAX_GOLD, type ShopOffer } from './run/shop';
+import { addGold, generateShop, rewardGold, rewardGoldChoice, MAX_GOLD, type ShopOffer } from './run/shop';
 import { isDebug } from './debug';
 import { showShop } from './ui/ShopScreen';
 import { showInn } from './ui/InnScreen';
@@ -259,9 +259,12 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   run.stats.enemiesDefeated++;
   if (!bareRun && !cheated && tile.enemyId && discoverEnemy(meta, tile.enemyId)) saveMeta(meta); // モンスター図鑑に載る
   markCleared(run, tile.id);
-  const gold = rewardGold(run, enemyOfTile(tile), tile.kind === 'boss');
-  addGold(run, gold);
-  box.append(el('p', 'result__line result__gold', `ゴールド +${gold}（所持 ${run.gold} G）`));
+  // ゴールドが自動で入るのはボスだけ。ふつうの敵は、次の画面で「スキル」か「ゴールド」を選ぶ
+  if (tile.kind === 'boss') {
+    const gold = rewardGold(run, enemyOfTile(tile), true);
+    addGold(run, gold);
+    box.append(el('p', 'result__line result__gold', `ゴールド +${gold}（所持 ${run.gold} G）`));
+  }
 
   if (tile.kind === 'boss' && !isFinalStage(run)) {
     box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('次の階層へ', offerStageRelic, true));
@@ -302,19 +305,45 @@ function offerStageRelic(): void {
   });
 }
 
-/** 敵を倒した報酬: スキルを3択で獲得し、そのまま装備画面でセットする。 */
-function offerSkillReward(enemyId?: string): void {
-  const ids = offerSkills(defaultRng, run, enemyId);
-  const dropFrom = enemyId ? getEnemy(enemyId).name : '';
+/**
+ * 敵を倒した報酬: スキル 3 つと「ゴールドを受け取る」から、1 つを選ぶ（スキルかゴールドの二択）。
+ * スキルを選んだら装備画面でセットする。置き場所を決めて確定するまでは「戻る」で、この画面に戻って選び直せる（同じ候補のまま）。
+ */
+function offerSkillReward(enemyId?: string, offered?: string[]): void {
+  const ids = offered ?? offerSkills(defaultRng, run, enemyId);
+  const def = enemyId ? getEnemy(enemyId) : null;
+  const gold = def ? rewardGoldChoice(run, def) : 0;
+  const dropFrom = def ? def.name : '';
   showChoiceScreen(root, {
-    heading: 'スキル獲得',
-    sub: `${dropFrom ? `${dropFrom}の落とし物。` : ''}ひとつ選んで装備する`,
-    scene: { kind: 'reward', line: `${dropFrom ? `${dropFrom}の落とし物。` : ''}ひとつ選んで装備する。` },
-    options: ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}${hasMergeTarget(run, id) ? '・装備中と合成で＋' : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
+    heading: 'ごほうび',
+    sub: `${dropFrom ? `${dropFrom}の落とし物。` : ''}スキルかゴールドを、ひとつ選ぶ`,
+    scene: { kind: 'reward', title: 'ごほうび', line: `${dropFrom ? `${dropFrom}の落とし物。` : ''}スキルか、ゴールドか。ひとつ選べ。` },
+    options: [
+      ...ids.map((id) => ({ rarity: rarityOfSkill(getSkill(id)), icon: getSkill(id).icon, name: getSkill(id).name, description: `${describeSkillBonus(getSkill(id))}${placementNote(getSkill(id)) ? `（${placementNote(getSkill(id))}）` : ''}${hasMergeTarget(run, id) ? '・装備中と合成で＋' : ''}`, tag: KIND_LABEL[kindOfSkill(getSkill(id))], kind: kindOfSkill(getSkill(id)) })),
+      ...(gold > 0 ? [{ icon: '金', name: `ゴールド +${gold} G`, description: `スキルの代わりに、ゴールドを受け取る（所持 ${run.gold} G）`, tone: 'b' as const }] : []),
+    ],
     onPick(i) {
-      run.inventory.push(ids[i]);
-      syncCodex();
-      showLoadout(root, run, { armed: ids[i], onClose: (msg) => showMapScreen(msg) });
+      if (i >= ids.length) {
+        addGold(run, gold);
+        showMapScreen(`ゴールド +${gold}（所持 ${run.gold} G）`);
+        return;
+      }
+      const id = ids[i];
+      run.inventory.push(id);
+      showLoadout(root, run, {
+        armed: id,
+        // 確定する前なら、選び直せる（持ち物から外して、同じ候補の画面に戻る）
+        onBack: () => {
+          const at = run.inventory.lastIndexOf(id);
+          if (at >= 0) run.inventory.splice(at, 1);
+          offerSkillReward(enemyId, ids);
+        },
+        onClose: (msg) => {
+          syncCodex();
+          if (!bareRun && !cheated && discoverSkill(meta, id)) saveMeta(meta); // 売ったときも、手に入れたものとして図鑑に載せる
+          showMapScreen(msg);
+        },
+      });
     },
   });
 }

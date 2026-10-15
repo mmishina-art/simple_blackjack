@@ -23,6 +23,8 @@ export interface LoadoutOptions {
    * shop = ショップで買った（袋に入れる / 買うのをやめて返金）。省略時は reward。
    */
   mode?: 'reward' | 'pouch' | 'shop';
+  /** reward のとき、確定する前に「戻る」で呼ぶ（報酬の画面に戻って選び直す）。なければ、セット待ちの間は戻れない。 */
+  onBack?(): void;
   /** shop のとき、「買うのをやめる」で呼ぶ（返金して売り切れを戻す）。 */
   undo?(): void;
   /** 閉じる。message があればマップ画面に表示する。 */
@@ -66,7 +68,7 @@ export function showLoadout(root: HTMLElement, run: RunState, opts: LoadoutOptio
       head.append(tabs);
     }
     // 上の左の「戻る」は全画面で同じ位置。置き先を決めるまで閉じられないセット待ちのときだけ、戻るボタンは出さない
-    screen.append(buildTopBar('装備', armed ? undefined : () => opts.onClose()), head);
+    screen.append(buildTopBar('装備', armed ? (opts.onBack && armedMode === 'reward' ? () => { audio.sfx('click'); opts.onBack!(); } : undefined) : () => opts.onClose()), head);
 
     if (armed) {
       const skill = getSkill(armed);
