@@ -8,7 +8,7 @@ import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
 import {
-  advanceStage, armorCap, STAGE_CLEAR_MAX_HP, createRun, enemyOfTile, hasMergeTarget, isCleared, isFinalStage, markCleared, moveTo, offerRelics, offerSkills, type RunState,
+  advanceStage, armorCap, STAGE_CLEAR_MAX_HP, createRun, debugMoveTo, enemyOfTile, hasMergeTarget, isCleared, isFinalStage, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, type RunState,
 } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
@@ -94,7 +94,12 @@ function showMapScreen(message = ''): void {
   leaveBattle();
   syncCodex();
   showMap(root, run, {
-    onMove: (id) => resolveTile(moveTo(run, id)),
+    onMove: (id) => {
+      const isReachable = reachableTiles(run).some((t) => t.id === id);
+      if (!isReachable && isDebug()) cheated = true;
+      const tile = !isReachable && isDebug() ? debugMoveTo(run, id) : moveTo(run, id);
+      resolveTile(tile);
+    },
     onLoadout: () => showLoadout(root, run, { onClose: (msg) => showMapScreen(msg ?? message) }),
     onGiveUp: () => { leaveBattle(); showTitle(); }, // 魂片は入らない（endRun を呼ばない）
   }, message);

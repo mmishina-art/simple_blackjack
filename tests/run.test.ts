@@ -13,8 +13,8 @@ import {
   Whetstone,
 } from '../src/relics/catalog';
 import {
-  createRun, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
-  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_HEAL, STAGE_CLEAR_MAX_HP, swapSlots, upgradeSlot, placementViolations, shrineUpgradeChoices, canMergeAt, mergeSkill, hasMergeTarget,
+  createRun, debugMoveTo, enemyOfTile, equipSkill, isCleared, isSlotLocked, markCleared, moveTo, offerRelics, offerSkills, reachableTiles,
+  advanceStage, canSwapSpots, swapSpots, canUpgradeSlot, isFinalStage, STAGE_CLEAR_MAX_HP, STAGE_CLEAR_HEAL, swapSlots, upgradeSlot, placementViolations, shrineUpgradeChoices, canMergeAt, mergeSkill, hasMergeTarget,
 } from '../src/run/Run';
 import { ENEMY_SPRITES } from '../src/ui/components/enemySprites';
 import { upgradeCost } from '../src/run/shop';
@@ -174,6 +174,15 @@ describe('駒の移動', () => {
     expect(() => moveTo(run, 'L2')).toThrow();
     moveTo(run, 'L1');
     expect(run.position).toBe('L1');
+  });
+
+  it('デバッグ用: 離れたマス（ボスなど）へ直接ワープ移動できる', () => {
+    const run = createRun();
+    expect(run.position).toBe('S');
+    const boss = debugMoveTo(run, 'B');
+    expect(run.position).toBe('B');
+    expect(boss.kind).toBe('boss');
+    expect(() => debugMoveTo(run, 'INVALID')).toThrow();
   });
 
   it('済みのマスを記録できる', () => {

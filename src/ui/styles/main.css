@@ -510,7 +510,7 @@ section { min-width: 0; }
 .tile--boss .tile__icon { fill: var(--blood-hi); font-size: 28px; }
 .tile--cleared { opacity: 0.45; }
 .tile--here .tile__bg { fill: #2a2112; stroke: #e6c878; }
-.tile--reach { cursor: pointer; }
+.tile[role="button"], .tile--reach { cursor: pointer; }
 .tile--reach .tile__bg { stroke: #e6c878; stroke-width: 3.5; animation: reach 1.2s ease-in-out infinite; }
 .tile--reach:focus-visible .tile__bg { stroke-width: 5; }
 @keyframes reach { 0%,100% { filter: drop-shadow(0 0 2px rgba(230, 200, 120, 0.4)); } 50% { filter: drop-shadow(0 0 10px rgba(230, 200, 120, 0.95)); } }

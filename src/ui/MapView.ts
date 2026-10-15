@@ -10,6 +10,7 @@ import { enemyArtHref } from './components/enemyArt';
 import { TILE_ICONS } from './components/tileIcons';
 import { openMonsterSheet } from './components/MonsterSheet';
 import { mapBackdropHtml } from './components/art';
+import { isDebug } from '../debug';
 
 const NS = 'http://www.w3.org/2000/svg';
 const W = 360;
@@ -114,16 +115,16 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
     const who = t.enemyId ? `${getEnemy(t.enemyId).name} LV${enemyLevel(getEnemy(t.enemyId))}・` : '';
     title.textContent = who + TILE_LABEL[t.kind] + (cleared ? '（済）' : '');
     g.append(title);
-    // 敵のマスは、タップで詳細を出す（進める敵は「進む」で移動）。敵以外で進めるマスは、タップですぐ移動する。
     const enemyId = t.enemyId;
+    const canGo = canMove || (isDebug() && Boolean(enemyId));
     if (enemyId || canMove) {
       const name = enemyId ? `${getEnemy(enemyId).name}（${TILE_LABEL[t.kind]}）` : TILE_LABEL[t.kind];
       g.setAttribute('role', 'button');
       g.setAttribute('tabindex', '0');
-      g.setAttribute('aria-label', enemyId ? `${name}の詳細${canMove ? '（進める）' : ''}` : `${name}へ進む`);
+      g.setAttribute('aria-label', enemyId ? `${name}の詳細${canGo ? '（進める）' : ''}` : `${name}へ進む`);
       const act = () => {
         audio.sfx('click');
-        if (enemyId) openMonsterSheet(enemyId, { run, boss: t.kind === 'boss', canGo: canMove, onGo: () => handlers.onMove(t.id) });
+        if (enemyId) openMonsterSheet(enemyId, { run, boss: t.kind === 'boss', canGo, onGo: () => handlers.onMove(t.id) });
         else handlers.onMove(t.id);
       };
       g.addEventListener('click', act);
