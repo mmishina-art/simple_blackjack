@@ -59,3 +59,9 @@ describe('BUST or DIE の予告', () => {
     expect(readFileSync('src/ui/components/EnemyInfo.ts', 'utf8')).toContain('die-tag');
   });
 });
+
+describe('予告が消える', () => {
+  it('hidden 属性の要素は、display を指定していても必ず隠れる（全体の [hidden] の指定）', () => {
+    expect(readFileSync('src/ui/styles/main.css', 'utf8')).toContain('[hidden] { display: none !important; }');
+  });
+});
