@@ -264,5 +264,4 @@ bus.on('onBlockGained', (p) => ({ ...p, amount: p.amount + 3 }));               
 - **敵の絵・タイトルの絵・戦闘の舞台の背景・マップの背景・場面の挿絵（画像）**: Google Gemini で生成（`src/ui/art/`）。
 - **それ以外の絵**（マップのマスのアイコン・メダル・画像がないときの代わりの絵）: このリポジトリで自作した SVG。
 - **効果音**: 生成 AI で作った音声ファイル（オーナーが作成。`src/audio/sfx/`）と、Web Audio で合成した音（ファイルのないもの・BGM）。
-- **文章**（ゲームの文言・説明）: 自作。
-- **フォント**: Google Fonts（Cinzel・Shippori Mincho B1。どちらも SIL Open Font License）。
+- **フォント**: Cinzel（Natanael Gama 作）、Shippori Mincho B1（FONTDASU 作）。どちらも SIL Open Font License 1.1。WOFF2 形式（Shippori Mincho B1 はゲーム内文字＋常用漢字＋JIS第1水準漢字のサブセット）でアプリ内に同梱（`src/ui/fonts/`）し、Service Worker で precache されるため完全オフラインで表示可能。

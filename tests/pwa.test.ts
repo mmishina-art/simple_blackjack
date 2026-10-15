@@ -93,3 +93,32 @@ describe('画面の上端（iPhone のぼかしの帯を避ける）', () => {
     expect(css).not.toMatch(/padding:\s*calc\(env\(safe-area-inset-top\)/);
   });
 });
+
+describe('オフライン完全対応（フォントの同梱）', () => {
+  const html = readFileSync(resolve(root, 'index.html'), 'utf8');
+  const css = readFileSync(resolve(root, 'src/ui/styles/main.css'), 'utf8');
+  const config = readFileSync(resolve(root, 'vite.config.ts'), 'utf8');
+
+  it('外部フォント（Google Fonts）へのリンクがない', () => {
+    expect(html).not.toMatch(/fonts\.googleapis\.com/);
+    expect(html).not.toMatch(/fonts\.gstatic\.com/);
+  });
+
+  it('main.css でローカルフォント（Cinzel, Shippori Mincho B1）の @font-face が定義されている', () => {
+    expect(css).toMatch(/@font-face\s*\{\s*font-family:\s*'Cinzel'/);
+    expect(css).toMatch(/@font-face\s*\{\s*font-family:\s*'Shippori Mincho B1'/);
+  });
+
+  it('定義されたフォントファイルがすべて src/ui/fonts/ に実在する', () => {
+    const fontRefs = [...css.matchAll(/url\(['"]\.\.\/fonts\/([^'"]+)['"]\)/g)].map((m) => m[1]);
+    expect(fontRefs.length).toBeGreaterThanOrEqual(5);
+    for (const file of fontRefs) {
+      expect(existsSync(resolve(root, 'src/ui/fonts', file)), file).toBe(true);
+    }
+  });
+
+  it('vite.config.ts の precache 対象（globPatterns）に woff2 が含まれる', () => {
+    expect(config).toMatch(/globPatterns:[^\]]*woff2/);
+  });
+});
+
