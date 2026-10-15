@@ -11,6 +11,7 @@ const name = (path: string) => path.replace(/^.*\/([^/]+)\.webp$/, '$1');
 const toMap = (files: Record<string, string>): Partial<Record<string, string>> => Object.fromEntries(Object.entries(files).map(([p, u]) => [name(p), u]));
 const TITLE = Object.values(import.meta.glob<string>('../art/title.webp', { eager: true, query: '?url', import: 'default' }))[0];
 const STAGES = toMap(import.meta.glob<string>('../art/stages/*.webp', { eager: true, query: '?url', import: 'default' }));
+const MAP_STAGES = toMap(import.meta.glob<string>('../art/maps/*.webp', { eager: true, query: '?url', import: 'default' }));
 
 /** タイトルの絵（画像があれば <img>、なければ SVG）。 */
 export function titleArtHtml(): string {
@@ -22,3 +23,10 @@ export function backdropHtml(stage = 1): { html: string; image: boolean } {
   const img = STAGES[`stage${stage}`];
   return img ? { html: `<img class="backdrop-art" src="${img}" alt="" draggable="false">`, image: true } : { html: STAGE_BACKDROP, image: false };
 }
+
+/** マップ画面の背景（階層ごと）。画像があれば <img>、なければ空。 */
+export function mapBackdropHtml(stage = 1): { html: string; image: boolean } {
+  const img = MAP_STAGES[`stage${stage}`];
+  return img ? { html: `<img class="map-backdrop__art" src="${img}" alt="" draggable="false">`, image: true } : { html: '', image: false };
+}
+

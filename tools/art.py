@@ -36,6 +36,8 @@ def target(name: str) -> tuple[str, int, bool]:
     """(保存先, 横の大きさ, 背景を透明にするか)"""
     if name == 'title':
         return 'src/ui/art/title.webp', 900, True
+    if name.startswith('map_stage'):
+        return f'src/ui/art/maps/{name[len("map_"): ]}.webp', 900, False
     if name.startswith('stage'):
         return f'src/ui/art/stages/{name}.webp', 1280, False
     if name.startswith('scene_'):

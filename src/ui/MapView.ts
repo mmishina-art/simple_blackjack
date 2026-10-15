@@ -9,6 +9,7 @@ import { enemyLevel } from '../core/entities/enemies/level';
 import { enemyArtHref } from './components/enemyArt';
 import { TILE_ICONS } from './components/tileIcons';
 import { openMonsterSheet } from './components/MonsterSheet';
+import { mapBackdropHtml } from './components/art';
 
 const NS = 'http://www.w3.org/2000/svg';
 const W = 360;
@@ -177,7 +178,16 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
   actions.append(giveUp, loadout);
   foot.append(msg, actions);
 
+  const bd = mapBackdropHtml(run.stage);
+  if (bd.image) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'map-backdrop map-backdrop--image';
+    backdrop.innerHTML = bd.html + '<div class="map-backdrop__overlay" aria-hidden="true"></div>';
+    screen.append(backdrop);
+  }
+
   screen.append(hud, boardWrap, foot);
+  screen.dataset.stage = String(run.stage);
   root.replaceChildren(screen);
   // 長い階層は、いまいる位置が画面の中ほどに来るようにスクロールしておく
   if (tall) {
