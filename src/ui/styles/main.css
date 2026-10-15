@@ -1601,7 +1601,8 @@ section { min-width: 0; }
 .fatal-tag { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 6px; margin-left: 4px; color: var(--fatal-text); border: 1px solid rgba(216, 72, 58, 0.6); border-radius: 8px; letter-spacing: 0.06em; vertical-align: middle; }
 .slot.slot--die { opacity: 1; color: #ffe2da; background: radial-gradient(circle at 50% 30%, var(--die-hi), var(--die-lo) 85%); }
 .slot.slot--die .slot__val, .slot.slot--die .slot__key { color: #fff; font-weight: 800; }
-.lslot.lslot--die { background: linear-gradient(90deg, #4a100b, #1e0a08 80%); }
+/* 敵の 21（必殺）: 危険と同じ赤い下地に、レジェンドの金の枠（--rar）を重ねて、危険より上と分かるようにする */
+.lslot.lslot--die { background: linear-gradient(90deg, #4a100b, #1e0a08 80%); border-left: 3px solid var(--rar); }
 .lslot--die .lslot__desc { color: #fff0ea; font-weight: 800; }
 
 /* ======== BUST or DIE の予告 ========
@@ -1639,4 +1640,4 @@ section { min-width: 0; }
 .slot.slot--tone-attack .slot__icon { color: var(--tone-attack); }
 .lslot.lslot--tone-attack .medal { border-color: var(--tone-attack-line); color: var(--tone-attack); }
 .slot.slot--die .slot__icon { color: var(--die-icon); }
-.lslot.lslot--die .medal { border-color: var(--fatal); color: var(--die-medal); background: #2a0806; }
+.lslot.lslot--die .medal { border-color: var(--rar); color: var(--die-medal); background: #2a0806; }

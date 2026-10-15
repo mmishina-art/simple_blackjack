@@ -56,7 +56,8 @@ export class SlotStrip {
       const id = entity.slots[key];
       const skill = id ? getSkill(id) : null;
       // プレイヤーの 11以下・21 は特殊スロット（金/鋼）。
-      // 敵の 21 は特殊スロット（金枠・光）ではなく、他のスロットと同じ枠でプレイヤーと同じレジェンド枠色（rar-legend）。
+      // 敵の 21 は特殊スロット（金枠・光）ではなく、他のスロットと同じ形で、レジェンドの金の枠（rar-legend）。
+      // 攻撃の技なら、下地を危険と同じ赤にして（slot--die）、危険より上の「必殺」と分かるようにする
       const isEnemy = entity.id === 'enemy';
       const isEnemy21 = isEnemy && key === SLOT_MAX;
       const look = slotLook(key, skill);
@@ -66,7 +67,7 @@ export class SlotStrip {
       const tone = isEnemy && !isEnemy21 && !skill?.fatal ? effectTone(skill) ?? 'attack' : null;
       const slotTypeClass = isSpecial ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(rarity)}`;
       // 敵の危険な合計値は、血の赤色（slot--fatal）で下地ごと赤く塗る
-      cell.className = `slot ${slotTypeClass}${skill?.fatal ? ' slot--fatal' : ''}${tone ? ` slot--tone-${tone}` : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
+      cell.className = `slot ${slotTypeClass}${skill?.fatal ? ' slot--fatal' : ''}${isEnemy21 && skill?.effects.some((e) => e.type === 'attack') ? ' slot--die' : ''}${tone ? ` slot--tone-${tone}` : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
       cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;
       const val = document.createElement('span');
       val.className = 'slot__val';
