@@ -1348,6 +1348,8 @@ section { min-width: 0; }
 .shop .loadout__head { display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .shop__gold { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; margin: 0; padding: 4px 12px 4px 8px; border: 1px solid #6b4a1f; border-radius: 14px; background: #1c130a; color: var(--bone); }
 .shop__coin { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff0b0, #e0b04a 55%, #7a5a1c); box-shadow: inset 0 0 0 1px #3a2a0c; }
+.shop__moneybag { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7)); }
+.shop__moneybag svg { width: 100%; height: 100%; display: block; }
 .shop .loadout__kind { color: var(--shop-accent); border-bottom: 1px solid #4a3418; letter-spacing: 0.25em; }
 .shop__row { border-left: 3px solid var(--rar, var(--shop-accent)); }
 .shop__price { padding: 4px 8px; min-width: 62px; align-items: center; border: 1px dashed #6b4a1f; border-radius: 3px; background: #1c130a; }
@@ -1404,6 +1406,8 @@ section { min-width: 0; }
 .map-hud__gold { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--bone); white-space: nowrap; }
 .map-hud__gold b { font-family: var(--font-display); font-size: 16px; color: var(--gold); }
 .map-hud__coin { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff0b0, #e0b04a 55%, #7a5a1c); box-shadow: inset 0 0 0 1px #3a2a0c; }
+.map-hud__moneybag { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7)); }
+.map-hud__moneybag svg { width: 100%; height: 100%; display: block; }
 .map-hud__hp { position: relative; height: 20px; padding: 1px; overflow: hidden; background: var(--ink); border: 1px solid var(--gold-dim); border-radius: 10px; }
 .map-hud__fill { position: absolute; inset: 1px auto 1px 1px; max-width: calc(100% - 2px); background: linear-gradient(90deg, #2d5a3e, var(--moss)); border-radius: 9px; }
 .map-hud__hp--low .map-hud__fill { background: linear-gradient(90deg, #6a1a16, var(--blood-hi)); }
