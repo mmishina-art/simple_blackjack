@@ -1,7 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ENEMY_IMAGES } from '../src/ui/components/enemyArt';
-import { backdropHtml, titleArtHtml } from '../src/ui/components/art';
+import { backdropHtml, mapBackdropHtml, titleArtHtml } from '../src/ui/components/art';
 import { STAGE_BACKDROP, TITLE_ART } from '../src/ui/components/enemySprites';
 
 const read = (p: string) => readFileSync(p, 'utf8');
@@ -46,4 +46,14 @@ describe('敵以外の絵（タイトル・戦闘の舞台の背景・場面の�
     expect(read('src/main.ts')).toContain('titleArtHtml()');
     expect(read('src/ui/EndingScreen.ts')).toContain('titleArtHtml()');
   });
+  it('マップの背景（階層ごと 3 枚）が画像になっている（1 枚 350KB 以下）', () => {
+    for (const st of [1, 2, 3]) {
+      const bd = mapBackdropHtml(st);
+      expect(bd.image, `map stage${st}`).toBe(true);
+      expect(bd.html.startsWith('<img')).toBe(true);
+      expect(statSync(`src/ui/art/maps/stage${st}.webp`).size, `stage${st}`).toBeLessThan(350_000);
+    }
+    expect(read('src/ui/MapView.ts')).toContain('mapBackdropHtml(run.stage)');
+  });
 });
+
