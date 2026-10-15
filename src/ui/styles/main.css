@@ -28,6 +28,8 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* hidden 属性の付いた要素は、display を指定していても必ず隠す（BUST or DIE の予告が消えなかった不具合の対策） */
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
