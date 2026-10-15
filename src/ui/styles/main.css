@@ -441,6 +441,17 @@ section { min-width: 0; }
 .choice__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .choice__text strong { font-size: 18px; letter-spacing: 0.08em; color: var(--gold); }
 .choice__text span { font-size: 14px; line-height: 1.5; color: var(--bone); }
+.choice__moneybag {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+  transition: transform 0.12s ease-out;
+}
+.choice__moneybag svg { width: 100%; height: 100%; display: block; }
+.choice__card--gold { border-left-color: var(--reward-accent, #d2ad55); }
+.choice__card--gold .choice__text strong { color: #f0d78c; }
+.choice__card--gold:hover .choice__moneybag { transform: scale(1.06); }
+.choice__card--gold:active .choice__moneybag { transform: scale(0.96); }
 
 .result { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 20px; text-align: center; }
 .result__line { margin: 0; font-size: 16px; letter-spacing: 0.1em; color: var(--bone); }

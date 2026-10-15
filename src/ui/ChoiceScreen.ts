@@ -2,6 +2,7 @@ import { audio } from '../audio/AudioManager';
 import type { Rarity } from '../core/rarity';
 import type { SkillKind } from '../core/skills/Skill';
 import { medalKindClass } from './kind';
+import { moneyBagSvg } from './components/moneyBag';
 import { buildScene, type SceneKind } from './components/scenes';
 import { buildTopBar } from './components/TopBar';
 import { rarityClass, rarityNote } from './rarity';
@@ -19,6 +20,8 @@ export interface ChoiceOption {
   tone?: 'a' | 'b' | 'c' | 'd';
   /** レリック（遺物）なら、六角形のメダル（スキルの丸と見分ける）。 */
   relic?: boolean;
+  /** ゴールドの選択肢なら、ドル袋の絵を出す（スキルの丸メダルと区別する）。 */
+  gold?: boolean;
 }
 
 export interface ChoiceScreenConfig {
@@ -50,9 +53,12 @@ export function showChoiceScreen(root: HTMLElement, cfg: ChoiceScreenConfig): vo
   list.className = 'choice__list';
   const buttons = cfg.options.map((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = `choice__card ${rarityClass(opt.rarity)}${opt.tone ? ` choice__card--tone-${opt.tone}` : ''}`;
+    btn.className = `choice__card ${rarityClass(opt.rarity)}${opt.tone ? ` choice__card--tone-${opt.tone}` : ''}${opt.gold ? ' choice__card--gold' : ''}`;
     btn.disabled = true;
-    btn.innerHTML = `<span class="medal${opt.kind ? medalKindClass(opt.kind) : ''}${opt.relic ? ' medal--relic' : ''}">${opt.icon}</span>
+    const iconHtml = opt.gold
+      ? `<span class="choice__moneybag" aria-hidden="true">${moneyBagSvg()}</span>`
+      : `<span class="medal${opt.kind ? medalKindClass(opt.kind) : ''}${opt.relic ? ' medal--relic' : ''}">${opt.icon}</span>`;
+    btn.innerHTML = `${iconHtml}
       <span class="choice__text"><strong>${opt.name}${opt.tag ? ` <em class="kind-tag kind-tag--${opt.kind ?? 'skill'}">${opt.tag}</em>` : ''}</strong><span>${opt.description}</span></span>
       ${opt.rarity ? rarityNote(opt.rarity) : ''}`;
     btn.addEventListener('click', () => {
