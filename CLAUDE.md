@@ -6,6 +6,13 @@ This file provides guidance to Claude Code when working in this repository.
 
 Bust or Die(旧名 Blackjack Roguelike。リポジトリ名 `simple_blackjack`・保存キー・バックアップの `app` 名・キャッシュ名は、記録を残すため旧名のまま): ブラックジャック × ローグライクの対戦型 RPG の PWA。スマホ縦画面。Vite + TypeScript + vite-plugin-pwa。ゲームのルールと仕様は `README.md` を参照(スキル、ブロック、POW、レリック、メタ進行など)。**ルールを変えたら README も更新する。** ユーザー向けの文言は日本語。
 
+## 2 つの AI での共同作業（Claude Code と Antigravity）
+
+- このリポジトリは、**Claude Code（Web 版）** と **Antigravity（Gemini）** で開発している。どちらの AI も、**この `CLAUDE.md` を共通の指示書として従う**（`AGENTS.md`・`GEMINI.md` は、ここを読むように案内するだけ）。
+- 2 つの AI は互いの会話を見られないので、作業の状態は **`docs/HANDOVER.md`（引き継ぎメモ）** で渡す。作業の始め方・終わり方は **`docs/workflow.md`**（Claude Code は `/start`・`/finish`、Antigravity は同じ名前のワークフロー）。
+- **同じブランチを 2 つの AI で同時に触らない。始める前に最新の `main` を取り込む**（もう一方がマージしているかもしれない）。`version` は `main` の最新から上げる。
+- 下の共通ルールのうち、**選択式の確認（AskUserQuestion）とプレビュー（Artifact）は Claude Code の機能**。Antigravity では、確認は「1. ○○ / 2. △△」の番号で聞き、プレビューは Antigravity の画面の確認の方法で代える。
+
 ## Running / Testing
 
 ```bash
