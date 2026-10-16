@@ -10,6 +10,8 @@ export interface EnemyDef {
   attack: number;
   /** 特性による攻撃ダメージの上乗せ（LV の計算用。黒竜の息吹の +3 など）。 */
   attackBonus?: number;
+  /** 倒したときの獲得ゴールド倍率（貪欲なミミックの 3 倍など）。 */
+  goldMultiplier?: number;
   ai: EnemyAI;
   /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;

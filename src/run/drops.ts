@@ -11,10 +11,14 @@ export const ENEMY_DROPS: Record<string, readonly SkillId[]> = {
   skeleton: ['slash', 'chop', 'jab', 'lunge', 'heavy'],                      // 骨の剣: 斬る・叩く
   bat: ['drain', 'lunge', 'twin_strike', 'jab', 'siphon'],                   // 血を吸う・素早い
   ghoul: ['drain', 'mend', 'chop', 'berserk', 'holy_light'],                 // 屍を喰らい癒える
+  shield_bearer: ['pierce_stab', 'shield', 'bulwark', 'shield_bash', 'heavy'], // 大盾: 貫通と盾技
+  mimic: ['heavy', 'chop', 'drain', 'bulwark', 'pierce_stab'],               // 貪欲な宝箱: 重撃と吸収
   // 第2階層
   merman: ['twin_strike', 'lunge', 'mend', 'drain', 'guard'],                // 素早い連撃・再生
   gargoyle: ['shield', 'bulwark', 'heavy', 'chop', 'pierce_stab'],           // 石の肌: 守りと重い一撃
   wraith: ['drain', 'pierce_stab', 'mend', 'holy_light', 'twin_strike'],     // 霊: 貫く・吸う
+  gambler: ['twin_strike', 'pierce_stab', 'lunge', 'siphon', 'flurry'],      // 賭博師: 連撃と急所突き
+  colossus: ['smash', 'heavy', 'bulwark', 'mend', 'berserk'],                // 腐肉の巨兵: 豪打と再生
   iron_golem: ['pierce_stab', 'heavy', 'smash', 'bulwark', 'shield_bash'],   // 鋼のブロック: 貫く・重い一撃
   drowned_knight: ['slash', 'bulwark', 'heavy', 'pierce_stab', 'twin_strike'], // 水没した騎士: 守りと重撃・連撃
   // 第3階層

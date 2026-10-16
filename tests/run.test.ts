@@ -23,7 +23,7 @@ import { noWait, playRound, reshapeRelic, unlockRelic, WITH_BLOCKS } from './hel
 describe('敵', () => {
   it('全員にスプライトがあり、スロットのスキルが全て実在する', () => {
     expect(new Set(ENEMY_LINEUP.map((e) => e.id)).size).toBe(ENEMY_LINEUP.length);
-    expect(ENEMY_LINEUP).toHaveLength(16); // 第1階層 5 / 第2階層 4 + 鋼鉄のゴーレム + 中ボス / 第3階層 4 + 鋼鉄のゴーレム + 中ボス
+    expect(ENEMY_LINEUP).toHaveLength(20); // 既存 16 種 + 重装の盾兵・貪欲なミミック・彷徨う賭博師・腐肉の巨兵
     for (const e of ENEMY_LINEUP) {
       expect(ENEMY_SPRITES[e.id], e.id).toBeTruthy();
       expect(hasSkill(e.fallbackSkill), `${e.id} fallback`).toBe(true);
@@ -83,11 +83,53 @@ describe('階層の構成', () => {
     expect(STAGES.map(stageRows)).toEqual([9, 14, 19]);
   });
 
-  it('階層ごとの敵: 第1階層は 5 種、第2階層は中ボスの水没した騎士を含む 6 種、第3階層は中ボスの溶岩の大蛇を含む 6 種', () => {
+  it('階層ごとの敵: 新規4種（重装の盾兵・貪欲なミミック・彷徨う賭博師・腐肉の巨兵）と中ボスを含む多彩な編成', () => {
     const ids = (m: (typeof STAGES)[number]) => new Set(Object.values(m.tiles).flatMap((t) => (t.enemyId ? [t.enemyId] : [])));
-    expect(ids(STAGES[0])).toEqual(new Set(['slime', 'skeleton', 'bat', 'ghoul', 'knight']));
-    expect(ids(STAGES[1])).toEqual(new Set(['merman', 'gargoyle', 'wraith', 'iron_golem', 'drowned_knight', 'serpent']));
-    expect(ids(STAGES[2])).toEqual(new Set(['flame', 'golem', 'imp', 'iron_golem', 'magma_serpent', 'dragon']));
+    expect(ids(STAGES[0])).toEqual(new Set(['slime', 'skeleton', 'bat', 'ghoul', 'shield_bearer', 'mimic', 'knight']));
+    expect(ids(STAGES[1])).toEqual(new Set(['merman', 'gargoyle', 'wraith', 'iron_golem', 'drowned_knight', 'mimic', 'gambler', 'colossus', 'serpent']));
+    expect(ids(STAGES[2])).toEqual(new Set(['flame', 'golem', 'imp', 'iron_golem', 'magma_serpent', 'mimic', 'gambler', 'colossus', 'dragon']));
+  });
+
+  it('戦略ルート: 祠は各階層に 1 箇所だけ（全3階層で最大3回）。単調な3列固定ではなく2列・3列が組み合わさり、ミミックの直後にショップがある', () => {
+    for (const stage of STAGES) {
+      const tiles = Object.values(stage.tiles);
+      expect(tiles.some((t) => t.kind === 'empty')).toBe(false);
+      // 祠は各階層に 1 箇所だけ（会心の一撃 → 覇王の一撃 → 終焉の一撃 を各階層 1 段階ずつ育てる）
+      expect(tiles.filter((t) => t.kind === 'shrine')).toHaveLength(1);
+      // 2マスの段と3マスの段が両方存在し、単調な格子にならない
+      const rowCounts = new Set(Array.from({ length: stageRows(stage) }, (_, r) => tiles.filter((t) => t.row === r).length));
+      expect(rowCounts.has(2)).toBe(true);
+      expect(rowCounts.has(3)).toBe(true);
+      // 賞金首ルート: どの階層にも、倒した直後にショップへ行けるミミックがいる
+      const mimics = tiles.filter((t) => t.enemyId === 'mimic');
+      expect(mimics.length).toBeGreaterThanOrEqual(1);
+      expect(mimics.some((m) => nextTiles(stage, m.id).some((n) => n.kind === 'shop'))).toBe(true);
+      // ボス直前は宿屋（安全回復）と敵（最後の稼ぎ）を選べる
+      const bossRow = stageRows(stage) - 1;
+      const preBossKinds = new Set(tiles.filter((t) => t.row === bossRow - 1).map((t) => t.kind));
+      expect(preBossKinds.has('inn')).toBe(true);
+      expect(preBossKinds.has('enemy')).toBe(true);
+    }
+  });
+
+  it('中ボス（水没した騎士・溶岩の大蛇）と屍食鬼は分岐の挑戦ルート（左列）に配置され、直後に宝箱があり、別ルートへ迂回もできる', () => {
+    const checkChallenge = (stageIdx: number, enemyId: string) => {
+      const map = STAGES[stageIdx];
+      const tiles = Object.values(map.tiles);
+      const elite = tiles.find((t) => t.enemyId === enemyId)!;
+      expect(elite).toBeDefined();
+      expect(elite.col).toBe(0);
+      // 同じ段に迂回ルート（他の列のマス）が存在する
+      const sameRow = tiles.filter((t) => t.row === elite.row);
+      expect(sameRow.length).toBeGreaterThanOrEqual(2);
+      // 倒した直後のマスは宝箱（遺物）
+      const reward = nextTiles(map, elite.id);
+      expect(reward).toHaveLength(1);
+      expect(reward[0].kind).toBe('chest');
+    };
+    checkChallenge(0, 'ghoul');
+    checkChallenge(1, 'drowned_knight');
+    checkChallenge(2, 'magma_serpent');
   });
 
   it('次の階層へ: 最大 HP が +10、HP が最大の7割（+10 の分も）回復し、位置・済みのマスが新しい階層になる。最後の階層では進めない', () => {
@@ -495,6 +537,61 @@ describe('敵の特性', () => {
   it('黒竜: 攻撃ダメージ +3', async () => {
     const m = await playRound({ player: ['9', '9'], enemyHand: ['K', 'K'], enemy: enemy('dragon'), playerSlots: WITH_BLOCKS });
     expect(m.ctx.player.hp).toBe(60 - (23 - 11)); // 20: 業火 POW6×3+2 + 息吹3 = 23。後攻の身構え ブロック 11 が先に付与される
+  });
+
+  it('重装の盾兵: 開幕ブロック 10 + 毎ラウンド +2（上限 14）。低 HP 高ブロック', () => {
+    const def = enemy('shield_bearer');
+    expect(def.maxHp).toBe(14);
+    const m = new BattleMachine({ enemy: def, pace: noWait });
+    m.bus.emit('onBattleStart', { player: m.ctx.player, enemy: m.ctx.enemy });
+    expect(m.ctx.enemy.block).toBe(10);
+    m.bus.emit('onRoundStart', { round: 1 });
+    expect(m.ctx.enemy.block).toBe(12);
+    m.bus.emit('onRoundStart', { round: 2 });
+    m.bus.emit('onRoundStart', { round: 3 });
+    expect(m.ctx.enemy.block).toBe(14);
+  });
+
+  it('貪欲なミミック: 獲得ゴールドが通常の 3 倍で、開幕ブロック 4 を持つ', async () => {
+    const { enemyGold } = await import('../src/run/shop');
+    const def = enemy('mimic');
+    expect(def.goldMultiplier).toBe(3);
+    expect(enemyGold(def)).toBe(enemyGold({ ...def, goldMultiplier: 1 }) * 3);
+    const m = new BattleMachine({ enemy: def, pace: noWait });
+    m.bus.emit('onBattleStart', { player: m.ctx.player, enemy: m.ctx.enemy });
+    expect(m.ctx.enemy.block).toBe(4);
+  });
+
+  it('彷徨う賭博師（SmartAI）: ソフトハンド（A+5=16）ではヒットし、手負い時のハード15〜16ではスタンドして守り、好機には17以上を狙う', async () => {
+    const { makeCard } = await import('../src/core/cards/Card');
+    const def = enemy('gambler');
+    const m = new BattleMachine({ enemy: def, pace: noWait });
+    // 1. ソフト16 (A + 5) -> いつでもヒット
+    m.ctx.enemy.hand.clear();
+    m.ctx.enemy.hand.add(makeCard('A', 'S'));
+    m.ctx.enemy.hand.add(makeCard('5', 'H'));
+    expect(m.ctx.enemy.hand.isSoft(m.ctx.rules)).toBe(true);
+    m.ctx.enemy.hp = 10; // 手負いでもソフトハンドならヒット
+    expect(def.ai.decide(m.ctx.enemy, m.ctx.player, m.ctx.rules)).toBe('hit');
+    // 2. 手負い時（HP <= 60%）かつプレイヤーのブロックが薄い時のハード15 (10 + 5) -> ブラフ（ブロック+回復）発動のためスタンド
+    m.ctx.enemy.hand.clear();
+    m.ctx.enemy.hand.add(makeCard('10', 'S'));
+    m.ctx.enemy.hand.add(makeCard('5', 'H'));
+    expect(m.ctx.enemy.hand.isSoft(m.ctx.rules)).toBe(false);
+    m.ctx.player.block = 0;
+    expect(def.ai.decide(m.ctx.enemy, m.ctx.player, m.ctx.rules)).toBe('stand');
+    // 3. 万全時（HP > 60%）またはプレイヤーがブロックを固めている時のハード15 (10 + 5) -> 17以上を狙ってヒット
+    m.ctx.enemy.hp = def.maxHp;
+    expect(def.ai.decide(m.ctx.enemy, m.ctx.player, m.ctx.rules)).toBe('hit');
+  });
+
+  it('腐肉の巨兵: 高 HP（46）かつ毎ラウンド再生 +1', () => {
+    const def = enemy('colossus');
+    expect(def.maxHp).toBeGreaterThanOrEqual(45);
+    const m = new BattleMachine({ enemy: def, pace: noWait });
+    m.ctx.enemy.hp = 30;
+    m.bus.emit('onRoundStart', { round: 1 });
+    expect(m.ctx.enemy.hp).toBe(31);
   });
 });
 
