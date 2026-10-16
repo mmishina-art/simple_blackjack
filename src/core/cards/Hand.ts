@@ -57,6 +57,17 @@ export class Hand {
     return this._cards.length === rules.initialCards && this.total(rules) === rules.blackjackScore;
   }
 
+  /** A を 11 として数えている（もう 1 枚引いても A が 1 に戻るだけでバーストしにくい「ソフトハンド」）か。 */
+  isSoft(rules: RuleSet): boolean {
+    let sum = 0;
+    let aces = 0;
+    for (const c of this._cards) {
+      sum += c.value;
+      if (isAce(c)) aces++;
+    }
+    return aces > 0 && sum + rules.aceBonus <= rules.bustLimit;
+  }
+
   static totalOf(cards: readonly Card[], rules: RuleSet): number {
     let sum = 0;
     let aces = 0;

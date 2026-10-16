@@ -1,6 +1,7 @@
 import type { Relic } from '../../../relics/Relic';
 import { reduceDamage } from '../../../relics/catalog';
 import { DealerAI } from './ai/DealerAI';
+import { SmartAI } from './ai/SmartAI';
 import type { EnemyDef } from './EnemyDef';
 import { ENEMY_SLOTS } from '../../skills/catalog';
 import { Slime } from './Slime';
@@ -80,6 +81,33 @@ const SteelGuard: Relic = {
   },
 };
 
+const FortressShield: Relic = {
+  id: 'fortress_shield', name: '大盾の構え', icon: '盾', description: '戦闘開始時にブロック 10、毎ラウンド +2（上限 14）',
+  apply({ bus, enemy }) {
+    bus.on('onBattleStart', () => { enemy.block += 10; });
+    bus.on('onRoundStart', () => { enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block + 2); });
+    bus.on('onBlockApplied', ({ entity }) => { if (entity === enemy) enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block); });
+  },
+};
+
+const GoldenHoard: Relic = {
+  id: 'golden_hoard', name: '黄金の腹', icon: '金', description: '戦闘開始時にブロック 4。撃破時の獲得ゴールド 3 倍',
+  apply({ bus, enemy }) {
+    bus.on('onBattleStart', () => { enemy.block += 4; });
+  },
+};
+
+const CardSharper: Relic = {
+  id: 'card_sharper', name: '勝負師の眼', icon: '眼', description: '手札のAや互いのHP・ブロックを見てヒット基準を変える。同値なら必ず先攻',
+  apply({ bus }) {
+    bus.on('onInitiativeDecided', (p) => {
+      if (p.turn.mode === 'simultaneous') {
+        return { ...p, turn: { ...p.turn, mode: 'sequential', first: 'enemy', second: 'player' } };
+      }
+    });
+  },
+};
+
 const Chill: Relic = {
   id: 'chill', name: '冷気', icon: '冷', description: 'ラウンドの初めに、あなたのブロックが 2 減る',
   apply({ bus, player }) {
@@ -120,6 +148,26 @@ export const GiantBat: EnemyDef = {
 export const Ghoul: EnemyDef = {
   id: 'ghoul', name: '屍食鬼', maxHp: 18, attack: 4, ai: new DealerAI(16), slots: ENEMY_SLOTS.ghoul, fallbackSkill: 'ghoul_scratch',
   trait: '屍の渇き（HPを削るたびに HP +2）', relics: [CorpseThirst],
+};
+
+export const ShieldBearer: EnemyDef = {
+  id: 'shield_bearer', name: '重装の盾兵', maxHp: 14, attack: 2, ai: new DealerAI(15), slots: ENEMY_SLOTS.shield_bearer, fallbackSkill: 'sb_jab',
+  trait: '大盾の構え（開幕ブロック 10、毎ラウンド +2）。HP は低いため、貫通攻撃や一撃の重い技が効く', relics: [FortressShield],
+};
+
+export const Mimic: EnemyDef = {
+  id: 'mimic', name: '貪欲なミミック', maxHp: 22, attack: 3, ai: new DealerAI(16), slots: ENEMY_SLOTS.mimic, fallbackSkill: 'mimic_bite',
+  trait: '黄金の腹（開幕ブロック 4・撃破時の獲得ゴールド 3 倍）', relics: [GoldenHoard], goldMultiplier: 3,
+};
+
+export const WanderingGambler: EnemyDef = {
+  id: 'gambler', name: '彷徨う賭博師', maxHp: 26, attack: 3, ai: new SmartAI(15, 17), slots: ENEMY_SLOTS.gambler, fallbackSkill: 'gambler_throw',
+  trait: '勝負師の眼（ソフトハンドは17以下でヒット、手負い時は15〜16で守りを固め、好機には17以上を狙う）', relics: [CardSharper],
+};
+
+export const FleshColossus: EnemyDef = {
+  id: 'colossus', name: '腐肉の巨兵', maxHp: 46, attack: 3, ai: new DealerAI(16), slots: ENEMY_SLOTS.colossus, fallbackSkill: 'colossus_fist',
+  trait: '巨躯の再生（ラウンドの初めに HP +1）。圧倒的な HP を誇り、高倍率の一撃でないと削り切れない', relics: [Regeneration(1)],
 };
 
 export const BlackDragon: EnemyDef = {
@@ -195,8 +243,8 @@ export const MagmaSerpent: EnemyDef = {
 
 /** 冒険の敵の一覧（階層ごとの並びは、各階層のマップが決める）。 */
 export const ENEMY_LINEUP: readonly EnemyDef[] = [
-  Slime, Skeleton, GiantBat, Ghoul, GraveKnight,
-  Merman, Gargoyle, Wraith, IronGolem, DrownedKnight, Serpent,
+  Slime, Skeleton, GiantBat, Ghoul, ShieldBearer, Mimic, GraveKnight,
+  Merman, Gargoyle, Wraith, WanderingGambler, FleshColossus, IronGolem, DrownedKnight, Serpent,
   FlameSpirit, LavaGolem, Imp, MagmaSerpent, BlackDragon,
 ];
 

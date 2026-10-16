@@ -150,8 +150,28 @@ const stageReached: Record<number, number> = {};
       let pick = opts[Math.floor(rng.next() * opts.length)];
       if (SMART_PATH) {
         const hpRatio = run.hp / run.maxHp;
-        const score = (k: string): number => ({ inn: hpRatio < 0.7 ? 5 : 1, chest: 3, shop: 3, shrine: 3, enemy: 2, boss: 2, empty: 1, start: 0 } as Record<string, number>)[k] ?? 0;
-        pick = [...opts].sort((a, b) => score(b.kind) - score(a.kind) || rng.next() - 0.5)[0];
+        const tileScore = (t: (typeof opts)[number]): number => {
+          if (t.kind === 'inn') return hpRatio < 0.75 ? 6 : 1;
+          if (t.kind === 'chest') return 4;
+          if (t.kind === 'shop') return run.gold >= 30 ? 3.5 : 1.5;
+          if (t.kind === 'shrine') return 3;
+          if (t.kind === 'enemy' && t.enemyId) {
+            const e = enemyOfTile(t);
+            const risk = e.maxHp / 20 + enemyLevel(e) / 6;
+            return hpRatio < 0.65 ? 3 - risk : 2 - risk * 0.3;
+          }
+          return 1;
+        };
+        const laneScore = (start: (typeof opts)[number]): number => {
+          let sum = 0;
+          let cur: (typeof opts)[number] | undefined = start;
+          while (cur) {
+            sum += tileScore(cur);
+            cur = cur.next.length === 1 ? run.map.tiles[cur.next[0]] : undefined;
+          }
+          return sum;
+        };
+        pick = [...opts].sort((a, b) => laneScore(b) - laneScore(a) || rng.next() - 0.5)[0];
       }
       const tile = moveTo(run, pick.id);
       reach[tile.id] = (reach[tile.id] ?? 0) + 1;

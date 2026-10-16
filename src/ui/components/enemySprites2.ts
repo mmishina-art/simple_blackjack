@@ -258,6 +258,24 @@ const ironGolem = `
   <ellipse cx="100" cy="38" rx="26" ry="8" fill="#7fd8ff" opacity=".2"/>
 </svg>`;
 
+/** 貪欲なミミック: 牙と舌を剥き出しにし、金貨が溢れる宝箱の魔物。 */
+const mimic = `
+<svg viewBox="0 0 200 160" role="img" aria-label="貪欲なミミック" xmlns="http://www.w3.org/2000/svg">${defs('Mc', 20)}
+  ${shadow}
+  <g filter="url(#inkMc)" ${STROKE}>
+    <!-- 下箱 -->
+    <path d="M40 84h120l-8 60H48z" fill="#5c3a1e"/>
+    <path d="M40 84h120l-8 60H48z" fill="url(#hatchMc)"/>
+    <!-- 上蓋（開いた口） -->
+    <path d="M36 74L48 28h104l12 46z" fill="#6b4423"/>
+    <path d="M40 74h120v14H40z" fill="#1a0808"/>
+    <!-- 牙と金貨 -->
+    <path d="M48 74l6 10 6-10 8 10 6-10 8 10 6-10 8 10 6-10 8 10 6-10" fill="#ece3c6"/>
+    <path d="M90 82c10 18 28 24 38 14-8-14-20-18-38-14z" fill="#b82929"/>
+  </g>
+  <circle cx="76" cy="54" r="6" fill="#ffd24a"/><circle cx="124" cy="54" r="6" fill="#ffd24a"/>
+</svg>`;
+
 export const NEW_ENEMY_SPRITES: Record<string, string> = {
   knight,
   merman,
@@ -270,4 +288,8 @@ export const NEW_ENEMY_SPRITES: Record<string, string> = {
   iron_golem: ironGolem,
   drowned_knight: knight.replace('墓守の騎士', '水没した騎士'),
   magma_serpent: serpent.replace('深淵の海蛇', '溶岩の大蛇'),
+  shield_bearer: ironGolem.replace('鋼鉄のゴーレム', '重装の盾兵'),
+  mimic,
+  gambler: wraith.replace('亡霊', '彷徨う賭博師'),
+  colossus: golem.replace('溶岩ゴーレム', '腐肉の巨兵'),
 };

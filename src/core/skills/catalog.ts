@@ -280,6 +280,34 @@ defineSkill({ id: 'magma_scale', name: '溶岩の鱗', icon: '鱗', effects: [{ 
 atk('magma_eruption', 'マグマの大津波', 3, 3, '波');
 atk('magma_roar', '紅蓮の咆哮', 1, 5, '咆');
 
+// 重装の盾兵（HP は低いが開幕ブロックと毎ターン重装で鉄壁を誇る敵）
+atk('sb_jab', '盾裏の突き', 1, 0, '突');
+defineSkill({ id: 'sb_wall', name: '大盾の構え', icon: '盾', effects: [{ type: 'block', amount: 8 }] });
+defineSkill({ id: 'sb_bash', name: '重装盾撃', icon: '撃', effects: [{ type: 'attack', mult: 1, add: 2 }, { type: 'block', amount: 6 }] });
+defineSkill({ id: 'sb_crush', name: '城壁崩し', icon: '崩', effects: [{ type: 'attack', mult: 3, add: 4 }, { type: 'block', amount: 4 }] });
+defineSkill({ id: 'sb_fortress', name: '不落の要塞', icon: '砦', effects: [{ type: 'attack', mult: 1, add: 4 }, { type: 'block', amount: 8 }] });
+
+// 貪欲なミミック（倒すと大量のゴールドを落とす宝箱の魔物）
+atk('mimic_bite', '噛みつき', 1, 0, '噛');
+defineSkill({ id: 'mimic_lid', name: '鉄蓋を閉じる', icon: '蓋', effects: [{ type: 'block', amount: 7 }] });
+atk('mimic_chomp', '金貨吐き', 1, 2, '貨');
+defineSkill({ id: 'mimic_devour', name: '丸呑み', icon: '呑', effects: [{ type: 'attack', mult: 3, add: 2 }, { type: 'heal', amount: 3 }] });
+atk('mimic_jackpot', '黄金の暴食', 1, 3, '黄金');
+
+// 彷徨う賭博師（手札と状況を見てヒット・スタンドを切り替える知性派の敵）
+atk('gambler_throw', 'カード投げ', 1, 0, '札');
+defineSkill({ id: 'gambler_bluff', name: 'ブラフ', icon: '欺', effects: [{ type: 'block', amount: 6 }, { type: 'heal', amount: 3 }] });
+atk('gambler_trick', 'イカサマ切り', 1, 2, '切');
+atk('gambler_allin', 'オールイン', 3, 2, '賭');
+atk('gambler_royal', '切り札の処刑', 1, 3, '王');
+
+// 腐肉の巨兵（圧倒的な HP と再生を持つ肉の巨像）
+atk('colossus_fist', '肉塊の拳', 1, 0, '拳');
+defineSkill({ id: 'colossus_mend', name: '肉継ぎ', icon: '縫', effects: [{ type: 'heal', amount: 4 }, { type: 'block', amount: 4 }] });
+atk('colossus_cleave', '鉄鎖のなぎ払い', 1, 2, '鎖');
+atk('colossus_slam', '巨体の圧殺', 3, 2, '圧');
+atk('colossus_quake', '骸山の崩落', 1, 3, '崩');
+
 // 敵のスキルには、レア度を付けない（色分けしない）。危ない場所は「危険」（赤）、21 は「必殺」で示す。レア度の色は、プレイヤーが手に入れるスキルの価値だけを表す
 
 /**
@@ -294,6 +322,7 @@ export const FATAL_SKILLS: readonly SkillId[] = [
   'merman_rush', 'garg_crush', 'wraith_curse', 'ig_crush', 'serpent_tide',
   'flame_nova', 'golem_eruption', 'imp_hex', 'dragon_breath', 'dragon_inferno',
   'drowned_cleave', 'magma_eruption',
+  'sb_crush', 'mimic_devour', 'gambler_allin', 'colossus_slam',
 ];
 for (const id of FATAL_SKILLS) getSkill(id).fatal = true;
 
@@ -313,6 +342,10 @@ export const ENEMY_SLOTS = {
   imp: slotsFromRanges([[17, 18, 'imp_hex'], [19, 20, 'imp_siphon'], [21, 21, 'imp_hellfire']]),
   iron_golem: slotsFromRanges([[15, 17, 'ig_wall'], [18, 19, 'ig_bash'], [20, 20, 'ig_crush'], [21, 21, 'ig_quake']]),
   magma_serpent: slotsFromRanges([[18, 18, 'magma_scale'], [19, 19, 'magma_coil'], [20, 20, 'magma_eruption'], [21, 21, 'magma_roar']]),
+  shield_bearer: slotsFromRanges([[15, 17, 'sb_wall'], [18, 19, 'sb_bash'], [20, 20, 'sb_crush'], [21, 21, 'sb_fortress']]),
+  mimic: slotsFromRanges([[16, 17, 'mimic_lid'], [18, 19, 'mimic_chomp'], [20, 20, 'mimic_devour'], [21, 21, 'mimic_jackpot']]),
+  gambler: slotsFromRanges([[15, 16, 'gambler_bluff'], [17, 18, 'gambler_trick'], [19, 20, 'gambler_allin'], [21, 21, 'gambler_royal']]),
+  colossus: slotsFromRanges([[16, 17, 'colossus_mend'], [18, 19, 'colossus_cleave'], [20, 20, 'colossus_slam'], [21, 21, 'colossus_quake']]),
   dragon: slotsFromRanges([
     [18, 18, 'dragon_claw'], [19, 19, 'dragon_breath'], [20, 20, 'dragon_inferno'], [21, 21, 'dragon_apocalypse'],
   ]),

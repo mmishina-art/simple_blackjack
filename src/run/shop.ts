@@ -40,9 +40,9 @@ export function sellPrice(id: SkillId): number {
   return Math.floor(priceOfSkill(id) * SELL_RATIO);
 }
 
-/** 敵を倒したときにもらえるゴールド: 強い敵ほど多い（LV×2 + 6）。ボスは 2.5 倍。 */
+/** 敵を倒したときにもらえるゴールド: 強い敵ほど多い（LV×4 + 14）。goldMultiplier（ミミックの 3 倍など）やボス（2.5 倍）を掛ける。 */
 export function enemyGold(def: EnemyDef, boss = false): number {
-  return Math.round((enemyLevel(def) * 4 + 14) * (boss ? 2.5 : 1));
+  return Math.round((enemyLevel(def) * 4 + 14) * (def.goldMultiplier ?? 1) * (boss ? 2.5 : 1));
 }
 
 /** 敵を倒した報酬で、スキルの代わりにゴールドを選んだときの倍率（スキルをあきらめる分の見返り）。 */
