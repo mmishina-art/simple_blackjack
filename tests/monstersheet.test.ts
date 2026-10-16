@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { getEnemy } from '../src/core/entities/enemies/catalog';
 
 const map = readFileSync('src/ui/MapView.ts', 'utf8');
 const sheet = readFileSync('src/ui/components/MonsterSheet.ts', 'utf8');
@@ -60,9 +61,35 @@ describe('落とし物の出やすさ', () => {
 
 describe('マップのマスの絵', () => {
   const icons = readFileSync('src/ui/components/tileIcons.ts', 'utf8');
-  it('宝・店・祠・宿屋に絵があり、マップが使う', () => {
+  const css = readFileSync('src/ui/styles/main.css', 'utf8');
+  it('宝・店・祠・宿屋に絵があり、マップが使う。通常マスは r=28・中ボスは r=30・ボスマスは r=32 に拡大して見やすくする', () => {
     for (const k of ['start', 'chest', 'shop', 'shrine', 'inn']) expect(icons).toContain(`${k}:`);
     expect(map).toContain('TILE_ICONS[t.kind]');
     expect(map).toContain("start: '', empty: '', enemy: '敵', chest: '', inn: '', shrine: '', boss: '王', shop: ''");
+    expect(map).toContain("if (t.kind === 'boss') return 32;");
+    expect(map).toContain('if (isMidBoss(t)) return 30;');
+    expect(map).toContain('return 28;');
+    expect(map).toContain("transform: 'scale(1.45)'");
+  });
+  it('ボスは金色の枠＋金の王冠、中ボス（水没した騎士・溶岩の大蛇）は銅色の二重リングで、通常の敵（赤）と見分けられる', () => {
+    expect(map).toContain("'tile__crown'");
+    expect(map).toContain("if (midBoss) g.append(svg('circle', { r: r + 3.5 }, 'tile__ring'));");
+    expect(map).toContain("' tile--midboss'");
+    expect(css).toContain('.tile--boss:not(.tile--reach):not(.tile--here) .tile__bg { stroke: #e6c878;');
+    expect(css).toContain('.tile__crown { fill: #e6c878;');
+    expect(css).toContain('.tile--midboss .tile__ring {');
+    expect(getEnemy('drowned_knight').midBoss).toBe(true);
+    expect(getEnemy('magma_serpent').midBoss).toBe(true);
+    expect(getEnemy('skeleton').midBoss).toBeFalsy();
+    expect(sheet).toContain('def.midBoss ? `${def.name}（中ボス）`');
+  });
+  it('未討伐のボス（図鑑未登録）は、デバッグモードを除きマップ上も詳細シートもシルエットと「？？？」になる（真っ黒ではなく、姿がうっすら分かる）', () => {
+    expect(map).toContain("const bossUnknown = t.kind === 'boss' && Boolean(t.enemyId) && !isDebug() && !(run.knownEnemies ?? []).includes(t.enemyId!);");
+    expect(map).toContain("tile--unknown");
+    expect(css).toContain('.tile--unknown .tile__monster { filter: grayscale(1)');
+    expect(css).not.toContain('.tile--unknown .tile__monster { filter: brightness(0)');
+    expect(css).toContain('.monster-sheet--silhouette .codex__sprite svg { filter: grayscale(1)');
+    expect(sheet).toContain("const unknown = opts.boss && !isDebug() && !(opts.run.knownEnemies ?? []).includes(enemyId);");
+    expect(sheet).toContain("if (!unknown) content.append(buildEnemySkillList(enemy, def.ai.standOn));");
   });
 });

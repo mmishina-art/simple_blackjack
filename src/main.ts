@@ -262,7 +262,10 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   run.hp = machine.ctx.player.hp;
   run.maxHp = machine.ctx.player.maxHp; // 凱旋の杯で増えた最大 HP を引き継ぐ
   run.stats.enemiesDefeated++;
-  if (!bareRun && !cheated && tile.enemyId && discoverEnemy(meta, tile.enemyId)) saveMeta(meta); // モンスター図鑑に載る
+  if (!bareRun && !cheated && tile.enemyId) {
+    if (discoverEnemy(meta, tile.enemyId)) saveMeta(meta); // モンスター図鑑に載る
+    if (!(run.knownEnemies ??= []).includes(tile.enemyId)) run.knownEnemies.push(tile.enemyId);
+  }
   markCleared(run, tile.id);
   // ゴールドが自動で入るのはボスだけ。ふつうの敵は、次の画面で「スキル」か「ゴールド」を選ぶ
   if (tile.kind === 'boss') {

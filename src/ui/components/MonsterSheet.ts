@@ -8,16 +8,19 @@ import { rarityOfSkill } from '../../core/skills/Skill';
 import { enemyArtHtml } from './enemyArt';
 import { buildEnemySkillList } from './EnemyInfo';
 import { openSheet } from './SkillSheet';
+import { isDebug } from '../../debug';
 
 /**
  * マップで敵のマスをタップしたときの詳細（姿・LV・HP・特性・技・落とし物）。
- * canGo のときは「進む」を出す（押すと onGo）。図鑑の発見状況には左右されない（マップに姿が見えているため）。
+ * canGo のときは「進む」を出す（押すと onGo）。
+ * ボスは、一度倒して図鑑に載るまで（デバッグモード時を除き）シルエットと「？？？」で詳細を伏せる。
  */
 export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: boolean; canGo: boolean; onGo(): void }): void {
   const def = getEnemy(enemyId);
+  const unknown = opts.boss && !isDebug() && !(opts.run.knownEnemies ?? []).includes(enemyId);
   const enemy = new Entity('enemy', def.name, def.maxHp, { ...def.slots }, def.fallbackSkill, def.attack);
   const content = document.createElement('div');
-  content.className = 'monster-sheet';
+  content.className = `monster-sheet${unknown ? ' codex__item--unknown monster-sheet--silhouette' : ''}`;
 
   const top = document.createElement('div');
   top.className = 'monster-sheet__top';
@@ -28,9 +31,13 @@ export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: b
   const facts = document.createElement('div');
   facts.className = 'monster-sheet__facts';
   const stats = document.createElement('strong');
-  stats.textContent = `LV ${enemyLevel(def)}　HP ${def.maxHp}`;
+  stats.textContent = unknown ? 'LV ？　HP ？' : `LV ${enemyLevel(def)}　HP ${def.maxHp}`;
   facts.append(stats);
-  if (def.trait) {
+  if (unknown) {
+    const trait = document.createElement('small');
+    trait.textContent = '未討伐（一度倒して図鑑に載ると詳細が見える）';
+    facts.append(trait);
+  } else if (def.trait) {
     const trait = document.createElement('small');
     trait.textContent = `特性: ${def.trait}`;
     facts.append(trait);
@@ -59,10 +66,11 @@ export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: b
     drops.append(label, chips);
   }
 
-  content.append(top, drops, buildEnemySkillList(enemy, def.ai.standOn));
+  content.append(top, drops);
+  if (!unknown) content.append(buildEnemySkillList(enemy, def.ai.standOn));
 
   openSheet({
-    title: opts.boss ? `${def.name}（ボス）` : def.name,
+    title: opts.boss ? `${unknown ? '？？？' : def.name}（ボス）` : def.midBoss ? `${def.name}（中ボス）` : def.name,
     content,
     options: opts.canGo ? [{ kind: 'confirm', icon: '進', name: '進む', detail: 'この敵と戦う', onPick: opts.onGo }] : [],
     closeLabel: '閉じる',

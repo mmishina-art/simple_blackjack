@@ -12,6 +12,8 @@ export interface EnemyDef {
   attackBonus?: number;
   /** 倒したときの獲得ゴールド倍率（貪欲なミミックの 3 倍など）。 */
   goldMultiplier?: number;
+  /** 中ボス（通常の敵マスに置く、前の階層のボスの強化版）。マップでは専用の枠で示す。 */
+  midBoss?: boolean;
   ai: EnemyAI;
   /** 合計値スロットにセットされたスキル。 */
   slots: SlotTable;

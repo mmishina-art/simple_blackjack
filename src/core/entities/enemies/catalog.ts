@@ -211,7 +211,7 @@ export const IronGolem: EnemyDef = {
 };
 
 export const DrownedKnight: EnemyDef = {
-  id: 'drowned_knight', name: '水没した騎士', maxHp: 38, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.drowned_knight, fallbackSkill: 'drowned_slash',
+  id: 'drowned_knight', name: '水没した騎士', midBoss: true, maxHp: 38, attack: 4, ai: new DealerAI(17), slots: ENEMY_SLOTS.drowned_knight, fallbackSkill: 'drowned_slash',
   trait: '水没の重装（戦闘開始時にブロック 8）', relics: [DrownedArmor],
 };
 
@@ -237,7 +237,7 @@ export const Imp: EnemyDef = {
 };
 
 export const MagmaSerpent: EnemyDef = {
-  id: 'magma_serpent', name: '溶岩の大蛇', maxHp: 60, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.magma_serpent, fallbackSkill: 'magma_bite',
+  id: 'magma_serpent', name: '溶岩の大蛇', midBoss: true, maxHp: 60, attack: 5, ai: new DealerAI(18), slots: ENEMY_SLOTS.magma_serpent, fallbackSkill: 'magma_bite',
   trait: '溶岩再生（ラウンドの初めに HP +3）', relics: [{ ...Regeneration(3), id: 'magma_regen', name: '溶岩再生', description: 'ラウンドの初めに HP +3' }],
 };
 

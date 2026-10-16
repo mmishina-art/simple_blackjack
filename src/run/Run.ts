@@ -43,6 +43,8 @@ export interface RunState {
   bonus: RunBonus;
   /** 図鑑に載っているスキル（報酬に出やすい）。 */
   favored: SkillId[];
+  /** モンスター図鑑に載っている（討伐済みの）敵 ID。未討伐のボスをマップ上でシルエットにするために使う。 */
+  knownEnemies?: string[];
   /** 魂片の計算用の記録。 */
   stats: { maxRow: number; enemiesDefeated: number };
 }
@@ -63,6 +65,7 @@ export function createRun(map: StageMap = STAGES[0], meta?: MetaState): RunState
     slots, armor: DEFAULT_ARMOR_ID, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
     inventory: [], gold: 0, relics: [], bonus,
     favored: meta ? [...meta.codex.skills] : [],
+    knownEnemies: meta ? [...meta.codex.enemies] : [],
     stats: { maxRow: 0, enemiesDefeated: 0 },
   };
 }
