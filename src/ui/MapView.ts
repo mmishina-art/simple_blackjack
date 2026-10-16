@@ -18,11 +18,11 @@ const W = 360;
 const COL_X = [70, 180, 290];
 /** 9段までは、画面の高さに収める（従来どおり）。それより長い階層は、段の間隔を一定にして、縦にスクロールする。 */
 const FIT_ROWS = 9;
-const ROW_STEP = 62;
-const PAD = 56;
-const boardHeight = (rows: number): number => (rows <= FIT_ROWS ? 640 : PAD * 2 + (rows - 1) * ROW_STEP);
+const ROW_STEP = 74;
+const PAD = 64;
+const boardHeight = (rows: number): number => (rows <= FIT_ROWS ? 680 : PAD * 2 + (rows - 1) * ROW_STEP);
 const ROW_Y = (row: number, rows: number): number =>
-  rows <= FIT_ROWS ? 586 - row * ((586 - 64) / Math.max(1, rows - 1)) : boardHeight(rows) - PAD - row * ROW_STEP;
+  rows <= FIT_ROWS ? 624 - row * ((624 - 64) / Math.max(1, rows - 1)) : boardHeight(rows) - PAD - row * ROW_STEP;
 
 /** 絵のないマスの文字（スタート・宝・店・祠・宿屋は tileIcons の絵）。 */
 const ICON: Record<TileKind, string> = { start: '', empty: '', enemy: '敵', chest: '', inn: '', shrine: '', boss: '王', shop: '' };
@@ -39,6 +39,18 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string,
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
   if (cls) e.setAttribute('class', cls);
   return e;
+}
+
+/** 中ボス（通常の敵マスに置かれた、前の階層のボスの強化版）のマスか。 */
+function isMidBoss(t: TileDef): boolean {
+  return t.kind === 'enemy' && Boolean(t.enemyId) && Boolean(getEnemy(t.enemyId!).midBoss);
+}
+
+/** マスの半径。ボスがいちばん大きく、中ボスはその次。 */
+function tileRadius(t: TileDef): number {
+  if (t.kind === 'boss') return 32;
+  if (isMidBoss(t)) return 30;
+  return 28;
 }
 
 /** マップ画面。駒は1マスずつ進み、光っている隣接マスをタップして移動する。 */
@@ -83,13 +95,17 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
     const here = t.id === run.position;
     const canMove = reachable.has(t.id);
     const cleared = isCleared(run, t.id);
-    const r = t.kind === 'boss' ? 28 : 21;
+    const bossUnknown = t.kind === 'boss' && Boolean(t.enemyId) && !isDebug() && !(run.knownEnemies ?? []).includes(t.enemyId!);
+    const midBoss = isMidBoss(t);
+    const r = tileRadius(t);
     const g = svg('g', { transform: `translate(${x} ${y})` },
-      `tile tile--${t.kind}${cleared ? ' tile--cleared' : ''}${here ? ' tile--here' : ''}${canMove ? ' tile--reach' : ''}`);
+      `tile tile--${t.kind}${midBoss ? ' tile--midboss' : ''}${cleared ? ' tile--cleared' : ''}${here ? ' tile--here' : ''}${canMove ? ' tile--reach' : ''}${bossUnknown ? ' tile--unknown' : ''}`);
+    // 中ボスは、円の外側に細い銅色のリングを重ねて二重の枠にする（ボスは金色の枠＋上の王冠。王冠は絵のあとに描く）
+    if (midBoss) g.append(svg('circle', { r: r + 3.5 }, 'tile__ring'));
     g.append(svg('circle', { r }, 'tile__bg'));
     const monster = t.enemyId ? enemyArtHref(t.enemyId) : null;
     if (monster) {
-      // 敵のマスには、出てくるモンスターの絵を出す（円の中に切り抜く）
+      // 敵のマスには、出てくるモンスターの絵を出す（円の中に切り抜く。未討伐のボスはシルエット）
       const clip = svg('clipPath', { id: `clip-${t.id}` });
       clip.append(svg('circle', { r: r - 2 }));
       g.append(clip);
@@ -99,7 +115,7 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
       g.append(img);
     } else if (TILE_ICONS[t.kind]) {
       // 宝・店・祠・宿屋は、種類ごとの絵（線画。色は CSS の color）
-      const glyph = svg('g', { transform: 'scale(1.1)', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' }, 'tile__glyph');
+      const glyph = svg('g', { transform: 'scale(1.45)', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' }, 'tile__glyph');
       glyph.innerHTML = TILE_ICONS[t.kind]!;
       g.append(glyph);
     } else {
@@ -107,19 +123,24 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
       icon.textContent = ICON[t.kind];
       g.append(icon);
     }
+    // ボスは、円の上端に小さな王冠をのせる（色は CSS。枠と同じ金色）
+    if (t.kind === 'boss') {
+      const crown = svg('path', { d: 'M-11 0 L-11 -9 L-5.5 -4 L0 -11 L5.5 -4 L11 -9 L11 0 Z', transform: `translate(0 ${-r + 1})` }, 'tile__crown');
+      g.append(crown);
+    }
     if (cleared && t.kind !== 'empty' && t.kind !== 'start') {
       const mark = svg('text', { x: r - 4, y: -r + 10 }, 'tile__check');
       mark.textContent = '✓';
       g.append(mark);
     }
     const title = svg('title');
-    const who = t.enemyId ? `${getEnemy(t.enemyId).name} LV${enemyLevel(getEnemy(t.enemyId))}・` : '';
+    const who = t.enemyId ? (bossUnknown ? '？？？・' : `${getEnemy(t.enemyId).name} LV${enemyLevel(getEnemy(t.enemyId))}・`) : '';
     title.textContent = who + TILE_LABEL[t.kind] + (cleared ? '（済）' : '');
     g.append(title);
     const enemyId = t.enemyId;
     const canGo = canMove || (isDebug() && Boolean(enemyId));
     if (enemyId || canMove) {
-      const name = enemyId ? `${getEnemy(enemyId).name}（${TILE_LABEL[t.kind]}）` : TILE_LABEL[t.kind];
+      const name = enemyId ? `${bossUnknown ? '？？？' : getEnemy(enemyId).name}（${TILE_LABEL[t.kind]}）` : TILE_LABEL[t.kind];
       g.setAttribute('role', 'button');
       g.setAttribute('tabindex', '0');
       g.setAttribute('aria-label', enemyId ? `${name}の詳細${canGo ? '（進める）' : ''}` : `${name}へ進む`);
@@ -136,9 +157,11 @@ export function showMap(root: HTMLElement, run: RunState, handlers: MapHandlers,
     board.append(g);
   }
   // 駒
-  const here = pos(tileOf(run.map, run.position));
+  const hereTile = tileOf(run.map, run.position);
+  const here = pos(hereTile);
+  const hereR = tileRadius(hereTile) + (hereTile.kind === 'boss' ? 10 : isMidBoss(hereTile) ? 4 : 0);
   // 位置は外側の g の transform 属性で、上下にゆれる動き（CSS の transform）は内側の g で付ける（同じ要素に両方付けると、位置が上書きされて、左上に出てしまう）
-  const pawn = svg('g', { transform: `translate(${here.x} ${here.y - 34})` });
+  const pawn = svg('g', { transform: `translate(${here.x} ${here.y - (hereR + 12)})` });
   const bob = svg('g', {}, 'pawn');
   bob.append(svg('path', { d: 'M0 10 L9 0 L0 -12 L-9 0 Z' }, 'pawn__shape'));
   pawn.append(bob);
