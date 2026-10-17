@@ -1,4 +1,4 @@
-import { audio } from './audio/AudioManager';
+import { audio, bgmForBattle } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { getEnemy } from './core/entities/enemies/catalog';
@@ -88,6 +88,7 @@ function leaveBattle(): void {
   view = null;
   unbindSounds?.();
   unbindSounds = null;
+  audio.setBgm('field');
 }
 
 // ---- マップ ----
@@ -180,8 +181,10 @@ function resolveTile(tile: TileDef): void {
 // ---- 戦闘 ----
 function startBattle(tile: TileDef): void {
   leaveBattle();
+  const enemy = enemyOfTile(tile);
+  audio.setBgm(bgmForBattle(enemy, tile.kind === 'boss'));
   const machine = new BattleMachine({
-    enemy: enemyOfTile(tile),
+    enemy,
     playerMaxHp: run.maxHp,
     playerHp: run.hp,
     playerSlots: run.slots,

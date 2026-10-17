@@ -15,15 +15,123 @@ const FILE_GAIN = 0.45;
 /** 頻繁に鳴る軽い音（タップ・配る・めくる・選ぶ）は、戦闘の音より小さくする（ファイルはどれも同じ大きさで作られている）。 */
 const FILE_VOLUME: Partial<Record<SfxName, number>> = { click: 0.55, deal: 0.4, flip: 0.55, pick: 0.7, push: 0.8 };
 
-// A ハーモニックマイナー（Am - F - Dm - E）。小節ごとのベース音とアルペジオ（Hz）
-const BASS = [110.0, 87.31, 73.42, 82.41];
-const ARP: number[][] = [
+export type BgmTrack = 'field' | 'battle' | 'midboss' | 'boss';
+
+/**
+ * 戦う相手に応じた BGM トラックを返す。
+ * - 黒竜（ラスボス）: `'boss'`
+ * - 中ボス（midBoss = true）および第1・第2階層ボス（knight, serpent, またはボス戦マス）: `'midboss'`
+ * - 通常モンスター: `'battle'`
+ */
+export function bgmForBattle(enemy: { id: string; midBoss?: boolean }, isBossTile = false): BgmTrack {
+  if (enemy.id === 'dragon') return 'boss';
+  if (enemy.midBoss || isBossTile || enemy.id === 'knight' || enemy.id === 'serpent') return 'midboss';
+  return 'battle';
+}
+
+// ---- 1. 探索 BGM ('field'): A ハーモニックマイナー（Am - F - Dm - E）、84 BPM ----
+const FIELD_BASS = [110.0, 87.31, 73.42, 82.41];
+const FIELD_ARP: number[][] = [
   [220.0, 261.63, 329.63, 261.63],
   [174.61, 220.0, 261.63, 220.0],
   [146.83, 174.61, 220.0, 174.61],
   [164.81, 207.65, 246.94, 207.65],
 ];
-const STEP_SEC = 60 / 84 / 2; // 84bpm の8分音符
+const FIELD_STEP = 60 / 84 / 2; // 84bpm の8分音符
+
+// ---- 2. 通常戦闘 BGM ('battle'): D ハーモニックマイナー、110 BPM（8小節ループ） ----
+// 地下墓所や大聖堂で雑魚敵と刃を交える緊張感。刻むベースと短調の旋律が前に進む
+const BATTLE_STEP = 60 / 110 / 2;
+const BATTLE_BASS = [73.42, 65.41, 58.27, 55.0, 73.42, 98.0, 58.27, 82.41]; // Dm - C - Bb - A - Dm - Gm - Bb - A
+const BATTLE_ARP: number[][] = [
+  [146.83, 174.61, 220.0, 174.61],  // Dm
+  [130.81, 164.81, 196.0, 164.81],  // C
+  [116.54, 146.83, 174.61, 146.83], // Bb
+  [110.0, 138.59, 164.81, 138.59],  // A7
+  [146.83, 220.0, 293.66, 220.0],   // Dm
+  [196.0, 233.08, 293.66, 233.08],  // Gm
+  [116.54, 174.61, 233.08, 174.61], // Bb
+  [164.81, 207.65, 277.18, 220.0],  // A7
+];
+const BATTLE_MELODY: number[][] = [
+  [293.66, 0, 329.63, 349.23, 440.0, 0, 392.0, 349.23],
+  [329.63, 0, 293.66, 261.63, 293.66, 0, 220.0, 0],
+  [233.08, 0, 293.66, 349.23, 392.0, 0, 349.23, 329.63],
+  [277.18, 0, 293.66, 329.63, 220.0, 0, 0, 0],
+  [440.0, 0, 523.25, 466.16, 440.0, 0, 392.0, 349.23],
+  [392.0, 0, 466.16, 440.0, 392.0, 0, 349.23, 293.66],
+  [349.23, 329.63, 293.66, 233.08, 293.66, 349.23, 440.0, 0],
+  [415.3, 0, 440.0, 493.88, 554.37, 0, 440.0, 0],
+];
+
+// ---- 3. 中ボス・階層ボス BGM ('midboss'): C ハーモニックマイナー、128 BPM（8小節ループ） ----
+// 重装の騎士や大蛇が立ちはだかる威圧感。重い5度和音・半音階の刻み・金属の鐘で強敵らしさを出す
+const MIDBOSS_STEP = 60 / 128 / 2;
+const MIDBOSS_BASS = [65.41, 77.78, 87.31, 98.0, 65.41, 69.3, 103.83, 98.0]; // Cm - Eb - Fm - G - Cm - Db - Ab - G
+const MIDBOSS_FIFTH = [98.0, 116.54, 130.81, 146.83, 98.0, 103.83, 155.56, 146.83];
+const MIDBOSS_ARP: number[][] = [
+  [130.81, 155.56, 196.0, 246.94],  // Cm(maj7)
+  [155.56, 196.0, 233.08, 311.13],  // Eb
+  [174.61, 207.65, 261.63, 349.23], // Fm
+  [196.0, 246.94, 293.66, 349.23],  // G7
+  [130.81, 196.0, 261.63, 311.13],  // Cm
+  [138.59, 174.61, 207.65, 277.18], // Db (Phrygian bII)
+  [207.65, 261.63, 311.13, 415.3],  // Ab
+  [196.0, 246.94, 311.13, 392.0],   // G7(b13)
+];
+const MIDBOSS_MELODY: number[][] = [
+  [261.63, 0, 311.13, 293.66, 261.63, 246.94, 261.63, 392.0],
+  [311.13, 0, 392.0, 466.16, 392.0, 0, 349.23, 311.13],
+  [349.23, 0, 415.3, 392.0, 349.23, 311.13, 293.66, 261.63],
+  [246.94, 0, 293.66, 349.23, 415.3, 392.0, 293.66, 246.94],
+  [523.25, 0, 493.88, 523.25, 622.25, 0, 587.33, 523.25],
+  [554.37, 0, 523.25, 466.16, 415.3, 0, 392.0, 349.23],
+  [415.3, 466.16, 523.25, 415.3, 349.23, 415.3, 466.16, 523.25],
+  [493.88, 0, 587.33, 0, 622.25, 587.33, 493.88, 392.0],
+];
+
+// ---- 4. ラスボス BGM ('boss'): E ハーモニックマイナー、146 BPM（8小節ループ） ----
+// 竜の巣の主・黒竜との決戦。疾走する低音ペダル・重厚なオルガン風3声和音・弔いの大鐘・高音リードでクライマックスを描く
+const BOSS_STEP = 60 / 146 / 2;
+const BOSS_BASS = [82.41, 87.31, 98.0, 92.5, 110.0, 82.41, 73.42, 123.47]; // Em - F(bII) - G - F#dim - Am - Em - D - B7
+const BOSS_CHORDS: number[][] = [
+  [164.81, 196.0, 246.94],  // Em
+  [174.61, 220.0, 261.63],  // F (bII)
+  [196.0, 246.94, 293.66],  // G
+  [185.0, 220.0, 261.63],   // F#dim (tritone tension)
+  [220.0, 261.63, 329.63],  // Am
+  [164.81, 246.94, 329.63], // Em
+  [146.83, 220.0, 293.66],  // Dm/D
+  [185.0, 246.94, 311.13],  // B7
+];
+const BOSS_ARP: number[][] = [
+  [164.81, 246.94, 329.63, 392.0],
+  [174.61, 261.63, 349.23, 440.0],
+  [196.0, 293.66, 392.0, 493.88],
+  [185.0, 261.63, 369.99, 440.0],
+  [220.0, 329.63, 440.0, 523.25],
+  [164.81, 246.94, 329.63, 493.88],
+  [146.83, 220.0, 293.66, 440.0],
+  [246.94, 311.13, 369.99, 493.88],
+];
+const BOSS_MELODY: number[][] = [
+  [329.63, 392.0, 493.88, 0, 440.0, 392.0, 369.99, 329.63],
+  [349.23, 440.0, 523.25, 0, 493.88, 440.0, 392.0, 349.23],
+  [392.0, 493.88, 587.33, 0, 523.25, 493.88, 440.0, 392.0],
+  [369.99, 440.0, 523.25, 493.88, 440.0, 369.99, 311.13, 246.94],
+  [440.0, 523.25, 659.25, 0, 587.33, 523.25, 493.88, 440.0],
+  [659.25, 0, 587.33, 523.25, 493.88, 0, 440.0, 392.0],
+  [587.33, 523.25, 493.88, 440.0, 392.0, 440.0, 493.88, 587.33],
+  [622.25, 0, 659.25, 739.99, 783.99, 739.99, 622.25, 493.88],
+];
+
+/** トラックごとのローパス周波数（探索はこもらせ、強敵になるほど倍音を開いて迫力を増す）。 */
+const BGM_CUTOFF: Record<BgmTrack, number> = {
+  field: 1100,
+  battle: 1450,
+  midboss: 1750,
+  boss: 2100,
+};
 
 /** 音を出してよい操作（ブラウザの自動再生制限。iOS は touchstart / pointerdown では許可されず、touchend / click で許可される）。 */
 const GESTURES = ['click', 'touchend', 'keydown'] as const;
@@ -39,6 +147,7 @@ export class AudioManager {
   private ctx: AudioContext | null = null;
   private master!: GainNode;
   private bgmGain!: GainNode;
+  private bgmFilter: BiquadFilterNode | null = null;
   private sfxGain!: GainNode;
   private noiseBuf: AudioBuffer | null = null;
   /** 読み込んだ効果音ファイル（AudioContext を作り直したら、読み直す）。 */
@@ -47,6 +156,7 @@ export class AudioManager {
   private timer: number | null = null;
   private nextTime = 0;
   private step = 0;
+  private _bgm: BgmTrack = 'field';
   private _muted = false;
   /** 戻した（resume）あとも動かなかった。次のタップで、AudioContext を作り直す。 */
   private needsRebuild = false;
@@ -123,6 +233,23 @@ export class AudioManager {
     if (this.ctx) this.master.gain.setTargetAtTime(muted ? 0 : 1, this.ctx.currentTime, 0.02);
   }
 
+  get bgm(): BgmTrack {
+    return this._bgm;
+  }
+
+  /** BGM トラックを切り替える（探索 `'field'`・通常戦闘 `'battle'`・中ボス `'midboss'`・ラスボス `'boss'`）。 */
+  setBgm(track: BgmTrack): void {
+    if (this._bgm === track) return;
+    this._bgm = track;
+    this.step = 0;
+    if (this.ctx) {
+      this.nextTime = Math.max(this.ctx.currentTime + 0.06, 0);
+      if (this.bgmFilter) {
+        this.bgmFilter.frequency.value = BGM_CUTOFF[track];
+      }
+    }
+  }
+
   /**
    * AudioContext を作成し BGM を開始する。ボタンを押したときに呼ぶ（ブラウザの自動再生制限のため、ユーザー操作の中で）。
    */
@@ -136,10 +263,11 @@ export class AudioManager {
       this.master.connect(this.ctx.destination);
       this.bgmGain = this.ctx.createGain();
       this.bgmGain.gain.value = 0.26;
-      // こもった暗い音色にするローパス
+      // こもった暗い音色にするローパス（戦闘の格が上がるとカットオフを開いて迫力を増す）
       const lowpass = this.ctx.createBiquadFilter();
       lowpass.type = 'lowpass';
-      lowpass.frequency.value = 1100;
+      lowpass.frequency.value = BGM_CUTOFF[this._bgm];
+      this.bgmFilter = lowpass;
       this.bgmGain.connect(lowpass).connect(this.master);
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.gain.value = 0.6;
@@ -293,18 +421,143 @@ export class AudioManager {
     const ctx = this.ctx;
     if (!ctx) return;
     while (this.nextTime < ctx.currentTime + 0.35) {
-      const bar = Math.floor(this.step / 8) % 4;
-      const pos = this.step % 8;
       const t = this.nextTime;
-      if (pos % 4 === 0) {
-        this.tone(BASS[bar], t, STEP_SEC * 3.8, 'sawtooth', 0.28, undefined, this.bgmGain);
-        this.tone(BASS[bar] / 2, t, STEP_SEC * 3.8, 'sine', 0.5, undefined, this.bgmGain);
+      switch (this._bgm) {
+        case 'field':
+          this.stepField(t);
+          this.nextTime += FIELD_STEP;
+          break;
+        case 'battle':
+          this.stepBattle(t);
+          this.nextTime += BATTLE_STEP;
+          break;
+        case 'midboss':
+          this.stepMidboss(t);
+          this.nextTime += MIDBOSS_STEP;
+          break;
+        case 'boss':
+          this.stepBoss(t);
+          this.nextTime += BOSS_STEP;
+          break;
       }
-      this.tone(ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1), t, STEP_SEC * 0.9, 'triangle', 0.16, undefined, this.bgmGain);
-      if (pos % 2 === 1) this.noise(t, 0.03, 7000, 0.06, this.bgmGain);
-      this.nextTime += STEP_SEC;
       this.step++;
     }
+  }
+
+  /** 探索 BGM: 静かで不穏な地下迷宮の歩み（84 BPM, A ハーモニックマイナー）。 */
+  private stepField(t: number): void {
+    const bar = Math.floor(this.step / 8) % 4;
+    const pos = this.step % 8;
+    if (pos % 4 === 0) {
+      this.tone(FIELD_BASS[bar], t, FIELD_STEP * 3.8, 'sawtooth', 0.28, undefined, this.bgmGain);
+      this.tone(FIELD_BASS[bar] / 2, t, FIELD_STEP * 3.8, 'sine', 0.5, undefined, this.bgmGain);
+    }
+    this.tone(FIELD_ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1), t, FIELD_STEP * 0.9, 'triangle', 0.16, undefined, this.bgmGain);
+    if (pos % 2 === 1) this.noise(t, 0.03, 7000, 0.06, this.bgmGain);
+  }
+
+  /** 通常戦闘 BGM: 雑魚敵との緊迫した切り結び（110 BPM, D ハーモニックマイナー）。 */
+  private stepBattle(t: number): void {
+    const bar = Math.floor(this.step / 8) % 8;
+    const pos = this.step % 8;
+    const root = BATTLE_BASS[bar];
+    // 8分音符で刻むドライビングベース（表拍は重く、裏拍は1オクターブ上で推進力を出す）
+    const bassFreq = pos % 2 === 0 ? root : root * 2;
+    this.tone(bassFreq, t, BATTLE_STEP * 0.88, 'sawtooth', pos % 2 === 0 ? 0.28 : 0.2, undefined, this.bgmGain);
+    if (pos % 4 === 0) {
+      this.tone(root, t, BATTLE_STEP * 3.6, 'sine', 0.44, undefined, this.bgmGain);
+    }
+    // アルペジオと短調の主旋律
+    this.tone(BATTLE_ARP[bar][pos % 4], t, BATTLE_STEP * 0.85, 'triangle', 0.14, undefined, this.bgmGain);
+    const mel = BATTLE_MELODY[bar][pos];
+    if (mel > 0) {
+      this.tone(mel, t, BATTLE_STEP * 1.55, 'sawtooth', 0.15, undefined, this.bgmGain);
+      this.tone(mel * 0.5, t, BATTLE_STEP * 1.4, 'triangle', 0.1, undefined, this.bgmGain);
+    }
+    // パーカッション: 1・3拍にローキック、2・4拍にリムスネア、裏拍にハイハット
+    if (pos % 4 === 0) this.tone(92, t, 0.09, 'sine', 0.36, 42, this.bgmGain);
+    if (pos % 4 === 2) this.noise(t, 0.06, 1800, 0.14, this.bgmGain);
+    if (pos % 2 === 1) this.noise(t, 0.025, 6500, 0.07, this.bgmGain);
+  }
+
+  /** 中ボス・階層ボス BGM: 威圧感のある重装行進（128 BPM, C ハーモニックマイナー）。 */
+  private stepMidboss(t: number): void {
+    const bar = Math.floor(this.step / 8) % 8;
+    const pos = this.step % 8;
+    const root = MIDBOSS_BASS[bar];
+    const fifth = MIDBOSS_FIFTH[bar];
+    // 重い5度パワーコードとシンコペーションの低音
+    if (pos === 0 || pos === 3 || pos === 4 || pos === 6) {
+      this.tone(root, t, MIDBOSS_STEP * 1.7, 'sawtooth', 0.3, undefined, this.bgmGain);
+      this.tone(fifth, t, MIDBOSS_STEP * 1.5, 'sawtooth', 0.2, undefined, this.bgmGain);
+      this.tone(root, t, MIDBOSS_STEP * 1.8, 'sine', 0.46, undefined, this.bgmGain);
+    } else {
+      this.tone(root * 2, t, MIDBOSS_STEP * 0.8, 'sawtooth', 0.18, undefined, this.bgmGain);
+    }
+    // 4小節ごとの冒頭に不吉な金属の鐘を重ねる
+    if (pos === 0 && bar % 2 === 0) {
+      this.bellBgm(root * 4, t, MIDBOSS_STEP * 3.5, 0.12);
+    }
+    // 鋭いアルペジオと攻撃的なリードメロディ
+    this.tone(MIDBOSS_ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1), t, MIDBOSS_STEP * 0.85, 'triangle', 0.15, undefined, this.bgmGain);
+    const mel = MIDBOSS_MELODY[bar][pos];
+    if (mel > 0) {
+      this.tone(mel, t, MIDBOSS_STEP * 1.35, 'sawtooth', 0.18, undefined, this.bgmGain);
+      this.tone(mel, t, MIDBOSS_STEP * 1.35, 'triangle', 0.14, undefined, this.bgmGain);
+    }
+    // 重い太鼓と鋭いスネア
+    if (pos === 0 || pos === 3 || pos === 4) this.tone(105, t, 0.1, 'sine', 0.42, 38, this.bgmGain);
+    if (pos === 2 || pos === 6) {
+      this.noise(t, 0.08, 1600, 0.2, this.bgmGain);
+      this.tone(160, t, 0.06, 'triangle', 0.18, 75, this.bgmGain);
+    }
+    if (pos % 2 === 1) this.noise(t, 0.03, 7200, 0.09, this.bgmGain);
+  }
+
+  /** ラスボス BGM: 黒竜との最終決戦（146 BPM, E ハーモニックマイナー）。 */
+  private stepBoss(t: number): void {
+    const bar = Math.floor(this.step / 8) % 8;
+    const pos = this.step % 8;
+    const root = BOSS_BASS[bar];
+    // 疾走するオクターブベース + 16分音符のギャロップ刻み
+    this.tone(pos % 2 === 0 ? root : root * 2, t, BOSS_STEP * 0.85, 'sawtooth', 0.3, undefined, this.bgmGain);
+    if (pos % 2 === 1) {
+      this.tone(root * 2, t + BOSS_STEP * 0.5, BOSS_STEP * 0.42, 'sawtooth', 0.2, undefined, this.bgmGain);
+    }
+    if (pos % 4 === 0) {
+      this.tone(root * 0.5, t, BOSS_STEP * 3.8, 'sine', 0.52, undefined, this.bgmGain);
+    }
+    // 聖堂オルガン風の重厚な3声和音パッド（小節頭と中盤で鳴らす）
+    if (pos === 0 || pos === 4) {
+      for (const freq of BOSS_CHORDS[bar]) {
+        this.tone(freq, t, BOSS_STEP * 3.6, 'sawtooth', 0.11, undefined, this.bgmGain);
+      }
+    }
+    // 弔いの大鐘（2小節ごとに鳴り響く）
+    if (pos === 0 && bar % 2 === 0) {
+      this.bellBgm(root * 2, t, BOSS_STEP * 5.0, 0.16);
+    }
+    // 高速アルペジオと劇的な高音クライマックス旋律
+    this.tone(BOSS_ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1), t, BOSS_STEP * 0.8, 'triangle', 0.15, undefined, this.bgmGain);
+    const mel = BOSS_MELODY[bar][pos];
+    if (mel > 0) {
+      this.tone(mel, t, BOSS_STEP * 1.4, 'sawtooth', 0.2, undefined, this.bgmGain);
+      this.tone(mel * 0.5, t, BOSS_STEP * 1.4, 'sawtooth', 0.12, undefined, this.bgmGain);
+    }
+    // 激しいドラムビート（連打キック・重いスネア・刻むシンバル）
+    if (pos % 2 === 0 || pos === 7) this.tone(115, t, 0.09, 'sine', 0.46, 36, this.bgmGain);
+    if (pos === 2 || pos === 6) {
+      this.noise(t, 0.09, 1900, 0.24, this.bgmGain);
+      this.tone(180, t, 0.07, 'triangle', 0.22, 70, this.bgmGain);
+    }
+    this.noise(t, 0.025, pos % 2 === 0 ? 6000 : 8000, pos % 2 === 0 ? 0.06 : 0.11, this.bgmGain);
+  }
+
+  /** BGM 用の金属の鐘（bgmGain に流す）。 */
+  private bellBgm(freq: number, start: number, dur: number, vol: number): void {
+    this.tone(freq, start, dur, 'sine', vol, undefined, this.bgmGain);
+    this.tone(freq * 2.76, start, dur * 0.6, 'sine', vol * 0.35, undefined, this.bgmGain);
+    this.tone(freq * 5.4, start, dur * 0.35, 'sine', vol * 0.15, undefined, this.bgmGain);
   }
 
   /** 金属の鈴: 基音に、整数倍でない倍音（2.76 倍・5.4 倍）を短く重ねる。 */

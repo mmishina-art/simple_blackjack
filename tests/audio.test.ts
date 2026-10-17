@@ -2,7 +2,8 @@
 // ブラウザの AudioContext は無いので、最小限の偽物で、状態の遷移（suspended / interrupted / running）だけを確かめる。
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AudioManager } from '../src/audio/AudioManager';
+import { AudioManager, bgmForBattle } from '../src/audio/AudioManager';
+import { BlackDragon, DrownedKnight, GraveKnight, MagmaSerpent, Serpent, Skeleton } from '../src/core/entities/enemies/catalog';
 
 type State = 'suspended' | 'running' | 'interrupted' | 'closed';
 
@@ -322,4 +323,61 @@ describe('BUST or DIE の予告の効果音', () => {
     }
   });
 });
+
+describe('戦闘 BGM の切り替え（探索 → 雑魚 → 中ボス → ラスボス）', () => {
+  it('敵の種類に応じて BGM トラック（battle / midboss / boss）が決まる', () => {
+    expect(bgmForBattle(Skeleton)).toBe('battle');
+    expect(bgmForBattle(DrownedKnight)).toBe('midboss');
+    expect(bgmForBattle(MagmaSerpent)).toBe('midboss');
+    expect(bgmForBattle(GraveKnight, true)).toBe('midboss');
+    expect(bgmForBattle(Serpent, true)).toBe('midboss');
+    expect(bgmForBattle(BlackDragon, true)).toBe('boss');
+  });
+
+  it('setBgm でトラックが切り替わり、ローパスフィルターの開き具合が探索 < 通常戦闘 < 中ボス < ラスボス の順に上がる', () => {
+    const a = new AudioManager();
+    a.unlock();
+    const bgmFilter = ctxOf().filters[0].frequency as { value: number };
+    expect(a.bgm).toBe('field');
+    const fField = bgmFilter.value;
+
+    a.setBgm('battle');
+    expect(a.bgm).toBe('battle');
+    const fBattle = bgmFilter.value;
+
+    a.setBgm('midboss');
+    expect(a.bgm).toBe('midboss');
+    const fMidboss = bgmFilter.value;
+
+    a.setBgm('boss');
+    expect(a.bgm).toBe('boss');
+    const fBoss = bgmFilter.value;
+
+    expect(fField).toBeLessThan(fBattle);
+    expect(fBattle).toBeLessThan(fMidboss);
+    expect(fMidboss).toBeLessThan(fBoss);
+  });
+
+  it('4種すべての BGM（field / battle / midboss / boss）が矩形波を使わずに音をスケジュールする', () => {
+    for (const track of ['field', 'battle', 'midboss', 'boss'] as const) {
+      const a = new AudioManager();
+      a.setBgm(track);
+      a.unlock();
+      const c = ctxOf();
+      for (let i = 0; i < 20; i++) {
+        c.currentTime += 0.25;
+        vi.advanceTimersByTime(100);
+      }
+      expect(c.oscs.length, track).toBeGreaterThan(10);
+      for (const o of c.oscs) expect(o.type, track).not.toBe('square');
+    }
+  });
+
+  it('main.ts で戦闘開始時に bgmForBattle で BGM を切り替え、戦闘を離れるときに field に戻す', () => {
+    const mainSrc = readFileSync('src/main.ts', 'utf8');
+    expect(mainSrc).toContain("audio.setBgm(bgmForBattle(enemy, tile.kind === 'boss'))");
+    expect(mainSrc).toContain("audio.setBgm('field')");
+  });
+});
+
 
