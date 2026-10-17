@@ -595,74 +595,68 @@ describe('敵の特性', () => {
   });
 });
 
-describe('レア度ごとの、置けるスロットの制限（スキル・道具）', () => {
-  it('コモンはどこでも、レアは 15 以上、レジェンドは 18 以上', () => {
-    expect(RARITY_MIN_SLOT).toEqual({ common: 11, rare: 15, legend: 18 });
-    expect([minSlotOf(getSkill('jab')), minSlotOf(getSkill('big_attack')), minSlotOf(getSkill('smash'))]).toEqual([11, 15, 18]);
+describe('スキル・道具のスロット配置（レア度によるスロット制限なし）', () => {
+  it('コモン・レア・レジェンドのスキルはすべてどのスロットにも置ける（防具はスロットに置けない）', () => {
+    expect(RARITY_MIN_SLOT).toEqual({ common: 11, rare: 11, legend: 11 });
+    expect([minSlotOf(getSkill('jab')), minSlotOf(getSkill('big_attack')), minSlotOf(getSkill('smash'))]).toEqual([11, 11, 11]);
     expect(canPlaceAt(getSkill('jab'), 12)).toBe(true);
-    expect(canPlaceAt(getSkill('big_attack'), 14)).toBe(false);
-    expect(canPlaceAt(getSkill('big_attack'), 15)).toBe(true);
-    expect(canPlaceAt(getSkill('smash'), 17)).toBe(false);
+    expect(canPlaceAt(getSkill('big_attack'), 12)).toBe(true);
+    expect(canPlaceAt(getSkill('smash'), 12)).toBe(true);
     expect(canPlaceAt(getSkill('smash'), 18)).toBe(true);
     expect(canPlaceAt(getSkill('iron_shield'), 20)).toBe(false); // 防具はスロットに置けない
   });
 
-  it('道具にも同じ制限（霊薬はレジェンド=18 以上、回復薬はレア=15 以上、薬草はどこでも）', () => {
+  it('道具もレア度に関係なくどのスロットにも置ける', () => {
     expect(canPlaceAt(getSkill('herb'), 12)).toBe(true);
-    expect(canPlaceAt(getSkill('tonic'), 14)).toBe(false);
-    expect(canPlaceAt(getSkill('elixir'), 17)).toBe(false);
+    expect(canPlaceAt(getSkill('tonic'), 12)).toBe(true);
+    expect(canPlaceAt(getSkill('elixir'), 12)).toBe(true);
     expect(canPlaceAt(getSkill('elixir'), 19)).toBe(true);
   });
 
-  it('初期装備は、すべて制限に合っている', () => {
+  it('初期装備は、すべて置ける状態になっている', () => {
     const run = createRun();
     for (const [key, id] of Object.entries(run.slots)) expect(canPlaceAt(getSkill(id!), Number(key)), `${key}:${id}`).toBe(true);
   });
 
-  it('equipSkill: 置けないスロットには置けず、持ち物から減らない', () => {
+  it('equipSkill: 固定スロット（11・21）以外のどのスロットにもレア・レジェンドを置ける', () => {
     const run = createRun();
-    run.inventory.push('smash', 'jab');
-    expect(equipSkill(run, 16, 'smash')).toBe(false);
-    expect(run.inventory).toEqual(['smash', 'jab']);
-    expect(equipSkill(run, 19, 'smash')).toBe(true);
-    expect(equipSkill(run, 12, 'jab')).toBe(true);
+    run.inventory.push('smash', 'big_attack', 'jab');
+    expect(equipSkill(run, 11, 'smash')).toBe(false); // 固定スロットには置けない
+    expect(equipSkill(run, 12, 'smash')).toBe(true);
+    expect(equipSkill(run, 13, 'big_attack')).toBe(true);
+    expect(equipSkill(run, 14, 'jab')).toBe(true);
   });
 
-  it('入れ替え: どちらか一方でも、入れ替え後の場所が制限に合わなければできない', () => {
+  it('入れ替え: 固定スロット以外のどのスロット間でもレア度に関係なく入れ替えられる', () => {
     const run = createRun();
     run.slots[19] = 'smash'; // レジェンド
     run.slots[13] = 'jab';   // コモン
-    expect(swapSlots(run, 19, 13)).toBe(false); // 13 にレジェンドは置けない
-    expect(run.slots[19]).toBe('smash');
-    run.slots[18] = 'slash'; // コモン
-    expect(swapSlots(run, 19, 18)).toBe(true); // 18 にも置ける
-    expect([run.slots[18], run.slots[19]]).toEqual(['smash', 'slash']);
+    expect(swapSlots(run, 19, 13)).toBe(true);
+    expect([run.slots[13], run.slots[19]]).toEqual(['smash', 'jab']);
     run.slots[16] = 'heavy'; // レア
-    expect(swapSlots(run, 16, 13)).toBe(false); // 13 にレアは置けない
-    expect(swapSlots(run, 16, 19)).toBe(true);
+    expect(swapSlots(run, 16, 13)).toBe(true);
+    expect([run.slots[13], run.slots[16]]).toEqual(['heavy', 'smash']);
   });
 
-  it('バージョンアップ: レア度は同じなので、置けるスロットのまま「＋」にできる（置けないスロットのスキルは、元から強化できない）', () => {
+  it('バージョンアップ: どのスロットでも強化できる', () => {
     const run = createRun();
-    run.slots[16] = 'big_attack'; // レア（15 以上）
-    expect(canUpgradeSlot(run, 16)).toBe(true);
-    expect(upgradeSlot(run, 16)).toBe('big_attack_plus');
-    run.slots[18] = 'smash'; // レジェンド
-    expect(upgradeSlot(run, 18)).toBe('smash_plus');
-    run.slots[13] = 'jab'; // コモンは、どこでも
+    run.slots[13] = 'big_attack';
     expect(canUpgradeSlot(run, 13)).toBe(true);
+    expect(upgradeSlot(run, 13)).toBe('big_attack_plus');
+    run.slots[12] = 'smash';
+    expect(upgradeSlot(run, 12)).toBe('smash_plus');
   });
 
-  it('置ける場所の説明', () => {
+  it('置ける場所の説明（レア度制限がないため常に空）', () => {
     expect(placementNote(getSkill('jab'))).toBe('');
-    expect(placementNote(getSkill('big_attack'))).toBe('15 以上のスロットにだけ置ける');
-    expect(placementNote(getSkill('smash'))).toBe('18 以上のスロットにだけ置ける');
+    expect(placementNote(getSkill('big_attack'))).toBe('');
+    expect(placementNote(getSkill('smash'))).toBe('');
     expect(placementNote(getSkill('iron_shield'))).toBe('');
   });
 });
 
 describe('祠の入れ替え（スロット・道具袋・防具の間で、何度でも）', () => {
-  it('スロット ↔ スロット / 空きへの移動。レア度の制限と固定スロットは守る', () => {
+  it('スロット ↔ スロット / 空きへの移動。レア度に関係なく移動でき、固定スロットは守る', () => {
     const run = createRun();
     run.slots[13] = 'jab';
     expect(swapSpots(run, { kind: 'slot', key: 13 }, { kind: 'slot', key: 14 })).toBe(true); // 空きへ移動
@@ -671,25 +665,22 @@ describe('祠の入れ替え（スロット・道具袋・防具の間で、何�
     expect(swapSpots(run, { kind: 'slot', key: 14 }, { kind: 'slot', key: 15 })).toBe(true); // 薬草と入れ替え
     expect(run.slots[14]).toBe('herb');
     expect(run.slots[15]).toBe('jab');
-    run.slots[16] = 'smash'; // レジェンドは 18 以上にだけ置ける
-    expect(canSwapSpots(run, { kind: 'slot', key: 16 }, { kind: 'slot', key: 13 })).toBe(false);
+    run.slots[16] = 'smash'; // レジェンドも自由に入れ替えられる
+    expect(canSwapSpots(run, { kind: 'slot', key: 16 }, { kind: 'slot', key: 13 })).toBe(true);
+    expect(swapSpots(run, { kind: 'slot', key: 16 }, { kind: 'slot', key: 13 })).toBe(true);
+    expect(run.slots[13]).toBe('smash');
     expect(canSwapSpots(run, { kind: 'slot', key: 11 }, { kind: 'slot', key: 12 })).toBe(false); // 固定
-    expect(canSwapSpots(run, { kind: 'slot', key: 12 }, { kind: 'slot', key: 13 })).toBe(false); // どちらも空き
+    expect(canSwapSpots(run, { kind: 'slot', key: 12 }, { kind: 'slot', key: 14 })).toBe(true);
+    expect(canSwapSpots(run, { kind: 'slot', key: 12 }, { kind: 'slot', key: 16 })).toBe(false); // どちらも空き
   });
 
-  it('仮置き: tentative ならレア度の制限に合わない場所にも置けて、placementViolations に出る。直すまで残る', () => {
+  it('固定スロットと防具の制限は、入れ替えでも守る', () => {
     const run = createRun();
-    run.slots[19] = 'smash'; // レジェンド（18 以上）
+    run.slots[19] = 'smash';
     expect(placementViolations(run)).toEqual([]);
-    expect(canSwapSpots(run, { kind: 'slot', key: 19 }, { kind: 'slot', key: 13 })).toBe(false); // 通常は不可
-    expect(swapSpots(run, { kind: 'slot', key: 19 }, { kind: 'slot', key: 13 }, { tentative: true })).toBe(true);
-    expect(placementViolations(run)).toEqual([13]);
-    expect(swapSpots(run, { kind: 'slot', key: 13 }, { kind: 'slot', key: 18 }, { tentative: true })).toBe(true);
-    expect(placementViolations(run)).toEqual([]);
-    // 固定スロットと防具の制限は、仮置きでも守る
-    expect(canSwapSpots(run, { kind: 'slot', key: 18 }, { kind: 'slot', key: 11 }, { tentative: true })).toBe(false);
+    expect(canSwapSpots(run, { kind: 'slot', key: 19 }, { kind: 'slot', key: 11 })).toBe(false);
     run.inventory = ['iron_shield'];
-    expect(canSwapSpots(run, { kind: 'pouch' }, { kind: 'slot', key: 13 }, { tentative: true })).toBe(false);
+    expect(canSwapSpots(run, { kind: 'pouch' }, { kind: 'slot', key: 13 })).toBe(false);
   });
 
   it('スロット ↔ 道具袋（袋は 1 つ）。袋が空でも、スロットの中身を袋に移せる', () => {

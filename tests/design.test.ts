@@ -102,3 +102,14 @@ describe('お金（ゴールド）の選択肢はドル袋の絵', () => {
     expect(css).toContain('.shop__moneybag {');
   });
 });
+
+describe('スキルの入れ替えタイミング（階層開始時＋祠では行動消費なし）', () => {
+  it('祠の入れ替えは祠を消費せずメニューに戻り、階層踏破時にも次の階層へ進む前に showSwapScreen を開く', () => {
+    const shrine = read('src/ui/ShrineScreen.ts');
+    expect(shrine).toContain('showSwapScreen(root, run, { onClose: () => show() })');
+    expect(shrine).not.toContain('祠でスキルや道具を入れ替えた');
+    const main = read('src/main.ts');
+    expect(main).toContain('title: `第${run.stage}階層の準備`');
+    expect(main).toContain('proceedLabel: `第${run.stage}階層へ進む`');
+  });
+});
