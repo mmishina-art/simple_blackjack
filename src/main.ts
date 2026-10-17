@@ -23,6 +23,7 @@ import { isDebug } from './debug';
 import { showShop } from './ui/ShopScreen';
 import { showInn } from './ui/InnScreen';
 import { showShrine } from './ui/ShrineScreen';
+import { showSwapScreen } from './ui/SwapScreen';
 import { showSettings } from './ui/SettingsScreen';
 import { showEnding } from './ui/EndingScreen';
 import { setupUpdateBanner } from './ui/UpdateBanner';
@@ -291,14 +292,21 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   return box;
 }
 
-/** 階層を踏破した報酬: 遺物を3択で獲得し、HP が回復して、次の階層へ進む。 */
+/** 階層を踏破した報酬: 遺物を3択で獲得し、HP が回復して、次の階層へ進む（開始前にスキルや道具袋の入れ替えができる）。 */
 function offerStageRelic(): void {
   const relics = offerRelics(run, defaultRng);
   const enter = (): void => {
     const before = run.hp;
     advanceStage(run);
     shopOffers.clear();
-    showMapScreen(`第${run.stage}階層「${run.map.name}」へ。最大 HP +${STAGE_CLEAR_MAX_HP}、HP が ${run.hp - before} 回復した。`);
+    const msg = `第${run.stage}階層「${run.map.name}」へ。最大 HP +${STAGE_CLEAR_MAX_HP}、HP が ${run.hp - before} 回復した。`;
+    showSwapScreen(root, run, {
+      title: `第${run.stage}階層の準備`,
+      hint: `第${run.stage}階層へ進む前に、スキルや道具袋を自由に入れ替えられる（ドラッグ、またはタップ → タップ）`,
+      closeLabel: '進む',
+      proceedLabel: `第${run.stage}階層へ進む`,
+      onClose: () => showMapScreen(msg),
+    });
   };
   if (relics.length === 0) return enter();
   showChoiceScreen(root, {

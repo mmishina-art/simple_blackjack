@@ -17,15 +17,15 @@ export interface ShrineOptions {
 }
 
 /**
- * 祠。できることは**1 つだけ**: 入れ替え（スロット・道具袋を好きなだけ。1 つでも入れ替えたら祠を出る）・
- * バージョンアップ（21 の会心の一撃の系統だけを育てる）・祈り（ランダムな効果）。選んだら祠は済みになり、出る。
+ * 祠。入れ替え（スロット・道具袋を好きなだけ。何度でもでき、祠は終わらない）と、
+ * 1 つだけ選べる行動: バージョンアップ（21 の会心の一撃の系統だけを育てる）・祈り（ランダムな効果）。行動を選んだら祠は済みになり、出る。
  */
 export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions): void {
   /** バージョンアップの候補（21 の会心の一撃の系統だけ。終焉の一撃まで育ったら、なし）。 */
   const upgradeCandidates = shrineUpgradeChoices(run, opts.rng);
 
   const choices: { icon: string; name: string; description: string; tone: 'a' | 'b' | 'c' | 'd'; run(): void }[] = [];
-  choices.push({ icon: '替', tone: 'a', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（祠でできることは1つだけ。1 つでも入れ替えたら、祠を出る）', run: () => showSwapScreen(root, run, { onClose: (swapped) => (swapped ? opts.onDone('祠でスキルや道具を入れ替えた。') : show()) }) });
+  choices.push({ icon: '替', tone: 'a', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（入れ替えても祠は終わらず、続けてバージョンアップや祈りを選べる）', run: () => showSwapScreen(root, run, { onClose: () => show() }) });
   if (upgradeCandidates.length > 0) choices.push({ icon: '昇', tone: 'b', name: 'バージョンアップ', description: 'ゴールドを払って、21 の会心の一撃を育てる（会心の一撃 → 覇王の一撃 → 終焉の一撃。ほかのスキルの＋は、同じスキルの合成で作る）', run: pickUpgrade });
   choices.push({ icon: '祈', tone: 'c', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
 

@@ -1,24 +1,31 @@
 import { audio } from '../audio/AudioManager';
 import { slotAttack } from '../core/skills/catalog';
-import { describeSkillBonus, describeSkillShort, getSkill, isArmor, kindOfSkill, placementNote, rarityOfSkill, SLOT_KEYS, slotLabel, type SlotKey } from '../core/skills/Skill';
-import { canSwapSpots, isSlotLocked, placementViolations, spotItem, swapSpots, type RunState, type Spot } from '../run/Run';
+import { describeSkillBonus, describeSkillShort, getSkill, isArmor, kindOfSkill, rarityOfSkill, SLOT_KEYS, slotLabel, type SlotKey } from '../core/skills/Skill';
+import { canSwapSpots, isSlotLocked, spotItem, swapSpots, type RunState, type Spot } from '../run/Run';
 import { effectiveSlotSkills } from '../run/effective';
 import { buildSlotRow } from './components/SlotRow';
 import { buildTopBar } from './components/TopBar';
 import { kindTag, medalKindClass } from './kind';
 import { rarityClass } from './rarity';
 
+export interface SwapScreenOptions {
+  title?: string;
+  hint?: string;
+  closeLabel?: string;
+  proceedLabel?: string;
+  onClose(swapped: boolean): void;
+}
+
 /**
- * 祠の入れ替え画面: スキルのスロット・道具袋の中身を、好きなだけ入れ替える（回数の制限なし）。
+ * 入れ替え画面（祠・次の階層の開始時）: スキルのスロット・道具袋の中身を、好きなだけ入れ替える（回数の制限なし）。
  * 動かせない固定スロット（11 以下・21）と防御スロットは出さない。
  * 動かしたいものを**ドラッグして、入れ替え先にドロップ**（指では左のアイコンをつかむ。タップ → タップでもできる）。
- * レア度の制限に合わない場所にも**仮置き**できるが、その行は赤くなり、直すまで「戻る」は押せない。
  */
-export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose(swapped: boolean): void }): void {
+export function showSwapScreen(root: HTMLElement, run: RunState, opts: SwapScreenOptions): void {
   let picked: Spot | null = null; // タップで選んでいるもの
   let dragFrom: Spot | null = null; // ドラッグ中のもの
   let note = '';
-  let swapped = false; // 1 つでも入れ替えたか（入れ替えたら、祠は済みになって出る）
+  let swapped = false; // 1 つでも入れ替えたか
 
   const nameAt = (spot: Spot): string => (spot.kind === 'slot' ? slotLabel(spot.key) : spot.kind === 'pouch' ? '道具袋' : '防御');
   const itemName = (spot: Spot): string => { const id = spotItem(run, spot); return id ? getSkill(id).name : '空き'; };
@@ -27,16 +34,10 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
   const fromId = (id: string | undefined): Spot | null => (id === 'pouch' ? { kind: 'pouch' } : id?.startsWith('slot:') ? { kind: 'slot', key: Number(id.slice(5)) as SlotKey } : null);
   const held = (): Spot | null => dragFrom ?? picked;
 
-  /** 仮置きで、制限に合っていない理由（赤い行に出す）。 */
-  const violationOf = (key: SlotKey): string => {
-    const id = run.slots[key];
-    return id && placementViolations(run).includes(key) ? `「${getSkill(id).name}」は ${placementNote(getSkill(id))}` : '';
-  };
-
   const move = (from: Spot, to: Spot): void => {
     const a = `${nameAt(from)}の「${itemName(from)}」`;
     const b = `${nameAt(to)}の「${itemName(to)}」`;
-    if (swapSpots(run, from, to, { tentative: true })) {
+    if (swapSpots(run, from, to)) {
       audio.sfx('pick');
       swapped = true;
       note = `${a} と ${b} を入れ替えた。`;
@@ -66,12 +67,13 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
     const h = held();
     const isPicked = !!h && same(h, spot);
     if (!h || isPicked) return { picked: isPicked && !dragFrom, target: false, blocked: false, over: false };
-    const ok = canSwapSpots(run, h, spot, { tentative: true });
+    const ok = canSwapSpots(run, h, spot);
     return { picked: false, target: ok, blocked: !ok, over: false };
   };
 
+  const defaultHint = opts.hint ?? '左のアイコンをドラッグして、入れ替え先に落とす（タップ → タップでも入れ替えできる）';
+
   const render = (): void => {
-    const bad = placementViolations(run);
     const screen = document.createElement('main');
     screen.className = 'loadout swap topbar-screen';
     const body = document.createElement('div');
@@ -79,17 +81,8 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
 
     const hint = document.createElement('p');
     hint.className = 'loadout__hint';
-    hint.textContent = picked ? `「${itemName(picked)}」をどこと入れ替える？（もう一度タップで解除）` : '左のアイコンをドラッグして、入れ替え先に落とす（タップ → タップでも入れ替えできる）';
+    hint.textContent = picked ? `「${itemName(picked)}」をどこと入れ替える？（もう一度タップで解除）` : defaultHint;
     body.append(hint);
-
-    if (bad.length) {
-      const warn = document.createElement('p');
-      warn.className = 'swap__warn';
-      warn.setAttribute('role', 'alert');
-      warn.textContent = `赤い行は、置けない場所に仮置きしている。直すまで「戻る」は押せない。\n${bad.map((k) => `${slotLabel(k)}: ${violationOf(k)}`).join('\n')}`;
-      warn.style.whiteSpace = 'pre-line';
-      body.append(warn);
-    }
 
     const list = document.createElement('div');
     list.className = 'loadout__slots';
@@ -101,7 +94,7 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
       const f = flags(spot);
       const row = buildSlotRow({
         key, skill: id ? getSkill(id) : null, fallback: getSkill(run.fallbackSkill), atk: slotAttack(run.baseAttack, key),
-        effective: effective.get(key), target: f.target, blocked: f.blocked, picked: f.picked, violation: violationOf(key) || undefined,
+        effective: effective.get(key), target: f.target, blocked: f.blocked, picked: f.picked,
         onTap: () => tap(spot),
       });
       row.dataset.spot = spotId(spot);
@@ -116,7 +109,18 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: { onClose
     msg.textContent = note;
     body.append(msg);
 
-    screen.append(buildTopBar('入れ替え', close, '戻る', bad.length > 0), body);
+    if (opts.proceedLabel) {
+      const actions = document.createElement('div');
+      actions.className = 'loadout__actions';
+      const go = document.createElement('button');
+      go.className = 'btn btn--primary loadout__btn';
+      go.innerHTML = `<span class="btn__main">${opts.proceedLabel}</span>`;
+      go.addEventListener('click', () => { audio.sfx('click'); close(); });
+      actions.append(go);
+      body.append(actions);
+    }
+
+    screen.append(buildTopBar(opts.title ?? '入れ替え', close, opts.closeLabel ?? '戻る'), body);
     root.replaceChildren(screen);
   };
 
