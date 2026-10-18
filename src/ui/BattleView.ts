@@ -12,7 +12,7 @@ import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
 import { relicButton } from './components/relicMedal';
 import { previewAllSlots } from '../core/skills/preview';
-import { SLOT_KEYS } from '../core/skills/Skill';
+import { ELEMENT_LABEL, SLOT_KEYS } from '../core/skills/Skill';
 import { calloutOf } from './callout';
 import { damageDealtMultiplier, damageTakenMultiplier } from '../core/rules/bust';
 import { turnBanner } from './turnBanner';
@@ -225,8 +225,28 @@ export class BattleView {
   private buildTraits(): HTMLElement {
     const line = document.createElement('div');
     line.className = 'enemy-trait';
-    const traits = this.machine.ctx.enemyDef.relics ?? [];
-    line.hidden = traits.length === 0;
+    const def = this.machine.ctx.enemyDef;
+    const traits = def.relics ?? [];
+    const showElem = this.run.character === 'mage' && (def.weakness || def.attackElement);
+    line.hidden = traits.length === 0 && !showElem;
+    if (showElem) {
+      const chip = document.createElement('span');
+      chip.className = 'enemy-trait__item';
+      const wText = def.weakness ? `弱点:${ELEMENT_LABEL[def.weakness]}` : '';
+      const aText = def.attackElement ? `攻撃:${ELEMENT_LABEL[def.attackElement]}` : '';
+      const label = [wText, aText].filter(Boolean).join('・');
+      chip.title = `${label}（弱点属性ならダメージ2倍・同じ属性を帯びれば攻撃を吸収）`;
+      const icon = document.createElement('span');
+      icon.className = 'medal medal--sm';
+      icon.textContent = def.weakness ? ELEMENT_LABEL[def.weakness] : '属';
+      const text = document.createElement('span');
+      text.className = 'enemy-trait__text';
+      const strong = document.createElement('strong');
+      strong.textContent = label;
+      text.append(strong);
+      chip.append(icon, text);
+      line.append(chip);
+    }
     for (const t of traits) {
       const chip = document.createElement('span');
       chip.className = 'enemy-trait__item';
@@ -299,10 +319,11 @@ export class BattleView {
   private renderDefend(): void {
     const { ctx } = this.machine;
     const cap = ctx.player.armorCap ?? ctx.rules.defendCap;
-    const text = `防御・被ダメージ最大 ${cap}`;
+    const ref = ctx.player.armorReflect > 0 ? `・軽減分を${ctx.player.armorReflect > 1 ? `${ctx.player.armorReflect}倍` : ''}反射` : '';
+    const text = `防御・被ダメージ最大 ${cap}${ref}`;
     if (this.surrenderSub.textContent !== text) this.surrenderSub.textContent = text;
     // 短い表示では伝えきれない説明は、読み上げ・ホバー用に残す
-    this.surrenderBtn.title = this.surrenderBtn.ariaLabel = `防御: 被ダメージ最大 ${cap}・このラウンドはスキルが発動しない`;
+    this.surrenderBtn.title = this.surrenderBtn.ariaLabel = `防御: 被ダメージ最大 ${cap}${ref}・このラウンドはスキルが発動しない`;
   }
 
   /** Hit ボタンの下に、次に引いたときのバースト・ブラックジャックの確率を、アイコン + 数字で出す（入力待ちのときだけ）。 */

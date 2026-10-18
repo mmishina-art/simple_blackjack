@@ -2,13 +2,13 @@ import { audio, bgmForBattle, bgmForStage } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { getEnemy } from './core/entities/enemies/catalog';
-import { discoverEnemy, discoverRelic, discoverSkill, finishRun, loadMeta, saveMeta, type MetaState, type RunSummary } from './meta/Meta';
-import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, placementNote, rarityOfSkill } from './core/skills/Skill';
+import { discoverEnemy, discoverRelic, discoverSkill, finishRun, isMageUnlocked, loadMeta, saveMeta, type MetaState, type RunSummary } from './meta/Meta';
+import { describeSkillBonus, getSkill, KIND_LABEL, kindOfSkill, placementNote, rarityOfSkill, type CharacterId } from './core/skills/Skill';
 import { defaultRng } from './core/util/Rng';
 import { useInn } from './map/events';
 import type { TileDef } from './map/StageMap';
 import {
-  advanceStage, armorCap, STAGE_CLEAR_MAX_HP, createRun, debugMoveTo, enemyOfTile, hasMergeTarget, isCleared, isFinalStage, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, type RunState,
+  advanceStage, armorCap, armorReflect, STAGE_CLEAR_MAX_HP, createRun, debugMoveTo, enemyOfTile, hasMergeTarget, isCleared, isFinalStage, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, type RunState,
 } from './run/Run';
 import { BattleView } from './ui/BattleView';
 import { showChoiceScreen, showNotice } from './ui/ChoiceScreen';
@@ -189,10 +189,12 @@ function startBattle(tile: TileDef): void {
   audio.setBgm(bgmForBattle(enemy, tile.kind === 'boss'));
   const machine = new BattleMachine({
     enemy,
+    playerCharacter: run.character,
     playerMaxHp: run.maxHp,
     playerHp: run.hp,
     playerSlots: run.slots,
     playerArmorCap: armorCap(run),
+    playerArmorReflect: armorReflect(run),
     playerFallback: run.fallbackSkill,
     playerBlock: run.bonus.startBlock,
     playerAttack: run.baseAttack,
@@ -223,29 +225,68 @@ function endRun(cleared: boolean): number {
   return gained;
 }
 
-/** 冒険を始める。装備は出撃準備で決めた保存済みの設定が使われる。 */
-function startAdventure(): void {
-  bareRun = false;
+/** 直前に選んだキャラクター（「もう一度」で同じキャラで再開するため）。 */
+let selectedCharacter: CharacterId = 'warrior';
+
+function beginRun(character: CharacterId, bare: boolean): void {
+  selectedCharacter = character;
+  bareRun = bare;
   cheated = false;
   shopOffers.clear();
-  run = createRun(undefined, meta);
+  run = bare ? createRun(undefined, undefined, character) : createRun(undefined, meta, character);
   setStatus(true);
-  showMapScreen();
+  const charLabel = character === 'mage' ? '魔導士' : '戦士';
+  showMapScreen(bare ? `${charLabel}・素の状態で出発した（祭壇の強化は使わず、記録も残らない）` : '');
+}
+
+/** 1人目でクリア済み（またはデバッグモード）なら、キャラクター選択シートを出す。未クリアなら戦士で即開始。 */
+function promptCharacterAndStart(bare: boolean): void {
+  if (!isMageUnlocked(meta) && !isDebug()) {
+    beginRun('warrior', bare);
+    return;
+  }
+  openSheet({
+    title: 'キャラクター選択',
+    subtitle: bare ? '素の状態で挑むキャラクターを選ぶ' : '冒険に出るキャラクターを選ぶ',
+    options: [
+      {
+        kind: 'confirm',
+        icon: '戦',
+        name: '戦士',
+        detail: '剣と盾で戦う標準のスタイル（初期装備: 会心の一撃・鉄の盾）',
+        onPick: () => beginRun('warrior', bare),
+      },
+      {
+        kind: 'confirm',
+        icon: '魔',
+        name: '魔導士',
+        detail: '炎・氷・雷の属性魔法を操る。弱点でダメージ2倍、同属性の敵攻撃を吸収し、防御でダメージを反射する',
+        onPick: () => beginRun('mage', bare),
+      },
+      {
+        disabled: true,
+        badge: '🔒 未解放',
+        icon: '鍵',
+        name: '？？？',
+        detail: '3人目のキャラクター（未解放）',
+        onPick() {},
+      },
+    ],
+  });
+}
+
+/** 冒険を始める。クリア済みならキャラクター選択、未クリアなら戦士で始まる。 */
+function startAdventure(): void {
+  promptCharacterAndStart(false);
 }
 
 /** 素の状態で冒険を始める: 祭壇の強化・図鑑・出撃準備の変更を使わず、記録も残さない（バランスを試すため）。 */
 function startBareAdventure(): void {
-  bareRun = true;
-  cheated = false;
-  shopOffers.clear();
-  run = createRun();
-  setStatus(true);
-  showMapScreen('素の状態で出発した（祭壇の強化は使わず、記録も残らない）');
+  promptCharacterAndStart(true);
 }
 
 function restartRun(): void {
-  if (bareRun) startBareAdventure();
-  else startAdventure();
+  beginRun(selectedCharacter, bareRun);
 }
 
 /** 戦闘終了時のオーバーレイ。敗北でやり直し、勝利で報酬スキルの選択へ進む。 */
@@ -294,8 +335,14 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   }
   if (tile.kind === 'boss') {
     // 最後の階層のボスを倒した: 魂片を記録して、エンディングへ。エンディングが終わると、タイトルに戻る
+    const wasUnlocked = isMageUnlocked(meta);
     const gained = endRun(true);
-    box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('エンディングへ', () => {
+    const newlyUnlocked = !wasUnlocked && isMageUnlocked(meta);
+    box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`));
+    if (newlyUnlocked) {
+      box.append(el('p', 'result__line result__gold', '新たなキャラクター「魔導士」が解放された！'));
+    }
+    box.append(button('エンディングへ', () => {
       leaveBattle();
       setStatus(false);
       showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun || cheated }, showTitle);

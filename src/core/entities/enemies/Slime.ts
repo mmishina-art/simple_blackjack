@@ -7,6 +7,8 @@ export const Slime: EnemyDef = {
   name: 'スライム',
   maxHp: 14,
   attack: 3,
+  weakness: 'fire',
+  attackElement: 'ice',
   ai: new DealerAI(14),
   slots: ENEMY_SLOTS.slime,
   fallbackSkill: 'slime_touch',

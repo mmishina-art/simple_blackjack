@@ -16,7 +16,11 @@ export class SurrenderState implements BattleState {
     ctx.bus.emit('onSurrender', { entity: player });
     player.damageCap = player.armorCap ?? rules.defendCap;
     player.capTaken = 0;
-    ctx.log(`${player.name}は防御に徹した…（受けるダメージは最大 ${player.damageCap}）`);
+    if (player.armorReflect > 0) {
+      player.reflectRatio = Math.max(player.reflectRatio, player.armorReflect);
+    }
+    const refNote = player.armorReflect > 0 ? '・攻撃を反射' : '';
+    ctx.log(`${player.name}は防御に徹した…（受けるダメージは最大 ${player.damageCap}${refNote}）`);
     ctx.notify();
     await ctx.wait(PACE.surrender);
     return 'Initiative';

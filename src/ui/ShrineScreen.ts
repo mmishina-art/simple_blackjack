@@ -26,7 +26,12 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
 
   const choices: { icon: string; name: string; description: string; tone: 'a' | 'b' | 'c' | 'd'; run(): void }[] = [];
   choices.push({ icon: '替', tone: 'a', name: '入れ替え', description: 'スキル・道具袋の中身を、好きなだけ入れ替える（入れ替えても祠は終わらず、続けてバージョンアップや祈りを選べる）', run: () => showSwapScreen(root, run, { onClose: () => show() }) });
-  if (upgradeCandidates.length > 0) choices.push({ icon: '昇', tone: 'b', name: 'バージョンアップ', description: 'ゴールドを払って、21 の会心の一撃を育てる（会心の一撃 → 覇王の一撃 → 終焉の一撃。ほかのスキルの＋は、同じスキルの合成で作る）', run: pickUpgrade });
+  if (upgradeCandidates.length > 0) {
+    const label21 = run.character === 'mage'
+      ? 'ゴールドを払って、21 の大魔導を育てる（大魔導 → 星霊魔導 → 創世魔導。ほかのスキルの＋は、同じスキルの合成で作る）'
+      : 'ゴールドを払って、21 の会心の一撃を育てる（会心の一撃 → 覇王の一撃 → 終焉の一撃。ほかのスキルの＋は、同じスキルの合成で作る）';
+    choices.push({ icon: '昇', tone: 'b', name: 'バージョンアップ', description: label21, run: pickUpgrade });
+  }
   choices.push({ icon: '祈', tone: 'c', name: '祈る', description: '祠の力にまかせる（最大HP・全回復・スキル獲得・血の契約・呪いなど、ランダム）', run: pray });
 
   const show = (): void => showChoiceScreen(root, {
@@ -38,8 +43,9 @@ export function showShrine(root: HTMLElement, run: RunState, opts: ShrineOptions
   });
 
   function pickUpgrade(): void {
+    const subName = run.character === 'mage' ? '大魔導' : '会心の一撃';
     openSheet({
-      title: 'バージョンアップ', subtitle: `会心の一撃を育てる（所持 ${run.gold} G）`,
+      title: 'バージョンアップ', subtitle: `${subName}を育てる（所持 ${run.gold} G）`,
       options: upgradeCandidates.map((k) => {
         const from = getSkill(run.slots[k]!);
         const to = getSkill(from.upgradesTo!);

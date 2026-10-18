@@ -2,7 +2,7 @@ import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
 import { PACE } from '../battle/pace';
 import { damageDealtMultiplier, damageTakenMultiplier } from '../rules/bust';
-import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
+import { attackValue, ELEMENT_LABEL, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
 /** ダメージ適用。HP より先にブロックを減らす。piercing ならブロックを無視する。 */
 export function applyDamage(target: Entity, amount: number, piercing = false): { absorbed: number; hpLoss: number } {
@@ -26,6 +26,9 @@ export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef)
     ctx.log(`${user.name}のスキルは不発に終わった`);
     return null;
   }
+  if (payload.skill.absorbElement) user.activeElement = payload.skill.absorbElement;
+  if (payload.skill.absorbAll) user.absorbAllElements = true;
+  if (payload.skill.reflect) user.reflectRatio = Math.max(user.reflectRatio, payload.skill.reflect);
   ctx.log(`${user.name}の「${payload.skill.name}」`);
   ctx.bus.emit('onSkillUsed', { user, skill: payload.skill });
   return payload.skill;
@@ -46,39 +49,76 @@ export async function applyEffects(
   part: EffectPart = 'all',
 ): Promise<void> {
   const { bus } = ctx;
+  if (part === 'all' || part === 'block') {
+    if (skill.absorbElement) user.activeElement = skill.absorbElement;
+    if (skill.absorbAll) user.absorbAllElements = true;
+    if (skill.reflect) user.reflectRatio = Math.max(user.reflectRatio, skill.reflect);
+  }
   for (const effect of skill.effects) {
     // この呼び出しで処理する効果の種類（part による絞り込み）
     const wanted = part === 'all' || part === effect.type || (part === 'rest' && effect.type !== 'block');
     if (!wanted) continue;
     if (effect.type === 'attack') {
+      const elem = effect.element ?? skill.element ?? user.attackElement;
       const base = attackValue(effect, user.attackAt(user.hand.total(ctx.rules)));
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
-      // バーストした側が受けるダメージは、レリック・特性の補正のあとに増える（そのあとブロックが吸収する）
-      // 敵の 21 は、攻撃ダメージが 2 倍（BUST or DIE の DIE）。バーストの倍率と同じく、補正のあとに掛ける
+      const def = calc.defender;
+      // 弱点属性（×2、レリックで ×2.5）・敵の 21（×2）・バーストの被ダメージ倍率を掛ける
+      const weakMult = elem && def.weakness === elem ? user.weaknessMultiplier : 1;
       const mult21 = damageDealtMultiplier(user, user.hand.total(ctx.rules), ctx.rules);
-      const mult = damageTakenMultiplier(calc.defender, ctx.rules);
-      let damage = Math.max(0, Math.floor(calc.damage * mult21 * mult));
+      const mult = damageTakenMultiplier(def, ctx.rules);
+      let damage = Math.max(0, Math.floor(calc.damage * weakMult * mult21 * mult));
+
+      // 属性吸収: 受け手が同じ属性（または全属性吸収）を帯びているなら、ダメージを 0 にして HP を回復する
+      const canAbsorb = !!elem && (def.alwaysAbsorbElements || def.absorbAllElements || def.activeElement === elem);
+      if (canAbsorb && damage > 0) {
+        const healRaw = Math.max(1, Math.floor(damage * 0.5));
+        const { amount } = bus.emit('onHealed', { entity: def, amount: healRaw, skill: null });
+        const before = def.hp;
+        def.hp = Math.min(def.maxHp, def.hp + Math.max(0, Math.floor(amount)));
+        const healed = def.hp - before;
+        ctx.log(`${def.name}は${ELEMENT_LABEL[elem]}属性を吸収し、HP を ${healed} 回復した！`);
+        bus.emit('onHealApplied', { entity: def, amount: healed });
+        ctx.notify();
+        await ctx.wait(PACE.heal);
+        continue;
+      }
+
       // 防御中（防具の上限）: HP の減少が、残りの上限を超えないように軽減する（ブロックが先に吸収する）
       let reduced = 0;
-      const def = calc.defender;
       if (def.damageCap !== null) {
         const reach = (effect.pierce ? 0 : def.block) + Math.max(0, def.damageCap - def.capTaken);
         if (damage > reach) { reduced = damage - reach; damage = reach; }
       }
       // ブロックを無視する攻撃（会心の一撃）は、ブロックに吸われず、相手のブロックをすべて破壊する
-      const broken = effect.pierce ? calc.defender.block : 0;
-      const { absorbed, hpLoss } = applyDamage(calc.defender, damage, !!effect.pierce);
-      if (effect.pierce) calc.defender.block = 0;
+      const broken = effect.pierce ? def.block : 0;
+      const { absorbed, hpLoss } = applyDamage(def, damage, !!effect.pierce);
+      if (effect.pierce) def.block = 0;
       if (def.damageCap !== null) def.capTaken += hpLoss;
-      bus.emit('onDamageDealt', { attacker: user, defender: calc.defender, damage, absorbed, hpLoss, broken, reduced, skill });
-      if (reduced > 0) ctx.log(`${calc.defender.name}の防具が ${reduced} ダメージを防いだ`);
-      if (broken > 0) ctx.log(`${calc.defender.name}のブロック ${broken} を破壊した`);
-      const burst = [mult21 !== 1 && damage > 0 ? `21 ×${mult21}` : '', mult !== 1 && damage > 0 ? `バースト ×${mult}` : ''].filter(Boolean).join('・');
+      bus.emit('onDamageDealt', { attacker: user, defender: def, damage, absorbed, hpLoss, broken, reduced, skill });
+      if (reduced > 0) ctx.log(`${def.name}の防具が ${reduced} ダメージを防いだ`);
+      if (broken > 0) ctx.log(`${def.name}のブロック ${broken} を破壊した`);
+      const burst = [
+        weakMult !== 1 && damage > 0 ? `弱点 ×${weakMult}` : '',
+        mult21 !== 1 && damage > 0 ? `21 ×${mult21}` : '',
+        mult !== 1 && damage > 0 ? `バースト ×${mult}` : '',
+      ].filter(Boolean).join('・');
       if (hpLoss > 0 || absorbed === 0) {
         const notes = [absorbed > 0 ? `ブロック ${absorbed} を消費` : '', burst].filter(Boolean);
-        ctx.log(`${calc.defender.name}に${hpLoss}ダメージ${notes.length > 0 ? `（${notes.join('・')}）` : ''}`);
+        ctx.log(`${def.name}に${hpLoss}ダメージ${notes.length > 0 ? `（${notes.join('・')}）` : ''}`);
       } else {
-        ctx.log(`${calc.defender.name}はブロックで防いだ（${[absorbed, burst].filter(Boolean).join('・')}）`);
+        ctx.log(`${def.name}はブロックで防いだ（${[absorbed, burst].filter(Boolean).join('・')}）`);
+      }
+
+      // 攻撃の反射（魔導士の防御: 上限を超えた軽減分を反射 / 反射スキル: 敵の攻撃力そのものを反射）
+      if (def.reflectRatio > 0 && user !== def && !user.isDead) {
+        const baseReflect = def.damageCap !== null ? reduced : (absorbed + hpLoss);
+        const reflected = Math.floor(baseReflect * def.reflectRatio * def.reflectMultiplier);
+        if (reflected > 0) {
+          const refRes = applyDamage(user, reflected);
+          bus.emit('onDamageDealt', { attacker: def, defender: user, damage: reflected, absorbed: refRes.absorbed, hpLoss: refRes.hpLoss, skill: null });
+          ctx.log(`反射！${user.name}に${refRes.hpLoss}ダメージを跳ね返した`);
+        }
       }
     } else {
       if (effect.type === 'block') {

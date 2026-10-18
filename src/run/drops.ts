@@ -1,4 +1,4 @@
-import type { SkillId } from '../core/skills/Skill';
+import type { CharacterId, SkillId } from '../core/skills/Skill';
 
 /**
  * 敵ごとの「落とし物」（報酬のスキルの候補）。敵の姿・特性に合わせたスキルが、報酬に多く並ぶ。
@@ -29,7 +29,33 @@ export const ENEMY_DROPS: Record<string, readonly SkillId[]> = {
   magma_serpent: ['twin_strike', 'berserk', 'rampage', 'impale', 'flurry'], // 溶岩の大蛇: 荒々しい連撃・貫通
 };
 
+/** 魔導士で冒険しているときの、敵ごとの落とし物（属性魔法・反射・吸収）。 */
+export const MAGE_ENEMY_DROPS: Record<string, readonly SkillId[]> = {
+  // 第1階層
+  slime: ['frost_shield', 'aqua_mend', 'fire_bolt', 'mana_ward'],
+  skeleton: ['fire_bolt', 'flame_wave', 'mana_ward', 'fire_magic'],
+  bat: ['spark', 'ice_needle', 'element_drain', 'twin_thunder'],
+  ghoul: ['fire_bolt', 'flame_wave', 'aqua_mend', 'element_drain'],
+  shield_bearer: ['thunder_lance', 'mana_ward', 'mirror_coat', 'spark'],
+  mimic: ['spark', 'thunder_lance', 'mirror_coat', 'element_drain'],
+  // 第2階層
+  merman: ['spark', 'twin_thunder', 'aqua_mend', 'blizzard'],
+  gargoyle: ['mana_ward', 'mirror_coat', 'thunder_lance', 'spark'],
+  wraith: ['fire_bolt', 'flame_wave', 'fire_magic', 'element_drain'],
+  gambler: ['twin_thunder', 'thunder_lance', 'ice_needle', 'judgement_bolt'],
+  colossus: ['fire_magic', 'meteor', 'frost_shield', 'aqua_mend'],
+  iron_golem: ['thunder_lance', 'mirror_coat', 'aegis_mirror', 'twin_thunder'],
+  drowned_knight: ['spark', 'thunder_lance', 'mirror_coat', 'blizzard'],
+  // 第3階層
+  serpent: ['twin_thunder', 'blizzard', 'absolute_zero', 'judgement_bolt'],
+  flame: ['ice_needle', 'blizzard', 'frost_shield', 'meteor'],
+  golem: ['blizzard', 'absolute_zero', 'mirror_coat', 'aegis_mirror'],
+  imp: ['element_drain', 'astral_drain', 'blizzard', 'absolute_zero'],
+  magma_serpent: ['blizzard', 'absolute_zero', 'astral_drain', 'meteor'],
+};
+
 /** 敵の落とし物の候補（なければ空）。 */
-export function dropsOf(enemyId: string | undefined): readonly SkillId[] {
-  return (enemyId && ENEMY_DROPS[enemyId]) || [];
+export function dropsOf(enemyId: string | undefined, character: CharacterId = 'warrior'): readonly SkillId[] {
+  const table = character === 'mage' ? MAGE_ENEMY_DROPS : ENEMY_DROPS;
+  return (enemyId && table[enemyId]) || [];
 }

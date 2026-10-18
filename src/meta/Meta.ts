@@ -1,7 +1,7 @@
 import { ENEMY_LINEUP } from '../core/entities/enemies/catalog';
 import { ARMOR_POOL, baseSkillId, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
 import type { SkillId } from '../core/skills/Skill';
-import { RELIC_POOL } from '../relics/catalog';
+import { ALL_RELIC_POOL, RELIC_POOL } from '../relics/catalog';
 
 /**
  * メタ進行（周回をまたいで残るデータ）。
@@ -57,7 +57,7 @@ export function loadMeta(storage: StorageLike | null = defaultStorage()): MetaSt
     if (kit > 0) meta.shards += REMOVED_KIT_COSTS.slice(0, kit).reduce((a, b) => a + b, 0);
     delete meta.upgrades.kit;
     if (d.codex && isStringArray(d.codex.skills)) meta.codex.skills = [...new Set(d.codex.skills)];
-    if (d.codex && isStringArray(d.codex.relics)) meta.codex.relics = [...new Set(d.codex.relics)].filter((id) => RELIC_POOL.some((r) => r.id === id)); // 削除したレリックの記録は捨てる
+    if (d.codex && isStringArray(d.codex.relics)) meta.codex.relics = [...new Set(d.codex.relics)].filter((id) => ALL_RELIC_POOL.some((r) => r.id === id)); // 削除したレリックの記録は捨てる
     // モンスター図鑑（あとから加えた項目。古い保存データには無いので、空から始める）
     if (d.codex && isStringArray((d.codex as { enemies?: unknown }).enemies)) meta.codex.enemies = [...new Set((d.codex as { enemies: string[] }).enemies)];
     if (d.stats && isNumRecord(d.stats)) meta.stats = { ...meta.stats, ...d.stats };
@@ -181,10 +181,17 @@ export function finishRun(meta: MetaState, s: RunSummary): number {
 // ---- 図鑑 ----
 /** 最初から図鑑に載っているスキル（初期スロットのスキル）。 */
 export const STARTER_SKILLS: readonly SkillId[] = ['small_attack', 'herb', 'big_attack', 'ace_strike'];
+/** 魔導士の初期スロットのスキル（解放後は最初から図鑑に載る）。 */
+export const MAGE_STARTER_SKILLS: readonly SkillId[] = ['small_attack', 'ice_needle', 'herb', 'frost_shield', 'spark', 'fire_magic', 'arch_magic'];
+
+/** 2人目のキャラクター（魔導士）が解放されているか（1回以上クリアで解放）。 */
+export function isMageUnlocked(meta: MetaState): boolean {
+  return meta.stats.clears >= 1;
+}
 
 export function isSkillDiscovered(meta: MetaState, rawId: SkillId): boolean {
   const id = baseSkillId(rawId); // 「＋」のスキルは、もとのスキルとして数える
-  return STARTER_SKILLS.includes(id) || meta.codex.skills.includes(id);
+  return STARTER_SKILLS.includes(id) || (isMageUnlocked(meta) && MAGE_STARTER_SKILLS.includes(id)) || meta.codex.skills.includes(id);
 }
 
 export function isRelicDiscovered(meta: MetaState, id: string): boolean {

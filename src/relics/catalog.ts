@@ -1,3 +1,4 @@
+import type { CharacterId } from '../core/skills/Skill';
 import type { Relic } from './Relic';
 
 /** ダメージが正のときだけ軽減する（最低1）。0 のダメージは増やさない。 */
@@ -177,9 +178,55 @@ export const NoBustPenalty: Relic = {
   },
 };
 
-/** 報酬として出現するレリックの一覧。 */
+// ---- 魔導士専用のレリック ----
+export const ManaCrystal: Relic = {
+  id: 'mana_crystal', rarity: 'common', name: '魔導の水晶', icon: '晶',
+  description: '属性魔法の攻撃ダメージ +2',
+  apply({ bus, player }) {
+    bus.on('onDamageCalculated', (p) => {
+      if (p.attacker === player && p.skill?.element && p.damage > 0) return { ...p, damage: p.damage + 2 };
+    });
+  },
+};
+
+export const ElementRing: Relic = {
+  id: 'element_ring', rarity: 'rare', name: '元素の指輪', icon: '環',
+  description: '敵の弱点属性を突いたときのダメージ倍率が 2 倍 → 2.5 倍になる',
+  apply({ player }) {
+    player.weaknessMultiplier = 2.5;
+  },
+};
+
+export const MirrorBrooch: Relic = {
+  id: 'mirror_brooch', rarity: 'rare', name: '鏡面のブローチ', icon: '鏡',
+  description: '敵の攻撃を反射するときのダメージが 1.5 倍になる',
+  apply({ player }) {
+    player.reflectMultiplier = 1.5;
+  },
+};
+
+export const SageStone: Relic = {
+  id: 'sage_stone', rarity: 'legend', name: '賢者の秘石', icon: '秘',
+  description: '常時すべての属性攻撃を吸収して HP を回復する（どの手でも敵の属性攻撃を吸収できる）',
+  apply({ player }) {
+    player.alwaysAbsorbElements = true;
+  },
+};
+
+/** 報酬として出現するレリックの一覧（共通）。 */
 export const RELIC_POOL: readonly Relic[] = [
   SturdyShield, LifeCandle, LuckyDice, DefenderCharm, Boots, HerbalistBag, ArtisanTools,
   Whetstone, ThornMail, FullRing, CounterStance,
   Unyielding, Breastplate, TriumphCup, NoBustPenalty,
 ];
+
+/** 魔導士で冒険しているときに追加で出現する専用レリック。 */
+export const MAGE_RELIC_POOL: readonly Relic[] = [
+  ManaCrystal, ElementRing, MirrorBrooch, SageStone,
+];
+
+export const ALL_RELIC_POOL: readonly Relic[] = [...RELIC_POOL, ...MAGE_RELIC_POOL];
+
+export function relicPoolFor(character: CharacterId = 'warrior'): readonly Relic[] {
+  return character === 'mage' ? ALL_RELIC_POOL : RELIC_POOL;
+}

@@ -10,6 +10,8 @@ export interface PreviewPart {
   value: number;
   /** 攻撃が相手のブロックを無視して破壊する（会心の一撃）。 */
   pierce?: boolean;
+  /** 相手の弱点属性を突いているか。 */
+  weak?: boolean;
 }
 
 export interface SkillPreview {
@@ -31,7 +33,14 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
     if (e.type === 'attack') {
       const raw = attackValue(e, user.attackAt(total));
       const calc = env.bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: raw, skill });
-      return { type: 'attack', value: Math.max(0, Math.floor(calc.damage * damageDealtMultiplier(user, total, env.rules) * damageTakenMultiplier(calc.defender, env.rules))), ...(e.pierce ? { pierce: true } : {}) };
+      const elem = e.element ?? skill.element ?? user.attackElement;
+      const weakMult = elem && calc.defender.weakness === elem ? user.weaknessMultiplier : 1;
+      return {
+        type: 'attack',
+        value: Math.max(0, Math.floor(calc.damage * weakMult * damageDealtMultiplier(user, total, env.rules) * damageTakenMultiplier(calc.defender, env.rules))),
+        ...(e.pierce ? { pierce: true } : {}),
+        ...(weakMult > 1 ? { weak: true } : {}),
+      };
     }
     const amount = supportValue(e, user.attackAt(total));
     if (e.type === 'block') return { type: 'block', value: Math.max(0, Math.floor(env.bus.emit('onBlockGained', { entity: user, amount, skill }).amount)) };

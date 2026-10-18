@@ -1,5 +1,5 @@
 import type { Rarity } from '../rarity';
-import { assignRarity, defineSkill, getSkill, rarityOfSkill, slotsFromRanges, type SkillDef, type SkillId, type SlotTable } from './Skill';
+import { assignRarity, defineSkill, getSkill, rarityOfSkill, slotsFromRanges, type CharacterId, type ElementType, type SkillDef, type SkillId, type SlotTable } from './Skill';
 
 /**
  * 基本パワー（POW）基準のスキル。攻撃: floor(POW × mult) + add / ブロック・回復: floor(POW × mult) + amount。
@@ -9,7 +9,10 @@ import { assignRarity, defineSkill, getSkill, rarityOfSkill, slotsFromRanges, ty
 const atk = (id: string, name: string, mult: number, add = 0, icon = '攻'): SkillDef =>
   defineSkill({ id, name, icon, effects: [{ type: 'attack', mult, add }] });
 
-// ---- プレイヤーのスキル ----
+const magicAtk = (id: string, name: string, icon: string, element: ElementType, mult: number, add = 0, pierce = false): SkillDef =>
+  defineSkill({ id, name, icon, element, effects: [{ type: 'attack', mult, add, ...(pierce ? { pierce: true } : {}), element }] });
+
+// ---- プレイヤーのスキル（戦士） ----
 export const BASIC_ATTACK_ID: SkillId = atk('basic_attack', '通常攻撃', 1, 0, '攻').id;
 atk('small_attack', '小攻撃', 0.5, 0, '小');
 atk('jab', '突き', 1, 1, '突');          // コモン: POW+1
@@ -52,6 +55,47 @@ defineSkill({
   effects: [{ type: 'attack', mult: 0.7, add: 2 }, { type: 'attack', mult: 0.7, add: 2 }, { type: 'attack', mult: 0.7, add: 2 }], // レジェンド: 3回攻撃
 });
 
+// ---- プレイヤーのスキル（魔導士） ----
+// コモン（3属性の攻撃魔法・3属性の吸収障壁・反射の盾）
+magicAtk('fire_bolt', '火球', '火', 'fire', 1, 1);           // コモン: 炎攻撃 POW+1（氷の敵に弱点2倍）
+magicAtk('ice_needle', '氷柱', '氷', 'ice', 1, 1);           // コモン: 氷攻撃 POW+1（雷の敵に弱点2倍）
+magicAtk('spark', '雷撃', '雷', 'lightning', 1, 1);          // コモン: 雷攻撃 POW+1（炎の敵に弱点2倍）
+defineSkill({ id: 'flame_wave', name: '炎の障壁', icon: '炎', absorbElement: 'fire', effects: [{ type: 'block', mult: 1, amount: 2 }] }); // コモン: ブロック POW+2 + 炎吸収
+defineSkill({ id: 'frost_shield', name: '氷の障壁', icon: '凍', absorbElement: 'ice', effects: [{ type: 'block', mult: 1, amount: 2 }] }); // コモン: ブロック POW+2 + 氷吸収
+defineSkill({ id: 'aqua_mend', name: '雷の障壁', icon: '帯', absorbElement: 'lightning', effects: [{ type: 'block', mult: 1, amount: 2 }] }); // コモン: ブロック POW+2 + 雷吸収
+defineSkill({ id: 'mana_ward', name: '魔力の盾', icon: '障', reflect: 0.5, effects: [{ type: 'block', mult: 1, amount: 1 }] });     // コモン: ブロック POW+1 + 反射 50%
+
+// レア（上位の属性攻撃魔法・反射結界・全属性吸収バリア）
+magicAtk('fire_magic', '紅蓮術', '紅', 'fire', 1, 5);        // レア: 炎攻撃 POW+5（魔導士の初期スロット20）
+magicAtk('blizzard', '吹雪', '雪', 'ice', 1.5, 2);           // レア: 氷攻撃 POW×1.5+2
+magicAtk('thunder_lance', '雷槍', '槍', 'lightning', 1, 3, true); // レア: 雷攻撃 POW+3・ブロック無視
+defineSkill({ id: 'mirror_coat', name: '反鏡の陣', icon: '鏡', reflect: 1, effects: [{ type: 'block', mult: 1, amount: 4 }] }); // レア: ブロック POW+4 + 反射 100%
+defineSkill({
+  id: 'element_drain', name: '元素吸収', icon: '吸', absorbAll: true,
+  effects: [{ type: 'block', mult: 1, amount: 3 }, { type: 'heal', mult: 0.5, amount: 2 }], // レア: ブロック + 回復 + 全属性吸収
+});
+defineSkill({
+  id: 'twin_thunder', name: '双雷', icon: '双', element: 'lightning',
+  effects: [{ type: 'attack', mult: 0.8, add: 1, element: 'lightning' }, { type: 'attack', mult: 0.8, add: 1, element: 'lightning' }], // レア: 雷 2回攻撃
+});
+
+// レジェンド（極大属性魔法・神鏡反射・星喰らい）
+magicAtk('meteor', '隕石召喚', '隕', 'fire', 2, 5);          // レジェンド: 炎攻撃 POW×2+5
+magicAtk('absolute_zero', '絶対零度', '零', 'ice', 1.5, 4, true); // レジェンド: 氷攻撃 POW×1.5+4・ブロック無視
+defineSkill({
+  id: 'judgement_bolt', name: '神罰の雷', icon: '罰', element: 'lightning',
+  effects: [
+    { type: 'attack', mult: 0.7, add: 2, element: 'lightning' },
+    { type: 'attack', mult: 0.7, add: 2, element: 'lightning' },
+    { type: 'attack', mult: 0.7, add: 2, element: 'lightning' },
+  ], // レジェンド: 雷 3回攻撃
+});
+defineSkill({ id: 'aegis_mirror', name: '神鏡の結界', icon: '界', reflect: 1.5, effects: [{ type: 'block', mult: 1, amount: 8 }] }); // レジェンド: ブロック POW+8 + 反射 150%
+defineSkill({
+  id: 'astral_drain', name: '星喰らい', icon: '喰', element: 'ice', absorbAll: true,
+  effects: [{ type: 'attack', mult: 1.5, add: 3, element: 'ice' }, { type: 'block', mult: 1, amount: 4 }], // レジェンド: 氷攻撃 + ブロック + 全属性吸収
+});
+
 /** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。POW×1.5。相手のブロックを無視して破壊する。 */
 export const ACE_STRIKE_ID: SkillId = defineSkill({
   id: 'ace_strike', name: '会心の一撃', icon: '会',
@@ -67,6 +111,14 @@ const overlord = (id: string, name: string, icon: string, mult: number): void =>
 overlord('overlord_strike', '覇王の一撃', '覇', 2);
 overlord('final_strike', '終焉の一撃', '終', 3);
 
+/** 魔導士のスロット21に固定されるスキル（大魔導 → 星霊魔導 → 創世魔導）。ブロックを無視し、全属性吸収の障壁も張る。 */
+export const ARCH_MAGIC_ID: SkillId = defineSkill({
+  id: 'arch_magic', name: '大魔導', icon: '魔', absorbAll: true,
+  effects: [{ type: 'attack', mult: 1.5, pierce: true }],
+}).id;
+defineSkill({ id: 'astral_magic', name: '星霊魔導', icon: '星', absorbAll: true, effects: [{ type: 'attack', mult: 2, pierce: true }] });
+defineSkill({ id: 'genesis_magic', name: '創世魔導', icon: '創', absorbAll: true, effects: [{ type: 'attack', mult: 3, pierce: true }] });
+
 // ---- 道具: 効果は基本パワー（POW）に関係なく固定（低いスロットでも、同じだけ効く）。レリックで強化できるものもある ----
 const item = (id: string, name: string, icon: string, effect: SkillDef['effects'][number]): SkillDef =>
   defineSkill({ id, name, icon, kind: 'item', effects: [effect] });
@@ -79,13 +131,21 @@ item('ward', '守りの巻物', '巻', { type: 'block', amount: 7 });           
 item('holy_ward', '聖なる護符', '符', { type: 'block', amount: 12 });         // レア: ブロック 12
 
 // ---- 防具: 防御スロットに置く。防御したラウンドに受けるダメージ（HP の減少）の上限。数字が小さいほど硬い ----
-const armor = (id: string, name: string, icon: string, damageCap: number): SkillDef =>
-  defineSkill({ id, name, icon, kind: 'armor', effects: [], damageCap });
+const armor = (id: string, name: string, icon: string, damageCap: number, reflect?: number): SkillDef =>
+  defineSkill({ id, name, icon, kind: 'armor', effects: [], damageCap, ...(reflect ? { reflect } : {}) });
 armor('iron_shield', '鉄の盾', '鉄', 5);   // コモン: 上限 5（戦士の初期装備）
 armor('steel_shield', '鋼の盾', '鋼', 4);  // レア: 上限 4
 armor('mithril_shield', 'ミスリルの盾', '銀', 3); // レジェンド: 上限 3（防具はショップでだけ買える）
 
-assignRarity(['big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'overlord_strike', 'tonic', 'steel_shield', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'big_bomb', 'holy_ward'], 'rare');
+// 魔導士の防具（防御したラウンドに軽減したダメージを敵に反射するローブ）
+armor('magic_robe', '魔導のローブ', '衣', 5, 1);    // コモン: 上限 5・反射 100%（魔導士の初期装備）
+armor('mirror_robe', '反鏡のローブ', '鏡', 4, 1);   // レア: 上限 4・反射 100%
+armor('astral_robe', '星霊のローブ', '星', 3, 1.5); // レジェンド: 上限 3・反射 150%
+
+assignRarity([
+  'big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'overlord_strike', 'tonic', 'steel_shield', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'big_bomb', 'holy_ward',
+  'fire_magic', 'blizzard', 'thunder_lance', 'mirror_coat', 'element_drain', 'twin_thunder', 'mirror_robe',
+], 'rare');
 // レジェンドのブロック・複合スキル（祠のバージョンアップの行き先。報酬にも出る）
 defineSkill({ id: 'fortress', name: '城塞', icon: '城', effects: [{ type: 'block', mult: 1, amount: 10 }] }); // レジェンド: POW+10
 defineSkill({
@@ -96,26 +156,44 @@ defineSkill({
   id: 'siphon', name: '吸魂', icon: '魂',
   effects: [{ type: 'attack', mult: 1.5, add: 3 }, { type: 'heal', mult: 0.5, amount: 5 }],
 });
-assignRarity(['smash', 'final_strike', 'fortress', 'aegis', 'siphon', 'mithril_shield', 'impale', 'rampage', 'miracle', 'flurry', 'elixir'], 'legend');
+assignRarity([
+  'smash', 'final_strike', 'fortress', 'aegis', 'siphon', 'mithril_shield', 'impale', 'rampage', 'miracle', 'flurry', 'elixir',
+  'meteor', 'absolute_zero', 'judgement_bolt', 'aegis_mirror', 'astral_drain', 'astral_robe',
+], 'legend');
 
 /**
  * 祠のバージョンアップ: **レア度は変えず、一段階だけ強くする**（スキル名に「＋」が付き、効果が上がる）。道具・防具は強化できない。
- * ただし 21 の会心の一撃は、レジェンドのまま、別に 2 段階育つ（会心の一撃 → 覇王の一撃 → 終焉の一撃。名前と効果が変わる）。
+ * ただし 21 の会心の一撃・大魔導は、レジェンドのまま、別に 2 段階育つ（名前と効果が変わる）。
  */
-const ACE_CHAIN: Record<SkillId, SkillId> = { ace_strike: 'overlord_strike', overlord_strike: 'final_strike' };
+const ACE_CHAIN: Record<SkillId, SkillId> = {
+  ace_strike: 'overlord_strike', overlord_strike: 'final_strike',
+  arch_magic: 'astral_magic', astral_magic: 'genesis_magic',
+};
 for (const [from, to] of Object.entries(ACE_CHAIN)) getSkill(from).upgradesTo = to;
-assignRarity(['ace_strike', 'overlord_strike', 'final_strike'], 'legend'); // 会心の一撃の系統は、どの段階もレジェンド
+assignRarity(['ace_strike', 'overlord_strike', 'final_strike', 'arch_magic', 'astral_magic', 'genesis_magic'], 'legend');
 
 /** 報酬には出ず、バージョンアップでだけ手に入るスキル（図鑑には載る）。 */
 export const UPGRADE_ONLY_SKILLS: readonly SkillId[] = ['overlord_strike', 'final_strike'];
+export const MAGE_UPGRADE_ONLY_SKILLS: readonly SkillId[] = ['astral_magic', 'genesis_magic'];
 
-/** 報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。基本パワーが基準で、スロットが高いほど強い。 */
+/** 戦士の報酬として出現するスキル（小攻撃は 11以下に固定なので含めない）。基本パワーが基準で、スロットが高いほど強い。 */
 export const SKILL_POOL: readonly SkillId[] = [
   'big_attack', 'jab', 'slash', 'heavy', 'smash',
   'guard', 'shield', 'bulwark', 'shield_bash', 'drain', 'rally',
   'fortress', 'aegis', 'siphon',
   'lunge', 'chop', 'mend', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'impale', 'rampage', 'miracle', 'flurry',
 ];
+
+/** 魔導士の報酬として出現する専用スキル。 */
+export const MAGE_SKILL_POOL: readonly SkillId[] = [
+  'fire_bolt', 'ice_needle', 'spark', 'flame_wave', 'frost_shield', 'mana_ward', 'aqua_mend',
+  'fire_magic', 'blizzard', 'thunder_lance', 'mirror_coat', 'element_drain', 'twin_thunder',
+  'meteor', 'absolute_zero', 'judgement_bolt', 'aegis_mirror', 'astral_drain',
+];
+
+export function skillPoolFor(character: CharacterId = 'warrior'): readonly SkillId[] {
+  return character === 'mage' ? MAGE_SKILL_POOL : SKILL_POOL;
+}
 
 /** 「＋」のスキルの ID と名前の目印。 */
 export const PLUS_ID_SUFFIX = '_plus';
@@ -129,7 +207,7 @@ export const isPlusSkill = (id: SkillId): boolean => id.endsWith(PLUS_ID_SUFFIX)
 export const baseSkillId = (id: SkillId): SkillId => (isPlusSkill(id) ? id.slice(0, -PLUS_ID_SUFFIX.length) : id);
 
 /** 報酬に出るスキルごとに、「＋」のスキルを作る。レア度は同じで、攻撃・ブロック・回復の上乗せが増える。 */
-for (const id of SKILL_POOL) {
+for (const id of [...SKILL_POOL, ...MAGE_SKILL_POOL]) {
   const base = getSkill(id);
   const rarity = rarityOfSkill(base);
   const n = PLUS_BONUS[rarity];
@@ -139,23 +217,43 @@ for (const id of SKILL_POOL) {
   base.upgradesTo = `${id}${PLUS_ID_SUFFIX}`;
 }
 
-/** 報酬として出現する道具。効果は固定（基本パワーに関係ない）。 */
+/** 報酬として出現する道具。効果は固定（基本パワーに関係ない）。戦士・魔導士で共通。 */
 export const ITEM_POOL: readonly SkillId[] = ['herb', 'tonic', 'elixir', 'bomb', 'big_bomb', 'ward', 'holy_ward'];
 
-/** 防具（防御スロットに置く）。敵の報酬には出ず、ショップでだけ買える。 */
+/** 戦士の防具（防御スロットに置く）。敵の報酬には出ず、ショップでだけ買える。 */
 export const ARMOR_POOL: readonly SkillId[] = ['iron_shield', 'steel_shield', 'mithril_shield'];
+/** 魔導士の防具（防御するとダメージを反射するローブ）。 */
+export const MAGE_ARMOR_POOL: readonly SkillId[] = ['magic_robe', 'mirror_robe', 'astral_robe'];
+
+export function armorPoolFor(character: CharacterId = 'warrior'): readonly SkillId[] {
+  return character === 'mage' ? MAGE_ARMOR_POOL : ARMOR_POOL;
+}
+
 /** 戦士の初期装備の防具。 */
 export const DEFAULT_ARMOR_ID: SkillId = 'iron_shield';
+/** 魔導士の初期装備の防具。 */
+export const DEFAULT_MAGE_ARMOR_ID: SkillId = 'magic_robe';
 
 /** スロットに置けるものすべて（スキル + 道具。防具は防御スロット専用）。図鑑・出撃準備・祠の抽選に使う。 */
 export const ALL_POOL: readonly SkillId[] = [...SKILL_POOL, ...ITEM_POOL];
 
-/** プレイヤーの初期スロット。15 は薬草（道具）、20 は大攻撃、21 は会心の一撃で固定（守りは防具が受け持つので、シールド・盾は初期装備にしない）。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
+/** 戦士の初期スロット。15 は薬草（道具）、20 は大攻撃、21 は会心の一撃で固定。未設定の合計値は fallbackSkill（基本攻撃）が発動する。 */
 export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   11: 'small_attack',
   15: 'herb', // 初期から回復を持つ。15 は「止まるか、引くか」を迷う合計値（バースト確率が約 54%）なので、止まる理由になる。試算でも最もクリア率が高い位置（14 と並ぶ）
   20: 'big_attack',
   21: ACE_STRIKE_ID,
+};
+
+/** 魔導士の初期スロット。13 に氷柱、15 に薬草、16 に氷の障壁（氷吸収＋ブロック）、18 に雷撃、20 に紅蓮術（炎）、21 に大魔導を装備。 */
+export const DEFAULT_MAGE_SLOTS: SlotTable = {
+  11: 'small_attack',
+  13: 'ice_needle',
+  15: 'herb',
+  16: 'frost_shield',
+  18: 'spark',
+  20: 'fire_magic',
+  21: ARCH_MAGIC_ID,
 };
 /** プレイヤーの初期の基本パワー。 */
 export const START_ATTACK = 5;

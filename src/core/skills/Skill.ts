@@ -1,9 +1,23 @@
 import type { Rarity } from '../rarity';
 
+/** 魔法の属性（炎・氷・雷）。 */
+export type ElementType = 'fire' | 'ice' | 'lightning';
+
+/** プレイヤーのキャラクター種別（戦士・魔導士）。 */
+export type CharacterId = 'warrior' | 'mage';
+
+export const ELEMENT_LABEL: Record<ElementType, string> = { fire: '炎', ice: '氷', lightning: '雷' };
+export const ELEMENT_ICON: Record<ElementType, string> = { fire: '火', ice: '氷', lightning: '雷' };
+
+/** 三すくみ（炎🔥 ＞ 氷❄️ ＞ 雷⚡ ＞ 炎🔥）: その属性の敵に対する弱点属性を返す。 */
+export function weaknessOfElement(el: ElementType): ElementType {
+  return el === 'ice' ? 'fire' : el === 'lightning' ? 'ice' : 'lightning';
+}
+
 /** スキルの効果。判別共用体なので、バフやドロー等を後から追加できる。 */
 export type SkillEffect =
   /** 基本パワー（POW）を基準にしたダメージ: floor(POW × mult) + add。pierce なら相手のブロックを無視して、そのブロックを破壊する（会心の一撃）。 */
-  | { type: 'attack'; mult: number; add?: number; pierce?: boolean }
+  | { type: 'attack'; mult: number; add?: number; pierce?: boolean; element?: ElementType }
   /**
    * 回復・ブロックも基本パワーが基準: floor(POW × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
    * mult を省略すると固定量（敵のスキルなど）で、amount のまま。
@@ -29,6 +43,14 @@ export interface SkillDef {
   rarity?: Rarity;
   /** 防具の効果: 防御したラウンドに受けるダメージ（HP の減少）の上限。 */
   damageCap?: number;
+  /** 攻撃魔法の属性（炎・氷・雷）。敵の弱点属性と一致すればダメージ 2 倍。 */
+  element?: ElementType;
+  /** 属性バリアの吸収属性（炎・氷・雷）。発動したラウンドはその属性の敵攻撃を吸収（ダメージ0＋HP回復）する。 */
+  absorbElement?: ElementType;
+  /** すべての属性の敵攻撃を吸収するか（上位の吸収魔法・大魔導など）。 */
+  absorbAll?: boolean;
+  /** 敵の攻撃を跳ね返す割合（1 = 100%。防具なら防御したラウンドに軽減分を反射、スキルなら発動したラウンドに敵の攻撃力を反射）。 */
+  reflect?: number;
   /** 祠のバージョンアップで変わる先（コモン→レア、レア→レジェンド）。ないスキル・道具は強化できない。 */
   upgradesTo?: SkillId;
   /** 敵の危険な合計値の技（その合計値でだけ出る、一撃の重い技）。スロット表で赤い印、一覧で「危険」の札。 */
@@ -146,16 +168,25 @@ export function supportFormula(effect: { amount: number; mult?: number }): strin
 
 /** 効果の要約。atk を渡すと実数値（＝16）も併記する。 */
 function describeEffects(skill: SkillDef, atk?: number): string {
-  if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}`;
+  if (skill.damageCap !== undefined) {
+    const refNote = skill.reflect ? `・軽減分を${skill.reflect > 1 ? `${skill.reflect}倍` : ''}反射` : '';
+    return `防御: 被ダメージ最大 ${skill.damageCap}${refNote}`;
+  }
   const value = (v: (atk: number) => number): string => (atk === undefined ? '' : `＝${v(atk)}`);
-  return skill.effects
-    .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${attackFormula(e)}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
-      const label = e.type === 'block' ? 'ブロック' : '回復';
-      // 固定量（mult なし）は、基本パワーに関係ないので、数字だけ
-      return e.mult ? `${label} ${supportFormula(e)}${value((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
-    })
-    .join(' + ');
+  const parts = skill.effects.map((e) => {
+    if (e.type === 'attack') {
+      const elem = e.element ?? skill.element;
+      const prefix = elem ? `${ELEMENT_LABEL[elem]}攻撃` : '攻撃';
+      return `${prefix} ${attackFormula(e)}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
+    }
+    const label = e.type === 'block' ? 'ブロック' : '回復';
+    // 固定量（mult なし）は、基本パワーに関係ないので、数字だけ
+    return e.mult ? `${label} ${supportFormula(e)}${value((a) => supportValue(e, a))}` : `${label} ${e.amount}`;
+  });
+  if (skill.reflect) parts.push(`反射 ${Math.round(skill.reflect * 100)}%`);
+  if (skill.absorbAll) parts.push('全属性吸収');
+  else if (skill.absorbElement) parts.push(`${ELEMENT_LABEL[skill.absorbElement]}吸収`);
+  return parts.join(' + ');
 }
 
 /** 基本パワーに対する上乗せの表記: 「+5」「×1.5+3」。倍率が 1 で上乗せがなければ「+0」。 */
@@ -169,14 +200,23 @@ function bonusFormula(mult: number, add: number): string {
  * 基本パワーに対する上乗せだけを示す（「攻撃 +5」「ブロック +3」「回復 +3」「攻撃 ×1.5+3」）。固定量は数字のまま。
  */
 export function describeSkillBonus(skill: SkillDef): string {
-  if (skill.damageCap !== undefined) return `防御: 被ダメージ最大 ${skill.damageCap}`;
-  return skill.effects
-    .map((e) => {
-      if (e.type === 'attack') return `攻撃 ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
-      const label = e.type === 'block' ? 'ブロック' : '回復';
-      return e.mult ? `${label} ${bonusFormula(e.mult, e.amount)}` : `${label} ${e.amount}`;
-    })
-    .join(' + ');
+  if (skill.damageCap !== undefined) {
+    const refNote = skill.reflect ? `・軽減分を${skill.reflect > 1 ? `${skill.reflect}倍` : ''}反射` : '';
+    return `防御: 被ダメージ最大 ${skill.damageCap}${refNote}`;
+  }
+  const parts = skill.effects.map((e) => {
+    if (e.type === 'attack') {
+      const elem = e.element ?? skill.element;
+      const prefix = elem ? `${ELEMENT_LABEL[elem]}攻撃` : '攻撃';
+      return `${prefix} ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
+    }
+    const label = e.type === 'block' ? 'ブロック' : '回復';
+    return e.mult ? `${label} ${bonusFormula(e.mult, e.amount)}` : `${label} ${e.amount}`;
+  });
+  if (skill.reflect) parts.push(`反射 ${Math.round(skill.reflect * 100)}%`);
+  if (skill.absorbAll) parts.push('全属性吸収');
+  else if (skill.absorbElement) parts.push(`${ELEMENT_LABEL[skill.absorbElement]}吸収`);
+  return parts.join(' + ');
 }
 
 /** 「攻撃 POW×3+2＝14」「ブロック POW+3＝8」のような効果の要約。atk を渡すと実数値も併記する。 */

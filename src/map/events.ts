@@ -1,8 +1,8 @@
-import { SKILL_POOL } from '../core/skills/catalog';
+import { skillPoolFor } from '../core/skills/catalog';
 import { pickWeighted, tierWeights } from '../core/rarity';
 import { getSkill, rarityOfSkill } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
-import { RELIC_POOL } from '../relics/catalog';
+import { relicPoolFor } from '../relics/catalog';
 import type { RunState } from '../run/Run';
 
 export const INN_HEAL_RATIO = 0.5;
@@ -53,7 +53,8 @@ const SHRINE_EFFECTS: ShrineEffect[] = [
   {
     id: 'old-art', weight: 3,
     apply(run, rng) {
-      const id = pickWeighted(SKILL_POOL, 1, rng, tierWeights(SKILL_POOL, (sid) => rarityOfSkill(getSkill(sid)), run.stage))[0];
+      const pool = skillPoolFor(run.character);
+      const id = pickWeighted(pool, 1, rng, tierWeights(pool, (sid) => rarityOfSkill(getSkill(sid)), run.stage))[0];
       run.inventory.push(id);
       return { id: 'old-art', title: '古き技の記憶', text: `「${getSkill(id).name}」を授かった。` };
     },
@@ -62,7 +63,7 @@ const SHRINE_EFFECTS: ShrineEffect[] = [
     id: 'pact', weight: 2,
     apply(run, rng) {
       const owned = new Set(run.relics.map((r) => r.id));
-      const pool = RELIC_POOL.filter((r) => !owned.has(r.id));
+      const pool = relicPoolFor(run.character).filter((r) => !owned.has(r.id));
       if (pool.length === 0) return null;
       const relic = pickWeighted(pool, 1, rng, tierWeights(pool, (r) => r.rarity ?? 'common', run.stage))[0];
       const cost = Math.min(10, run.hp - 1);

@@ -7,16 +7,17 @@ import { dropsOf } from '../run/drops';
 import { enemyArtHtml } from './components/enemyArt';
 import { buildTopBar } from './components/TopBar';
 import { audio } from '../audio/AudioManager';
-import { ARMOR_POOL, ITEM_POOL, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
-import { describeSkill, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
+import { ARMOR_POOL, ITEM_POOL, MAGE_ARMOR_POOL, MAGE_SKILL_POOL, MAGE_UPGRADE_ONLY_SKILLS, SKILL_POOL, UPGRADE_ONLY_SKILLS } from '../core/skills/catalog';
+import { describeSkill, ELEMENT_LABEL, getSkill, kindOfSkill, rarityOfSkill, type SkillKind } from '../core/skills/Skill';
 import { sortSkillsForCodex } from '../meta/codexOrder';
 import { RARITY_ORDER } from '../run/loadout';
 import { kindTag, medalKindClass } from './kind';
 import {
-  buyUpgrade, canBuy, CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, isEnemyDiscovered, isRelicDiscovered, isSkillDiscovered,
-  nextCost, saveMeta, STARTER_SKILLS, UPGRADES, upgradeLevel, type MetaState,
+  buyUpgrade, canBuy, CODEX_ARMOR_TOTAL, CODEX_ITEM_TOTAL, CODEX_RELIC_TOTAL, CODEX_SKILL_TOTAL, isEnemyDiscovered, isMageUnlocked, isRelicDiscovered, isSkillDiscovered,
+  MAGE_STARTER_SKILLS, nextCost, saveMeta, STARTER_SKILLS, UPGRADES, upgradeLevel, type MetaState,
 } from '../meta/Meta';
-import { RELIC_POOL } from '../relics/catalog';
+import { MAGE_RELIC_POOL, RELIC_POOL } from '../relics/catalog';
+import type { Relic } from '../relics/Relic';
 import { createBackupSection } from './BackupSection';
 import { rarityClass, rarityNote } from './rarity';
 
@@ -104,24 +105,32 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
     box.append(grid);
     return box;
   };
-  const skills = section('スキル', kindOf('skill'), CODEX_SKILL_TOTAL);
+  const skills = section('スキル（戦士）', kindOf('skill'), CODEX_SKILL_TOTAL);
+  const mageSkillIds = [...new Set([...MAGE_STARTER_SKILLS, ...MAGE_SKILL_POOL, ...MAGE_UPGRADE_ONLY_SKILLS])].filter((id) => !ITEM_POOL.includes(id) && id !== 'small_attack');
+  const mageSkills = section('スキル（魔導士）', mageSkillIds, mageSkillIds.length);
   const items = section('道具', kindOf('item'), CODEX_ITEM_TOTAL);
-  const armors = section('防具', kindOf('armor'), CODEX_ARMOR_TOTAL);
+  const armors = section('防具（戦士）', kindOf('armor'), CODEX_ARMOR_TOTAL);
+  const mageArmors = section('防具（魔導士）', [...MAGE_ARMOR_POOL], MAGE_ARMOR_POOL.length);
 
-  const relics = el('section', 'codex');
-  const rFound = RELIC_POOL.filter((r) => relicKnown(r.id)).length;
-  relics.append(el('h2', 'codex__title', `レリック　${rFound} / ${CODEX_RELIC_TOTAL}`));
-  const rGrid = el('div', 'codex__grid');
-  // レア度の低い順（同じレア度は、もとの並び）
-  const relicsByRarity = byRarityAsc(RELIC_POOL, (r) => r.rarity ?? 'common');
-  for (const r of relicsByRarity) {
-    const known = relicKnown(r.id);
-    rGrid.append(el('div', `codex__item ${known ? rarityClass(r.rarity) : 'codex__item--unknown'}`,
-      known
-        ? `<span class="medal medal--sm medal--relic">${r.icon}</span><span>${r.name} ${rarityNote(r.rarity)}<small>${r.description}</small></span>`
-        : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
-  }
-  relics.append(rGrid);
+  const buildRelicBox = (title: string, pool: readonly Relic[], total: number): HTMLElement => {
+    const box = el('section', 'codex');
+    const rFound = pool.filter((r) => relicKnown(r.id)).length;
+    box.append(el('h2', 'codex__title', `${title}　${rFound} / ${total}`));
+    const rGrid = el('div', 'codex__grid');
+    for (const r of byRarityAsc(pool, (x) => x.rarity ?? 'common')) {
+      const known = relicKnown(r.id);
+      rGrid.append(el('div', `codex__item ${known ? rarityClass(r.rarity) : 'codex__item--unknown'}`,
+        known
+          ? `<span class="medal medal--sm medal--relic">${r.icon}</span><span>${r.name} ${rarityNote(r.rarity)}<small>${r.description}</small></span>`
+          : '<span class="medal medal--sm">？</span><span>？？？<small>未入手</small></span>'));
+    }
+    box.append(rGrid);
+    return box;
+  };
+  const relics = buildRelicBox('レリック（共通）', RELIC_POOL, CODEX_RELIC_TOTAL);
+  const mageRelics = buildRelicBox('レリック（魔導士）', MAGE_RELIC_POOL, MAGE_RELIC_POOL.length);
+  const showMage = isMageUnlocked(meta) || isDebug();
+  const skillSections = showMage ? [skills, mageSkills, items, armors, mageArmors, relics, mageRelics] : [skills, items, armors, relics];
 
   const monsters = buildMonsterSection();
   const render = (tab: 'skills' | 'monsters'): void => {
@@ -134,7 +143,7 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
         return b;
       }),
     );
-    body.replaceChildren(hint, ...(tab === 'skills' ? [skills, items, armors, relics] : monsters));
+    body.replaceChildren(hint, ...(tab === 'skills' ? skillSections : monsters));
     body.scrollTop = 0;
   };
   screen.append(top, tabs, body);
@@ -169,10 +178,14 @@ export function showCodex(root: HTMLElement, meta: MetaState, onClose: () => voi
                 ? `<span class="drop ${rarityClass(rarityOfSkill(sk))}" title="${sk.name}（${describeSkill(sk)}）"><span class="medal medal--sm${medalKindClass(kindOfSkill(sk))}">${sk.icon}</span>${sk.name}</span>`
                 : '<span class="drop drop--unknown" title="スキル図鑑に載ると見える"><span class="medal medal--sm">？</span></span>';
             }).join('');
+        const elemNote = known && (def.weakness || def.attackElement)
+          ? `<small>${[def.weakness ? `弱点: ${ELEMENT_LABEL[def.weakness]}` : '', def.attackElement ? `攻撃属性: ${ELEMENT_LABEL[def.attackElement]}` : ''].filter(Boolean).join('　')}</small>`
+          : '';
         const item = el('div', `codex__item codex__item--monster${known ? '' : ' codex__item--unknown'}`,
           `<div class="codex__sprite" aria-hidden="true">${enemyArtHtml(id)}</div>
            <div class="codex__mon">
              <strong>${known ? def.name : '？？？'}${id === bossId ? ' <em class="kind-tag">ボス</em>' : ''}${known ? ` <small>LV${enemyLevel(def)}・HP ${def.maxHp}</small>` : ''}</strong>
+             ${elemNote}
              ${known ? `<small>${def.trait ?? ''}</small>` : '<small>未討伐</small>'}
              ${known ? `<div class="drops"><span class="drops__label">落とし物</span>${dropHtml}</div>` : ''}
            </div>`);

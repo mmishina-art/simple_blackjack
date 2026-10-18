@@ -1,10 +1,10 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { enemyLevel } from '../core/entities/enemies/level';
 import { pickWeighted, tierWeights, type Rarity } from '../core/rarity';
-import { ARMOR_POOL, ITEM_POOL } from '../core/skills/catalog';
+import { armorPoolFor, ITEM_POOL } from '../core/skills/catalog';
 import { getSkill, isArmor, isItem, rarityOfSkill, type SkillId } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
-import { RELIC_POOL } from '../relics/catalog';
+import { ALL_RELIC_POOL, relicPoolFor } from '../relics/catalog';
 import type { Relic } from '../relics/Relic';
 import { CODEX_BOOST, type RunState } from './Run';
 
@@ -99,11 +99,11 @@ export function generateShop(run: RunState, rng: Rng): ShopOffer[] {
   const items = pickWeighted(itemPool, tier.items, rng, (id) => itemW(id) * boost(id));
 
   const curCap = getSkill(run.armor).damageCap ?? Infinity;
-  const armorPool = ARMOR_POOL.filter((id) => (getSkill(id).damageCap ?? Infinity) < curCap && allowed(rarityOf(id)));
+  const armorPool = armorPoolFor(run.character).filter((id) => (getSkill(id).damageCap ?? Infinity) < curCap && allowed(rarityOf(id)));
   const armors = pickWeighted(armorPool, Math.min(tier.armors, armorPool.length), rng, tierWeights(armorPool, rarityOf, run.stage));
 
   const owned = new Set(run.relics.map((r) => r.id));
-  const relicPool = RELIC_POOL.filter((r) => !owned.has(r.id) && allowed(r.rarity ?? 'common'));
+  const relicPool = relicPoolFor(run.character).filter((r) => !owned.has(r.id) && allowed(r.rarity ?? 'common'));
   const relics = pickWeighted(relicPool, tier.relics, rng, tierWeights(relicPool, (r) => r.rarity ?? 'common', run.stage));
 
   return [
@@ -117,7 +117,7 @@ export function generateShop(run: RunState, rng: Rng): ShopOffer[] {
 export function buyOffer(run: RunState, offer: ShopOffer): boolean {
   if (offer.sold || run.gold < offer.price) return false;
   if (offer.type === 'relic') {
-    const relic = RELIC_POOL.find((r) => r.id === offer.id);
+    const relic = ALL_RELIC_POOL.find((r) => r.id === offer.id);
     if (!relic || run.relics.some((r) => r.id === relic.id)) return false;
     run.relics.push(relic);
   } else {
@@ -138,9 +138,12 @@ export function sellFromInventory(run: RunState, id: SkillId): number | null {
   return gold;
 }
 
-/** 祠のバージョンアップの代金（「＋」にする）: レア度ごと。会心の一撃の系統は、段階ごと（→ 覇王の一撃 40 G、→ 終焉の一撃 80 G）。 */
+/** 祠のバージョンアップの代金（「＋」にする）: レア度ごと。会心の一撃・大魔導の系統は、段階ごと（1段階目 40 G、2段階目 80 G）。 */
 export const PLUS_COST: Record<Rarity, number> = { common: 30, rare: 50, legend: 80 };
-export const ACE_UPGRADE_COST: Record<SkillId, number> = { ace_strike: 40, overlord_strike: 80 };
+export const ACE_UPGRADE_COST: Record<SkillId, number> = {
+  ace_strike: 40, overlord_strike: 80,
+  arch_magic: 40, astral_magic: 80,
+};
 
 export function upgradeCost(id: SkillId): number | null {
   const sk = getSkill(id);

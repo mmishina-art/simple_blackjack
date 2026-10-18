@@ -14,6 +14,12 @@ export class DealState implements BattleState {
     ctx.bustOrDie = false;
     player.damageCap = null;
     player.capTaken = 0;
+    player.activeElement = null;
+    player.absorbAllElements = false;
+    player.reflectRatio = 0;
+    enemy.activeElement = null;
+    enemy.absorbAllElements = false;
+    enemy.reflectRatio = 0;
     ctx.plan = {};
     player.hand.clear();
     enemy.hand.clear();

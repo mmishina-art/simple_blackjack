@@ -1,7 +1,7 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { EnemyDef } from '../../core/entities/enemies/EnemyDef';
 import { createRuleSet } from '../../core/rules/RuleSet';
-import { BASIC_ICON, describeSkillShort, fallbackLabel, SLOT_MAX } from '../../core/skills/Skill';
+import { BASIC_ICON, describeSkillShort, ELEMENT_LABEL, fallbackLabel, SLOT_MAX } from '../../core/skills/Skill';
 import { effectTone, slotLook } from '../../core/skills/look';
 import { describeSlotTable } from '../../core/skills/table';
 import { enemyLevel, hitsToDefeat } from '../../core/entities/enemies/level';
@@ -14,7 +14,10 @@ export function buildEnemyInfo(enemy: Entity, def: EnemyDef, playerHp: number, o
   sheet.className = 'enemy-info';
   const head = document.createElement('div');
   head.className = 'enemy-info__head';
-  head.innerHTML = `<h2>${enemy.name}の技</h2><p>LV ${lv}　HP ${enemy.maxHp}<br>1回の攻撃で平均 ${lv} ダメージ（あなたの HP ${playerHp} なら、約 ${hitsToDefeat(playerHp, lv)} 回で倒れる）${def.trait ? `<br>特性: ${def.trait}` : ''}</p>`;
+  const elemLine = def.weakness || def.attackElement
+    ? `<br>${[def.weakness ? `弱点: ${ELEMENT_LABEL[def.weakness]}` : '', def.attackElement ? `攻撃属性: ${ELEMENT_LABEL[def.attackElement]}` : ''].filter(Boolean).join('　')}`
+    : '';
+  head.innerHTML = `<h2>${enemy.name}の技</h2><p>LV ${lv}　HP ${enemy.maxHp}<br>1回の攻撃で平均 ${lv} ダメージ（あなたの HP ${playerHp} なら、約 ${hitsToDefeat(playerHp, lv)} 回で倒れる）${elemLine}${def.trait ? `<br>特性: ${def.trait}` : ''}</p>`;
   const list = buildEnemySkillList(enemy, def.ai.standOn);
   const close = document.createElement('button');
   close.className = 'btn btn--retry enemy-info__close';

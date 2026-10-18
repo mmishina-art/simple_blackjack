@@ -1,7 +1,7 @@
 import { Entity } from '../../core/entities/Entity';
 import { getEnemy } from '../../core/entities/enemies/catalog';
 import { enemyLevel } from '../../core/entities/enemies/level';
-import { getSkill } from '../../core/skills/Skill';
+import { ELEMENT_LABEL, getSkill } from '../../core/skills/Skill';
 import { dropChances, type RunState } from '../../run/Run';
 import { rarityClass } from '../rarity';
 import { rarityOfSkill } from '../../core/skills/Skill';
@@ -37,10 +37,21 @@ export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: b
     const trait = document.createElement('small');
     trait.textContent = '未討伐（一度倒して図鑑に載ると詳細が見える）';
     facts.append(trait);
-  } else if (def.trait) {
-    const trait = document.createElement('small');
-    trait.textContent = `特性: ${def.trait}`;
-    facts.append(trait);
+  } else {
+    if (def.weakness || def.attackElement) {
+      const elemInfo = document.createElement('small');
+      const parts = [
+        def.weakness ? `弱点: ${ELEMENT_LABEL[def.weakness]}` : '',
+        def.attackElement ? `攻撃属性: ${ELEMENT_LABEL[def.attackElement]}` : '',
+      ].filter(Boolean);
+      elemInfo.textContent = parts.join('　');
+      facts.append(elemInfo);
+    }
+    if (def.trait) {
+      const trait = document.createElement('small');
+      trait.textContent = `特性: ${def.trait}`;
+      facts.append(trait);
+    }
   }
   top.append(sprite, facts);
 

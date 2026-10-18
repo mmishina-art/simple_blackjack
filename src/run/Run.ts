@@ -1,15 +1,15 @@
 import type { EnemyDef } from '../core/entities/enemies/EnemyDef';
 import { getEnemy } from '../core/entities/enemies/catalog';
 import { dropsOf } from './drops';
-import { DEFAULT_ARMOR_ID, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, isPlusSkill, SKILL_POOL, START_ATTACK } from '../core/skills/catalog';
+import { DEFAULT_ARMOR_ID, DEFAULT_MAGE_ARMOR_ID, DEFAULT_MAGE_SLOTS, DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS, isPlusSkill, skillPoolFor, START_ATTACK } from '../core/skills/catalog';
 import { RARITY_ORDER } from './loadout';
 import { pickWeighted, tierWeights } from '../core/rarity';
-import { canPlaceAt, getSkill, isArmor, rarityOfSkill, SLOT_KEYS, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
+import { canPlaceAt, getSkill, isArmor, rarityOfSkill, SLOT_KEYS, type CharacterId, type SkillId, type SlotKey, type SlotTable } from '../core/skills/Skill';
 import type { Rng } from '../core/util/Rng';
 import { NO_BONUS, computeBonus, type MetaState, type RunBonus } from '../meta/Meta';
 import { STAGES, stageRowOffset } from '../map/stages';
 import { nextTiles, type StageMap, type TileDef } from '../map/StageMap';
-import { RELIC_POOL } from '../relics/catalog';
+import { relicPoolFor } from '../relics/catalog';
 import type { Relic } from '../relics/Relic';
 
 /**
@@ -17,6 +17,8 @@ import type { Relic } from '../relics/Relic';
  * 永続強化はスロットとレリックのみ（レベル・経験値はない）。
  */
 export interface RunState {
+  /** 選択したキャラクター（'warrior' = 戦士 / 'mage' = 魔導士）。 */
+  character: CharacterId;
   map: StageMap;
   /** いま何階層目か（1 始まり）。最後の階層のボスを倒すとクリア。 */
   stage: number;
@@ -51,18 +53,20 @@ export interface RunState {
 
 /** 冒険の初期の最大 HP（祭壇の強化が上乗せされる）。道具の回復（薬草など）で保つ。 */
 export const START_MAX_HP = 30;
-/** 固定スロット。11以下は小攻撃、21 は会心の一撃で固定。レリックで解除できる（いまは該当するレリックなし）。 */
+/** 固定スロット。11以下は小攻撃、21 は会心の一撃（魔導士は大魔導）で固定。レリックで解除できる（いまは該当するレリックなし）。 */
 export const FIXED_SLOTS: readonly SlotKey[] = [11, 21];
 
 /** 新しい冒険を始める。meta を渡すと、祭壇の強化・初期スキル・図鑑が反映される。 */
-export function createRun(map: StageMap = STAGES[0], meta?: MetaState): RunState {
+export function createRun(map: StageMap = STAGES[0], meta?: MetaState, character: CharacterId = 'warrior'): RunState {
   const bonus = meta ? computeBonus(meta) : { ...NO_BONUS };
   const maxHp = START_MAX_HP + bonus.maxHp;
-  const slots = { ...DEFAULT_PLAYER_SLOTS };
+  const slots = character === 'mage' ? { ...DEFAULT_MAGE_SLOTS } : { ...DEFAULT_PLAYER_SLOTS };
+  const armor = character === 'mage' ? DEFAULT_MAGE_ARMOR_ID : DEFAULT_ARMOR_ID;
   return {
+    character,
     map, stage: Math.max(1, STAGES.findIndex((m) => m.id === map.id) + 1), position: map.start, cleared: [],
     maxHp, hp: maxHp, baseAttack: START_ATTACK + bonus.attack,
-    slots, armor: DEFAULT_ARMOR_ID, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
+    slots, armor, fallbackSkill: DEFAULT_PLAYER_FALLBACK,
     inventory: [], gold: 0, relics: [], bonus,
     favored: meta ? [...meta.codex.skills] : [],
     knownEnemies: meta ? [...meta.codex.enemies] : [],
@@ -162,6 +166,11 @@ export function equipArmor(run: RunState, armorId: SkillId): boolean {
 /** 装備中の防具の被ダメージ上限。 */
 export function armorCap(run: RunState): number {
   return getSkill(run.armor).damageCap ?? 5;
+}
+
+/** 装備中の防具の反射割合（魔導士のローブなど）。 */
+export function armorReflect(run: RunState): number {
+  return getSkill(run.armor).reflect ?? 0;
 }
 
 /** 祠の入れ替え: 2つのスロットの中身を交換する（空きとの交換は移動）。固定スロットは動かせない。 */
@@ -295,16 +304,18 @@ export const CODEX_BOOST = 2;
  * レア度が高いほど出にくい（割合は階層ごと）。図鑑に載っているスキルは出やすい。
  */
 export function offerSkills(rng: Rng, run?: RunState, enemyId?: string): SkillId[] {
+  const char = run?.character ?? 'warrior';
+  const pool = skillPoolFor(char);
   const favored = new Set(run?.favored ?? []);
   const stage = run?.stage ?? 1;
   const rarityOf = (id: SkillId) => rarityOfSkill(getSkill(id));
   const boost = (id: SkillId): number => (favored.has(id) ? CODEX_BOOST : 1);
-  const weight = tierWeights(SKILL_POOL, rarityOf, stage);
+  const weight = tierWeights(pool, rarityOf, stage);
   const w = (id: SkillId): number => weight(id) * boost(id);
   const count = 3 + (run?.bonus.extraChoices ?? 0);
-  const themed = dropsOf(enemyId).filter((id) => SKILL_POOL.includes(id));
+  const themed = dropsOf(enemyId, char).filter((id) => pool.includes(id));
   const fromTheme = themed.length > 0 ? pickWeighted(themed, Math.min(count - 1, themed.length), rng, w) : [];
-  const rest = SKILL_POOL.filter((id) => !fromTheme.includes(id));
+  const rest = pool.filter((id) => !fromTheme.includes(id));
   return [...fromTheme, ...pickWeighted(rest, count - fromTheme.length, rng, w)];
 }
 
@@ -313,11 +324,13 @@ export function offerSkills(rng: Rng, run?: RunState, enemyId?: string): SkillId
  * 落とし物からの抽選（offerSkills の fromTheme）と同じ重み（レア度の割合 × 図鑑のブースト）で、落とし物だけの中で割る。
  */
 export function dropChances(run: RunState, enemyId: string): { id: SkillId; percent: number }[] {
+  const char = run.character ?? 'warrior';
+  const pool = skillPoolFor(char);
   const favored = new Set(run.favored ?? []);
   const rarityOf = (id: SkillId) => rarityOfSkill(getSkill(id));
-  const weight = tierWeights(SKILL_POOL, rarityOf, run.stage);
+  const weight = tierWeights(pool, rarityOf, run.stage);
   const w = (id: SkillId): number => weight(id) * (favored.has(id) ? CODEX_BOOST : 1);
-  const themed = dropsOf(enemyId).filter((id) => SKILL_POOL.includes(id));
+  const themed = dropsOf(enemyId, char).filter((id) => pool.includes(id));
   const total = themed.reduce((sum, id) => sum + w(id), 0);
   return themed
     .map((id) => ({ id, percent: total > 0 ? Math.round((w(id) / total) * 100) : 0 }))
@@ -327,6 +340,6 @@ export function dropChances(run: RunState, enemyId: string): { id: SkillId; perc
 /** 宝箱のレリック（3択）。所持済みは出ない。レア度が高いほど出にくい。 */
 export function offerRelics(run: RunState, rng: Rng): Relic[] {
   const owned = new Set(run.relics.map((r) => r.id));
-  const pool = RELIC_POOL.filter((r) => !owned.has(r.id));
+  const pool = relicPoolFor(run.character).filter((r) => !owned.has(r.id));
   return pickWeighted(pool, 3, rng, tierWeights(pool, (r) => r.rarity ?? 'common', run.stage));
 }

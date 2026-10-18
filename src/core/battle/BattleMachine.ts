@@ -1,7 +1,7 @@
 import { Deck } from '../cards/Deck';
 import { Entity } from '../entities/Entity';
 import { DEFAULT_PLAYER_FALLBACK, DEFAULT_PLAYER_SLOTS } from '../skills/catalog';
-import type { SkillId, SlotTable } from '../skills/Skill';
+import type { CharacterId, SkillId, SlotTable } from '../skills/Skill';
 import type { EnemyDef } from '../entities/enemies/EnemyDef';
 import { EventBus } from '../events/EventBus';
 import { createRuleSet, type RuleSet } from '../rules/RuleSet';
@@ -21,6 +21,7 @@ import { TRANSITIONS, type BattleState, type PlayerInput, type StateId } from '.
 
 export interface BattleOptions {
   enemy: EnemyDef;
+  playerCharacter?: CharacterId;
   playerMaxHp?: number;
   /** 開始時のプレイヤーHP（連戦での持ち越し用）。省略時は最大HP。 */
   playerHp?: number;
@@ -32,6 +33,8 @@ export interface BattleOptions {
   playerAttack?: number;
   /** 装備している防具の被ダメージ上限（防御したラウンドに効く）。省略時は RuleSet.defendCap。 */
   playerArmorCap?: number;
+  /** 装備している防具の反射割合（防御したラウンドに効く）。 */
+  playerArmorReflect?: number;
   /** 戦闘開始時にプレイヤーが持つブロック（祭壇の強化）。 */
   playerBlock?: number;
   rules?: Partial<RuleSet>;
@@ -63,10 +66,14 @@ export class BattleMachine {
       { ...(opts.playerSlots ?? DEFAULT_PLAYER_SLOTS) }, opts.playerFallback ?? DEFAULT_PLAYER_FALLBACK, opts.playerAttack,
     );
     const enemy = new Entity('enemy', opts.enemy.name, opts.enemy.maxHp, { ...opts.enemy.slots }, opts.enemy.fallbackSkill, opts.enemy.attack);
+    player.character = opts.playerCharacter ?? 'warrior';
     player.armorCap = opts.playerArmorCap;
+    player.armorReflect = opts.playerArmorReflect ?? (player.character === 'mage' ? 1 : 0);
     player.scaleAttackBySlot = true; // プレイヤーの基本パワーは、スロットごとに変わる（敵は固定）
     player.block = opts.playerBlock ?? 0;
     if (opts.playerHp !== undefined) player.hp = Math.min(opts.playerHp, player.maxHp);
+    enemy.weakness = opts.enemy.weakness;
+    enemy.attackElement = opts.enemy.attackElement;
 
     this.ctx = {
       rules,
