@@ -32,6 +32,7 @@ export function endingSummaryLines(s: EndingSummary): string[] {
  * 最後に「THE END」と結果を出して、「タイトルへ」で戻る。
  */
 export function showEnding(root: HTMLElement, summary: EndingSummary, onClose: () => void): void {
+  audio.setBgm('ending');
   const screen = document.createElement('main');
   screen.className = 'ending';
   const back = document.createElement('div');
