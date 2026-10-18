@@ -2,7 +2,7 @@
 // ブラウザの AudioContext は無いので、最小限の偽物で、状態の遷移（suspended / interrupted / running）だけを確かめる。
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AudioManager, bgmForBattle } from '../src/audio/AudioManager';
+import { AudioManager, bgmForBattle, bgmForStage } from '../src/audio/AudioManager';
 import { BlackDragon, DrownedKnight, GraveKnight, MagmaSerpent, Serpent, Skeleton } from '../src/core/entities/enemies/catalog';
 
 type State = 'suspended' | 'running' | 'interrupted' | 'closed';
@@ -324,8 +324,11 @@ describe('BUST or DIE の予告の効果音', () => {
   });
 });
 
-describe('戦闘 BGM の切り替え（探索 → 雑魚 → 中ボス → ラスボス）', () => {
-  it('敵の種類に応じて BGM トラック（battle / midboss / boss）が決まる', () => {
+describe('ステージ・イベント・戦闘・エンディング BGM の切り替え', () => {
+  it('階層（1〜3）と敵の種類に応じて BGM トラックが決まる', () => {
+    expect(bgmForStage(1)).toBe('stage1');
+    expect(bgmForStage(2)).toBe('stage2');
+    expect(bgmForStage(3)).toBe('stage3');
     expect(bgmForBattle(Skeleton)).toBe('battle');
     expect(bgmForBattle(DrownedKnight)).toBe('midboss');
     expect(bgmForBattle(MagmaSerpent)).toBe('midboss');
@@ -334,12 +337,24 @@ describe('戦闘 BGM の切り替え（探索 → 雑魚 → 中ボス → ラ�
     expect(bgmForBattle(BlackDragon, true)).toBe('boss');
   });
 
-  it('setBgm でトラックが切り替わり、ローパスフィルターの開き具合が探索 < 通常戦闘 < 中ボス < ラスボス の順に上がる', () => {
+  it('setBgm でトラックが切り替わり、ローパスフィルターの開き具合が タイトル < 第1階層 < 第2階層 < 第3階層 < 戦闘 の順に上がる', () => {
     const a = new AudioManager();
     a.unlock();
     const bgmFilter = ctxOf().filters[0].frequency as { value: number };
     expect(a.bgm).toBe('field');
     const fField = bgmFilter.value;
+
+    a.setBgm('stage1');
+    expect(a.bgm).toBe('stage1');
+    const fStage1 = bgmFilter.value;
+
+    a.setBgm('stage2');
+    expect(a.bgm).toBe('stage2');
+    const fStage2 = bgmFilter.value;
+
+    a.setBgm('stage3');
+    expect(a.bgm).toBe('stage3');
+    const fStage3 = bgmFilter.value;
 
     a.setBgm('battle');
     expect(a.bgm).toBe('battle');
@@ -353,13 +368,16 @@ describe('戦闘 BGM の切り替え（探索 → 雑魚 → 中ボス → ラ�
     expect(a.bgm).toBe('boss');
     const fBoss = bgmFilter.value;
 
-    expect(fField).toBeLessThan(fBattle);
-    expect(fBattle).toBeLessThan(fMidboss);
-    expect(fMidboss).toBeLessThan(fBoss);
+    expect(fField).toBeLessThan(fStage1);
+    expect(fStage1).toBeLessThan(fStage2);
+    expect(fStage2).toBeLessThan(fStage3);
+    expect(fStage3).toBeLessThan(fBattle);
+    expect(fBattle).toBeLessThanOrEqual(fMidboss);
+    expect(fMidboss).toBeLessThanOrEqual(fBoss);
   });
 
-  it('4種すべての BGM（field / battle / midboss / boss）が矩形波を使わずに音をスケジュールする', () => {
-    for (const track of ['field', 'battle', 'midboss', 'boss'] as const) {
+  it('9種すべての BGM（field / stage1 / stage2 / stage3 / event / battle / midboss / boss / ending）が矩形波を使わずに音をスケジュールする', () => {
+    for (const track of ['field', 'stage1', 'stage2', 'stage3', 'event', 'battle', 'midboss', 'boss', 'ending'] as const) {
       const a = new AudioManager();
       a.setBgm(track);
       a.unlock();
@@ -373,11 +391,59 @@ describe('戦闘 BGM の切り替え（探索 → 雑魚 → 中ボス → ラ�
     }
   });
 
-  it('main.ts で戦闘開始時に bgmForBattle で BGM を切り替え、戦闘を離れるときに field に戻す', () => {
+  it('setBgm で別のトラックや none に切り替えたとき、前の BGM の予約済みノートが即座に stop され、delaySec の間は新しい音が鳴らない', () => {
+    const a = new AudioManager();
+    a.setBgm('boss');
+    a.unlock();
+    const c = ctxOf();
+    c.currentTime = 0.2;
+    vi.advanceTimersByTime(100);
+    const bossOscs = [...c.oscs];
+    expect(bossOscs.length).toBeGreaterThan(0);
+
+    // ラスボス撃破: 戦闘 BGM を即座に止め、2.4 秒後にエンディング BGM を始める
+    c.currentTime = 0.5;
+    a.setBgm('ending', 2.4);
+    expect(a.bgm).toBe('ending');
+    // 前のラスボス BGM のオシレータに対して stop(0.5) が呼ばれていること
+    for (const o of bossOscs) {
+      const stopCalls = (o.stop as { mock: { calls: number[][] } }).mock.calls;
+      expect(stopCalls.some(([t]) => t === 0.5)).toBe(true);
+    }
+
+    // 2.4 秒が経つ前（勝利ジングルの余韻中）は、まだエンディング BGM のノートは作られない
+    const countAfterStop = c.oscs.length;
+    c.currentTime = 1.5;
+    vi.advanceTimersByTime(500);
+    expect(c.oscs.length).toBe(countAfterStop);
+
+    // 2.4 秒経過すると、エンディング BGM のノートがスケジュールされる
+    c.currentTime = 3.0;
+    vi.advanceTimersByTime(200);
+    expect(c.oscs.length).toBeGreaterThan(countAfterStop);
+
+    // 敗北時（'none'）に切り替えると、以後は何もスケジュールされない
+    a.setBgm('none');
+    const countAtNone = c.oscs.length;
+    c.currentTime = 5.0;
+    vi.advanceTimersByTime(500);
+    expect(c.oscs.length).toBe(countAtNone);
+  });
+
+  it('タイトル・各階層マップ・イベントマス・戦闘開始・決着（勝利/敗北/ラスボス撃破）・エンディングの各場面で BGM が適切に切り替わる', () => {
     const mainSrc = readFileSync('src/main.ts', 'utf8');
+    const endingSrc = readFileSync('src/ui/EndingScreen.ts', 'utf8');
+    // 戦闘開始時
     expect(mainSrc).toContain("audio.setBgm(bgmForBattle(enemy, tile.kind === 'boss'))");
+    // 敗北時は戦闘 BGM を止める
+    expect(mainSrc).toContain("audio.setBgm('none')");
+    // 勝利時は戦闘 BGM を止め、ラスボス撃破なら ending、それ以外なら現在の階層の BGM を余韻後に流す
+    expect(mainSrc).toContain("audio.setBgm(finalVictory ? 'ending' : bgmForStage(run.stage), 2.4)");
+    // マップ画面・階層進行時は階層の BGM（stage1〜stage3）、イベントマスでは event、エンディングでは ending、タイトルでは field
+    expect(mainSrc).toContain("audio.setBgm(bgmForStage(run.stage))");
+    expect(mainSrc).toContain("audio.setBgm('event')");
+    expect(endingSrc).toContain("audio.setBgm('ending')");
     expect(mainSrc).toContain("audio.setBgm('field')");
   });
 });
-
 

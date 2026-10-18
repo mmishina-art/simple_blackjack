@@ -1,4 +1,4 @@
-import { audio, bgmForBattle } from './audio/AudioManager';
+import { audio, bgmForBattle, bgmForStage } from './audio/AudioManager';
 import { bindBattleSounds } from './audio/bindBattleSounds';
 import { BattleMachine } from './core/battle/BattleMachine';
 import { getEnemy } from './core/entities/enemies/catalog';
@@ -88,12 +88,12 @@ function leaveBattle(): void {
   view = null;
   unbindSounds?.();
   unbindSounds = null;
-  audio.setBgm('field');
 }
 
 // ---- マップ ----
 function showMapScreen(message = ''): void {
   leaveBattle();
+  audio.setBgm(bgmForStage(run.stage));
   syncCodex();
   showMap(root, run, {
     onMove: (id) => {
@@ -112,6 +112,7 @@ const shopOffers = new Map<string, ShopOffer[]>();
 
 /** ショップ。スキル・道具・防具を買うと、装備画面で置き先（スロット / 道具袋）を決める。 */
 function openShop(tile: TileDef, offers: ShopOffer[], note = ''): void {
+  audio.setBgm('event');
   showShop(root, run, {
     offers, note,
     onBought: (offer) => showLoadout(root, run, {
@@ -136,6 +137,7 @@ function resolveTile(tile: TileDef): void {
     case 'boss':
       return startBattle(tile);
     case 'chest': {
+      audio.setBgm('event');
       const relics = offerRelics(run, defaultRng);
       markCleared(run, tile.id);
       if (relics.length === 0) return showNotice(root, { heading: '宝箱', text: '中は空っぽだった。', button: '進む', onClose: () => showMapScreen() });
@@ -151,12 +153,14 @@ function resolveTile(tile: TileDef): void {
       });
     }
     case 'inn': {
+      audio.setBgm('event');
       const before = run.hp;
       useInn(run);
       markCleared(run, tile.id);
       return showInn(root, { before, after: run.hp, max: run.maxHp, onClose: () => showMapScreen() });
     }
     case 'shrine': {
+      audio.setBgm('event');
       return showShrine(root, run, {
         rng: defaultRng,
         onDone: (message) => {
@@ -253,15 +257,21 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
   const shardsLine = (gained: number) =>
     el('p', 'result__line result__shards', cheated ? 'デバッグを使った冒険（魂片・図鑑は記録されない）' : bareRun ? '素の状態の冒険（魂片・図鑑は記録されない）' : `魂片 +${gained}（所持 ${meta.shards}）`);
   const endButtons = (retry: string) => {
-    const altar = button('魂の祭壇', () => { setStatus(false); showAltar(root, meta, showTitle); });
+    const altar = button('魂の祭壇', () => { leaveBattle(); audio.setBgm('field'); setStatus(false); showAltar(root, meta, showTitle); });
     altar.classList.replace('btn--retry', 'btn--stand');
     return [altar, button(retry, restartRun, true)];
   };
 
   if (!won) {
+    // 敗北時: 戦闘 BGM を即座に止めて敗北ジングルを聴かせる
+    audio.setBgm('none');
     box.append(shardsLine(endRun(false)), ...endButtons('もう一度'));
     return box;
   }
+
+  // 勝利時: 戦闘 BGM を即座に止め、勝利ジングルの余韻のあとに現在の階層の探索 BGM（ラスボス撃破時はエンディング BGM）を流す
+  const finalVictory = tile.kind === 'boss' && isFinalStage(run);
+  audio.setBgm(finalVictory ? 'ending' : bgmForStage(run.stage), 2.4);
 
   run.hp = machine.ctx.player.hp;
   run.maxHp = machine.ctx.player.maxHp; // 凱旋の杯で増えた最大 HP を引き継ぐ
@@ -286,6 +296,7 @@ function buildResult(machine: BattleMachine, tile: TileDef, won: boolean): HTMLE
     // 最後の階層のボスを倒した: 魂片を記録して、エンディングへ。エンディングが終わると、タイトルに戻る
     const gained = endRun(true);
     box.append(el('p', 'result__line', `「${run.map.name}」を踏破した！`), button('エンディングへ', () => {
+      leaveBattle();
       setStatus(false);
       showEnding(root, { gained, shards: meta.shards, enemiesDefeated: run.stats.enemiesDefeated, relics: run.relics.length, bare: bareRun || cheated }, showTitle);
     }, true));
@@ -302,6 +313,7 @@ function offerStageRelic(): void {
     const before = run.hp;
     advanceStage(run);
     shopOffers.clear();
+    audio.setBgm(bgmForStage(run.stage));
     const msg = `第${run.stage}階層「${run.map.name}」へ。最大 HP +${STAGE_CLEAR_MAX_HP}、HP が ${run.hp - before} 回復した。`;
     showSwapScreen(root, run, {
       title: `第${run.stage}階層の準備`,
@@ -312,6 +324,7 @@ function offerStageRelic(): void {
     });
   };
   if (relics.length === 0) return enter();
+  audio.setBgm('event');
   showChoiceScreen(root, {
     heading: '階層を踏破した',
     sub: '遺物をひとつ選べ',
@@ -370,6 +383,7 @@ function offerSkillReward(enemyId?: string, offered?: string[]): void {
 /** タイトル画面。音声はユーザー操作後でないと鳴らせないため、ここでタップさせる。 */
 function showTitle(): void {
   setStatus(false);
+  audio.setBgm('field');
   const screen = el('main', 'title');
   const art = el('div', 'enemy-stage title-stage');
   const back = backdropHtml(1);
