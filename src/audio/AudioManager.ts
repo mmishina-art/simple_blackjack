@@ -84,21 +84,20 @@ const STAGE3_ARP: number[][] = [
 ];
 const STAGE3_CHIME = [659.25, 587.33, 523.25, 493.88];
 
-// ---- 5. イベントマス BGM ('event' / C-1): 88 BPM、宿屋・店・祠・宝箱（亡者のハープと孤独な鈴の調べ） ----
-const EVENT_STEP = 60 / 88 / 2;
-const EVENT_BASS = [73.42, 65.41, 58.27, 55.0]; // Dm - C - Bb - A
-const EVENT_PAD: number[][] = [
-  [146.83, 220.0, 293.66, 349.23],
-  [130.81, 196.0, 261.63, 329.63],
-  [116.54, 174.61, 233.08, 293.66],
-  [110.0, 164.81, 220.0, 277.18],
+// ---- 5. イベントマス BGM ('event' / B-1): 92 BPM、宿屋・店・祠・宝箱（古典バロックの半音階下降「嘆きのバス」とチェンバロ風分散和音） ----
+const EVENT_STEP = 60 / 92 / 2;
+const EVENT_BASS = [110.0, 103.83, 98.0, 92.5, 87.31, 73.42, 82.41, 82.41]; // A - G# - G - F# - F - D - E - E
+const EVENT_ARP: number[][] = [
+  [220.0, 261.63, 329.63, 440.0],   // Am
+  [207.65, 261.63, 329.63, 415.3],  // E/G#
+  [196.0, 261.63, 329.63, 392.0],   // Am/G
+  [185.0, 261.63, 329.63, 369.99],  // F#dim7
+  [174.61, 220.0, 261.63, 349.23],  // Fmaj7
+  [146.83, 174.61, 220.0, 293.66],  // Dm
+  [164.81, 207.65, 246.94, 329.63], // E
+  [164.81, 207.65, 293.66, 415.3],  // E7
 ];
-const EVENT_MEL: number[][] = [
-  [587.33, 0, 0, 523.25, 440.0, 0, 0, 0],
-  [523.25, 0, 0, 466.16, 392.0, 0, 0, 0],
-  [466.16, 0, 0, 440.0, 349.23, 0, 392.0, 0],
-  [415.3, 0, 0, 440.0, 277.18, 0, 0, 0],
-];
+const EVENT_MEL = [659.25, 622.25, 587.33, 554.37, 523.25, 440.0, 493.88, 415.3];
 
 // ---- 6. 戦闘 BGM ('battle'、および 'midboss'・'boss' の仮置き / 元①-3): 110 BPM、E ハーモニックマイナー ----
 // 地を揺るがす疾走重低音オスティナート、4声の大聖堂パイプオルガン、深淵の大鐘と連続バスドラム
@@ -159,10 +158,10 @@ const ENDING_MELODY: number[][] = [
 /** トラックごとの音量基準値。 */
 const BGM_VOLUME: Record<BgmTrack, number> = {
   field: 0.26,
-  stage1: 0.34,
-  stage2: 0.35,
-  stage3: 0.36,
-  event: 0.32,
+  stage1: 0.31,
+  stage2: 0.32,
+  stage3: 0.33,
+  event: 0.35,
   battle: 0.40,
   midboss: 0.42,
   boss: 0.44,
@@ -173,10 +172,10 @@ const BGM_VOLUME: Record<BgmTrack, number> = {
 /** トラックごとのローパス周波数（地下の深みと重厚な空気感を出し、耳障りな高周波をカット）。 */
 const BGM_CUTOFF: Record<BgmTrack, number> = {
   field: 1100,
-  stage1: 1550,
-  stage2: 1650,
-  stage3: 1750,
-  event: 1550,
+  stage1: 1360,
+  stage2: 1420,
+  stage3: 1480,
+  event: 1700,
   battle: 1850,
   midboss: 1950,
   boss: 2050,
@@ -543,77 +542,77 @@ export class AudioManager {
     if (pos % 2 === 1) this.noise(t, 0.03, 7000, 0.06, this.bgmGain);
   }
 
-  /** ステージ 1 BGM ('stage1' / A-1): 94 BPM、D ハーモニックマイナー。探索型 2 オクターブアルペジオ＋冷たい鈴。 */
+  /** ステージ 1 BGM ('stage1' / A-1 中間調整): 94 BPM、D ハーモニックマイナー。探索型 2 オクターブアルペジオ＋角を丸めた鈴。 */
   private stepStage1(t: number): void {
     const bar = Math.floor(this.step / 8) % 4;
     const pos = this.step % 8;
     const root = STAGE1_BASS[bar];
     if (pos % 4 === 0) {
-      this.tone(root, t, STAGE1_STEP * 3.8, 'sawtooth', 0.32, undefined, this.bgmGain);
-      this.tone(root / 2, t, STAGE1_STEP * 3.8, 'sine', 0.52, undefined, this.bgmGain);
+      this.tone(root, t, STAGE1_STEP * 3.8, 'sawtooth', 0.30, undefined, this.bgmGain);
+      this.tone(root / 2, t, STAGE1_STEP * 3.8, 'sine', 0.51, undefined, this.bgmGain);
     }
-    if (pos === 0) this.chimeBgm(STAGE1_CHIME[bar], t, STAGE1_STEP * 3.5, 0.16);
+    if (pos === 0) this.midChimeBgm(STAGE1_CHIME[bar], t, STAGE1_STEP * 3.8, 0.10);
     const arp = STAGE1_ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1);
-    this.tone(arp, t, STAGE1_STEP * 0.95, 'triangle', 0.25, undefined, this.bgmGain);
+    this.tone(arp, t, STAGE1_STEP * 0.92, 'triangle', 0.215, undefined, this.bgmGain);
     if (pos % 2 === 1) this.noise(t, 0.03, 6500, 0.06, this.bgmGain);
   }
 
-  /** ステージ 2 BGM ('stage2' / A-2): 104 BPM、C ハーモニックマイナー。減七アルペジオ＋弔いの鐘。 */
+  /** ステージ 2 BGM ('stage2' / A-2 中間調整): 104 BPM、C ハーモニックマイナー。減七アルペジオ＋刺さりを抑えた弔いの鐘。 */
   private stepStage2(t: number): void {
     const bar = Math.floor(this.step / 8) % 4;
     const pos = this.step % 8;
     const root = STAGE2_BASS[bar];
     if (pos % 4 === 0) {
-      this.tone(root, t, STAGE2_STEP * 3.8, 'sawtooth', 0.34, undefined, this.bgmGain);
-      this.tone(root * 1.5, t, STAGE2_STEP * 3.6, 'triangle', 0.2, undefined, this.bgmGain);
-      this.tone(root / 2, t, STAGE2_STEP * 3.8, 'sine', 0.55, undefined, this.bgmGain);
+      this.tone(root, t, STAGE2_STEP * 3.8, 'sawtooth', 0.315, undefined, this.bgmGain);
+      this.tone(root * 1.5, t, STAGE2_STEP * 3.6, 'triangle', 0.17, undefined, this.bgmGain);
+      this.tone(root / 2, t, STAGE2_STEP * 3.8, 'sine', 0.535, undefined, this.bgmGain);
     }
     if (pos === 0 || pos === 4) {
-      this.bellBgm(STAGE2_BELL[bar] * (pos === 4 ? 1.5 : 1), t, STAGE2_STEP * 3.5, 0.2);
+      this.midBellBgm(STAGE2_BELL[bar] * (pos === 4 ? 1.5 : 1), t, STAGE2_STEP * 3.8, pos === 4 ? 0.08 : 0.11);
     }
     const arp = STAGE2_ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1);
-    this.tone(arp, t, STAGE2_STEP * 0.95, 'triangle', 0.26, undefined, this.bgmGain);
-    this.tone(arp * 0.5, t, STAGE2_STEP * 0.9, 'sawtooth', 0.12, undefined, this.bgmGain);
-    if (pos % 2 === 1) this.noise(t, 0.03, 6000, 0.07, this.bgmGain);
+    this.tone(arp, t, STAGE2_STEP * 0.92, 'triangle', 0.22, undefined, this.bgmGain);
+    this.tone(arp * 0.5, t, STAGE2_STEP * 0.9, 'sawtooth', 0.105, undefined, this.bgmGain);
+    if (pos % 2 === 1) this.noise(t, 0.03, 6000, 0.065, this.bgmGain);
   }
 
-  /** ステージ 3 BGM ('stage3' / A-3): 116 BPM、E ハーモニックマイナー。倍速 2 層アルペジオ＋聖堂大鐘。 */
+  /** ステージ 3 BGM ('stage3' / A-3 中間調整): 116 BPM、E ハーモニックマイナー。倍速 2 層アルペジオ＋角を丸めた聖堂大鐘。 */
   private stepStage3(t: number): void {
     const bar = Math.floor(this.step / 8) % 4;
     const pos = this.step % 8;
     const root = STAGE3_BASS[bar];
     if (pos % 4 === 0) {
-      this.tone(root, t, STAGE3_STEP * 3.8, 'sawtooth', 0.36, undefined, this.bgmGain);
-      this.tone(root / 2, t, STAGE3_STEP * 3.8, 'sine', 0.58, undefined, this.bgmGain);
+      this.tone(root, t, STAGE3_STEP * 3.8, 'sawtooth', 0.33, undefined, this.bgmGain);
+      this.tone(root / 2, t, STAGE3_STEP * 3.8, 'sine', 0.56, undefined, this.bgmGain);
       for (const f of STAGE3_ARP[bar]) {
-        this.tone(f, t, STAGE3_STEP * 3.7, 'triangle', 0.14, undefined, this.bgmGain);
+        this.tone(f, t, STAGE3_STEP * 3.7, 'triangle', 0.125, undefined, this.bgmGain);
       }
     }
-    if (pos === 0) this.bellBgm(root * 2, t, STAGE3_STEP * 5.0, 0.26);
-    if (pos === 4) this.chimeBgm(STAGE3_CHIME[bar], t, STAGE3_STEP * 3.8, 0.22);
+    if (pos === 0) this.midBellBgm(root * 2, t, STAGE3_STEP * 5.0, 0.14);
+    if (pos === 4) this.midChimeBgm(STAGE3_CHIME[bar], t, STAGE3_STEP * 3.8, 0.11);
     const arp = STAGE3_ARP[bar][pos % 4] * (pos >= 4 ? 2 : 1);
-    this.tone(arp, t, STAGE3_STEP * 0.9, 'triangle', 0.26, undefined, this.bgmGain);
-    // 16分音符の残響エコー（アルペジオが2層で激しく渦巻く）
-    this.tone(arp * 1.5, t + STAGE3_STEP * 0.5, STAGE3_STEP * 0.45, 'triangle', 0.16, undefined, this.bgmGain);
-    if (pos % 2 === 1) this.noise(t, 0.03, 6500, 0.08, this.bgmGain);
+    this.tone(arp, t, STAGE3_STEP * 0.9, 'triangle', 0.22, undefined, this.bgmGain);
+    // 16分音符の残響エコー（アルペジオが2層で渦巻く）
+    this.tone(arp * 1.5, t + STAGE3_STEP * 0.5, STAGE3_STEP * 0.45, 'triangle', 0.13, undefined, this.bgmGain);
+    if (pos % 2 === 1) this.noise(t, 0.03, 6500, 0.07, this.bgmGain);
   }
 
-  /** イベントマス BGM ('event' / C-1): 88 BPM、宿屋・店・祠・宝箱で流れる亡者のハープと孤独な鈴の調べ。 */
+  /** イベントマス BGM ('event' / B-1): 92 BPM、宿屋・店・祠・宝箱で流れる古典バロックの半音階下降「嘆きのバス」とチェンバロ風分散和音。 */
   private stepEvent(t: number): void {
-    const bar = Math.floor(this.step / 8) % 4;
+    const bar8 = Math.floor(this.step / 8) % 8;
     const pos = this.step % 8;
-    const root = EVENT_BASS[bar];
-    if (pos === 0) {
-      this.tone(root, t, EVENT_STEP * 7.8, 'sine', 0.52, undefined, this.bgmGain);
-      this.tone(root, t, EVENT_STEP * 7.6, 'sawtooth', 0.24, undefined, this.bgmGain);
-      for (const f of EVENT_PAD[bar]) {
-        this.tone(f, t, EVENT_STEP * 7.5, 'triangle', 0.14, undefined, this.bgmGain);
-      }
+    const root = EVENT_BASS[bar8];
+    if (pos % 4 === 0) {
+      this.tone(root, t, EVENT_STEP * 3.8, 'sawtooth', 0.3, undefined, this.bgmGain);
+      this.tone(root / 2, t, EVENT_STEP * 3.8, 'sine', 0.48, undefined, this.bgmGain);
     }
-    const arp = EVENT_PAD[bar][pos % 4];
-    this.tone(arp, t, EVENT_STEP * 1.6, 'triangle', 0.2, undefined, this.bgmGain);
-    const mel = EVENT_MEL[bar][pos];
-    if (mel > 0) this.chimeBgm(mel, t, EVENT_STEP * 3.5, 0.24);
+    if (pos === 0) {
+      this.chimeBgm(EVENT_MEL[bar8], t, EVENT_STEP * 6.5, 0.2);
+    }
+    const arpIdx = [0, 1, 2, 3, 2, 1, 2, 0][pos];
+    const arp = EVENT_ARP[bar8][arpIdx];
+    this.tone(arp, t, EVENT_STEP * 1.2, 'triangle', 0.24, undefined, this.bgmGain);
+    this.tone(arp * 2, t, EVENT_STEP * 0.4, 'sine', 0.1, undefined, this.bgmGain);
   }
 
   /** 戦闘 BGM ('battle'、および中ボス・ラスボス仮置き / 元①-3): 110 BPM。暗黒疾走オスティナート、大聖堂オルガン、深淵の大鐘。 */
@@ -688,6 +687,18 @@ export class AudioManager {
     this.tone(freq * 2, start, dur * 0.6, 'sine', vol * 0.3, undefined, this.bgmGain);
   }
 
+  /** ステージ探索 BGM 用の角を丸めた鐘（5.4倍の鋭い金属倍音を省き、2.76倍倍音を控えめ 0.14・アタック 0.026s に抑える）。 */
+  private midBellBgm(freq: number, start: number, dur: number, vol: number): void {
+    this.tone(freq, start, dur, 'sine', vol, undefined, this.bgmGain, 0.026);
+    this.tone(freq * 2.76, start, dur * 0.5, 'sine', vol * 0.14, undefined, this.bgmGain, 0.026);
+  }
+
+  /** ステージ探索 BGM 用の角を丸めた鈴（2倍倍音を 0.14・アタック 0.026s に抑える）。 */
+  private midChimeBgm(freq: number, start: number, dur: number, vol: number): void {
+    this.tone(freq, start, dur, 'sine', vol, undefined, this.bgmGain, 0.026);
+    this.tone(freq * 2, start, dur * 0.5, 'sine', vol * 0.14, undefined, this.bgmGain, 0.026);
+  }
+
   /** 金属の鈴: 基音に、整数倍でない倍音（2.76 倍・5.4 倍）を短く重ねる。 */
   private bell(freq: number, start: number, dur: number, vol: number): void {
     this.tone(freq, start, dur, 'sine', vol);
@@ -703,7 +714,7 @@ export class AudioManager {
 
   private tone(
     freq: number, start: number, dur: number, type: OscillatorType, vol: number,
-    slideTo?: number, dest?: AudioNode,
+    slideTo?: number, dest?: AudioNode, attack = 0.01,
   ): void {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
@@ -712,7 +723,7 @@ export class AudioManager {
     osc.frequency.setValueAtTime(freq, start);
     if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, start + dur);
     g.gain.setValueAtTime(0.0001, start);
-    g.gain.linearRampToValueAtTime(vol, start + 0.01);
+    g.gain.linearRampToValueAtTime(vol, start + attack);
     g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
     osc.connect(g).connect(dest ?? this.sfxGain);
     osc.start(start);
