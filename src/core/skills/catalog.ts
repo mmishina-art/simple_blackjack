@@ -390,7 +390,7 @@ atk('mimic_bite', '噛みつき', 1, 0, '噛');
 defineSkill({ id: 'mimic_lid', name: '鉄蓋を閉じる', icon: '蓋', effects: [{ type: 'block', amount: 7 }] });
 atk('mimic_chomp', '金貨吐き', 1, 2, '貨');
 defineSkill({ id: 'mimic_devour', name: '丸呑み', icon: '呑', effects: [{ type: 'attack', mult: 3, add: 2 }, { type: 'heal', amount: 3 }] });
-atk('mimic_jackpot', '黄金の暴食', 1, 3, '黄金');
+atk('mimic_jackpot', '黄金の暴食', 1, 3, '富');
 
 // 彷徨う賭博師（手札と状況を見てヒット・スタンドを切り替える知性派の敵）
 atk('gambler_throw', 'カード投げ', 1, 0, '札');

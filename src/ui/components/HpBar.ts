@@ -10,6 +10,8 @@ export class HpBar {
   private left = document.createElement('span');
   private atkChip = document.createElement('span');
 
+  private right = document.createElement('span');
+
   constructor(variant: 'player' | 'enemy') {
     this.el.className = `hpbar hpbar--${variant}`;
     const track = document.createElement('div');
@@ -26,16 +28,30 @@ export class HpBar {
     this.blockChip.hidden = true;
     this.atkChip.className = 'atk-chip';
     this.atkChip.title = '敵のレベル（LV）= 攻撃するときの平均ダメージ。LV 5 なら、1回の攻撃で約 5 ダメージ';
-    const right = document.createElement('span');
-    right.className = 'hpbar__right';
-    right.append(this.blockChip, this.atkChip, this.label);
-    row.append(this.left, right);
+    this.right.className = 'hpbar__right';
+    if (variant === 'enemy') {
+      this.left.append(this.atkChip);
+      this.right.append(this.blockChip, this.label);
+    } else {
+      this.right.append(this.blockChip, this.atkChip, this.label);
+    }
+    row.append(this.left, this.right);
     this.el.append(row, track);
+  }
+
+  /** 名前の前に要素（ラウンド表示等）を添える。 */
+  prepend(el: HTMLElement): void {
+    this.left.prepend(el);
   }
 
   /** 名前の横に要素（レリック等）を添える。 */
   attach(el: HTMLElement): void {
     this.left.append(el);
+  }
+
+  /** 右端に要素（操作ボタン等）を添える。 */
+  attachRight(el: HTMLElement): void {
+    this.right.append(el);
   }
 
   update(name: string, hp: number, maxHp: number, block = 0, level?: number): void {

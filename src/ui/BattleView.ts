@@ -88,9 +88,10 @@ export class BattleView {
     const topRight = document.createElement('span');
     topRight.className = 'top-row__right';
     topRight.append(historyBtn, infoBtn, this.muteBtn);
-    const topRow = section('top-row', this.roundEl, topRight);
+    this.enemyHp.prepend(this.roundEl);
+    this.enemyHp.attachRight(topRight);
     this.enemyView.el.append(this.buildTraits()); // 敵の舞台の上に重ねる（高さを使わない）
-    const enemyArea = section('enemy-area', topRow, this.enemyHp.el, this.enemySlotStrip.el, this.enemyView.el, this.enemyHand.el);
+    const enemyArea = section('enemy-area', this.enemyHp.el, this.enemyView.el, this.enemyHand.el);
     // 合計値（勝負の結果）を上に、発動するスキルとダメージを手札の右側に出す
     this.enemyHand.side.append(this.enemySlotStrip.caption);
     this.playerHand.side.append(this.slotStrip.caption);

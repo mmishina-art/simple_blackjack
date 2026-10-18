@@ -137,9 +137,9 @@ section { min-width: 0; }
 .round { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.3em; color: var(--gold); min-height: 1em; }
 
 /* HP */
-.hpbar__row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
-.hpbar__name { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; }
-.hpbar__label { font-family: var(--font-display); font-size: 13px; color: var(--bone-dim); font-variant-numeric: tabular-nums; }
+.hpbar__row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.hpbar__name { font-size: 15px; font-weight: 700; letter-spacing: 0.08em; line-height: 1.2; }
+.hpbar__label { font-family: var(--font-display); font-size: 13px; color: var(--bone-dim); font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.2; }
 .hpbar__track {
   height: 12px; background: var(--ink); border: 1px solid var(--gold-dim); border-radius: 2px;
   padding: 1px; overflow: hidden;
@@ -150,6 +150,89 @@ section { min-width: 0; }
 }
 .hpbar--player .hpbar__fill { background: linear-gradient(90deg, #2d5a3e, var(--moss)); }
 .hpbar--enemy .hpbar__fill { background: linear-gradient(90deg, var(--blood), var(--blood-hi)); }
+
+/* ---- 敵のHPバー（最上段ヘッダーと合体） ---- */
+.hpbar--enemy .hpbar__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.hpbar--enemy .hpbar__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.hpbar--enemy .round {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  background: rgba(176, 141, 62, 0.16);
+  border: 1px solid var(--gold-dim);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  flex: none;
+  line-height: 1.2;
+}
+.hpbar--enemy .round:empty { display: none; }
+.hpbar--enemy .hpbar__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.hpbar--enemy .atk-chip {
+  height: 18px;
+  padding: 0 6px;
+  font-size: 10px;
+  flex: none;
+}
+.hpbar--enemy .hpbar__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.hpbar--enemy .hpbar__label {
+  font-size: 12px;
+}
+.hpbar--enemy .top-row__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.hpbar--enemy .info-btn {
+  min-height: 24px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border-radius: 12px;
+}
+.hpbar--enemy .mute {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 380px) {
+  .hpbar--enemy .hpbar__row { gap: 4px; }
+  .hpbar--enemy .hpbar__left { gap: 4px; }
+  .hpbar--enemy .hpbar__right { gap: 4px; }
+  .hpbar--enemy .info-btn { padding: 0 5px; font-size: 10px; }
+}
 
 /* Hand */
 .hand { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 84px; }
@@ -269,13 +352,13 @@ section { min-width: 0; }
   box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.9);
 }
 .enemy-trait {
-  position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; gap: 8px; min-width: 0; padding: 2px 6px;
-  font-size: 12px; color: var(--bone-dim); background: rgba(8, 6, 4, 0.72); border: 1px solid var(--gold-dim); border-radius: 6px;
+  position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 8px;
+  font-size: 12px; line-height: 1.2; color: var(--bone-dim); background: rgba(8, 6, 4, 0.78); border: 1px solid var(--gold-dim); border-radius: 6px;
 }
 .enemy-trait[hidden] { display: none; }
 .enemy-trait__item { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.enemy-trait__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.enemy-trait .medal--sm { width: 20px; height: 20px; font-size: 11px; }
+.enemy-trait__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.enemy-trait .medal--sm { width: 20px; height: 20px; font-size: 11px; flex: none; }
 /* 短い画面（敵の舞台が小さい）では、特性の名前だけを左上に小さく出す（絵を隠さない。説明は長押し・「敵の技」で） */
 @media (max-height: 760px) {
   .enemy-trait { right: auto; top: 3px; left: 4px; padding: 1px 6px 1px 3px; }
@@ -458,19 +541,22 @@ section { min-width: 0; }
 .result .btn { margin-top: 10px; min-width: 220px; }
 
 /* ---- Slots / Block / Surrender ---- */
-.hpbar__right { display: inline-flex; align-items: baseline; gap: 10px; }
+.hpbar__right { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .block-chip {
   font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
-  padding: 1px 8px 1px 5px; color: #cfe3ef; background: linear-gradient(180deg, #34505f, #1b2d37);
-  border: 1px solid #6f8d9d; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;
+  height: 20px; padding: 0 8px 0 4px; box-sizing: border-box;
+  color: #cfe3ef; background: linear-gradient(180deg, #34505f, #1b2d37);
+  border: 1px solid #6f8d9d; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  line-height: 1; flex-shrink: 0;
 }
-.block-chip__icon { width: 18px; height: 18px; flex: none; color: #8cc4f5; filter: drop-shadow(0 0 3px rgba(140, 196, 245, 0.7)); }
+.block-chip span { line-height: 1; }
+.block-chip__icon { width: 14px; height: 14px; flex: none; color: #8cc4f5; filter: drop-shadow(0 0 3px rgba(140, 196, 245, 0.7)); display: block; }
 .block-chip[hidden] { display: none; }
 
 .slots { display: flex; flex-direction: column; gap: 4px; }
 .slots__row { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 2px; }
 .slot {
-  display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 3px 0 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; padding: 3px 0 3px;
   border: 1px solid #2a2118; border-radius: 2px; background: #0d0a07; color: #4f4536;
   font-family: var(--font-display); font-size: 10px; line-height: 1;
 }
@@ -494,7 +580,11 @@ section { min-width: 0; }
 @media (prefers-reduced-motion: reduce) { .slot, .slot::after { transition: none; } }
 
 /* 各マスの効果: 攻撃=ダメージ数 / 回復=+回復数 / Block=B+数（色だけでなく、先頭の文字でも区別する） */
-.slot__val { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 3px; min-height: 10px; font-family: var(--font-body); font-size: 10px; font-weight: 800; line-height: 1; }
+.slot__val {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1px;
+  min-height: 20px; font-family: var(--font-body); font-size: 9.5px; font-weight: 800; line-height: 1;
+}
+.slot__badge { white-space: nowrap; }
 .slot__badge--attack { color: #ffa27e; }
 .slot__badge--heal { color: #8ee0a0; }
 .slot__badge--block { color: #8cc4f5; }
@@ -510,8 +600,8 @@ section { min-width: 0; }
   .card { width: 40px; height: 58px; }
 }
 
-.hpbar__left { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.hpbar__left .status-strip__relics { margin-left: 0; }
+.hpbar__left { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+.hpbar__left .status-strip__relics { margin-left: 0; flex-shrink: 1; min-width: 0; overflow: hidden; }
 .enemy-stage { height: 128px; }
 .enemy-sprite { height: 120px; width: 160px; }
 .hand { min-height: 80px; }
@@ -597,7 +687,9 @@ section { min-width: 0; }
 /* ---- POW（基本パワー） ---- */
 .atk-chip {
   font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
-  padding: 1px 8px; color: #f0d9a0; background: linear-gradient(180deg, #5a3a14, #2a1a08);
+  height: 20px; padding: 0 8px; box-sizing: border-box; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  color: #f0d9a0; background: linear-gradient(180deg, #5a3a14, #2a1a08);
   border: 1px solid var(--gold); border-radius: 10px;
 }
 .atk-chip[hidden] { display: none; }
@@ -665,12 +757,6 @@ section { min-width: 0; }
 .slot--active.rar-rare, .slot--active.rar-legend {
   color: #1a1206; background: linear-gradient(180deg, #d1ae5a, var(--gold)); border: 1px solid #e6c878; box-shadow: 0 0 10px rgba(176, 141, 62, 0.65);
 }
-.enemy-area .slot.rar-legend { box-shadow: none; }
-
-
-/* 敵のスロット表を追加した分、敵ステージを少し低くする */
-.enemy-stage { height: 100px; }
-.enemy-sprite { height: 96px; width: 128px; }
 .enemy-area .slots__caption { min-height: 1.4em; }
 .title .enemy-stage { height: 200px; }
 .title .enemy-sprite { height: 180px; width: 240px; }
@@ -713,9 +799,10 @@ section { min-width: 0; }
   border: 1px solid #e6c878;
   border-radius: 2px;
 }
-.slot--special::before { /* 上辺の飾り（21 の会心の一撃） */
-  content: ''; position: absolute; top: -5px; left: 50%; width: 7px; height: 7px;
+.slot--special::before { /* 上辺の飾り（21 の会心の一撃）: キー数字（21）に重ならないよう枠の上に配置 */
+  content: ''; position: absolute; top: -4px; left: 50%; width: 5px; height: 5px;
   background: #e6c878; border: 1px solid #14100a; transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
 }
 .slot--special .slot__key { color: #d9b862; }
 .slot--special .slot__icon { text-shadow: 0 0 8px rgba(230, 200, 120, 0.5); }
@@ -919,8 +1006,8 @@ section { min-width: 0; }
 /* ---- 戦闘画面: ログ欄をなくした分の高さは、敵の舞台に回す ----
    敵の舞台は、残りの高さまで伸びる（最低の高さは、このあとの @media で短い画面ごとに決める）。敵の絵は舞台の高さに合わせて拡大縮小する。 */
 /* contain: size … 中の絵の大きさは、舞台の最低の高さに数えない（絵は舞台の高さに合わせて決まるため、数えると循環して、短い画面で下のボタンが押し出される） */
-.battle .enemy-stage { flex: 1 1 auto; height: auto; min-height: 120px; contain: size; }
-.battle .enemy-sprite { height: 92%; max-height: 170px; width: auto; aspect-ratio: 4 / 3; }
+.battle .enemy-stage { flex: 1 1 auto; height: auto; min-height: 150px; contain: size; }
+.battle .enemy-sprite { height: 92%; max-height: 200px; width: auto; aspect-ratio: 4 / 3; }
 
 /* ---- いま発動するスキルの大きな表示（スロット表の下）: アイコン・名前・効果の数値 ---- */
 .battle .slots__caption { min-height: 46px; display: flex; align-items: center; }
@@ -953,7 +1040,7 @@ section { min-width: 0; }
 @media (max-height: 850px) {
   .battle { gap: 6px; padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
   .battle .enemy-area, .battle .player-area { padding: 10px 12px; gap: 5px; }
-  .battle .enemy-stage { min-height: 84px; }
+  .battle .enemy-stage { min-height: 140px; }
   .battle .hand { min-height: 64px; }
   .battle .card { width: 44px; height: 64px; }
   .battle .slots__caption { min-height: 40px; }
@@ -976,7 +1063,7 @@ section { min-width: 0; }
   .battle .callout__icon { width: 26px; height: 26px; font-size: 13px; }
   .battle .callout__name { font-size: 15px; }
   .battle .callout__fx b { font-size: 17px; }
-  .battle .enemy-stage { min-height: 76px; }
+  .battle .enemy-stage { min-height: 120px; }
   .battle .hand { min-height: 58px; }
   .battle .card { width: 40px; height: 58px; }
   .battle .actions { gap: 8px; }
