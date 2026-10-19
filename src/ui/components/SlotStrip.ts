@@ -1,5 +1,4 @@
 import type { Entity } from '../../core/entities/Entity';
-import { bustPenaltyText } from '../../core/rules/bust';
 import type { RuleSet } from '../../core/rules/RuleSet';
 import { badgeText, type PreviewPart } from '../../core/skills/preview';
 import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, SLOT_MAX, slotKeyOf, slotLabel, type SlotKey } from '../../core/skills/Skill';
@@ -90,17 +89,7 @@ export class SlotStrip {
     };
     if (size === 0) text('');
     else if (totalHidden) text(hiddenNote);
-    else if (bust) {
-      this.caption.className = 'slots__caption slots__caption--bust';
-      const title = document.createElement('strong');
-      title.className = 'slots__bust-title';
-      title.textContent = '⚠️ バースト！';
-      const sub = document.createElement('span');
-      sub.className = 'slots__bust-sub';
-      sub.textContent = bustPenaltyText(rules, entity);
-      this.caption.replaceChildren(title, sub);
-      this.calloutKey = '';
-    }
+    else if (bust) text('');
     else if (callout) this.renderCallout(callout);
     else {
       const id = entity.slots[slotKeyOf(total)];

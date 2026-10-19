@@ -294,8 +294,7 @@ export class BattleView {
     this.slotStrip.update(ctx.player, ctx.rules, calloutOf(ctx, ctx.player, ctx.enemy), false, previewAllSlots(ctx, ctx.player, ctx.enemy, SLOT_KEYS));
     const hidden = ctx.enemy.hand.hasHidden;
     const omen = hidden && ctx.bustOrDie;
-    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : calloutOf(ctx, ctx.enemy, ctx.player), hidden, previewAllSlots(ctx, ctx.enemy, ctx.player, SLOT_KEYS),
-      omen ? 'BUST or DIE: 21 なら攻撃 2 倍、バーストなら行動できない' : undefined);
+    this.enemySlotStrip.update(ctx.enemy, ctx.rules, hidden ? undefined : calloutOf(ctx, ctx.enemy, ctx.player), hidden, previewAllSlots(ctx, ctx.enemy, ctx.player, SLOT_KEYS));
     if (this.omen.hidden === omen) this.omen.hidden = !omen;
     this.roundEl.textContent =
       ctx.round > 0 ? `ROUND ${ctx.round}` : '';
