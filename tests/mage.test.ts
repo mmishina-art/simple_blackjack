@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { BattleMachine } from '../src/core/battle/BattleMachine';
+import { makeCard } from '../src/core/cards/Card';
 import { ENEMY_LINEUP, getEnemy } from '../src/core/entities/enemies/catalog';
 import {
   ARCH_MAGIC_ID, armorPoolFor, DEFAULT_MAGE_ARMOR_ID, DEFAULT_MAGE_SLOTS, ITEM_POOL,
@@ -184,6 +185,19 @@ describe('防御と反射魔法による攻撃の反射', () => {
     expect(m.ctx.player.hp).toBe(30 - 5);
     expect(m.ctx.enemy.hp).toBe(knight.maxHp - 7);
     expect(m.logs.some((l) => l.includes('反射！'))).toBe(true);
+  });
+
+  it('敵の 21（攻撃 2 倍）を防御しても、跳ね返すのは 2 倍する前の分だけ（予告のとき、防御が必ず得にはならない）', async () => {
+    // 墓守の騎士 21（審判の剣: 7 → 2 倍で 14）。魔導のローブ（上限 5）で防御すると、被ダメは 5、反射は 2 倍する前の 7 から上限 5 を引いた 2
+    const knight = getEnemy('knight');
+    const m = new BattleMachine({ enemy: knight, playerCharacter: 'mage', playerMaxHp: 60, playerHp: 30, playerArmorCap: 5, playerArmorReflect: 1, pace: noWait });
+    m.ctx.enemy.hand.add(makeCard('K', 'S'));
+    m.ctx.enemy.hand.add(makeCard('A', 'S'));
+    m.ctx.player.hand.add(makeCard('9', 'S'));
+    m.ctx.player.hand.add(makeCard('6', 'S'));
+    await m.runFrom('Surrender', ['Deal']);
+    expect(m.ctx.player.hp).toBe(30 - 5);
+    expect(m.ctx.enemy.hp).toBe(knight.maxHp - 2);
   });
 
   it('反射スキル（反鏡の陣・神鏡の結界）は、ブロック獲得＋敵の攻撃力そのものを100%〜150%跳ね返す', async () => {

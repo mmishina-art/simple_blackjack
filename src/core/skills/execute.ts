@@ -68,6 +68,8 @@ export async function applyEffects(
       const mult21 = damageDealtMultiplier(user, user.hand.total(ctx.rules), ctx.rules);
       const mult = damageTakenMultiplier(def, ctx.rules);
       let damage = Math.max(0, Math.floor(calc.damage * weakMult * mult21 * mult));
+      // 反射の元にする値は、敵の 21 の 2 倍を掛ける前のダメージ（2 倍した分は跳ね返さない）
+      const damageBefore21 = Math.max(0, Math.floor(calc.damage * weakMult * mult));
 
       // 属性吸収: 受け手が同じ属性（または全属性吸収）を帯びているなら、ダメージを 0 にして HP を回復する
       const canAbsorb = !!elem && (def.alwaysAbsorbElements || def.absorbAllElements || def.activeElement === elem);
@@ -86,8 +88,9 @@ export async function applyEffects(
 
       // 防御中（防具の上限）: HP の減少が、残りの上限を超えないように軽減する（ブロックが先に吸収する）
       let reduced = 0;
+      let reach = Infinity;
       if (def.damageCap !== null) {
-        const reach = (effect.pierce ? 0 : def.block) + Math.max(0, def.damageCap - def.capTaken);
+        reach = (effect.pierce ? 0 : def.block) + Math.max(0, def.damageCap - def.capTaken);
         if (damage > reach) { reduced = damage - reach; damage = reach; }
       }
       // ブロックを無視する攻撃（会心の一撃）は、ブロックに吸われず、相手のブロックをすべて破壊する
@@ -110,9 +113,10 @@ export async function applyEffects(
         ctx.log(`${def.name}はブロックで防いだ（${[absorbed, burst].filter(Boolean).join('・')}）`);
       }
 
-      // 攻撃の反射（魔導士の防御: 上限を超えた軽減分を反射 / 反射スキル: 敵の攻撃力そのものを反射）
+      // 攻撃の反射（魔導士の防御: 上限を超えた軽減分を反射 / 反射スキル: 敵の攻撃力そのものを反射）。
+      // 敵の 21 の一撃は、2 倍する前の値で数える（予告のとき、防御が必ず得にならないように）
       if (def.reflectRatio > 0 && user !== def && !user.isDead) {
-        const baseReflect = def.damageCap !== null ? reduced : (absorbed + hpLoss);
+        const baseReflect = def.damageCap !== null ? Math.max(0, damageBefore21 - reach) : Math.min(absorbed + hpLoss, damageBefore21);
         const reflected = Math.floor(baseReflect * def.reflectRatio * def.reflectMultiplier);
         if (reflected > 0) {
           const refRes = applyDamage(user, reflected);
