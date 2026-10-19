@@ -44,11 +44,11 @@ export function fxChips(parts: readonly PreviewPart[], targetBlock: number): FxC
 
 /**
  * 現在の合計値で発動するスキルの表示内容（レリック・特性・相手のバーストを反映した予測）。
- * 手札が空・バーストのときは null（そのときは別の文言を出す）。空きスロットは「通常攻撃」と明記する。
+ * 手札が初手未満（配牌中）・バーストのときは null（そのときは別の文言を出すか非表示）。空きスロットは「通常攻撃」と明記する。
  */
 export function calloutOf(env: { bus: EventBus; rules: RuleSet }, user: Entity, target: Entity): Callout | null {
   const total = user.hand.total(env.rules);
-  if (user.hand.size === 0 || total > env.rules.bustLimit) return null;
+  if (user.hand.size < env.rules.initialCards || total > env.rules.bustLimit) return null;
   const p = previewSkill(env, user, target, total);
   if (!p.skill) return { name: '不発', icon: '×', rarity: 'common', parts: [], targetBlock: target.block, fizzled: true, item: false };
   const empty = !user.slots[slotKeyOf(total)];

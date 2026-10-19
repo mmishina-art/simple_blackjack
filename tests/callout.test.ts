@@ -45,10 +45,14 @@ describe('発動するスキルの大きな表示（calloutOf / fxChips）', () 
     expect(fxChips(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)!.parts, 0)[0].main).toBe('16');
   });
 
-  it('手札が空・バーストのときは出さない（別の文言になる）', () => {
+  it('手札が初手未満（0枚・1枚）・バーストのときは出さない（配牌中のチラつきを防ぐ）', () => {
     const m = machine();
     expect(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)).toBeNull();
-    give(m, 'player', ['K', 'Q', '5']);
+    give(m, 'player', ['10']); // 1枚（配牌中）
+    expect(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)).toBeNull();
+    give(m, 'player', ['6']);  // 2枚（初手確定）
+    expect(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)).not.toBeNull();
+    give(m, 'player', ['K', 'Q']); // 36 BUST
     expect(calloutOf(m.ctx, m.ctx.player, m.ctx.enemy)).toBeNull();
   });
 

@@ -1,7 +1,7 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { RuleSet } from '../../core/rules/RuleSet';
 import { badgeText, type PreviewPart } from '../../core/skills/preview';
-import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, SLOT_MAX, slotKeyOf, slotLabel, type SlotKey } from '../../core/skills/Skill';
+import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, SLOT_MAX, slotLabel, type SlotKey } from '../../core/skills/Skill';
 import { effectTone, slotLook } from '../../core/skills/look';
 import { rarityClass } from '../rarity';
 import { gaugeKeys, gaugeState } from '../slotGauge';
@@ -87,15 +87,11 @@ export class SlotStrip {
       this.caption.textContent = s;
       this.calloutKey = '';
     };
-    if (size === 0) text('');
+    if (size < rules.initialCards) text('');
     else if (totalHidden) text(hiddenNote);
     else if (bust) text('');
     else if (callout) this.renderCallout(callout);
-    else {
-      const id = entity.slots[slotKeyOf(total)];
-      const skill = getSkill(id ?? entity.fallbackSkill);
-      text(`発動: ${id ? skill.name : fallbackLabel(skill)}（${describeSkill(skill, entity.attackAt(total))}）`);
-    }
+    else text('');
     this.el.classList.toggle('slots--bust', bust);
   }
 
