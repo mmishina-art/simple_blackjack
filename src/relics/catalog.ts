@@ -1,3 +1,4 @@
+import { elementOfSuit } from '../core/cards/Card';
 import type { CharacterId } from '../core/skills/Skill';
 import type { Relic } from './Relic';
 
@@ -184,7 +185,10 @@ export const ManaCrystal: Relic = {
   description: '属性魔法の攻撃ダメージ +2',
   apply({ bus, player }) {
     bus.on('onDamageCalculated', (p) => {
-      if (p.attacker === player && p.skill?.element && p.damage > 0) return { ...p, damage: p.damage + 2 };
+      if (!p.attacker || p.attacker !== player || p.damage <= 0) return;
+      const suitElem = p.attacker.character === 'mage' ? elementOfSuit(p.attacker.hand.cards[p.attacker.hand.cards.length - 1]?.suit) : undefined;
+      const elem = p.skill?.element ?? suitElem ?? p.attacker.attackElement;
+      if (elem) return { ...p, damage: p.damage + 2 };
     });
   },
 };

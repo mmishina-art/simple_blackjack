@@ -2,6 +2,7 @@ import { audio } from '../audio/AudioManager';
 import type { BattleMachine } from '../core/battle/BattleMachine';
 import { enemyLevel } from '../core/entities/enemies/level';
 import { drawOdds, formatPercent } from '../core/cards/odds';
+import { elementOfSuit, SUIT_ELEMENT_LABEL, SUIT_SYMBOL } from '../core/cards/Card';
 import type { Entity } from '../core/entities/Entity';
 import { BattleLog } from './components/BattleLog';
 import { EnemyView, floatText, playFx } from './components/EnemyView';
@@ -30,6 +31,7 @@ export class BattleView {
   private playerHp = new HpBar('player');
   private enemyHand = new HandView();
   private playerHand = new HandView();
+  private playerElementBadge: HTMLElement | null = null;
   private slotStrip = new SlotStrip();
   private enemySlotStrip: SlotStrip;
   private log = new BattleLog();
@@ -88,6 +90,11 @@ export class BattleView {
     this.enemyView.el.append(this.buildTraits());
     const weaknessEl = this.buildWeakness();
     if (weaknessEl) this.enemyHand.attachHeaderRight(weaknessEl);
+    if (this.run.character === 'mage') {
+      this.playerElementBadge = document.createElement('div');
+      this.playerElementBadge.className = 'player-element';
+      this.playerHand.attachHeaderRight(this.playerElementBadge);
+    }
     // 敵スキルスロットは舞台内ではなく、敵舞台と敵手札の間に配置
     const enemyArea = section('enemy-area', this.enemyHp.el, this.enemyView.el, this.enemySlotStrip.el, this.enemyHand.el);
     // 合計値（勝負の結果）を上に、発動するスキルとダメージを手札の右側に出す
@@ -235,6 +242,35 @@ export class BattleView {
     return el;
   }
 
+  /** 魔導士のとき、手札の最後の札のマークによる属性（♥ 炎・♠ 氷・♣ 雷・♦ 無属性）と弱点判定を表示するバッジ。 */
+  private renderPlayerElement(): void {
+    if (!this.playerElementBadge) return;
+    const cards = this.machine.ctx.player.hand.cards;
+    if (cards.length === 0) {
+      this.playerElementBadge.hidden = true;
+      return;
+    }
+    this.playerElementBadge.hidden = false;
+    const lastCard = cards[cards.length - 1];
+    const suit = lastCard.suit;
+    const elem = elementOfSuit(suit);
+    const symbol = SUIT_SYMBOL[suit];
+    const label = SUIT_ELEMENT_LABEL[suit];
+    const isWeakness = !!elem && this.machine.ctx.enemy.weakness === elem;
+
+    this.playerElementBadge.className = `player-element player-element--${elem ?? 'none'}`;
+    this.playerElementBadge.title = elem
+      ? `${symbol} ${label}属性（攻撃・属性の障壁が${label}属性になる）${isWeakness ? '・敵の弱点！' : ''}`
+      : `${symbol} 無属性（弱点倍率なし・敵に吸収されない）`;
+    this.playerElementBadge.replaceChildren(document.createTextNode(`${symbol} ${label}`));
+    if (isWeakness) {
+      const weakSpan = document.createElement('span');
+      weakSpan.className = 'player-element__weak';
+      weakSpan.textContent = '弱点';
+      this.playerElementBadge.append(weakSpan);
+    }
+  }
+
   /** 敵の特殊能力（特性）を、敵画面の下に常に見える1行で出す（先頭アイコンなし、1行で収める）。 */
   private buildTraits(): HTMLElement {
     const line = document.createElement('div');
@@ -282,6 +318,7 @@ export class BattleView {
     this.playerHp.update(ctx.player.name, ctx.player.hp, ctx.player.maxHp, ctx.player.block);
     this.enemyHand.update(ctx.enemy, ctx.rules);
     this.playerHand.update(ctx.player, ctx.rules);
+    this.renderPlayerElement();
     this.slotStrip.update(ctx.player, ctx.rules, calloutOf(ctx, ctx.player, ctx.enemy), false, previewAllSlots(ctx, ctx.player, ctx.enemy, SLOT_KEYS));
     const hidden = ctx.enemy.hand.hasHidden;
     const omen = hidden && ctx.bustOrDie;

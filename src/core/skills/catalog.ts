@@ -1,5 +1,5 @@
 import type { Rarity } from '../rarity';
-import { assignRarity, defineSkill, getSkill, rarityOfSkill, slotsFromRanges, type CharacterId, type ElementType, type SkillDef, type SkillId, type SlotTable } from './Skill';
+import { assignRarity, defineSkill, getSkill, rarityOfSkill, slotsFromRanges, type CharacterId, type SkillDef, type SkillId, type SlotTable } from './Skill';
 
 /**
  * 基本パワー（POW）基準のスキル。攻撃: floor(POW × mult) + add / ブロック・回復: floor(POW × mult) + amount。
@@ -8,9 +8,6 @@ import { assignRarity, defineSkill, getSkill, rarityOfSkill, slotsFromRanges, ty
  */
 const atk = (id: string, name: string, mult: number, add = 0, icon = '攻'): SkillDef =>
   defineSkill({ id, name, icon, effects: [{ type: 'attack', mult, add }] });
-
-const magicAtk = (id: string, name: string, icon: string, element: ElementType, mult: number, add = 0, pierce = false): SkillDef =>
-  defineSkill({ id, name, icon, element, effects: [{ type: 'attack', mult, add, ...(pierce ? { pierce: true } : {}), element }] });
 
 // ---- プレイヤーのスキル（戦士） ----
 export const BASIC_ATTACK_ID: SkillId = atk('basic_attack', '通常攻撃', 1, 0, '攻').id;
@@ -56,44 +53,39 @@ defineSkill({
 });
 
 // ---- プレイヤーのスキル（魔導士） ----
-// コモン（3属性の攻撃魔法・3属性の吸収障壁・反射の盾）
-magicAtk('fire_bolt', '火球', '火', 'fire', 1, 1);           // コモン: 炎攻撃 POW+1（氷の敵に弱点2倍）
-magicAtk('ice_needle', '氷柱', '氷', 'ice', 1, 1);           // コモン: 氷攻撃 POW+1（雷の敵に弱点2倍）
-magicAtk('spark', '雷撃', '雷', 'lightning', 1, 1);          // コモン: 雷攻撃 POW+1（炎の敵に弱点2倍）
-defineSkill({ id: 'flame_wave', name: '炎の障壁', icon: '炎', absorbElement: 'fire', effects: [{ type: 'block', mult: 1, amount: 2 }] }); // コモン: ブロック POW+2 + 炎吸収
-defineSkill({ id: 'frost_shield', name: '氷の障壁', icon: '凍', absorbElement: 'ice', effects: [{ type: 'block', mult: 1, amount: 2 }] }); // コモン: ブロック POW+2 + 氷吸収
-defineSkill({ id: 'aqua_mend', name: '雷の障壁', icon: '帯', absorbElement: 'lightning', effects: [{ type: 'block', mult: 1, amount: 2 }] }); // コモン: ブロック POW+2 + 雷吸収
-defineSkill({ id: 'mana_ward', name: '魔力の盾', icon: '障', reflect: 0.5, effects: [{ type: 'block', mult: 1, amount: 1 }] });     // コモン: ブロック POW+1 + 反射 50%
+// コモン
+atk('magic_bullet', '魔弾', 1, 1, '弾'); // コモン: 攻撃 POW+1
+defineSkill({ id: 'elemental_barrier', name: '属性の障壁', icon: '障', absorbSuitElement: true, effects: [{ type: 'block', mult: 1, amount: 2 }] }); // コモン: ブロック POW+2 + マーク属性吸収
+defineSkill({ id: 'mana_ward', name: '魔力の盾', icon: '盾', reflect: 0.5, effects: [{ type: 'block', mult: 1, amount: 1 }] }); // コモン: ブロック POW+1 + 反射 50%
 
-// レア（上位の属性攻撃魔法・反射結界・全属性吸収バリア）
-magicAtk('fire_magic', '紅蓮術', '紅', 'fire', 1, 5);        // レア: 炎攻撃 POW+5（魔導士の初期スロット20）
-magicAtk('blizzard', '吹雪', '雪', 'ice', 1.5, 2);           // レア: 氷攻撃 POW×1.5+2
-magicAtk('thunder_lance', '雷槍', '槍', 'lightning', 1, 3, true); // レア: 雷攻撃 POW+3・ブロック無視
+// レア
+defineSkill({
+  id: 'rapid_bullets', name: '連弾', icon: '連',
+  effects: [{ type: 'attack', mult: 0.8, add: 1 }, { type: 'attack', mult: 0.8, add: 1 }], // レア: 2回攻撃 POW×0.8+1
+});
+defineSkill({ id: 'magic_lance', name: '魔槍', icon: '槍', effects: [{ type: 'attack', mult: 1, add: 3, pierce: true }] }); // レア: 攻撃 POW+3・ブロック無視
+atk('grand_magic', '大魔法', 1, 5, '大'); // レア: 攻撃 POW+5（魔導士の初期スロット20）
+defineSkill({ id: 'resonance_bullet', name: '共鳴弾', icon: '響', effects: [{ type: 'attack', mult: 1, add: 2, resonance: true }] }); // レア: 攻撃 POW+2。手札が同マークなら2倍
 defineSkill({ id: 'mirror_coat', name: '反鏡の陣', icon: '鏡', reflect: 1, effects: [{ type: 'block', mult: 1, amount: 4 }] }); // レア: ブロック POW+4 + 反射 100%
 defineSkill({
   id: 'element_drain', name: '元素吸収', icon: '吸', absorbAll: true,
   effects: [{ type: 'block', mult: 1, amount: 3 }, { type: 'heal', mult: 0.5, amount: 2 }], // レア: ブロック + 回復 + 全属性吸収
 });
-defineSkill({
-  id: 'twin_thunder', name: '双雷', icon: '双', element: 'lightning',
-  effects: [{ type: 'attack', mult: 0.8, add: 1, element: 'lightning' }, { type: 'attack', mult: 0.8, add: 1, element: 'lightning' }], // レア: 雷 2回攻撃
-});
 
-// レジェンド（極大属性魔法・神鏡反射・星喰らい）
-magicAtk('meteor', '隕石召喚', '隕', 'fire', 2, 5);          // レジェンド: 炎攻撃 POW×2+5
-magicAtk('absolute_zero', '絶対零度', '零', 'ice', 1.5, 4, true); // レジェンド: 氷攻撃 POW×1.5+4・ブロック無視
+// レジェンド
+atk('cataclysm', '天変', 2, 5, '天'); // レジェンド: 攻撃 POW×2+5
 defineSkill({
-  id: 'judgement_bolt', name: '神罰の雷', icon: '罰', element: 'lightning',
+  id: 'tri_star', name: '三連星', icon: '星',
   effects: [
-    { type: 'attack', mult: 0.7, add: 2, element: 'lightning' },
-    { type: 'attack', mult: 0.7, add: 2, element: 'lightning' },
-    { type: 'attack', mult: 0.7, add: 2, element: 'lightning' },
-  ], // レジェンド: 雷 3回攻撃
+    { type: 'attack', mult: 0.7, add: 2 },
+    { type: 'attack', mult: 0.7, add: 2 },
+    { type: 'attack', mult: 0.7, add: 2 },
+  ], // レジェンド: 3回攻撃 POW×0.7+2
 });
 defineSkill({ id: 'aegis_mirror', name: '神鏡の結界', icon: '界', reflect: 1.5, effects: [{ type: 'block', mult: 1, amount: 8 }] }); // レジェンド: ブロック POW+8 + 反射 150%
 defineSkill({
-  id: 'astral_drain', name: '星喰らい', icon: '喰', element: 'ice', absorbAll: true,
-  effects: [{ type: 'attack', mult: 1.5, add: 3, element: 'ice' }, { type: 'block', mult: 1, amount: 4 }], // レジェンド: 氷攻撃 + ブロック + 全属性吸収
+  id: 'astral_drain', name: '星喰らい', icon: '喰', absorbAll: true,
+  effects: [{ type: 'attack', mult: 1.5, add: 3 }, { type: 'block', mult: 1, amount: 4 }], // レジェンド: 攻撃 POW×1.5+3 + ブロック POW+4 + 全属性吸収
 });
 
 /** スロット21に固定されるスキル（封印の鍵のレリックで付け替え可能）。POW×1.5。相手のブロックを無視して破壊する。 */
@@ -144,7 +136,7 @@ armor('astral_robe', '星霊のローブ', '星', 3, 1.5); // レジェンド: �
 
 assignRarity([
   'big_attack', 'heavy', 'bulwark', 'shield_bash', 'drain', 'overlord_strike', 'tonic', 'steel_shield', 'pierce_stab', 'berserk', 'holy_light', 'twin_strike', 'big_bomb', 'holy_ward',
-  'fire_magic', 'blizzard', 'thunder_lance', 'mirror_coat', 'element_drain', 'twin_thunder', 'mirror_robe',
+  'rapid_bullets', 'magic_lance', 'grand_magic', 'resonance_bullet', 'mirror_coat', 'element_drain', 'mirror_robe',
 ], 'rare');
 // レジェンドのブロック・複合スキル（祠のバージョンアップの行き先。報酬にも出る）
 defineSkill({ id: 'fortress', name: '城塞', icon: '城', effects: [{ type: 'block', mult: 1, amount: 10 }] }); // レジェンド: POW+10
@@ -158,7 +150,7 @@ defineSkill({
 });
 assignRarity([
   'smash', 'final_strike', 'fortress', 'aegis', 'siphon', 'mithril_shield', 'impale', 'rampage', 'miracle', 'flurry', 'elixir',
-  'meteor', 'absolute_zero', 'judgement_bolt', 'aegis_mirror', 'astral_drain', 'astral_robe',
+  'cataclysm', 'tri_star', 'aegis_mirror', 'astral_drain', 'astral_robe',
 ], 'legend');
 
 /**
@@ -186,9 +178,9 @@ export const SKILL_POOL: readonly SkillId[] = [
 
 /** 魔導士の報酬として出現する専用スキル。 */
 export const MAGE_SKILL_POOL: readonly SkillId[] = [
-  'fire_bolt', 'ice_needle', 'spark', 'flame_wave', 'frost_shield', 'mana_ward', 'aqua_mend',
-  'fire_magic', 'blizzard', 'thunder_lance', 'mirror_coat', 'element_drain', 'twin_thunder',
-  'meteor', 'absolute_zero', 'judgement_bolt', 'aegis_mirror', 'astral_drain',
+  'magic_bullet', 'elemental_barrier', 'mana_ward',
+  'rapid_bullets', 'magic_lance', 'grand_magic', 'resonance_bullet', 'mirror_coat', 'element_drain',
+  'cataclysm', 'tri_star', 'aegis_mirror', 'astral_drain',
 ];
 
 export function skillPoolFor(character: CharacterId = 'warrior'): readonly SkillId[] {
@@ -245,14 +237,14 @@ export const DEFAULT_PLAYER_SLOTS: SlotTable = {
   21: ACE_STRIKE_ID,
 };
 
-/** 魔導士の初期スロット。13 に氷柱、15 に薬草、16 に氷の障壁（氷吸収＋ブロック）、18 に雷撃、20 に紅蓮術（炎）、21 に大魔導を装備。 */
+/** 魔導士の初期スロット。11 小攻撃・13 魔弾・15 薬草・16 属性の障壁・18 魔弾・20 大魔法・21 大魔導。 */
 export const DEFAULT_MAGE_SLOTS: SlotTable = {
   11: 'small_attack',
-  13: 'ice_needle',
+  13: 'magic_bullet',
   15: 'herb',
-  16: 'frost_shield',
-  18: 'spark',
-  20: 'fire_magic',
+  16: 'elemental_barrier',
+  18: 'magic_bullet',
+  20: 'grand_magic',
   21: ARCH_MAGIC_ID,
 };
 /** プレイヤーの初期の基本パワー。 */

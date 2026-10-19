@@ -2,6 +2,7 @@ import type { BattleContext } from '../battle/BattleContext';
 import type { Entity } from '../entities/Entity';
 import { PACE } from '../battle/pace';
 import { damageDealtMultiplier, damageTakenMultiplier } from '../rules/bust';
+import { elementOfSuit } from '../cards/Card';
 import { attackValue, ELEMENT_LABEL, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
 /** ダメージ適用。HP より先にブロックを減らす。piercing ならブロックを無視する。 */
@@ -27,6 +28,9 @@ export function activateSkill(ctx: BattleContext, user: Entity, skill: SkillDef)
     return null;
   }
   if (payload.skill.absorbElement) user.activeElement = payload.skill.absorbElement;
+  if (payload.skill.absorbSuitElement) {
+    user.activeElement = elementOfSuit(user.hand.cards[user.hand.cards.length - 1]?.suit) ?? null;
+  }
   if (payload.skill.absorbAll) user.absorbAllElements = true;
   if (payload.skill.reflect) user.reflectRatio = Math.max(user.reflectRatio, payload.skill.reflect);
   ctx.log(`${user.name}の「${payload.skill.name}」`);
@@ -51,6 +55,9 @@ export async function applyEffects(
   const { bus } = ctx;
   if (part === 'all' || part === 'block') {
     if (skill.absorbElement) user.activeElement = skill.absorbElement;
+    if (skill.absorbSuitElement) {
+      user.activeElement = elementOfSuit(user.hand.cards[user.hand.cards.length - 1]?.suit) ?? null;
+    }
     if (skill.absorbAll) user.absorbAllElements = true;
     if (skill.reflect) user.reflectRatio = Math.max(user.reflectRatio, skill.reflect);
   }
@@ -59,7 +66,10 @@ export async function applyEffects(
     const wanted = part === 'all' || part === effect.type || (part === 'rest' && effect.type !== 'block');
     if (!wanted) continue;
     if (effect.type === 'attack') {
-      const elem = effect.element ?? skill.element ?? user.attackElement;
+      const suitElem = user.character === 'mage' ? elementOfSuit(user.hand.cards[user.hand.cards.length - 1]?.suit) : undefined;
+      const elem = effect.element ?? skill.element ?? suitElem ?? user.attackElement;
+      const isResonating = !!effect.resonance && user.hand.cards.length > 0 && user.hand.cards.every((c) => c.suit === user.hand.cards[0].suit);
+      const resMult = isResonating ? 2 : 1;
       const base = attackValue(effect, user.attackAt(user.hand.total(ctx.rules)));
       const calc = bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: base, skill });
       const def = calc.defender;
@@ -67,9 +77,9 @@ export async function applyEffects(
       const weakMult = elem && def.weakness === elem ? user.weaknessMultiplier : 1;
       const mult21 = damageDealtMultiplier(user, user.hand.total(ctx.rules), ctx.rules);
       const mult = damageTakenMultiplier(def, ctx.rules);
-      let damage = Math.max(0, Math.floor(calc.damage * weakMult * mult21 * mult));
+      let damage = Math.max(0, Math.floor(calc.damage * resMult * weakMult * mult21 * mult));
       // 反射の元にする値は、敵の 21 の 2 倍を掛ける前のダメージ（2 倍した分は跳ね返さない）
-      const damageBefore21 = Math.max(0, Math.floor(calc.damage * weakMult * mult));
+      const damageBefore21 = Math.max(0, Math.floor(calc.damage * resMult * weakMult * mult));
 
       // 属性吸収: 受け手が同じ属性（または全属性吸収）を帯びているなら、ダメージを 0 にして HP を回復する
       const canAbsorb = !!elem && (def.alwaysAbsorbElements || def.absorbAllElements || def.activeElement === elem);
@@ -102,6 +112,7 @@ export async function applyEffects(
       if (reduced > 0) ctx.log(`${def.name}の防具が ${reduced} ダメージを防いだ`);
       if (broken > 0) ctx.log(`${def.name}のブロック ${broken} を破壊した`);
       const burst = [
+        isResonating ? '共鳴 ×2' : '',
         weakMult !== 1 && damage > 0 ? `弱点 ×${weakMult}` : '',
         mult21 !== 1 && damage > 0 ? `21 ×${mult21}` : '',
         mult !== 1 && damage > 0 ? `バースト ×${mult}` : '',

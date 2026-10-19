@@ -2,6 +2,7 @@ import type { EventBus } from '../events/EventBus';
 import type { Entity } from '../entities/Entity';
 import { damageDealtMultiplier, damageTakenMultiplier } from '../rules/bust';
 import type { RuleSet } from '../rules/RuleSet';
+import { elementOfSuit } from '../cards/Card';
 import { attackValue, getSkill, slotKeyOf, supportValue, type SkillDef } from './Skill';
 
 export interface PreviewPart {
@@ -33,11 +34,14 @@ export function previewSkill(env: { bus: EventBus; rules: RuleSet }, user: Entit
     if (e.type === 'attack') {
       const raw = attackValue(e, user.attackAt(total));
       const calc = env.bus.emit('onDamageCalculated', { attacker: user, defender: target, damage: raw, skill });
-      const elem = e.element ?? skill.element ?? user.attackElement;
+      const suitElem = user.character === 'mage' ? elementOfSuit(user.hand.cards[user.hand.cards.length - 1]?.suit) : undefined;
+      const elem = e.element ?? skill.element ?? suitElem ?? user.attackElement;
+      const isResonating = !!e.resonance && user.hand.cards.length > 0 && user.hand.cards.every((c) => c.suit === user.hand.cards[0].suit);
+      const resMult = isResonating ? 2 : 1;
       const weakMult = elem && calc.defender.weakness === elem ? user.weaknessMultiplier : 1;
       return {
         type: 'attack',
-        value: Math.max(0, Math.floor(calc.damage * weakMult * damageDealtMultiplier(user, total, env.rules) * damageTakenMultiplier(calc.defender, env.rules))),
+        value: Math.max(0, Math.floor(calc.damage * resMult * weakMult * damageDealtMultiplier(user, total, env.rules) * damageTakenMultiplier(calc.defender, env.rules))),
         ...(e.pierce ? { pierce: true } : {}),
         ...(weakMult > 1 ? { weak: true } : {}),
       };

@@ -1,5 +1,5 @@
 import { BattleMachine, type BattleOptions } from '../src/core/battle/BattleMachine';
-import { makeCard, type Rank } from '../src/core/cards/Card';
+import { makeCard, type Card, type Rank, type Suit } from '../src/core/cards/Card';
 import type { EnemyDef } from '../src/core/entities/enemies/EnemyDef';
 import { Slime } from '../src/core/entities/enemies/Slime';
 import type { StateId } from '../src/core/battle/types';
@@ -13,9 +13,17 @@ export const noWait = async () => {};
 /** 守りのスキルを置いた編成（初期装備には受け流し・身構えはないので、ブロックを試すテストで使う）。15 = シールド（ブロック 6）/ 18 = 盾（ブロック 11）。 */
 export const WITH_BLOCKS: SlotTable = { ...DEFAULT_PLAYER_SLOTS, 12: 'herb', 15: 'guard', 18: 'shield' }; // 薬草は 12 に置き直す（初期装備の薬草は 15 なので、シールドで上書きされないように）
 
+export type CardInput = Rank | { rank: Rank; suit?: Suit } | Card;
+
+function toCard(c: CardInput, defaultSuit: Suit): Card {
+  if (typeof c === 'string') return makeCard(c, defaultSuit);
+  if ('value' in c) return c as Card;
+  return makeCard(c.rank, c.suit ?? defaultSuit);
+}
+
 export interface RoundSetup extends Partial<BattleOptions> {
-  player: Rank[];
-  enemyHand: Rank[];
+  player: CardInput[];
+  enemyHand: CardInput[];
   relics?: Relic[];
   enemy?: EnemyDef;
   playerHp?: number;
@@ -30,8 +38,8 @@ export interface RoundSetup extends Partial<BattleOptions> {
 export async function playRound(setup: RoundSetup) {
   const { player, enemyHand, from = 'Initiative', stopAt = ['Deal'], enemyHp, ...opts } = setup;
   const m = new BattleMachine({ enemy: Slime, rng: seededRng(1), pace: noWait, ...opts });
-  player.forEach((r) => m.ctx.player.hand.add(makeCard(r, 'S')));
-  enemyHand.forEach((r) => m.ctx.enemy.hand.add(makeCard(r, 'H')));
+  player.forEach((c) => m.ctx.player.hand.add(toCard(c, 'S')));
+  enemyHand.forEach((c) => m.ctx.enemy.hand.add(toCard(c, 'H')));
   if (enemyHp !== undefined) m.ctx.enemy.hp = enemyHp;
   await m.runFrom(from, stopAt);
   return m;

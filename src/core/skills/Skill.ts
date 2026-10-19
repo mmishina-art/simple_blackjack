@@ -17,7 +17,7 @@ export function weaknessOfElement(el: ElementType): ElementType {
 /** スキルの効果。判別共用体なので、バフやドロー等を後から追加できる。 */
 export type SkillEffect =
   /** 基本パワー（POW）を基準にしたダメージ: floor(POW × mult) + add。pierce なら相手のブロックを無視して、そのブロックを破壊する（会心の一撃）。 */
-  | { type: 'attack'; mult: number; add?: number; pierce?: boolean; element?: ElementType }
+  | { type: 'attack'; mult: number; add?: number; pierce?: boolean; element?: ElementType; resonance?: boolean }
   /**
    * 回復・ブロックも基本パワーが基準: floor(POW × mult) + amount。上位のスキルほど amount（固定の上乗せ）が大きい（例: +1 / +3 / +5）。
    * mult を省略すると固定量（敵のスキルなど）で、amount のまま。
@@ -47,6 +47,8 @@ export interface SkillDef {
   element?: ElementType;
   /** 属性バリアの吸収属性（炎・氷・雷）。発動したラウンドはその属性の敵攻撃を吸収（ダメージ0＋HP回復）する。 */
   absorbElement?: ElementType;
+  /** マークの属性を吸収（魔導士の「属性の障壁」など。手札の最後の札のマークの属性を吸収）。 */
+  absorbSuitElement?: boolean;
   /** すべての属性の敵攻撃を吸収するか（上位の吸収魔法・大魔導など）。 */
   absorbAll?: boolean;
   /** 敵の攻撃を跳ね返す割合（1 = 100%。防具なら防御したラウンドに軽減分を反射、スキルなら発動したラウンドに敵の攻撃力を反射）。 */
@@ -83,6 +85,36 @@ export function slotsFromRanges(spec: ReadonlyArray<readonly [number, number, Sk
   return table;
 }
 
+/** 廃止された旧魔導士スキルの新スキルへの移行マップ。 */
+export const MAGE_SKILL_MIGRATION: Record<string, SkillId> = {
+  fire_bolt: 'magic_bullet',
+  ice_needle: 'magic_bullet',
+  spark: 'magic_bullet',
+  flame_wave: 'elemental_barrier',
+  frost_shield: 'elemental_barrier',
+  aqua_mend: 'elemental_barrier',
+  fire_magic: 'grand_magic',
+  blizzard: 'grand_magic',
+  thunder_lance: 'magic_lance',
+  twin_thunder: 'rapid_bullets',
+  meteor: 'cataclysm',
+  absolute_zero: 'tri_star',
+  judgement_bolt: 'tri_star',
+  fire_bolt_plus: 'magic_bullet_plus',
+  ice_needle_plus: 'magic_bullet_plus',
+  spark_plus: 'magic_bullet_plus',
+  flame_wave_plus: 'elemental_barrier_plus',
+  frost_shield_plus: 'elemental_barrier_plus',
+  aqua_mend_plus: 'elemental_barrier_plus',
+  fire_magic_plus: 'grand_magic_plus',
+  blizzard_plus: 'grand_magic_plus',
+  thunder_lance_plus: 'magic_lance_plus',
+  twin_thunder_plus: 'rapid_bullets_plus',
+  meteor_plus: 'cataclysm_plus',
+  absolute_zero_plus: 'tri_star_plus',
+  judgement_bolt_plus: 'tri_star_plus',
+};
+
 const registry = new Map<SkillId, SkillDef>();
 
 export function defineSkill(def: SkillDef): SkillDef {
@@ -91,7 +123,8 @@ export function defineSkill(def: SkillDef): SkillDef {
 }
 
 export function getSkill(id: SkillId): SkillDef {
-  const def = registry.get(id);
+  const resolved = MAGE_SKILL_MIGRATION[id] ?? id;
+  const def = registry.get(resolved);
   if (!def) throw new Error(`Unknown skill: ${id}`);
   return def;
 }
@@ -133,7 +166,8 @@ export function kindOfSkill(skill: SkillDef): SkillKind {
 export const KIND_LABEL: Record<SkillKind, string> = { skill: 'スキル', item: '道具', armor: '防具' };
 
 export function hasSkill(id: SkillId): boolean {
-  return registry.has(id);
+  const resolved = MAGE_SKILL_MIGRATION[id] ?? id;
+  return registry.has(resolved);
 }
 
 export function hasAttack(skill: SkillDef): boolean {
@@ -177,7 +211,8 @@ function describeEffects(skill: SkillDef, atk?: number): string {
     if (e.type === 'attack') {
       const elem = e.element ?? skill.element;
       const prefix = elem ? `${ELEMENT_LABEL[elem]}攻撃` : '攻撃';
-      return `${prefix} ${attackFormula(e)}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
+      const resNote = e.resonance ? '（同マーク2倍）' : '';
+      return `${prefix} ${attackFormula(e)}${resNote}${e.mult ? value((a) => attackValue(e, a)) : ''}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
     }
     const label = e.type === 'block' ? 'ブロック' : '回復';
     // 固定量（mult なし）は、基本パワーに関係ないので、数字だけ
@@ -186,6 +221,7 @@ function describeEffects(skill: SkillDef, atk?: number): string {
   if (skill.reflect) parts.push(`反射 ${Math.round(skill.reflect * 100)}%`);
   if (skill.absorbAll) parts.push('全属性吸収');
   else if (skill.absorbElement) parts.push(`${ELEMENT_LABEL[skill.absorbElement]}吸収`);
+  else if (skill.absorbSuitElement) parts.push('マーク属性吸収');
   return parts.join(' + ');
 }
 
@@ -208,7 +244,8 @@ export function describeSkillBonus(skill: SkillDef): string {
     if (e.type === 'attack') {
       const elem = e.element ?? skill.element;
       const prefix = elem ? `${ELEMENT_LABEL[elem]}攻撃` : '攻撃';
-      return `${prefix} ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
+      const resNote = e.resonance ? '（同マーク2倍）' : '';
+      return `${prefix} ${e.mult ? bonusFormula(e.mult, e.add ?? 0) : (e.add ?? 0)}${resNote}${e.pierce ? '（ブロック無視・破壊）' : ''}`;
     }
     const label = e.type === 'block' ? 'ブロック' : '回復';
     return e.mult ? `${label} ${bonusFormula(e.mult, e.amount)}` : `${label} ${e.amount}`;
@@ -216,6 +253,7 @@ export function describeSkillBonus(skill: SkillDef): string {
   if (skill.reflect) parts.push(`反射 ${Math.round(skill.reflect * 100)}%`);
   if (skill.absorbAll) parts.push('全属性吸収');
   else if (skill.absorbElement) parts.push(`${ELEMENT_LABEL[skill.absorbElement]}吸収`);
+  else if (skill.absorbSuitElement) parts.push('マーク属性吸収');
   return parts.join(' + ');
 }
 

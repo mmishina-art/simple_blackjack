@@ -58,7 +58,7 @@ describe('キャラクター解放と選択（戦士 / 魔導士 / 3人目 🔒�
   });
 });
 
-describe('属性魔法と敵の弱点（三すくみ 🔥＞❄️＞⚡＞🔥・ダメージ 2 倍）', () => {
+describe('手札のマークによる属性決定（♥炎・♠氷・♣雷・♦無属性）と敵の弱点（三すくみ・ダメージ 2 倍）', () => {
   it('すべての敵に3属性が割り当てられ、三すくみ（🔥炎 ＞ ❄️氷 ＞ ⚡雷 ＞ 🔥炎）に従う', () => {
     const expectedWeakness = { ice: 'fire', lightning: 'ice', fire: 'lightning' } as const;
     for (const e of ENEMY_LINEUP) {
@@ -67,87 +67,121 @@ describe('属性魔法と敵の弱点（三すくみ 🔥＞❄️＞⚡＞🔥�
     }
   });
 
-  it('敵の弱点属性で攻撃するとダメージが 2 倍になり、予測表示（previewSkill）にも反映される', async () => {
-    // スライムは氷属性（弱点: 炎）。スロット 20（POW 10）で紅蓮術（POW+5 = 15）→ 弱点 2 倍で 30 ダメージ
+  it('魔導士の攻撃は最後のカードのマークで属性が決まり、敵の弱点ならダメージ 2 倍（previewSkill にも反映）', async () => {
     const slime = getEnemy('slime');
     expect(slime.attackElement).toBe('ice');
     expect(slime.weakness).toBe('fire');
-    const m = await playRound({
-      player: ['K', 'K'], enemyHand: ['9', '8'], enemy: slime, enemyHp: 50,
-      playerSlots: { 20: 'fire_magic' },
-    });
-    expect(50 - m.ctx.enemy.hp).toBe(15 * 2);
-    expect(m.logs.some((l) => l.includes('弱点 ×2'))).toBe(true);
 
-    // 弱点でない属性（氷柱: 氷属性）なら等倍（スロット 20: POW 10 + 1 = 11 ダメージ）
-    const mIce = await playRound({
-      player: ['K', 'K'], enemyHand: ['9', '8'], enemy: slime, enemyHp: 50,
-      playerSlots: { 20: 'ice_needle' },
+    // 1. 最後の札が ♥（炎）: スライム（弱点: 炎）に対し、スロット 20（POW 10）の大魔法（POW+5 = 15）→ 弱点 2 倍で 30 ダメージ
+    const mFire = await playRound({
+      playerCharacter: 'mage',
+      player: ['K', { rank: 'K', suit: 'H' }], enemyHand: ['9', '8'], enemy: slime, enemyHp: 50,
+      playerSlots: { 20: 'grand_magic' },
     });
-    expect(50 - mIce.ctx.enemy.hp).toBe(11);
+    expect(50 - mFire.ctx.enemy.hp).toBe(15 * 2);
+    expect(mFire.logs.some((l) => l.includes('弱点 ×2'))).toBe(true);
 
     // previewSkill でも弱点 2 倍と weak フラグが返る
-    const preview = previewSkill(m.ctx, m.ctx.player, m.ctx.enemy, 20);
+    const preview = previewSkill(mFire.ctx, mFire.ctx.player, mFire.ctx.enemy, 20);
     expect(preview.parts[0]).toMatchObject({ type: 'attack', value: 30, weak: true });
+
+    // 2. 最後の札が ♠（氷）: 氷属性になるため等倍（15 ダメージ）
+    const mIce = await playRound({
+      playerCharacter: 'mage',
+      player: ['K', { rank: 'K', suit: 'S' }], enemyHand: ['9', '8'], enemy: slime, enemyHp: 50,
+      playerSlots: { 20: 'grand_magic' },
+    });
+    expect(50 - mIce.ctx.enemy.hp).toBe(15);
+
+    // 3. 最後の札が ♦（無属性）: 弱点を突かず等倍（15 ダメージ）
+    const mDia = await playRound({
+      playerCharacter: 'mage',
+      player: ['K', { rank: 'K', suit: 'D' }], enemyHand: ['9', '8'], enemy: slime, enemyHp: 50,
+      playerSlots: { 20: 'grand_magic' },
+    });
+    expect(50 - mDia.ctx.enemy.hp).toBe(15);
   });
 
-  it('三すくみ通り、雷属性の敵（ガーゴイル）には氷魔法、炎属性の敵（黒竜）には雷魔法で 2 倍ダメージが入る', async () => {
+  it('三すくみ通り、雷属性の敵（ガーゴイル）には♠氷、炎属性の敵（黒竜）には♣雷で 2 倍ダメージが入る', async () => {
     const garg = getEnemy('gargoyle');
     expect(garg.attackElement).toBe('lightning');
     expect(garg.weakness).toBe('ice');
-    // 20（POW 10）で吹雪（POW×1.5+2 = 17）→ 石の肌 -3 で 14 → 弱点 ×2 = 28
+    // 最後の札が ♠（氷）。20（POW 10）で魔槍（POW+3 = 13・貫通）→ 石の肌 -3 で 10 → 弱点 ×2 = 20
     const m2 = await playRound({
-      player: ['K', 'K'], enemyHand: ['K', '9'], enemy: garg, enemyHp: 50,
-      playerSlots: { 20: 'blizzard' },
+      playerCharacter: 'mage',
+      player: ['K', { rank: 'K', suit: 'S' }], enemyHand: ['K', '9'], enemy: garg, enemyHp: 50,
+      playerSlots: { 20: 'magic_lance' },
     });
-    expect(50 - m2.ctx.enemy.hp).toBe(14 * 2);
+    expect(50 - m2.ctx.enemy.hp).toBe(10 * 2);
 
     const dragon = getEnemy('dragon');
     expect(dragon.attackElement).toBe('fire');
     expect(dragon.weakness).toBe('lightning');
-    // 18（POW 8）で雷撃（POW+1 = 9）→ 弱点 ×2 = 18
+    // 最後の札が ♣（雷）。18（POW 8）で魔弾（POW+1 = 9）→ 弱点 ×2 = 18
     const m3 = await playRound({
-      player: ['K', '8'], enemyHand: ['K', '8'], enemy: dragon, enemyHp: 90,
-      playerSlots: { 18: 'spark' },
+      playerCharacter: 'mage',
+      player: ['K', { rank: '8', suit: 'C' }], enemyHand: ['K', '8'], enemy: dragon, enemyHp: 90,
+      playerSlots: { 18: 'magic_bullet' },
     });
     expect(90 - m3.ctx.enemy.hp).toBe(9 * 2);
   });
+
+  it('共鳴弾: 手札がすべて同じマークなら 2 倍、さらに弱点なら 4 倍ダメージになる', async () => {
+    const slime = getEnemy('slime');
+    // 手札が両方 ♥（炎）。18（POW 8）で共鳴弾（POW+2 = 10）→ 共鳴 2 倍（20）→ スライムの弱点（炎）でさらに 2 倍 = 40 ダメージ！
+    const mRes = await playRound({
+      playerCharacter: 'mage',
+      player: [{ rank: '9', suit: 'H' }, { rank: '9', suit: 'H' }], enemyHand: ['8', '8'], enemy: slime, enemyHp: 50,
+      playerSlots: { 18: 'resonance_bullet' },
+    });
+    expect(50 - mRes.ctx.enemy.hp).toBe(10 * 2 * 2);
+    expect(mRes.logs.some((l) => l.includes('共鳴 ×2'))).toBe(true);
+    expect(mRes.logs.some((l) => l.includes('弱点 ×2'))).toBe(true);
+
+    // マークが揃っていない（♥ と ♠）場合は共鳴しない（スロット 18: 10 ダメージ、最後の札 ♠ は弱点でないので等倍のまま）
+    const mDiff = await playRound({
+      playerCharacter: 'mage',
+      player: [{ rank: '9', suit: 'H' }, { rank: '9', suit: 'S' }], enemyHand: ['8', '8'], enemy: slime, enemyHp: 50,
+      playerSlots: { 18: 'resonance_bullet' },
+    });
+    expect(50 - mDiff.ctx.enemy.hp).toBe(10);
+  });
 });
 
-describe('属性バリア系スキルによる敵攻撃の吸収（ダメージ 0 ＋ HP 回復）', () => {
-  it('通常の攻撃魔法（火球など）では属性吸収は発動せず、属性障壁（炎の障壁・氷の障壁・雷の障壁）を使ったときに同属性の敵攻撃を吸収回復する', async () => {
+describe('属性の障壁と敵攻撃の吸収（ダメージ 0 ＋ HP 回復）', () => {
+  it('属性の障壁は最後のカードのマークの属性を吸収し、一致すれば敵攻撃を吸収して HP 回復する', async () => {
     const flame = getEnemy('flame');
     expect(flame.attackElement).toBe('fire');
 
-    // 1. 攻撃魔法（火球: fire_bolt）を使った場合は、炎の精霊の攻撃（16ダメージ）を吸収せず普通に受ける
-    const mAtk = await playRound({
-      player: ['K', '7'], enemyHand: ['K', 'K'], enemy: flame,
+    // 1. 最後の札が ♥（炎）のとき「属性の障壁」を使うと、炎の精霊の攻撃（16）を吸収して HP +8 回復！
+    const mBarrierFire = await playRound({
+      playerCharacter: 'mage',
+      player: ['K', { rank: '7', suit: 'H' }], enemyHand: ['K', 'K'], enemy: flame,
       playerMaxHp: 60, playerHp: 30,
-      playerSlots: { 17: 'fire_bolt' },
+      playerSlots: { 17: 'elemental_barrier' },
     });
-    expect(mAtk.ctx.player.hp).toBe(30 - 16);
+    expect(mBarrierFire.ctx.player.hp).toBe(30 + 8);
+    expect(mBarrierFire.ctx.player.block).toBe(7 + 2); // 吸収したのでブロックも減らずに残る
+    expect(mBarrierFire.logs.some((l) => l.includes('炎属性を吸収し、HP を 8 回復した'))).toBe(true);
 
-    // 2. 属性バリア（炎の障壁: flame_wave）を使った場合は、ブロックを得つつ炎の精霊の先攻攻撃（16）を吸収して HP +8 回復！
-    const mBarrier = await playRound({
-      player: ['K', '7'], enemyHand: ['K', 'K'], enemy: flame,
+    // 2. 最後の札が ♠（氷）のときは氷属性吸収になるため、炎攻撃は吸収されず通常のブロック（POW 7 + 2 = 9）で軽減
+    const mBarrierIce = await playRound({
+      playerCharacter: 'mage',
+      player: ['K', { rank: '7', suit: 'S' }], enemyHand: ['K', 'K'], enemy: flame,
       playerMaxHp: 60, playerHp: 30,
-      playerSlots: { 17: 'flame_wave' },
+      playerSlots: { 17: 'elemental_barrier' },
     });
-    expect(mBarrier.ctx.player.hp).toBe(30 + 8);
-    expect(mBarrier.ctx.player.block).toBe(7 + 2); // 吸収したのでブロックも減らずに残る
-    expect(mBarrier.logs.some((l) => l.includes('炎属性を吸収し、HP を 8 回復した'))).toBe(true);
-  });
+    expect(mBarrierIce.ctx.player.hp).toBe(30 - (16 - 9));
+    expect(mBarrierIce.ctx.player.block).toBe(0);
 
-  it('属性バリアが敵の属性と一致しないときでも、通常のブロックとして機能して腐らない', async () => {
-    // 炎の精霊（fire）に対して氷の障壁（frost_shield: ice吸収 + ブロック POW+2）を使った場合 → ブロック 9 で軽減
-    const flame = getEnemy('flame');
-    const m = await playRound({
-      player: ['K', '7'], enemyHand: ['K', 'K'], enemy: flame,
+    // 3. 最後の札が ♦（無属性）のときは何も吸収しないが、通常のブロックとして機能する
+    const mBarrierDia = await playRound({
+      playerCharacter: 'mage',
+      player: ['K', { rank: '7', suit: 'D' }], enemyHand: ['K', 'K'], enemy: flame,
       playerMaxHp: 60, playerHp: 30,
-      playerSlots: { 17: 'frost_shield' },
+      playerSlots: { 17: 'elemental_barrier' },
     });
-    expect(m.ctx.player.hp).toBe(30 - (16 - 9));
-    expect(m.ctx.player.block).toBe(0);
+    expect(mBarrierDia.ctx.player.hp).toBe(30 - (16 - 9));
   });
 
   it('全属性吸収スキル（元素吸収・星喰らい・大魔導）は、どの属性の敵攻撃も吸収して回復する', async () => {
@@ -251,11 +285,12 @@ describe('魔導士の専用スキル・防具・レリック・報酬プール'
 
   it('魔導士の追加レリック 4 種（魔導の水晶・元素の指輪・鏡面のブローチ・賢者の秘石）が正しく機能する', async () => {
     // 1. 魔導の水晶（属性魔法ダメージ +2）+ 元素の指輪（弱点 2.5 倍）
-    // スライム（炎弱点）に 17（POW 7）の火球（POW+1 = 8）→ 水晶で 8+2=10 → 指輪の弱点 2.5 倍で floor(10×2.5) = 25 ダメージ！
+    // スライム（炎弱点）に 17（POW 7）の魔弾（POW+1 = 8、最後の札 ♥ で炎属性）→ 水晶で 8+2=10 → 指輪の弱点 2.5 倍で floor(10×2.5) = 25 ダメージ！
     const slime = getEnemy('slime');
     const m1 = await playRound({
-      player: ['K', '7'], enemyHand: ['9', '7'], enemy: slime, enemyHp: 40,
-      playerSlots: { 17: 'fire_bolt' },
+      playerCharacter: 'mage',
+      player: ['K', { rank: '7', suit: 'H' }], enemyHand: ['9', '7'], enemy: slime, enemyHp: 40,
+      playerSlots: { 17: 'magic_bullet' },
       relics: [ManaCrystal, ElementRing],
     });
     expect(40 - m1.ctx.enemy.hp).toBe(Math.floor((slotAttack(5, 17) + 1 + 2) * 2.5));
@@ -278,6 +313,16 @@ describe('魔導士の専用スキル・防具・レリック・報酬プール'
       relics: [SageStone],
     });
     expect(m3.ctx.player.hp).toBe(30 + 8);
+  });
+
+  it('旧スキルのID互換性: 旧スキルIDを指定しても新スキルとして解決され動作する', () => {
+    expect(getSkill('fire_bolt').id).toBe('magic_bullet');
+    expect(getSkill('frost_shield').id).toBe('elemental_barrier');
+    expect(getSkill('fire_magic').id).toBe('grand_magic');
+    expect(getSkill('thunder_lance').id).toBe('magic_lance');
+    expect(getSkill('twin_thunder').id).toBe('rapid_bullets');
+    expect(getSkill('meteor').id).toBe('cataclysm');
+    expect(getSkill('judgement_bolt').id).toBe('tri_star');
   });
 });
 
