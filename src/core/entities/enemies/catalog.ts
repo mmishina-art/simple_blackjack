@@ -16,7 +16,7 @@ const BoneArmor: Relic = {
 };
 
 const Ultrasound: Relic = {
-  id: 'ultrasound', name: '超音波', icon: '音', description: '合計値が同値のとき、必ず先攻になる',
+  id: 'ultrasound', name: '超音波', icon: '音', description: '同値なら必ず先攻',
   apply({ bus }) {
     bus.on('onInitiativeDecided', (p) => {
       if (p.turn.mode === 'simultaneous') {
@@ -27,7 +27,7 @@ const Ultrasound: Relic = {
 };
 
 const CorpseThirst: Relic = {
-  id: 'thirst', name: '屍の渇き', icon: '渇', description: 'HP を削るたびに HP +2',
+  id: 'thirst', name: '屍の渇き', icon: '渇', description: 'HPを削るたびHP+2',
   apply({ bus, enemy }) {
     bus.on('onDamageDealt', ({ attacker, hpLoss }) => {
       if (attacker === enemy && hpLoss > 0) enemy.hp = Math.min(enemy.maxHp, enemy.hp + 2);
@@ -49,14 +49,14 @@ const DragonBreath: Relic = {
 
 // ---- 第1階層のボス・第2階層・第3階層の敵の特性 ----
 const IronClad: Relic = {
-  id: 'ironclad', name: '重装', icon: '甲', description: '戦闘開始時にブロック 6',
+  id: 'ironclad', name: '重装', icon: '甲', description: '開幕ブロック6',
   apply({ bus, enemy }) {
     bus.on('onBattleStart', () => { enemy.block += 6; });
   },
 };
 
 const Regeneration = (amount: number): Relic => ({
-  id: 'regen', name: '再生', icon: '再', description: `ラウンドの初めに HP +${amount}`,
+  id: 'regen', name: '再生', icon: '再', description: `毎R開始時HP+${amount}`,
   apply({ bus, enemy }) {
     bus.on('onRoundStart', () => { enemy.hp = Math.min(enemy.maxHp, enemy.hp + amount); });
   },
@@ -74,7 +74,7 @@ const StoneSkin = (by: number): Relic => ({
 /** 鋼鉄のゴーレム: ブロックを重ねる。ラウンドの初めにブロック +2、上限 14（積み上がりすぎて倒せなくならないように）。 */
 const STEEL_BLOCK_CAP = 14;
 const SteelGuard: Relic = {
-  id: 'steelguard', name: '鋼の守り', icon: '鋼', description: `ラウンドの初めにブロック +2（上限 ${STEEL_BLOCK_CAP}）`,
+  id: 'steelguard', name: '鋼の守り', icon: '鋼', description: `毎Rブロック+2(上限${STEEL_BLOCK_CAP})`,
   apply({ bus, enemy }) {
     bus.on('onRoundStart', () => { enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block + 2); });
     bus.on('onBlockApplied', ({ entity }) => { if (entity === enemy) enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block); });
@@ -82,7 +82,7 @@ const SteelGuard: Relic = {
 };
 
 const FortressShield: Relic = {
-  id: 'fortress_shield', name: '大盾の構え', icon: '盾', description: '戦闘開始時にブロック 10、毎ラウンド +2（上限 14）',
+  id: 'fortress_shield', name: '大盾の構え', icon: '盾', description: '開幕ブロック10、毎R+2(上限14)',
   apply({ bus, enemy }) {
     bus.on('onBattleStart', () => { enemy.block += 10; });
     bus.on('onRoundStart', () => { enemy.block = Math.min(STEEL_BLOCK_CAP, enemy.block + 2); });
@@ -91,14 +91,14 @@ const FortressShield: Relic = {
 };
 
 const GoldenHoard: Relic = {
-  id: 'golden_hoard', name: '黄金の腹', icon: '金', description: '戦闘開始時にブロック 4。撃破時の獲得ゴールド 3 倍',
+  id: 'golden_hoard', name: '黄金の腹', icon: '金', description: '開幕ブロック4、獲得Gold3倍',
   apply({ bus, enemy }) {
     bus.on('onBattleStart', () => { enemy.block += 4; });
   },
 };
 
 const CardSharper: Relic = {
-  id: 'card_sharper', name: '勝負師の眼', icon: '眼', description: '手札のAや互いのHP・ブロックを見てヒット基準を変える。同値なら必ず先攻',
+  id: 'card_sharper', name: '勝負師の眼', icon: '眼', description: '同値先攻・状況に応じ判断',
   apply({ bus }) {
     bus.on('onInitiativeDecided', (p) => {
       if (p.turn.mode === 'simultaneous') {
@@ -109,14 +109,14 @@ const CardSharper: Relic = {
 };
 
 const Chill: Relic = {
-  id: 'chill', name: '冷気', icon: '冷', description: 'ラウンドの初めに、あなたのブロックが 2 減る',
+  id: 'chill', name: '冷気', icon: '冷', description: '毎Rプレイヤーのブロック-2',
   apply({ bus, player }) {
     bus.on('onRoundStart', () => { player.block = Math.max(0, player.block - 2); });
   },
 };
 
 const Contract: Relic = {
-  id: 'contract', name: '悪魔の取引', icon: '契', description: '合計値が同値のとき、必ず先攻になる',
+  id: 'contract', name: '悪魔の取引', icon: '契', description: '同値なら必ず先攻',
   apply({ bus }) {
     bus.on('onInitiativeDecided', (p) => {
       if (p.turn.mode === 'simultaneous') {
@@ -183,7 +183,7 @@ export const GraveKnight: EnemyDef = {
 };
 
 const DrownedArmor: Relic = {
-  id: 'drowned_armor', name: '水没の重装', icon: '甲', description: '戦闘開始時にブロック 8',
+  id: 'drowned_armor', name: '水没の重装', icon: '甲', description: '開幕ブロック8',
   apply({ bus, enemy }) {
     bus.on('onBattleStart', () => { enemy.block += 8; });
   },
@@ -238,7 +238,7 @@ export const Imp: EnemyDef = {
 
 export const MagmaSerpent: EnemyDef = {
   id: 'magma_serpent', name: '溶岩の大蛇', midBoss: true, maxHp: 60, attack: 5, weakness: 'lightning', attackElement: 'fire', ai: new DealerAI(18), slots: ENEMY_SLOTS.magma_serpent, fallbackSkill: 'magma_bite',
-  trait: '溶岩再生（ラウンドの初めに HP +3）', relics: [{ ...Regeneration(3), id: 'magma_regen', name: '溶岩再生', description: 'ラウンドの初めに HP +3' }],
+  trait: '溶岩再生（ラウンドの初めに HP +3）', relics: [{ ...Regeneration(3), id: 'magma_regen', name: '溶岩再生', description: '毎R開始時HP+3' }],
 };
 
 /** 冒険の敵の一覧（階層ごとの並びは、各階層のマップが決める）。 */

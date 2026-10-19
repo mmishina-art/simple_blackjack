@@ -89,8 +89,12 @@ export class BattleView {
     topRight.className = 'top-row__right';
     topRight.append(historyBtn, infoBtn, this.muteBtn);
     this.enemyHp.prepend(this.roundEl);
-    this.enemyHp.attachRight(topRight);
-    this.enemyView.el.append(this.buildTraits()); // 敵の舞台の上に重ねる（高さを使わない）
+    // 敵の舞台の上にスキルスロットを重ねる
+    this.enemyView.el.append(this.enemySlotStrip.el);
+    // 特性の説明も敵の舞台内に置く（下部にオーバーレイ）
+    this.enemyView.el.append(this.buildTraits());
+    const weaknessEl = this.buildWeakness();
+    if (weaknessEl) this.enemyHand.attachHeaderRight(weaknessEl);
     const enemyArea = section('enemy-area', this.enemyHp.el, this.enemyView.el, this.enemyHand.el);
     // 合計値（勝負の結果）を上に、発動するスキルとダメージを手札の右側に出す
     this.enemyHand.side.append(this.enemySlotStrip.caption);
@@ -222,48 +226,41 @@ export class BattleView {
     }
   }
 
-  /** 敵の特殊能力（特性）を、常に見える1行で出す。長いときは省略し、タップ・長押しで全文（title）。 */
+  /** 魔導士のとき、敵の弱点・攻撃属性をカード合計値の右側に表示するバッジ。 */
+  private buildWeakness(): HTMLElement | null {
+    if (this.run.character !== 'mage') return null;
+    const def = this.machine.ctx.enemyDef;
+    if (!def.weakness && !def.attackElement) return null;
+    const el = document.createElement('div');
+    el.className = 'enemy-weakness';
+    const wText = def.weakness ? `弱点: ${ELEMENT_LABEL[def.weakness]}` : '';
+    const aText = def.attackElement ? `攻撃: ${ELEMENT_LABEL[def.attackElement]}` : '';
+    const label = [wText, aText].filter(Boolean).join('・');
+    el.title = `${label}（弱点属性ならダメージ2倍・同じ属性を帯びれば攻撃を吸収）`;
+    el.textContent = label;
+    return el;
+  }
+
+  /** 敵の特殊能力（特性）を、敵画面の下に常に見える1行で出す（先頭アイコンなし、1行で収める）。 */
   private buildTraits(): HTMLElement {
     const line = document.createElement('div');
     line.className = 'enemy-trait';
     const def = this.machine.ctx.enemyDef;
     const traits = def.relics ?? [];
-    const showElem = this.run.character === 'mage' && (def.weakness || def.attackElement);
-    line.hidden = traits.length === 0 && !showElem;
-    if (showElem) {
-      const chip = document.createElement('span');
-      chip.className = 'enemy-trait__item';
-      const wText = def.weakness ? `弱点:${ELEMENT_LABEL[def.weakness]}` : '';
-      const aText = def.attackElement ? `攻撃:${ELEMENT_LABEL[def.attackElement]}` : '';
-      const label = [wText, aText].filter(Boolean).join('・');
-      chip.title = `${label}（弱点属性ならダメージ2倍・同じ属性を帯びれば攻撃を吸収）`;
-      const icon = document.createElement('span');
-      icon.className = 'medal medal--sm';
-      icon.textContent = def.weakness ? ELEMENT_LABEL[def.weakness] : '属';
-      const text = document.createElement('span');
-      text.className = 'enemy-trait__text';
-      const strong = document.createElement('strong');
-      strong.textContent = label;
-      text.append(strong);
-      chip.append(icon, text);
-      line.append(chip);
-    }
+    line.hidden = traits.length === 0;
     for (const t of traits) {
       const chip = document.createElement('span');
       chip.className = 'enemy-trait__item';
       chip.title = `${t.name}: ${t.description}`;
-      const icon = document.createElement('span');
-      icon.className = 'medal medal--sm';
-      icon.textContent = t.icon;
       const text = document.createElement('span');
       text.className = 'enemy-trait__text';
       const strong = document.createElement('strong');
       strong.textContent = t.name;
       const desc = document.createElement('span');
       desc.className = 'enemy-trait__desc';
-      desc.textContent = ` ${t.description}`;
+      desc.textContent = `: ${t.description}`;
       text.append(strong, desc);
-      chip.append(icon, text);
+      chip.append(text);
       line.append(chip);
     }
     return line;

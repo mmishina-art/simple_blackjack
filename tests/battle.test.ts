@@ -603,3 +603,4 @@ describe('ブロックは後攻でも最初に付与される', () => {
     expect(m.ctx.enemy.block).toBe(1);
   });
 });
+

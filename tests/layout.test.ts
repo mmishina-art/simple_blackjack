@@ -140,3 +140,31 @@ describe('CSS の形', () => {
     expect(depth).toBe(0);
   });
 });
+
+describe('敵エリアのレイアウトと特性・弱点表示', () => {
+  it('敵ステージの上部にスキルスロット表が重ねられ、コンパクトに指定されている', () => {
+    expect(battleView).toContain('this.enemyView.el.append(this.enemySlotStrip.el)');
+    expect(css).toContain('.enemy-stage .slots');
+    expect(css).toContain('.enemy-stage .slot');
+  });
+
+  it('特性は敵画像ステージ内に配置され、先頭アイコン（medal）が排除されている', () => {
+    expect(battleView).toContain('this.enemyView.el.append(this.buildTraits())');
+    // buildTraits 内で medal アイコンを生成していない
+    const buildTraitsBody = /buildTraits\(\): HTMLElement \{([\s\S]*?)\n  \}/.exec(battleView)?.[1] ?? '';
+    expect(buildTraitsBody).not.toContain('medal');
+    // CSS でステージ内下部に配置され、1行収まり（nowrap / ellipsis）が指定されている
+    expect(css).toContain('.enemy-trait {');
+    expect(css).toContain('bottom: 4px;');
+    expect(css).toContain('.enemy-trait__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;');
+  });
+
+  it('魔導士用の弱点表示は特性から分離され、手札ヘッダーに配置され右寄せされる', () => {
+    expect(battleView).toContain('buildWeakness()');
+    expect(battleView).toContain('this.enemyHand.attachHeaderRight(weaknessEl)');
+    expect(handView).toContain('attachHeaderRight');
+    expect(handView).toContain('hand__header');
+    expect(css).toContain('.hand__header { display: flex; align-items: center; justify-content: space-between;');
+    expect(css).toContain('.enemy-weakness');
+  });
+});

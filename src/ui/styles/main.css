@@ -235,6 +235,15 @@ section { min-width: 0; }
 }
 
 /* Hand */
+.hand-block { display: flex; flex-direction: column; }
+.hand__header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.enemy-weakness {
+  display: inline-flex; align-items: center;
+  font-size: 11px; line-height: 1.2; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--bone); background: rgba(18, 13, 8, 0.85);
+  border: 1px solid var(--gold-dim); border-radius: 3px;
+  padding: 2px 6px; white-space: nowrap;
+}
 .hand { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 84px; }
 .hand__cards { display: flex; gap: 6px; flex-wrap: wrap; }
 .hand__total {
@@ -351,20 +360,51 @@ section { min-width: 0; }
   border: 1px solid var(--gold-dim);
   box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.9);
 }
+/* 敵のスキルスロット: 舞台の上部にコンパクトにオーバーレイ表示 */
+.enemy-stage .slots {
+  position: absolute; top: 4px; left: 6px; right: 6px; z-index: 3;
+}
+.enemy-stage .slots__row {
+  background: rgba(8, 6, 4, 0.82);
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  padding: 1px 2px;
+  gap: 1px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.enemy-stage .slot {
+  padding: 1px 0 2px;
+  font-size: 8.5px;
+  gap: 1px;
+  border-radius: 2px;
+}
+.enemy-stage .slot__key {
+  font-size: 8.5px;
+  line-height: 1;
+}
+.enemy-stage .slot__icon {
+  font-size: 11px;
+  line-height: 1;
+}
+.enemy-stage .slot__val {
+  min-height: 13px;
+  font-size: 8px;
+  line-height: 1;
+  gap: 0;
+}
 .enemy-trait {
-  position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 8px;
-  font-size: 12px; line-height: 1.2; color: var(--bone-dim); background: rgba(8, 6, 4, 0.78); border: 1px solid var(--gold-dim); border-radius: 6px;
+  position: absolute; bottom: 4px; left: 6px; right: 6px; z-index: 3;
+  display: flex; align-items: center; gap: 6px; min-width: 0;
+  padding: 2px 7px;
+  font-size: 11px; line-height: 1.25; color: var(--bone-dim);
+  background: rgba(8, 6, 4, 0.82);
+  border: 1px solid var(--gold-dim); border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 .enemy-trait[hidden] { display: none; }
-.enemy-trait__item { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.enemy-trait__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
-.enemy-trait .medal--sm { width: 20px; height: 20px; font-size: 11px; flex: none; }
-/* 短い画面（敵の舞台が小さい）では、特性の名前だけを左上に小さく出す（絵を隠さない。説明は長押し・「敵の技」で） */
-@media (max-height: 760px) {
-  .enemy-trait { right: auto; top: 3px; left: 4px; padding: 1px 6px 1px 3px; }
-  .enemy-trait__desc { display: none; }
-}
-.enemy-trait__text strong { color: var(--bone); font-weight: 700; }
+.enemy-trait__item { display: inline-flex; align-items: center; min-width: 0; width: 100%; }
+.enemy-trait__text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.enemy-trait__text strong { color: var(--bone); font-weight: 700; margin-right: 2px; }
 .enemy-backdrop { position: absolute; inset: 0; }
 .enemy-stage[data-stage="2"] .enemy-backdrop { filter: hue-rotate(150deg) saturate(1.1) brightness(0.95); }
 .enemy-stage[data-stage="3"] .enemy-backdrop { filter: hue-rotate(-25deg) saturate(1.5) brightness(1.05); }

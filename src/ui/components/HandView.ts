@@ -11,6 +11,7 @@ export class HandView {
   readonly el = document.createElement('div');
   /** 手札の行の右側。いま発動するスキルの名前とダメージなどを出す（SlotStrip の caption を入れる）。 */
   readonly side = document.createElement('div');
+  private headerEl = document.createElement('div');
   private rowEl = document.createElement('div');
   private cardsEl = document.createElement('div');
   private totalEl = document.createElement('div');
@@ -18,12 +19,19 @@ export class HandView {
 
   constructor() {
     this.el.className = 'hand-block';
+    this.headerEl.className = 'hand__header';
     this.rowEl.className = 'hand';
     this.cardsEl.className = 'hand__cards';
     this.side.className = 'hand__side';
     this.totalEl.className = 'hand__total';
+    this.headerEl.append(this.totalEl);
     this.rowEl.append(this.cardsEl, this.side);
-    this.el.append(this.totalEl, this.rowEl);
+    this.el.append(this.headerEl, this.rowEl);
+  }
+
+  /** 合計値の右側にバッジなどを追加する（魔導士の弱点表示など）。 */
+  attachHeaderRight(child: HTMLElement): void {
+    this.headerEl.append(child);
   }
 
   update(entity: Entity, rules: RuleSet): void {
