@@ -12,7 +12,7 @@ import { seededRng } from '../src/core/util/Rng';
 import { resolveShrine, useInn } from '../src/map/events';
 import { upgradeCost, buyOffer, rewardGold, rewardGoldChoice, generateShop, sellFromInventory } from '../src/run/shop';
 import { emptyMeta } from '../src/meta/Meta';
-import { advanceStage, armorCap, canMergeAt, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, shrineUpgradeChoices, upgradeSlot, mergeSkill, type RunState } from '../src/run/Run';
+import { advanceStage, armorCap, armorReflect, canMergeAt, canUpgradeSlot, createRun, isFinalStage, enemyOfTile, equipArmor, equipSkill, markCleared, moveTo, offerRelics, offerSkills, reachableTiles, shrineUpgradeChoices, upgradeSlot, mergeSkill, type RunState } from '../src/run/Run';
 
 const N = Number(process.argv[2] ?? 600);
 const RISK = Number(process.argv[3] ?? 0.45);
@@ -117,6 +117,7 @@ if (ESS.some((x) => x !== 1)) {
   }
 }
 const stat = { goldPicks: 0, runs: 0, clears: 0, battles: 0, won: 0, rounds: 0, hpLost: 0, defends: 0, decisions: 0, herbs: 0 };
+const run0Char = process.env.CHAR === 'mage' ? '魔導士' : '戦士';
 const perEnemy: Record<string, { n: number; w: number; hp: number; rounds: number }> = {};
 const deaths: Record<string, number> = {};
 const reach: Record<string, number> = {};
@@ -125,13 +126,14 @@ const stageReached: Record<number, number> = {};
 (async () => {
   for (let i = 0; i < N; i++) {
     const rng = seededRng(1000 + i);
-    const run = createRun(undefined, upgMeta());
+    // CHAR=mage: 魔導士で冒険する（既定は戦士）
+    const run = createRun(undefined, upgMeta(), process.env.CHAR === 'mage' ? 'mage' : 'warrior');
     if (process.env.PLAYER_HP) { run.maxHp = Number(process.env.PLAYER_HP); run.hp = run.maxHp; }
     if (process.env.START_ARMOR) run.armor = process.env.START_ARMOR;
     if (process.env.HERB) (getSkill('herb').effects[0] as { amount: number }).amount = Number(process.env.HERB);
     if (process.env.NO_HERB) delete run.slots[12];
     if (process.env.HERB_SLOT) { delete run.slots[12]; run.slots[Number(process.env.HERB_SLOT)] = 'herb'; }
-    if (process.env.RELIC) { const { RELIC_POOL } = await import('../src/relics/catalog'); const r = RELIC_POOL.find((x) => x.id === process.env.RELIC); if (r && !process.env.RELIC_STAGE) run.relics.push(r); }
+    if (process.env.RELIC) { const { ALL_RELIC_POOL } = await import('../src/relics/catalog'); const r = ALL_RELIC_POOL.find((x) => x.id === process.env.RELIC); if (r && !process.env.RELIC_STAGE) run.relics.push(r); }
     stat.runs++;
     let dead = '';
     while (!dead) {
@@ -143,7 +145,7 @@ const stageReached: Record<number, number> = {};
         if (rs.length) run.relics.push([...rs].sort((a, b) => (b.rarity === 'legend' ? 2 : b.rarity === 'rare' ? 1 : 0) - (a.rarity === 'legend' ? 2 : a.rarity === 'rare' ? 1 : 0))[0]);
         stageReached[run.stage + 1] = (stageReached[run.stage + 1] ?? 0) + 1;
         advanceStage(run);
-        if (process.env.RELIC && Number(process.env.RELIC_STAGE) === run.stage) { const { RELIC_POOL } = await import('../src/relics/catalog'); const r = RELIC_POOL.find((x) => x.id === process.env.RELIC); if (r && !run.relics.includes(r)) run.relics.push(r); } // RELIC_STAGE=N: N 階層の頭から持つ
+        if (process.env.RELIC && Number(process.env.RELIC_STAGE) === run.stage) { const { ALL_RELIC_POOL } = await import('../src/relics/catalog'); const r = ALL_RELIC_POOL.find((x) => x.id === process.env.RELIC); if (r && !run.relics.includes(r)) run.relics.push(r); } // RELIC_STAGE=N: N 階層の頭から持つ
         if (process.env.STAGE_HEAL_FULL) run.hp = run.maxHp;
         continue;
       }
@@ -178,7 +180,7 @@ const stageReached: Record<number, number> = {};
       if (tile.kind === 'enemy' || tile.kind === 'boss') {
         const def = enemyOfTile(tile);
         const lv = enemyLevel(def);
-        const m = new BattleMachine({ enemy: def, playerMaxHp: run.maxHp, playerHp: run.hp, playerSlots: run.slots, playerFallback: run.fallbackSkill, playerAttack: run.baseAttack, playerBlock: run.bonus.startBlock, playerArmorCap: armorCap(run), relics: run.relics, rng, pace: async () => {} });
+        const m = new BattleMachine({ enemy: def, playerCharacter: run.character, playerArmorReflect: armorReflect(run), playerMaxHp: run.maxHp, playerHp: run.hp, playerSlots: run.slots, playerFallback: run.fallbackSkill, playerAttack: run.baseAttack, playerBlock: run.bonus.startBlock, playerArmorCap: armorCap(run), relics: run.relics, rng, pace: async () => {} });
         m.bus.on('onRoundEnd', () => { stat.rounds++; (perEnemy[def.id] ??= { n: 0, w: 0, hp: 0, rounds: 0 }).rounds++; });
         m.onChange(() => {
           if (!m.canAct) return;
@@ -253,7 +255,7 @@ const stageReached: Record<number, number> = {};
     if (dead) deaths[`${run.stage}-${dead}`] = (deaths[`${run.stage}-${dead}`] ?? 0) + 1;
   }
   const f = (x: number, d = 1) => x.toFixed(d);
-  console.log(`risk ${RISK} N ${N} | クリア ${f(100 * stat.clears / N, 0)}% | 1戦の勝率 ${f(100 * stat.won / stat.battles, 0)}% | 1戦 ${f(stat.rounds / stat.battles)}R・自HP減 ${f(stat.hpLost / stat.battles)} | 防御 ${f(100 * stat.defends / stat.decisions, 1)}% | ゴールドを選んだ ${f(100 * stat.goldPicks / Math.max(1, stat.won), 0)}%`);
+  console.log(`${run0Char} risk ${RISK} N ${N} | クリア ${f(100 * stat.clears / N, 0)}% | 1戦の勝率 ${f(100 * stat.won / stat.battles, 0)}% | 1戦 ${f(stat.rounds / stat.battles)}R・自HP減 ${f(stat.hpLost / stat.battles)} | 防御 ${f(100 * stat.defends / stat.decisions, 1)}% | ゴールドを選んだ ${f(100 * stat.goldPicks / Math.max(1, stat.won), 0)}%`);
   for (const [id, p] of Object.entries(perEnemy)) console.log(`  ${id.padEnd(9)} 戦${String(p.n).padStart(5)} 勝率 ${f(100 * p.w / p.n, 0).padStart(3)}%  1戦 ${f(p.rounds / p.n)}R  自HP減 ${f(p.hp / p.n)}`);
   console.log('  階層に到達:', [2, 3].map((n) => `第${n}階層 ${f(100 * (stageReached[n] ?? 0) / N, 0)}%`).join(' '));
   console.log('  死亡位置:', Object.entries(deaths).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}:${f(100 * v / N, 0)}%`).join(' '));
