@@ -12,6 +12,7 @@ export interface SwapScreenOptions {
   title?: string;
   hint?: string;
   closeLabel?: string;
+  hideCloseButton?: boolean;
   proceedLabel?: string;
   onClose(swapped: boolean): void;
 }
@@ -120,7 +121,8 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: SwapScree
       body.append(actions);
     }
 
-    screen.append(buildTopBar(opts.title ?? '入れ替え', close, opts.closeLabel ?? '戻る'), body);
+    const onBack = opts.hideCloseButton ? undefined : close;
+    screen.append(buildTopBar(opts.title ?? '入れ替え', onBack, opts.closeLabel ?? '戻る'), body);
     root.replaceChildren(screen);
   };
 
@@ -130,8 +132,9 @@ export function showSwapScreen(root: HTMLElement, run: RunState, opts: SwapScree
     const id = spotItem(run, spot);
     const sk = id ? getSkill(id) : null;
     const f = flags(spot);
+    const isEmpty = !sk;
     const row = document.createElement('button');
-    row.className = `lslot lslot--set lslot--pouch lslot--tap${f.target ? ' lslot--target' : ''}${f.blocked ? ' lslot--blocked' : ''}${f.picked ? ' lslot--picked' : ''}`;
+    row.className = `lslot lslot--set lslot--pouch${isEmpty ? ' lslot--empty' : ''} lslot--tap${f.target ? ' lslot--target' : ''}${f.blocked ? ' lslot--blocked' : ''}${f.picked ? ' lslot--picked' : ''}`;
     const medal = sk
       ? `<span class="medal medal--sm ${rarityClass(rarityOfSkill(sk))}${medalKindClass(kindOfSkill(sk))}">${sk.icon}</span>`
       : '<span class="medal medal--sm medal--empty">袋</span>';

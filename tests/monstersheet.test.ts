@@ -11,8 +11,8 @@ describe('マップの敵の詳細', () => {
     expect(map).toContain('onGo: () => handlers.onMove(t.id)');
     expect(map).toMatch(/else handlers\.onMove\(t\.id\)/);
   });
-  it('進める敵のときだけ「進む」を出し、閉じるボタンは常にある', () => {
-    expect(sheet).toContain("opts.canGo ? [{ kind: 'confirm'");
+  it('進める敵のときだけ「戦闘開始」を出し、閉じるボタンは常にある', () => {
+    expect(sheet).toContain("confirm: opts.canGo ? { label: '戦闘開始', onConfirm: opts.onGo } : undefined");
     expect(sheet).toContain("closeLabel: '閉じる'");
   });
   it('LV・HP・特性・技・落とし物を出す', () => {

@@ -1,3 +1,5 @@
+import type { EnemyDef } from '../../core/entities/enemies/EnemyDef';
+import { getEnemy } from '../../core/entities/enemies/catalog';
 import { backdropHtml } from './art';
 import { enemyArtHtml } from './enemyArt';
 
@@ -8,10 +10,23 @@ export class EnemyView {
   readonly el = document.createElement('div');
   private sprite = document.createElement('div');
 
-  constructor(enemyId: string, stage = 1) {
+  constructor(enemy: EnemyDef | string, stage = 1) {
+    const enemyId = typeof enemy === 'string' ? enemy : enemy.id;
+    let size = typeof enemy !== 'string' && enemy.size ? enemy.size : 'medium';
+    let flying = typeof enemy !== 'string' ? !!enemy.flying : false;
+    if (typeof enemy === 'string') {
+      try {
+        const def = getEnemy(enemy);
+        if (def.size) size = def.size;
+        if (def.flying) flying = !!def.flying;
+      } catch {
+        // テスト用の未定義IDなど
+      }
+    }
+    const sizeMod = size === 'small' ? 'sm' : size === 'large' ? 'lg' : 'md';
     this.el.className = 'enemy-stage';
     this.el.dataset.stage = String(stage); // 階層ごとに背景の色合いが変わる（CSS）
-    this.sprite.className = 'enemy-sprite';
+    this.sprite.className = `enemy-sprite enemy-sprite--${size} enemy-sprite--${sizeMod}${flying ? ' enemy-sprite--flying' : ''}`;
     this.sprite.innerHTML = enemyArtHtml(enemyId) || enemyArtHtml('slime');
     const backdrop = document.createElement('div');
     backdrop.className = 'enemy-backdrop';

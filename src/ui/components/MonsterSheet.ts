@@ -83,7 +83,8 @@ export function openMonsterSheet(enemyId: string, opts: { run: RunState; boss: b
   openSheet({
     title: opts.boss ? `${unknown ? '？？？' : def.name}（ボス）` : def.midBoss ? `${def.name}（中ボス）` : def.name,
     content,
-    options: opts.canGo ? [{ kind: 'confirm', icon: '進', name: '進む', detail: 'この敵と戦う', onPick: opts.onGo }] : [],
+    options: [],
+    confirm: opts.canGo ? { label: '戦闘開始', onConfirm: opts.onGo } : undefined,
     closeLabel: '閉じる',
   });
 }

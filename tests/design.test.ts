@@ -110,6 +110,18 @@ describe('スキルの入れ替えタイミング（階層開始時＋祠では�
     expect(shrine).not.toContain('祠でスキルや道具を入れ替えた');
     const main = read('src/main.ts');
     expect(main).toContain('title: `第${run.stage}階層の準備`');
+    expect(main).toContain('hideCloseButton: true');
     expect(main).toContain('proceedLabel: `第${run.stage}階層へ進む`');
+  });
+
+  it('空きスロットには lslot--empty が付与され、ドラッグ不可と文字の減光スタイルが定義されている', () => {
+    const css = read('src/ui/styles/main.css');
+    expect(css).toContain('.lslot--empty');
+    expect(css).toContain('.lslot--empty .lslot__name');
+    expect(css).toContain('.swap .lslot--empty');
+    const slotRow = read('src/ui/components/SlotRow.ts');
+    expect(slotRow).toContain("!o.skill ? ' lslot--empty' : ''");
+    const swapScreen = read('src/ui/SwapScreen.ts');
+    expect(swapScreen).toContain("isEmpty ? ' lslot--empty' : ''");
   });
 });

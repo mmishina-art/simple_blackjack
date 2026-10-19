@@ -1,8 +1,36 @@
+import type { ElementType } from '../skills/Skill';
+
 export type Suit = 'S' | 'H' | 'D' | 'C';
 export type Rank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
 
 export const SUITS: readonly Suit[] = ['S', 'H', 'D', 'C'];
 export const RANKS: readonly Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+/** マークごとの属性: ♥ 炎・♠ 氷・♣ 雷・♦ 無属性 */
+export const SUIT_ELEMENT: Record<Suit, ElementType | undefined> = {
+  H: 'fire',
+  S: 'ice',
+  C: 'lightning',
+  D: undefined,
+};
+
+export const SUIT_SYMBOL: Record<Suit, string> = {
+  H: '♥',
+  S: '♠',
+  C: '♣',
+  D: '♦',
+};
+
+export const SUIT_ELEMENT_LABEL: Record<Suit, string> = {
+  H: '炎',
+  S: '氷',
+  C: '雷',
+  D: '無属性',
+};
+
+export function elementOfSuit(suit: Suit | undefined): ElementType | undefined {
+  return suit ? SUIT_ELEMENT[suit] : undefined;
+}
 
 export interface Card {
   readonly suit: Suit;

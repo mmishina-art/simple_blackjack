@@ -29,29 +29,29 @@ export const ENEMY_DROPS: Record<string, readonly SkillId[]> = {
   magma_serpent: ['twin_strike', 'berserk', 'rampage', 'impale', 'flurry'], // 溶岩の大蛇: 荒々しい連撃・貫通
 };
 
-/** 魔導士で冒険しているときの、敵ごとの落とし物（属性魔法・反射・吸収）。 */
+/** 魔導士で冒険しているときの、敵ごとの落とし物（魔弾・障壁・大魔法・反射・吸収）。 */
 export const MAGE_ENEMY_DROPS: Record<string, readonly SkillId[]> = {
   // 第1階層
-  slime: ['frost_shield', 'aqua_mend', 'fire_bolt', 'mana_ward'],
-  skeleton: ['fire_bolt', 'flame_wave', 'mana_ward', 'fire_magic'],
-  bat: ['spark', 'ice_needle', 'element_drain', 'twin_thunder'],
-  ghoul: ['fire_bolt', 'flame_wave', 'aqua_mend', 'element_drain'],
-  shield_bearer: ['thunder_lance', 'mana_ward', 'mirror_coat', 'spark'],
-  mimic: ['spark', 'thunder_lance', 'mirror_coat', 'element_drain'],
+  slime: ['elemental_barrier', 'magic_bullet', 'mana_ward', 'grand_magic'],
+  skeleton: ['magic_bullet', 'magic_lance', 'grand_magic', 'elemental_barrier'],
+  bat: ['magic_bullet', 'rapid_bullets', 'resonance_bullet', 'element_drain'],
+  ghoul: ['magic_bullet', 'elemental_barrier', 'element_drain', 'resonance_bullet'],
+  shield_bearer: ['magic_lance', 'mana_ward', 'mirror_coat', 'elemental_barrier'],
+  mimic: ['resonance_bullet', 'magic_lance', 'mirror_coat', 'element_drain'],
   // 第2階層
-  merman: ['spark', 'twin_thunder', 'aqua_mend', 'blizzard'],
-  gargoyle: ['mana_ward', 'mirror_coat', 'thunder_lance', 'spark'],
-  wraith: ['fire_bolt', 'flame_wave', 'fire_magic', 'element_drain'],
-  gambler: ['twin_thunder', 'thunder_lance', 'ice_needle', 'judgement_bolt'],
-  colossus: ['fire_magic', 'meteor', 'frost_shield', 'aqua_mend'],
-  iron_golem: ['thunder_lance', 'mirror_coat', 'aegis_mirror', 'twin_thunder'],
-  drowned_knight: ['spark', 'thunder_lance', 'mirror_coat', 'blizzard'],
+  merman: ['rapid_bullets', 'grand_magic', 'elemental_barrier', 'resonance_bullet'],
+  gargoyle: ['mana_ward', 'mirror_coat', 'magic_lance', 'resonance_bullet'],
+  wraith: ['magic_bullet', 'grand_magic', 'element_drain', 'rapid_bullets'],
+  gambler: ['resonance_bullet', 'rapid_bullets', 'tri_star', 'magic_lance'],
+  colossus: ['grand_magic', 'cataclysm', 'elemental_barrier', 'mirror_coat'],
+  iron_golem: ['magic_lance', 'mirror_coat', 'aegis_mirror', 'rapid_bullets'],
+  drowned_knight: ['magic_bullet', 'magic_lance', 'mirror_coat', 'grand_magic'],
   // 第3階層
-  serpent: ['twin_thunder', 'blizzard', 'absolute_zero', 'judgement_bolt'],
-  flame: ['ice_needle', 'blizzard', 'frost_shield', 'meteor'],
-  golem: ['blizzard', 'absolute_zero', 'mirror_coat', 'aegis_mirror'],
-  imp: ['element_drain', 'astral_drain', 'blizzard', 'absolute_zero'],
-  magma_serpent: ['blizzard', 'absolute_zero', 'astral_drain', 'meteor'],
+  serpent: ['rapid_bullets', 'grand_magic', 'tri_star', 'resonance_bullet'],
+  flame: ['grand_magic', 'cataclysm', 'elemental_barrier', 'tri_star'],
+  golem: ['cataclysm', 'mirror_coat', 'aegis_mirror', 'magic_lance'],
+  imp: ['element_drain', 'astral_drain', 'resonance_bullet', 'tri_star'],
+  magma_serpent: ['cataclysm', 'tri_star', 'astral_drain', 'resonance_bullet'],
 };
 
 /** 敵の落とし物の候補（なければ空）。 */
