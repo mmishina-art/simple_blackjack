@@ -30,7 +30,8 @@ export function effectiveSlotSkills(run: RunState): Map<SlotKey, EffectiveSkill>
   const { player } = probe.ctx;
   const out = new Map<SlotKey, EffectiveSkill>();
   for (const [key, id] of Object.entries(run.slots)) {
-    const base = getSkill(id!);
+    if (!id) continue;
+    const base = getSkill(id);
     const skill = probe.bus.emit('onSkillActivated', { user: player, skill: base }).skill ?? base;
     const atkBase = slotAttack(run.baseAttack, Number(key));
     const atk = player.attackAt(Number(key));

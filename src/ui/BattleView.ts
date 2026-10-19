@@ -7,7 +7,6 @@ import { BattleLog } from './components/BattleLog';
 import { EnemyView, floatText, playFx } from './components/EnemyView';
 import { HandView } from './components/HandView';
 import { HpBar } from './components/HpBar';
-import { buildEnemyInfo } from './components/EnemyInfo';
 import type { RunState } from '../run/Run';
 import { SlotStrip } from './components/SlotStrip';
 import { relicButton } from './components/relicMedal';
@@ -64,38 +63,33 @@ export class BattleView {
     this.enemyLv = enemyLevel(machine.ctx.enemyDef);
     this.container = document.createElement('main');
     this.container.className = 'battle';
-    this.enemyView = new EnemyView(machine.ctx.enemyDef.id, run.stage);
+    this.enemyView = new EnemyView(machine.ctx.enemyDef, run.stage);
     // 敵が「N以上になるまで引く」なら、N未満のスロットは出さない
     this.enemySlotStrip = new SlotStrip(machine.ctx.enemyDef.ai.standOn);
 
     this.roundEl.className = 'round';
     this.muteBtn.className = 'mute';
-    this.muteBtn.setAttribute('aria-label', 'サウンドの切り替え');
-    this.muteBtn.textContent = '♪';
+    this.muteBtn.innerHTML = '<span class="mute__note">♪</span><span class="mute__label"> BGM</span>';
     this.muteBtn.addEventListener('click', () => {
       audio.setMuted(!audio.muted);
       audio.sfx('click');
       this.renderMute();
     });
-    const infoBtn = document.createElement('button');
-    infoBtn.className = 'info-btn';
-    infoBtn.textContent = '敵の技';
-    infoBtn.addEventListener('click', () => this.showSheet((close) => buildEnemyInfo(machine.ctx.enemy, machine.ctx.enemyDef, machine.ctx.player.hp, close)));
     const historyBtn = document.createElement('button');
     historyBtn.className = 'info-btn';
     historyBtn.textContent = '記録';
     historyBtn.addEventListener('click', () => this.showSheet((close) => this.log.buildSheet(close)));
     const topRight = document.createElement('span');
     topRight.className = 'top-row__right';
-    topRight.append(historyBtn, infoBtn, this.muteBtn);
+    topRight.append(historyBtn, this.muteBtn);
     this.enemyHp.prepend(this.roundEl);
-    // 敵の舞台の上にスキルスロットを重ねる
-    this.enemyView.el.append(this.enemySlotStrip.el);
-    // 特性の説明も敵の舞台内に置く（下部にオーバーレイ）
+    this.enemyHp.attachRight(topRight);
+    // 特性の説明は敵の舞台内に置く（下部にオーバーレイ）
     this.enemyView.el.append(this.buildTraits());
     const weaknessEl = this.buildWeakness();
     if (weaknessEl) this.enemyHand.attachHeaderRight(weaknessEl);
-    const enemyArea = section('enemy-area', this.enemyHp.el, this.enemyView.el, this.enemyHand.el);
+    // 敵スキルスロットは舞台内ではなく、敵舞台と敵手札の間に配置
+    const enemyArea = section('enemy-area', this.enemyHp.el, this.enemyView.el, this.enemySlotStrip.el, this.enemyHand.el);
     // 合計値（勝負の結果）を上に、発動するスキルとダメージを手札の右側に出す
     this.enemyHand.side.append(this.enemySlotStrip.caption);
     this.playerHand.side.append(this.slotStrip.caption);

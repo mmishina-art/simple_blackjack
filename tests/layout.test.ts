@@ -142,10 +142,10 @@ describe('CSS の形', () => {
 });
 
 describe('敵エリアのレイアウトと特性・弱点表示', () => {
-  it('敵ステージの上部にスキルスロット表が重ねられ、コンパクトに指定されている', () => {
-    expect(battleView).toContain('this.enemyView.el.append(this.enemySlotStrip.el)');
-    expect(css).toContain('.enemy-stage .slots');
-    expect(css).toContain('.enemy-stage .slot');
+  it('敵スキルスロット表は敵ステージと手札の間に配置され、モンスター表示を遮らない', () => {
+    expect(battleView).toContain("section('enemy-area', this.enemyHp.el, this.enemyView.el, this.enemySlotStrip.el, this.enemyHand.el)");
+    expect(css).toContain('.enemy-area > .slots');
+    expect(css).toContain('.enemy-area .slot');
   });
 
   it('特性は敵画像ステージ内に配置され、先頭アイコン（medal）が排除されている', () => {
@@ -209,3 +209,46 @@ describe('手札を引く前後のレイアウト安定性（動的シフト・�
     expect(mediaBlocks(720)).toMatch(/\.battle \.hand\s*\{[^}]*height:\s*58px/);
   });
 });
+
+describe('戦闘画面のユーティリティボタン（記録・BGMオンオフ）', () => {
+  it('敵HPバーの右端に「記録」と「BGMオンオフ（♪）」が配置されている', () => {
+    expect(battleView).toContain("historyBtn.textContent = '記録'");
+    expect(battleView).toContain('topRight.append(historyBtn, this.muteBtn)');
+    expect(battleView).toContain('this.enemyHp.attachRight(topRight)');
+    expect(css).toContain('.hpbar--enemy .top-row__right');
+    expect(css).toContain('.hpbar--enemy .mute');
+    expect(css).toContain('.hpbar--enemy .info-btn');
+  });
+});
+
+describe('メニューパーツの鋲（リベット）の基本ルールとモンスター表示領域の最大化', () => {
+  it('基本ルール: 押せるパネル（ボタン、選択カード、選択肢）には鋲を残し、押せない枠（敵枠、味方枠、シート外枠、インベントリ枠）は鋲を持たない', () => {
+    // 押せない表示枠（.enemy-area, .player-area, .sheet, .loadout__inv）は var(--plate) のみで鋲を持たない
+    const frameMatch = css.match(/\.enemy-area,\s*\.player-area,\s*\.sheet,\s*\.loadout__inv[^{]*\{([^}]+)\}/);
+    expect(frameMatch).not.toBeNull();
+    const frameRules = frameMatch![1];
+    expect(frameRules).toContain('background: var(--plate);');
+    expect(frameRules).not.toContain('var(--rivets)');
+
+    // 押せるパネル・ボタン・選択札（.choice__card, .btn, .pick 等）は四隅に鋲（--rivets）を持つ
+    const clickableMatch = css.match(/\.choice__card,\s*\.btn,\s*\.pick,\s*\.sheet__close,\s*\.codex-tabs__btn,\s*\.topbar__back[^{]*\{([^}]+)\}/);
+    expect(clickableMatch).not.toBeNull();
+    const clickableRules = clickableMatch![1];
+    expect(clickableRules).toContain('background: var(--rivets), var(--plate);');
+  });
+
+  it('戦闘画面の敵モンスター表示領域（.enemy-stage / .enemy-sprite）が拡大設定されている', () => {
+    expect(css).toMatch(/\.battle \.enemy-stage\s*\{[^}]*flex:\s*1\s+1\s+auto/);
+    expect(css).toMatch(/\.battle \.enemy-sprite\s*\{[^}]*height:\s*98%/);
+    expect(css).toMatch(/\.battle \.enemy-sprite\s*\{[^}]*max-height:\s*280px/);
+    expect(css).toMatch(/\.battle \.enemy-sprite\s*\{[^}]*max-width:\s*calc\(100%\s*-\s*12px\)/);
+  });
+
+  it('敵のサイズ感（小・中・大・飛行）に応じた表示スタイルが定義されている', () => {
+    expect(css).toMatch(/\.battle \.enemy-sprite--lg,\s*\.battle \.enemy-sprite--large\s*\{[^}]*height:\s*100%/);
+    expect(css).toMatch(/\.battle \.enemy-sprite--md,\s*\.battle \.enemy-sprite--medium\s*\{[^}]*height:\s*78%/);
+    expect(css).toMatch(/\.battle \.enemy-sprite--sm,\s*\.battle \.enemy-sprite--small\s*\{[^}]*height:\s*52%/);
+    expect(css).toMatch(/\.battle \.enemy-sprite--flying\s*\{[^}]*align-self:\s*center/);
+  });
+});
+

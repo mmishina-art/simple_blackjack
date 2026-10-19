@@ -365,7 +365,7 @@ function offerStageRelic(): void {
     showSwapScreen(root, run, {
       title: `第${run.stage}階層の準備`,
       hint: `第${run.stage}階層へ進む前に、スキルや道具袋を自由に入れ替えられる（ドラッグ、またはタップ → タップ）`,
-      closeLabel: '進む',
+      hideCloseButton: true,
       proceedLabel: `第${run.stage}階層へ進む`,
       onClose: () => showMapScreen(msg),
     });

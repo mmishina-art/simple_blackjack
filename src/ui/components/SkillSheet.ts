@@ -24,6 +24,11 @@ export interface SheetOption {
   onPick(): void;
 }
 
+export interface SheetConfirm {
+  label: string;
+  onConfirm(): void;
+}
+
 export interface SheetConfig {
   title: string;
   subtitle?: string;
@@ -34,6 +39,8 @@ export interface SheetConfig {
   options: SheetOption[];
   /** 閉じるボタンの文言（省略時は「やめる」。説明を見せるだけのときは「閉じる」）。 */
   closeLabel?: string;
+  /** 決定ボタン（指定時は「閉じる」と横並びになる）。 */
+  confirm?: SheetConfirm;
   /** 選択肢が1つもないときの文言。 */
   empty?: string;
   onClose?(): void;
@@ -114,16 +121,46 @@ export function openSheet(cfg: SheetConfig): () => void {
     empty.textContent = cfg.empty;
     list.append(empty);
   }
-  sheet.append(list);
+  if (cfg.options.length > 0 || cfg.empty) {
+    sheet.append(list);
+  }
 
-  const foot = document.createElement('button');
-  foot.className = 'sheet__close';
-  foot.textContent = cfg.closeLabel ?? 'やめる';
-  foot.addEventListener('click', () => {
-    audio.sfx('click');
-    close();
-  });
-  sheet.append(foot);
+  let focusTarget: HTMLElement | null = null;
+  if (cfg.confirm) {
+    const actions = document.createElement('div');
+    actions.className = 'sheet__actions';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn--stand sheet__btn-close';
+    closeBtn.textContent = cfg.closeLabel ?? '閉じる';
+    closeBtn.addEventListener('click', () => {
+      audio.sfx('click');
+      close();
+    });
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn btn--primary sheet__btn-confirm';
+    confirmBtn.textContent = cfg.confirm.label;
+    confirmBtn.addEventListener('click', () => {
+      audio.sfx('pick');
+      document.removeEventListener('keydown', onKey);
+      layer.remove();
+      cfg.confirm!.onConfirm();
+    });
+
+    actions.append(closeBtn, confirmBtn);
+    sheet.append(actions);
+    focusTarget = confirmBtn;
+  } else {
+    const foot = document.createElement('button');
+    foot.className = 'sheet__close';
+    foot.textContent = cfg.closeLabel ?? 'やめる';
+    foot.addEventListener('click', () => {
+      audio.sfx('click');
+      close();
+    });
+    sheet.append(foot);
+    focusTarget = firstEnabled ?? foot;
+  }
 
   layer.addEventListener('click', (e) => {
     if (e.target === layer) close();
@@ -131,6 +168,6 @@ export function openSheet(cfg: SheetConfig): () => void {
   layer.append(sheet);
   document.body.append(layer);
   document.addEventListener('keydown', onKey);
-  (firstEnabled ?? foot).focus();
+  focusTarget.focus();
   return close;
 }
