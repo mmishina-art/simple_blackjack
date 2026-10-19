@@ -236,7 +236,7 @@ section { min-width: 0; }
 
 /* Hand */
 .hand-block { display: flex; flex-direction: column; }
-.hand__header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.hand__header { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 38px; }
 .enemy-weakness {
   display: inline-flex; align-items: center;
   font-size: 11px; line-height: 1.2; font-weight: 700; letter-spacing: 0.04em;
@@ -1081,7 +1081,7 @@ section { min-width: 0; }
   .battle { gap: 6px; padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
   .battle .enemy-area, .battle .player-area { padding: 10px 12px; gap: 5px; }
   .battle .enemy-stage { min-height: 140px; }
-  .battle .hand { min-height: 64px; }
+  .battle .hand { min-height: 64px; height: 64px; }
   .battle .card { width: 44px; height: 64px; }
   .battle .slots__caption { min-height: 40px; }
   .battle .callout__icon { width: 32px; height: 32px; font-size: 16px; }
@@ -1090,7 +1090,7 @@ section { min-width: 0; }
   .battle .actions { gap: 10px; }
   .battle .actions .btn { min-height: 60px; }
   .battle .actions .btn--surrender { min-height: 46px; }
-  /* 手札が5枚以上（HandView が .hand--many を付ける）のときは、折り返さずにカードを少し重ねて1行に収める。
+  /* 手札が4枚以上（HandView が .hand--many を付ける）のときは、折り返さずにカードを少し重ねて1行に収める。
      折り返すと手札の高さが増えて、ボタンが画面の外に出る */
   .battle .hand--many .card + .card { margin-left: -16px; }
 }
@@ -1104,7 +1104,7 @@ section { min-width: 0; }
   .battle .callout__name { font-size: 15px; }
   .battle .callout__fx b { font-size: 17px; }
   .battle .enemy-stage { min-height: 120px; }
-  .battle .hand { min-height: 58px; }
+  .battle .hand { min-height: 58px; height: 58px; }
   .battle .card { width: 40px; height: 58px; }
   .battle .actions { gap: 8px; }
   .battle .actions .btn { min-height: 52px; }
@@ -1276,20 +1276,34 @@ section { min-width: 0; }
 
 /* ---- 勝負の結果を主役に: 合計値を上の行に、発動するスキル名とダメージを手札の右側に出す ---- */
 .hand-block { display: flex; flex-direction: column; gap: 2px; }
-.hand-block > .hand__total { text-align: left; font-size: 34px; line-height: 1.1; min-height: 1.1em; }
-.hand-block > .hand__total--bust { font-size: 26px; }
+.hand-block .hand__header { min-height: 38px; }
+.hand-block .hand__total { text-align: left; font-size: 34px; line-height: 1.1; min-height: 1.1em; }
+.hand-block .hand__total--bust { font-size: 26px; }
+.battle .hand { flex-wrap: nowrap; min-height: 84px; height: 84px; }
+.battle .hand__cards { flex-wrap: nowrap; flex-shrink: 0; }
+.battle .hand--many .card + .card { margin-left: -16px; }
 .hand__side { flex: 1 1 0; min-width: 0; display: flex; justify-content: flex-end; }
 .battle .hand__side .slots__caption {
-  min-height: 0; flex-direction: column; align-items: flex-end; justify-content: center; gap: 0; text-align: right; padding: 0;
+  min-height: 0; max-height: 100%; flex-direction: column; align-items: flex-end; justify-content: center; gap: 0; text-align: right; padding: 0;
 }
 .battle .hand__side .callout__icon { display: none; }
-.battle .hand__side .callout__name { flex: none; max-width: 100%; font-size: 18px; }
-.battle .hand__side .callout__fx b { font-size: 30px; }
+.battle .hand__side .callout__name { flex: none; max-width: 100%; font-size: 18px; line-height: 1.1; }
+.battle .hand__side .callout__fx { line-height: 1; }
+.battle .hand__side .callout__fx b { font-size: 30px; line-height: 1; }
 .battle .hand__side .callout__note { display: block; margin: 0; text-align: right; }
 @media (max-height: 850px) {
-  .battle .hand-block > .hand__total { font-size: 28px; }
-  .battle .hand__side .callout__name { font-size: 16px; }
-  .battle .hand__side .callout__fx b { font-size: 24px; }
+  .battle .hand__header { min-height: 32px; }
+  .battle .hand-block .hand__total { font-size: 28px; }
+  .battle .hand-block .hand__total--bust { font-size: 22px; }
+  .battle .hand__side .callout__name { font-size: 15px; }
+  .battle .hand__side .callout__fx b { font-size: 20px; }
+}
+@media (max-height: 720px) {
+  .battle .hand__header { min-height: 28px; }
+  .battle .hand-block .hand__total { font-size: 24px; }
+  .battle .hand-block .hand__total--bust { font-size: 20px; }
+  .battle .hand__side .callout__name { font-size: 13px; }
+  .battle .hand__side .callout__fx b { font-size: 16px; }
 }
 
 /* 一覧の行（ショップ・図鑑）も、編成と同じ静かな枠。レア度は、アイコンの色と札で示す */

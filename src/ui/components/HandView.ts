@@ -2,8 +2,8 @@ import type { Entity } from '../../core/entities/Entity';
 import type { RuleSet } from '../../core/rules/RuleSet';
 import { cardElement } from './CardView';
 
-/** 手札がこの枚数以上になったら、短い画面ではカードを重ねて1行に収める（折り返すと高さが増えるため）。 */
-const MANY_CARDS = 5;
+/** 手札がこの枚数以上になったら、カードを重ねて1行に収める（折り返すと高さが増えてレイアウトが崩れるため）。 */
+const MANY_CARDS = 4;
 
 /** 手札と合計値の表示。 */
 export class HandView {

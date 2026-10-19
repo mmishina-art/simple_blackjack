@@ -168,3 +168,44 @@ describe('敵エリアのレイアウトと特性・弱点表示', () => {
     expect(css).toContain('.enemy-weakness');
   });
 });
+
+describe('手札を引く前後のレイアウト安定性（動的シフト・ガクつき防止）', () => {
+  it('.hand-block と .hand__total の間に直下セレクタ（>）を使わず、hand__header 経由でもスタイルが崩れない', () => {
+    // 直下セレクタ（>）があると、div.hand__header が挟まった際にスタイル（font-size, line-height, min-height）が失われる
+    expect(css).not.toMatch(/\.hand-block\s*>\s*\.hand__total/);
+    expect(css).toMatch(/\.hand-block\s+\.hand__total\s*\{[^}]*min-height:\s*1\.1em/);
+    expect(css).toMatch(/\.hand-block\s+\.hand__total\s*\{[^}]*line-height:\s*1\.1/);
+  });
+
+  it('手札ヘッダー（.hand__header）は全ブレークポイントで最小高さを固定し、手札が0枚〜バーストでもガクつかない', () => {
+    // 基本（通常時）: 38px
+    expect(css).toMatch(/\.hand__header\s*\{[^}]*min-height:\s*38px/);
+    // 高度 850px 以下: 32px
+    const block850 = mediaBlocks(850);
+    expect(block850).toMatch(/\.battle \.hand__header\s*\{[^}]*min-height:\s*32px/);
+    // 高度 720px 以下: 28px
+    const block720 = mediaBlocks(720);
+    expect(block720).toMatch(/\.battle \.hand__header\s*\{[^}]*min-height:\s*28px/);
+  });
+
+  it('戦闘中の手札カード（.battle .hand__cards）は折り返さず（nowrap）、4枚以上で重ねて1行に収める', () => {
+    expect(css).toMatch(/\.battle \.hand__cards\s*\{[^}]*flex-wrap:\s*nowrap/);
+    expect(handView).toMatch(/const MANY_CARDS = 4;/);
+    expect(css).toMatch(/\.battle \.hand--many \.card \+ \.card\s*\{[^}]*margin-left:\s*-\d+px/);
+  });
+
+  it('手札枚数の変化（0枚→2枚→3枚→4枚以上）やバーストによって手札領域のレイアウト構造が破綻しない', () => {
+    // HandView の実装において、カードが引かれるたびにクラス名と構造が一貫していること
+    expect(handView).toContain("this.headerEl.className = 'hand__header'");
+    expect(handView).toContain("this.rowEl.className = 'hand'");
+    expect(handView).toContain("this.totalEl.className = 'hand__total'");
+    expect(handView).toContain("this.rowEl.classList.toggle('hand--many', hand.size >= MANY_CARDS)");
+    expect(handView).toContain("this.totalEl.classList.toggle('hand__total--bust', bust)");
+  });
+
+  it('.battle .hand はブレークポイントごとに高さを固定（84px / 64px / 58px）し、カード追加やスキル変化で伸縮しない', () => {
+    expect(css).toMatch(/\.battle \.hand\s*\{[^}]*height:\s*84px/);
+    expect(mediaBlocks(850)).toMatch(/\.battle \.hand\s*\{[^}]*height:\s*64px/);
+    expect(mediaBlocks(720)).toMatch(/\.battle \.hand\s*\{[^}]*height:\s*58px/);
+  });
+});
