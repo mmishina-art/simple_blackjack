@@ -1246,10 +1246,29 @@ section { min-width: 0; }
 .battle .hand__side .callout__name { flex: none; max-width: 100%; font-size: 18px; }
 .battle .hand__side .callout__fx b { font-size: 30px; }
 .battle .hand__side .callout__note { display: block; margin: 0; text-align: right; }
+.battle .slots__bust-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--blood-hi);
+  text-shadow: 0 0 10px rgba(224, 69, 69, 0.45);
+  line-height: 1.25;
+}
+.battle .slots__bust-sub {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #ffb0b0;
+  line-height: 1.3;
+}
 @media (max-height: 850px) {
   .battle .hand-block > .hand__total { font-size: 28px; }
   .battle .hand__side .callout__name { font-size: 16px; }
   .battle .hand__side .callout__fx b { font-size: 24px; }
+  .battle .slots__bust-title { font-size: 14px; }
+  .battle .slots__bust-sub { font-size: 10.5px; }
 }
 
 /* 一覧の行（ショップ・図鑑）も、編成と同じ静かな枠。レア度は、アイコンの色と札で示す */

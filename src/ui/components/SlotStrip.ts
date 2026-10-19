@@ -90,7 +90,17 @@ export class SlotStrip {
     };
     if (size === 0) text('');
     else if (totalHidden) text(hiddenNote);
-    else if (bust) text(`バースト！ ${bustPenaltyText(rules, entity)}`);
+    else if (bust) {
+      this.caption.className = 'slots__caption slots__caption--bust';
+      const title = document.createElement('strong');
+      title.className = 'slots__bust-title';
+      title.textContent = '⚠️ バースト！';
+      const sub = document.createElement('span');
+      sub.className = 'slots__bust-sub';
+      sub.textContent = bustPenaltyText(rules, entity);
+      this.caption.replaceChildren(title, sub);
+      this.calloutKey = '';
+    }
     else if (callout) this.renderCallout(callout);
     else {
       const id = entity.slots[slotKeyOf(total)];
