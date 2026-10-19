@@ -5,6 +5,7 @@ import type { EnemyDef } from './EnemyDef';
 export const Slime: EnemyDef = {
   id: 'slime',
   name: 'スライム',
+  size: 'small',
   maxHp: 14,
   attack: 3,
   weakness: 'fire',

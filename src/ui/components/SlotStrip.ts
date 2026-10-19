@@ -1,7 +1,7 @@
 import type { Entity } from '../../core/entities/Entity';
 import type { RuleSet } from '../../core/rules/RuleSet';
 import { badgeText, type PreviewPart } from '../../core/skills/preview';
-import { BASIC_ICON, describeSkill, fallbackLabel, getSkill, SLOT_MAX, slotLabel, type SlotKey } from '../../core/skills/Skill';
+import { describeSkill, fallbackLabel, getSkill, SLOT_MAX, slotLabel, type SlotKey } from '../../core/skills/Skill';
 import { effectTone, slotLook } from '../../core/skills/look';
 import { rarityClass } from '../rarity';
 import { gaugeKeys, gaugeState } from '../slotGauge';
@@ -67,13 +67,14 @@ export class SlotStrip {
       const slotTypeClass = isSpecial ? `slot--special slot--${look.tone}` : `slot--set ${rarityClass(rarity)}`;
       // 敵の危険な合計値は、血の赤色（slot--fatal）で下地ごと赤く塗る
       cell.className = `slot ${slotTypeClass}${skill?.fatal ? ' slot--fatal' : ''}${isEnemy21 && skill?.effects.some((e) => e.type === 'attack') ? ' slot--die' : ''}${tone ? ` slot--tone-${tone}` : ''}${lit.has(key) ? ' slot--on' : ''}${key === tip ? ' slot--active' : ''}`;
-      cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span><span class="slot__icon">${skill ? skill.icon : BASIC_ICON}</span>`;
+      cell.innerHTML = `<span class="slot__key">${slotLabel(key)}</span>`;
       const val = document.createElement('span');
       val.className = 'slot__val';
+      const isDie = isEnemy21 && (skill?.effects.some((e) => e.type === 'attack') ?? false);
       for (const part of effects?.get(key) ?? []) {
         const b = document.createElement('span');
         b.className = `slot__badge slot__badge--${part.type}`;
-        b.textContent = badgeText(part);
+        b.textContent = slotBadgeText(part, skill?.fatal, isDie);
         val.append(b);
       }
       cell.append(val);
@@ -137,4 +138,16 @@ export class SlotStrip {
       this.caption.classList.add('is-pop');
     }
   }
+}
+
+/** スロット表用のコンパクト表示（アイコン＋数値） */
+function slotBadgeText(part: PreviewPart, isFatal?: boolean, isDie?: boolean): string {
+  if (part.type === 'attack') {
+    if (isDie) return `👑${part.value}`;
+    if (isFatal) return `💥${part.value}`;
+    return `⚔${part.value}`;
+  }
+  if (part.type === 'block') return `🛡${part.value}`;
+  if (part.type === 'heal') return `+${part.value}`;
+  return badgeText(part);
 }

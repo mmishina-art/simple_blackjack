@@ -12,6 +12,10 @@ export class HpBar {
 
   private right = document.createElement('span');
 
+  private topRow?: HTMLElement;
+  private topRowLeft?: HTMLElement;
+  private topRowRight?: HTMLElement;
+
   constructor(variant: 'player' | 'enemy') {
     this.el.className = `hpbar hpbar--${variant}`;
     const track = document.createElement('div');
@@ -30,18 +34,31 @@ export class HpBar {
     this.atkChip.title = '敵のレベル（LV）= 攻撃するときの平均ダメージ。LV 5 なら、1回の攻撃で約 5 ダメージ';
     this.right.className = 'hpbar__right';
     if (variant === 'enemy') {
+      this.topRow = document.createElement('div');
+      this.topRow.className = 'hpbar__top';
+      this.topRowLeft = document.createElement('span');
+      this.topRowLeft.className = 'hpbar__top-left';
+      this.topRowRight = document.createElement('span');
+      this.topRowRight.className = 'hpbar__top-right';
+      this.topRow.append(this.topRowLeft, this.topRowRight);
       this.left.append(this.atkChip);
       this.right.append(this.blockChip, this.label);
+      row.append(this.left, this.right);
+      this.el.append(this.topRow, row, track);
     } else {
       this.right.append(this.blockChip, this.atkChip, this.label);
+      row.append(this.left, this.right);
+      this.el.append(row, track);
     }
-    row.append(this.left, this.right);
-    this.el.append(row, track);
   }
 
-  /** 名前の前に要素（ラウンド表示等）を添える。 */
+  /** 名前の前に要素（ラウンド表示等）を添える。敵は上段の左に配置。 */
   prepend(el: HTMLElement): void {
-    this.left.prepend(el);
+    if (this.topRowLeft) {
+      this.topRowLeft.append(el);
+    } else {
+      this.left.prepend(el);
+    }
   }
 
   /** 名前の横に要素（レリック等）を添える。 */
@@ -49,9 +66,13 @@ export class HpBar {
     this.left.append(el);
   }
 
-  /** 右端に要素（操作ボタン等）を添える。 */
+  /** 右端に要素（操作ボタン等）を添える。敵は上段の右に配置。 */
   attachRight(el: HTMLElement): void {
-    this.right.append(el);
+    if (this.topRowRight) {
+      this.topRowRight.append(el);
+    } else {
+      this.right.append(el);
+    }
   }
 
   update(name: string, hp: number, maxHp: number, block = 0, level?: number): void {
@@ -59,7 +80,7 @@ export class HpBar {
     this.label.textContent = `HP ${hp} / ${maxHp}`;
     this.fill.style.width = `${Math.max(0, (hp / maxHp) * 100)}%`;
     this.atkChip.hidden = level === undefined;
-    if (level !== undefined) this.atkChip.textContent = `LV ${level}`;
+    if (level !== undefined) this.atkChip.textContent = `Lv.${level}`;
     this.blockChip.hidden = block <= 0;
     this.blockChip.innerHTML = `${BARRIER_ICON}<span>${block}</span>`;
     this.blockChip.setAttribute('aria-label', `ブロック ${block}`);
